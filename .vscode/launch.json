@@ -1,0 +1,30 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "App",
+      "type": "node-terminal",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/src/app",
+      "command": "npm run dev",
+      "serverReadyAction": {
+        "pattern": "Local:.+(https?://.+)",
+        "uriFormat": "%s",
+        "action": "openExternally"
+      }
+    },
+    {
+      "name": "Server",
+      "type": "node-terminal",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/src/server",
+      "command": "dotnet run"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "App + Server",
+      "configurations": ["Server", "App"]
+    }
+  ]
+}
