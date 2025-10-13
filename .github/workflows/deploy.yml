@@ -1,0 +1,83 @@
+name: Cloudflare Deployment
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+jobs:
+  server:
+    name: Deploy Server
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v3
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: src/server-worker/pnpm-lock.yaml
+
+      - name: Install Dependencies
+        working-directory: src/server-worker
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Types
+        working-directory: src/server-worker
+        run: pnpm run cf:gen
+
+      - name: Deploy to Cloudflare
+        uses: cloudflare/wrangler-action@v3
+        with:
+          accountId: ${{ secrets.CLOUDFLARE_ID }}
+          apiToken: ${{ secrets.CLOUDFLARE_TOKEN }}
+          command: deploy
+          workingDirectory: src/server-worker
+
+  app:
+    name: Deploy App
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v3
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: src/app/pnpm-lock.yaml
+
+      - name: Install Dependencies
+        working-directory: src/app
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Types
+        working-directory: src/app
+        run: pnpm run cf:gen
+
+      - name: Build Project
+        working-directory: src/app
+        run: pnpm run cf:build
+
+      - name: Deploy to Cloudflare
+        uses: cloudflare/wrangler-action@v3
+        with:
+          accountId: ${{ secrets.CLOUDFLARE_ID }}
+          apiToken: ${{ secrets.CLOUDFLARE_TOKEN }}
+          command: deploy
+          workingDirectory: src/app

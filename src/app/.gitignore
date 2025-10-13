@@ -1,0 +1,28 @@
+# IDE configurations
+.vs/
+.idea/
+
+# Environment files
+node_modules/
+
+# Output files
+build/
+dist/
+out/
+
+# Output files
+.vercel/
+.next/
+.wrangler/
+.open-next/
+*.d.ts
+
+# User-specific files
+.env*
+!.env*.template
+*.dev.vars*
+
+# Miscellaneous files
+.DS_Store
+Desktop.ini
+Thumbs.db

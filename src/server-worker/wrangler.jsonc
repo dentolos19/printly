@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "enterprise-server",
+  "main": "index.ts",
+  "account_id": "d910f54eba4cf3d1634aa41c3d9a93bc",
+  "compatibility_date": "2025-10-08",
+  "compatibility_flags": ["nodejs_compat"],
+  "upload_source_maps": true,
+  "observability": {
+    "enabled": true
+  },
+  "containers": [
+    {
+      "class_name": "ServerContainer",
+      "image": "../server/Dockerfile",
+      "max_instances": 10
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "ServerContainer",
+        "name": "SERVER_CONTAINER",
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "new_sqlite_classes": ["ServerContainer"],
+      "tag": "v1"
+    }
+  ]
+}
