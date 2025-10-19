@@ -1,12 +1,12 @@
-import { Container, getContainer } from "@cloudflare/containers";
+import { Container, getRandom } from "@cloudflare/containers";
 import { Hono } from "hono";
 
-export class ServerContainer extends Container<Env> {
+export class ServerContainer extends Container<CloudflareEnv> {
   // Port the container listens on (default: 8080)
   defaultPort = 8080;
 
   // Time before container sleeps due to inactivity (default: 30s)
-  sleepAfter = "2m";
+  sleepAfter = "10m";
 
   // Environment variables passed to the container
   envVars = {
@@ -26,24 +26,11 @@ export class ServerContainer extends Container<Env> {
   }
 }
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: CloudflareEnv }>();
 
-// Catch-all route for undefined endpoints
 app.all("*", async (c) => {
-  const container = getContainer(c.env.SERVER_CONTAINER);
+  const container = await getRandom(c.env.SERVER_CONTAINER, 3);
   return await container.fetch(c.req.raw);
 });
-
-// // Load balance requests across multiple containers
-// app.get("/lb", async (c) => {
-//   const container = await getRandom(c.env.SERVER_CONTAINER, 3);
-//   return await container.fetch(c.req.raw);
-// });
-
-// // Get a single container instance (singleton pattern)
-// app.get("/singleton", async (c) => {
-//   const container = getContainer(c.env.SERVER_CONTAINER);
-//   return await container.fetch(c.req.raw);
-// });
 
 export default app;
