@@ -1,5 +1,6 @@
 using EnterpriseServer;
 using EnterpriseServer.Models;
+using EnterpriseServer.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +9,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 builder.Services.AddAuthorization();
+builder.Services.AddAuthPolicies();
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite("Data Source=data.db"));
 builder.Services.AddIdentityApiEndpoints<User>()
     .AddEntityFrameworkStores<AppDbContext>();
