@@ -2,8 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "enterprise-server",
   "main": "index.ts",
-  "account_id": "d910f54eba4cf3d1634aa41c3d9a93bc",
-  "compatibility_date": "2025-10-08",
+  "compatibility_date": "2025-10-01",
   "compatibility_flags": ["nodejs_compat"],
   "upload_source_maps": true,
   "observability": {
@@ -13,7 +12,7 @@
     {
       "class_name": "ServerContainer",
       "image": "../server/Dockerfile",
-      "max_instances": 10
+      "max_instances": 5
     }
   ],
   "durable_objects": {
