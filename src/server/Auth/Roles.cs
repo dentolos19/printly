@@ -18,14 +18,12 @@ public static class Roles
          new Claim("permission", Claims.ManageRoles),
          new Claim("permission", Claims.ManageUsers),
          new Claim("permission", Claims.EditProfile),
-         new Claim("permission", Claims.ReadData)
       ],
 
       [User] =
       [
          new Claim(ClaimTypes.Role, User),
          new Claim("permission", Claims.EditProfile),
-         new Claim("permission", Claims.ReadData)
       ]
    };
 
@@ -34,7 +32,7 @@ public static class Roles
    /// <summary>
    /// Gives all the claims associated with a specified user type
    /// </summary>
-   /// <param name="role">The targetted role's name</param>
+   /// <param name="role">The targeted role's name</param>
    /// <returns>All the claims that belong to that user type, or an empty list if not found</returns>
    public static List<Claim> GetClaimsForRole(string role) => RoleClaims.TryGetValue(role, out var claims) ? claims : [];
 }

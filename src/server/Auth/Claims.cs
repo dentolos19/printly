@@ -15,7 +15,4 @@ public static class Claims
 
     /// <summary>Allows the user to change the role of other users</summary>
     public const string ManageRoles = "roles.manage";
-
-    /// <summary>Allows the user to read data from the database</summary>
-    public const string ReadData = "data.read";
 }
