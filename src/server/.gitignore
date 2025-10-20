@@ -16,3 +16,6 @@ obj/
 .DS_Store
 Desktop.ini
 Thumbs.db
+
+#Sqlite Database
+data.db
