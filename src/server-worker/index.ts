@@ -10,7 +10,10 @@ export class ServerContainer extends Container<CloudflareEnv> {
 
   // Environment variables passed to the container
   envVars = {
-    // MESSAGE: "I was passed in via the container class!",
+    ...(Object.fromEntries(Object.entries(process.env).filter(([, value]) => value !== undefined)) as Record<
+      string,
+      string
+    >),
   };
 
   override onStart() {

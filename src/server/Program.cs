@@ -79,6 +79,15 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+app.MapGet("/environment", () =>
+{
+    var variables = Environment.GetEnvironmentVariables()
+        .Cast<System.Collections.DictionaryEntry>()
+        .ToDictionary(x => x.Key.ToString(), x => x.Value?.ToString());
+    return variables;
+})
+.WithName("GetEnvironmentVariables");
+
 app.Run();
 
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
