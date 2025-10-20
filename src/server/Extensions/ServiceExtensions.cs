@@ -5,6 +5,9 @@ namespace EnterpriseServer.Extensions;
 public static class ServiceExtensions
 {
 
+    /// <summary>
+    /// Lets the backend server know that the custom roles exist
+    /// </summary>
     public static IServiceCollection AddAuthPolicies(this IServiceCollection services) {
         services.AddAuthorization(options =>
         {

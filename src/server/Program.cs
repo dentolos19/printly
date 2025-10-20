@@ -1,6 +1,9 @@
+using System.Security.Claims;
 using EnterpriseServer;
+using EnterpriseServer.Auth;
 using EnterpriseServer.Models;
 using EnterpriseServer.Extensions;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +15,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddAuthPolicies();
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite("Data Source=data.db"));
 builder.Services.AddIdentityApiEndpoints<User>()
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>();
 
 var app = builder.Build();
@@ -55,7 +59,24 @@ app.MapGet("/weatherforecast", () =>
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
     db.Database.EnsureCreated();
+
+    foreach (string name in Roles.GetRoles())
+    {
+        if (!await roleManager.RoleExistsAsync(name))
+        {
+            var role = new IdentityRole(name);
+            await roleManager.CreateAsync(new IdentityRole(name));
+
+            List<Claim> claims = Roles.GetClaimsForRole(name);
+            foreach (Claim claim in claims.Where(c => c.Type != ClaimTypes.Role))
+            {
+                await roleManager.AddClaimAsync(role, claim);
+            }
+        }
+    }
 }
 
 app.Run();
