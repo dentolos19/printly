@@ -1,4 +1,5 @@
-﻿using EnterpriseServer.Auth;
+﻿using System.Diagnostics;
+using EnterpriseServer.Auth;
 using Microsoft.AspNetCore.Identity;
 using EnterpriseServer.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -11,10 +12,24 @@ public class LoginController(
     ) : BaseController(context)
 {
 
+    public class RegistrationData
+    {
+        public string Email {get; set;} = string.Empty;
+        public string Password {get; set;} = string.Empty;
+    }
+
     [HttpPost]
     [Route("/api/register")]
-    public async Task<IActionResult> Register(User user) {
-        var result = await userManager.CreateAsync(user);
+    public async Task<IActionResult> Register(RegistrationData userData) {
+
+        //ASP uses the username to verify a person in the internal /login route
+        var user = new User()
+        {
+            UserName = userData.Email,
+            Email = userData.Email,
+        };
+
+        var result = await userManager.CreateAsync(user, password: userData.Password);
 
         if (result.Succeeded)
         {

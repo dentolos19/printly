@@ -3,6 +3,7 @@ using EnterpriseServer;
 using EnterpriseServer.Auth;
 using EnterpriseServer.Models;
 using EnterpriseServer.Extensions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,12 +24,12 @@ app.UseSwaggerUI();
 app.UseHttpsRedirection();
 app.MapIdentityApi<User>();
 
-//temporary so that i can run operations without creating migrations
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
+    //temporary so that i can run operations without creating migrations
     db.Database.EnsureCreated();
 
     foreach (string name in Roles.GetRoles())
@@ -36,12 +37,15 @@ using (var scope = app.Services.CreateScope())
         if (!await roleManager.RoleExistsAsync(name))
         {
             var role = new IdentityRole(name);
-            await roleManager.CreateAsync(new IdentityRole(name));
+            var createResult = await roleManager.CreateAsync(role);
 
-            List<Claim> claims = Roles.GetClaimsForRole(name);
-            foreach (Claim claim in claims.Where(c => c.Type != ClaimTypes.Role))
+            if (createResult.Succeeded)
             {
-                await roleManager.AddClaimAsync(role, claim);
+                List<Claim> claims = Roles.GetClaimsForRole(name);
+                foreach (Claim claim in claims.Where(c => c.Type != ClaimTypes.Role))
+                {
+                    await roleManager.AddClaimAsync(role, claim);
+                }
             }
         }
     }
@@ -50,7 +54,9 @@ using (var scope = app.Services.CreateScope())
 app.MapGet("/", () =>
 {
     return "Welcome to Enterprise API!";
-}).WithName("GetRoot");
+}).WithName("GetRoot") ;
+
+app.MapGet("/testLogin", [Authorize(Policy = Policies.LoggedIn)] () => "Hello, World!");
 
 app.MapGet("/environment", () =>
 {
@@ -62,5 +68,7 @@ app.MapGet("/environment", () =>
         .ToDictionary(x => x.Key, x => x.Value);
     return variables;
 }).WithName("GetEnvironmentVariables");
+
+app.MapControllers();
 
 app.Run();
