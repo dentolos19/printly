@@ -5,15 +5,30 @@ using EnterpriseServer.Models;
 using EnterpriseServer.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using DotNetEnv.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration.AddDotNetEnv();
+
+static string ConvertPostgresUrlToConnectionString(string url)
+{
+    var uri = new Uri(url);
+    var userInfo = uri.UserInfo.Split(':');
+    return
+        $"Host={uri.Host};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};Ssl Mode=Require;Trust Server Certificate=true;";
+}
+
+var databaseUrl = builder.Configuration["DATABASE_URL"];
+var connectionString = ConvertPostgresUrlToConnectionString(databaseUrl);
+builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 builder.Services.AddAuthorization();
 builder.Services.AddAuthPolicies();
-builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite("Data Source=data.db"));
+
 builder.Services.AddIdentityApiEndpoints<User>().AddRoles<IdentityRole>().AddEntityFrameworkStores<AppDbContext>();
 
 var app = builder.Build();
