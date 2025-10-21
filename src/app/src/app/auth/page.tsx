@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { API_KEY } from "@/environment";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -62,11 +63,11 @@ export default function Page() {
             />
           </CardContent>
           <CardFooter className={"flex-col gap-2"}>
-            <Button className={"w-full"} variant={"default"}>
+            <Button className={"w-full"} type={"submit"} variant={"default"}>
               Login
             </Button>
-            <Button className={"w-full"} variant={"outline"}>
-              Login with Google
+            <Button className={"w-full"} type={"button"} variant={"outline"} asChild>
+              <Link href={`${API_KEY}/login/google`}>Login with Google</Link>
             </Button>
             <p className={"mt-2 text-muted-foreground text-sm"}>
               Don't have an account?{" "}

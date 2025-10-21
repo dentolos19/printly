@@ -74,7 +74,7 @@ export default function Page() {
             />
           </CardContent>
           <CardFooter className={"flex-col gap-2"}>
-            <Button className={"w-full"} variant={"default"}>
+            <Button className={"w-full"} type={"submit"} variant={"default"}>
               Register
             </Button>
             <p className={"mt-2 text-muted-foreground text-sm"}>
