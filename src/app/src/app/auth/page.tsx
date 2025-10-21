@@ -1,17 +1,30 @@
 "use client";
 
+import { useAuth } from "@/components/providers/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 export default function Page() {
+  const router = useRouter();
+  const auth = useAuth();
   const form = useForm<{ email: string; password: string }>();
 
   const handleSubmit = form.handleSubmit(async (data) => {
-    // TODO
+    await auth
+      .login(data.email, data.password)
+      .then(() => {
+        router.push("/");
+        toast.success("Logged in successfully!");
+      })
+      .catch(() => {
+        toast.error("Login failed! Please try again later.");
+      });
   });
 
   return (

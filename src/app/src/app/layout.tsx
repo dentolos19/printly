@@ -1,3 +1,4 @@
+import AuthProvider from "@/components/providers/auth";
 import { Toaster } from "@/components/ui/sonner";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -25,8 +26,10 @@ export default function Layout({
   return (
     <html lang={"en"}>
       <body className={`${fontSans.variable} ${fontMono.variable} antialiased`}>
-        {children}
-        <Toaster />
+        <AuthProvider>
+          {children}
+          <Toaster />
+        </AuthProvider>
       </body>
     </html>
   );

@@ -1,10 +1,10 @@
 "use client";
 
+import { useAuth } from "@/components/providers/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { API_KEY } from "@/environment";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -12,23 +12,19 @@ import { toast } from "sonner";
 
 export default function Page() {
   const router = useRouter();
-  const form = useForm<{ email: string; password: string }>();
+  const auth = useAuth();
+  const form = useForm<{ name: string; email: string; password: string }>();
 
   const handleSubmit = form.handleSubmit(async (data) => {
-    const response = await fetch(`${API_KEY}/register`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
-
-    if (response.ok) {
-      toast.success("Registered successfully! Please login to continue.");
-      router.push("/auth");
-    } else {
-      toast.error("Failed to register. Please check your details and try again.");
-    }
+    await auth
+      .register(data.name, data.email, data.password)
+      .then(() => {
+        toast.success("Account registered! Please log in.");
+        router.push("/auth");
+      })
+      .catch(() => {
+        toast.error("Registration failed! Please try again later.");
+      });
   });
 
   return (
@@ -42,7 +38,7 @@ export default function Page() {
           <CardContent className={"space-y-4"}>
             <FormField
               control={form.control}
-              name={"email"}
+              name={"name"}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Name</FormLabel>
