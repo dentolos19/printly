@@ -5,11 +5,11 @@ namespace EnterpriseServer.Extensions;
 
 public static class ServiceExtensions
 {
-
     /// <summary>
     /// Lets the backend server know that the custom roles exist
     /// </summary>
-    public static IServiceCollection AddAuthPolicies(this IServiceCollection services) {
+    public static IServiceCollection AddAuthPolicies(this IServiceCollection services)
+    {
         services.AddAuthorization(options =>
         {
             // Role-based policies
@@ -23,23 +23,21 @@ public static class ServiceExtensions
         return services;
     }
 
-    public static IServiceCollection AddDb(this IServiceCollection services, IWebHostEnvironment builderEnvironment)
+    public static IServiceCollection AddDb(this IServiceCollection services, WebApplicationBuilder builder)
     {
-        if (builderEnvironment.IsProduction())
+        if (builder.Environment.IsProduction())
         {
-            // Dennise do your thing here i guess
+            var databaseUrl = builder.Configuration["DATABASE_URL"];
+            var databaseUri = new Uri(databaseUrl);
+            var userInfo = databaseUri.UserInfo.Split(':');
+            var connectionString = $"Host={databaseUri.Host};Database={databaseUri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};Ssl Mode=Require;Trust Server Certificate=true;";
+            services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
+        }
+        else
+        {
+            services.AddDbContext<AppDbContext>(options => options.UseSqlite("Data Source=data.db"));
         }
 
-        services.AddDbContext<AppDbContext>(options => options.UseSqlite("Data Source=data.db"));
-
         return services;
-    }
-
-    static string ConvertPostgresUrlToConnectionString(string url)
-    {
-        var uri = new Uri(url);
-        var userInfo = uri.UserInfo.Split(':');
-        return
-            $"Host={uri.Host};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};Ssl Mode=Require;Trust Server Certificate=true;";
     }
 }
