@@ -1,0 +1,69 @@
+"use client";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+
+export default function Page() {
+  const form = useForm<{ email: string; password: string }>();
+
+  const handleSubmit = form.handleSubmit(async (data) => {
+    // TODO
+  });
+
+  return (
+    <Form {...form}>
+      <form className={"h-dvh grid place-items-center"} onSubmit={handleSubmit}>
+        <Card className={"w-100"}>
+          <CardHeader>
+            <CardTitle>Login into your account</CardTitle>
+            <CardDescription>Enter your email and password to access your account.</CardDescription>
+          </CardHeader>
+          <CardContent className={"space-y-4"}>
+            <FormField
+              control={form.control}
+              name={"email"}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input {...field} type={"email"} placeholder={"john@example.com"} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name={"password"}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <Input {...field} type={"password"} placeholder={"••••••••••••"} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </CardContent>
+          <CardFooter className={"flex-col gap-2"}>
+            <Button className={"w-full"} variant={"default"}>
+              Login
+            </Button>
+            <Button className={"w-full"} variant={"outline"}>
+              Login with Google
+            </Button>
+            <p className={"mt-2 text-muted-foreground text-sm"}>
+              Don't have an account?{" "}
+              <Link className={"underline hover:text-foreground"} href={"/auth/new"}>
+                Sign up
+              </Link>
+            </p>
+          </CardFooter>
+        </Card>
+      </form>
+    </Form>
+  );
+}
