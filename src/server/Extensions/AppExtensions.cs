@@ -6,10 +6,16 @@ namespace EnterpriseServer.Extensions;
 
 public static class AppExtensions
 {
+    public static WebApplication UseCorsAllowAll(this WebApplication app)
+    {
+        app.UseCors("AllowAll");
+        return app;
+    }
+
     public static async Task<WebApplication> MapRoles(this WebApplication app)
     {
         using var scope = app.Services.CreateScope();
-        
+
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
