@@ -51,24 +51,6 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-app.MapGet("/", () =>
-{
-    return "Welcome to Enterprise API!";
-}).WithName("GetRoot") ;
-
-app.MapGet("/testLogin", [Authorize(Policy = Policies.LoggedIn)] () => "Hello, World!");
-
-app.MapGet("/environment", () =>
-{
-    var variables = Environment.GetEnvironmentVariables()
-        .Cast<System.Collections.DictionaryEntry>()
-        .ToDictionary(x => x.Key.ToString() ?? string.Empty, x => x.Value?.ToString() ?? string.Empty)
-        .Where(x => !string.IsNullOrEmpty(x.Value))
-        .Where(x => !string.IsNullOrEmpty(x.Key))
-        .ToDictionary(x => x.Key, x => x.Value);
-    return variables;
-}).WithName("GetEnvironmentVariables");
-
 app.MapControllers();
 
 app.Run();
