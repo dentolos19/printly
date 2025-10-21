@@ -3,7 +3,6 @@ using EnterpriseServer;
 using EnterpriseServer.Auth;
 using EnterpriseServer.Models;
 using EnterpriseServer.Extensions;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
