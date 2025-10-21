@@ -6,9 +6,16 @@ namespace EnterpriseServer.Extensions;
 
 public static class AppExtensions
 {
-    public static WebApplication UseCorsAllowAll(this WebApplication app)
+    public static WebApplication SetupCors(this WebApplication app)
     {
         app.UseCors("AllowAll");
+        return app;
+    }
+
+    public static WebApplication SetupAuth(this WebApplication app)
+    {
+        app.UseAuthentication();
+        app.UseAuthorization();
         return app;
     }
 
