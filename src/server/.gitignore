@@ -12,10 +12,10 @@ obj/
 *.user
 *.suo
 
+# Project-specific files
+*.db*
+
 # Miscellaneous files
 .DS_Store
 Desktop.ini
 Thumbs.db
-
-#Sqlite Database
-data.db
