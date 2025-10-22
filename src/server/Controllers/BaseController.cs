@@ -12,6 +12,9 @@ namespace EnterpriseServer.Controllers;
 /// <item><description>
 /// Implements <see cref="ApiControllerAttribute"/> such that all controllers inheriting from it will receive it as well
 /// </description></item>
+/// <item><description>
+/// Sets the default route to /controller/actionname
+/// </description></item>
 /// </list>
 /// </summary>
 /// <example>
@@ -25,6 +28,7 @@ namespace EnterpriseServer.Controllers;
 /// </example>
 /// <param name="context">A readonly reference to the database (this part is handled by ASP already via the builder instructions in the main Program.cs file), used inside each controller via the inherited property <see cref="Context"/></param>
 [ApiController]
+[Route("[controller]/[action]")]
 public class BaseController(AppDbContext context) : ControllerBase
 {
     protected readonly AppDbContext Context = context;
