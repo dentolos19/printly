@@ -12,7 +12,7 @@ builder.Services.SetupDatabase(builder);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddControllers();
+builder.Services.AddLowercaseControllers();
 
 var app = builder.Build();
 

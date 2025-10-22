@@ -8,6 +8,14 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace EnterpriseServer.Extensions;
 
+using Microsoft.AspNetCore.Mvc.ApplicationModels;
+
+public class LowercaseParameterTransformer : IOutboundParameterTransformer
+{
+    public string? TransformOutbound(object? value)
+        => value?.ToString()?.ToLowerInvariant();
+}
+
 public static class ServiceExtensions
 {
     /// <summary>
@@ -83,6 +91,16 @@ public static class ServiceExtensions
             services.AddDbContext<AppDbContext>(options => options.UseSqlite("Data Source=data.db"));
         }
 
+        return services;
+    }
+
+    public static IServiceCollection AddLowercaseControllers(this IServiceCollection services) {
+        services.AddControllers(options =>
+        {
+            options.Conventions.Add(
+                    new RouteTokenTransformerConvention(new LowercaseParameterTransformer())
+            );
+        });
         return services;
     }
 }

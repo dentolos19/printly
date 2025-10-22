@@ -9,7 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace EnterpriseServer.Controllers;
 
-[Route("auth")]
+// [Route("auth")]
 public class AuthController(
     AppDbContext context,
     IConfiguration configuration,
@@ -20,7 +20,7 @@ public class AuthController(
     public record LoginDto(string Email, string Password);
 
     [HttpPost]
-    [Route("register")]
+    // [Route("register")]
     public async Task<IActionResult> Register([FromBody] RegisterDto dto)
     {
         var userDto = new User { UserName = dto.Name, Email = dto.Email };
@@ -37,7 +37,7 @@ public class AuthController(
     }
 
     [HttpPost]
-    [Route("login")]
+    // [Route("login")]
     public async Task<IActionResult> Login([FromBody] LoginDto dto)
     {
         var user = await userManager.FindByEmailAsync(dto.Email);
