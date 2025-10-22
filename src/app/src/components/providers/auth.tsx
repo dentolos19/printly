@@ -23,7 +23,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const [token, setToken] = useState<string | null>(null);
 
   const login = async (email: string, password: string) => {
-    const response = await fetch(`${API_KEY}/login2`, {
+    const response = await fetch(`${API_KEY}/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -46,7 +46,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   };
 
   const register = async (name: string, email: string, password: string) => {
-    const response = await fetch(`${API_KEY}/register2`, {
+    const response = await fetch(`${API_KEY}/auth/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
