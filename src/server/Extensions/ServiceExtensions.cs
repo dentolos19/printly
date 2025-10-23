@@ -58,7 +58,6 @@ public static class ServiceExtensions
         {
             // Role-based policies
             options.AddPolicy(Policies.AdminOnly, policy => policy.RequireRole(Roles.Admin));
-
             options.AddPolicy(Policies.LoggedIn, policy => policy.RequireRole(Roles.Admin, Roles.User));
         });
 
@@ -103,6 +102,17 @@ public static class ServiceExtensions
             options.LowercaseUrls = true;
             options.LowercaseQueryStrings = true;
         });
+
+        return services;
+    }
+
+    /// <summary>
+    /// Setup Swagger documentation for the API
+    /// </summary>
+    public static IServiceCollection SetupDocumentation(this IServiceCollection services)
+    {
+        services.AddEndpointsApiExplorer();
+        services.AddSwaggerGen();
 
         return services;
     }

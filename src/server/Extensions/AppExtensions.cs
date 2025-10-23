@@ -6,12 +6,18 @@ namespace EnterpriseServer.Extensions;
 
 public static class AppExtensions
 {
+    /// <summary>
+    /// Setup Cross-Origin Resource Sharing (CORS) to allow our app to access this server
+    /// </summary>
     public static WebApplication SetupCors(this WebApplication app)
     {
         app.UseCors("AllowAll");
         return app;
     }
 
+    /// <summary>
+    /// Setup authentication and authorization using JWT and Identity
+    /// </summary>
     public static WebApplication SetupAuth(this WebApplication app)
     {
         app.UseAuthentication();
@@ -19,14 +25,24 @@ public static class AppExtensions
         return app;
     }
 
-    public static async Task<WebApplication> MapRoles(this WebApplication app)
+    /// <summary>
+    /// Setup Swagger documentation for the API
+    /// </summary>
+    public static WebApplication SetupDocumentation(this WebApplication app)
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI();
+        return app;
+    }
+
+    public static async Task<WebApplication> SetupRolesAsync(this WebApplication app)
     {
         using var scope = app.Services.CreateScope();
 
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
-        //temporary so that i can run operations without creating migrations
+        // NOTE: Temporary, so that I can run operations without creating migrations.
         await db.Database.EnsureCreatedAsync();
 
         foreach (string name in Roles.GetRoles())

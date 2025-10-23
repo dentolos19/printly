@@ -10,21 +10,25 @@ builder.Services.SetupCors();
 builder.Services.SetupAuth(builder);
 builder.Services.SetupDatabase(builder);
 builder.Services.SetupRouting();
-
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.SetupDocumentation();
 
 var app = builder.Build();
 
 app.SetupCors();
 app.SetupAuth();
-
-// app.UseHttpsRedirection();
-app.UseSwagger();
-app.UseSwaggerUI();
+app.SetupDocumentation();
 
 app.MapIdentityApi<User>();
-await app.MapRoles();
+await app.SetupRolesAsync();
 app.MapControllers();
+
+if (app.Environment.IsProduction())
+{
+    app.UseHttpsRedirection();
+}
+else
+{
+    app.UseDeveloperExceptionPage();
+}
 
 app.Run();

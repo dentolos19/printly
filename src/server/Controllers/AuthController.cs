@@ -9,7 +9,6 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace EnterpriseServer.Controllers;
 
-// [Route("auth")]
 public class AuthController(AppDbContext context, IConfiguration configuration, UserManager<User> userManager)
     : BaseController(context)
 {
@@ -18,7 +17,6 @@ public class AuthController(AppDbContext context, IConfiguration configuration, 
     public record LoginDto(string Email, string Password);
 
     [HttpPost]
-    // [Route("register")]
     public async Task<IActionResult> Register([FromBody] RegisterDto dto)
     {
         var userDto = new User { UserName = dto.Name, Email = dto.Email };
@@ -35,7 +33,6 @@ public class AuthController(AppDbContext context, IConfiguration configuration, 
     }
 
     [HttpPost]
-    // [Route("login")]
     public async Task<IActionResult> Login([FromBody] LoginDto dto)
     {
         var user = await userManager.FindByEmailAsync(dto.Email);
@@ -50,6 +47,7 @@ public class AuthController(AppDbContext context, IConfiguration configuration, 
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["SECRET_KEY"]!));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id),
