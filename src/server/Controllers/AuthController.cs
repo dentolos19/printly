@@ -2,21 +2,19 @@
 using System.Security.Claims;
 using System.Text;
 using EnterpriseServer.Auth;
-using Microsoft.AspNetCore.Identity;
 using EnterpriseServer.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 
 namespace EnterpriseServer.Controllers;
 
 // [Route("auth")]
-public class AuthController(
-    AppDbContext context,
-    IConfiguration configuration,
-    UserManager<User> userManager
-) : BaseController(context)
+public class AuthController(AppDbContext context, IConfiguration configuration, UserManager<User> userManager)
+    : BaseController(context)
 {
     public record RegisterDto(string Name, string Email, string Password);
+
     public record LoginDto(string Email, string Password);
 
     [HttpPost]
@@ -55,13 +53,14 @@ public class AuthController(
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email ?? "")
+            new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
         };
 
         var token = new JwtSecurityToken(
             claims: claims,
             expires: DateTime.UtcNow.AddDays(7),
-            signingCredentials: credentials);
+            signingCredentials: credentials
+        );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }

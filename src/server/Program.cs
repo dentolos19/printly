@@ -1,6 +1,6 @@
-using EnterpriseServer.Models;
-using EnterpriseServer.Extensions;
 using DotNetEnv.Configuration;
+using EnterpriseServer.Extensions;
+using EnterpriseServer.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,10 +9,10 @@ builder.Configuration.AddDotNetEnv();
 builder.Services.SetupCors();
 builder.Services.SetupAuth(builder);
 builder.Services.SetupDatabase(builder);
+builder.Services.SetupRouting();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddLowercaseControllers();
 
 var app = builder.Build();
 

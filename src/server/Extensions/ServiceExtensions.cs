@@ -8,74 +8,72 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace EnterpriseServer.Extensions;
 
-using Microsoft.AspNetCore.Mvc.ApplicationModels;
-
-public class LowercaseParameterTransformer : IOutboundParameterTransformer
-{
-    public string? TransformOutbound(object? value)
-        => value?.ToString()?.ToLowerInvariant();
-}
-
 public static class ServiceExtensions
 {
     /// <summary>
-    /// Setup Cross-Origin Resource Sharing to allow our app to access this server
+    /// Setup Cross-Origin Resource Sharing (CORS) to allow our app to access this server
     /// </summary>
     public static IServiceCollection SetupCors(this IServiceCollection services)
     {
         services.AddCors(options =>
         {
-            options.AddPolicy("AllowAll", policy =>
-            {
-                policy
-                    .AllowAnyOrigin()
-                    .AllowAnyMethod()
-                    .AllowAnyHeader();
-            });
+            options.AddPolicy(
+                "AllowAll",
+                policy =>
+                {
+                    policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+                }
+            );
         });
 
         return services;
     }
 
     /// <summary>
-    /// Lets the backend server know that the custom roles exist
+    /// Setup authentication and authorization using JWT and Identity
     /// </summary>
     public static IServiceCollection SetupAuth(this IServiceCollection services, WebApplicationBuilder builder)
     {
-        services.AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        }).AddJwtBearer(options =>
-        {
-            options.TokenValidationParameters = new TokenValidationParameters
+        services
+            .AddAuthentication(options =>
             {
-                ValidateIssuer = false,
-                ValidateAudience = false,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey =
-                    new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(builder.Configuration["SECRET_KEY"]!))
-            };
-        });
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(builder.Configuration["SECRET_KEY"]!)
+                    ),
+                };
+            });
 
         services.AddAuthorization(options =>
         {
             // Role-based policies
-            options.AddPolicy(Policies.AdminOnly, policy =>
-                policy.RequireRole(Roles.Admin));
+            options.AddPolicy(Policies.AdminOnly, policy => policy.RequireRole(Roles.Admin));
 
-            options.AddPolicy(Policies.LoggedIn, policy =>
-                policy.RequireRole(Roles.Admin, Roles.User));
+            options.AddPolicy(Policies.LoggedIn, policy => policy.RequireRole(Roles.Admin, Roles.User));
         });
 
-        services.AddIdentityApiEndpoints<User>().AddRoles<IdentityRole>().AddEntityFrameworkStores<AppDbContext>()
+        services
+            .AddIdentityApiEndpoints<User>()
+            .AddRoles<IdentityRole>()
+            .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders();
 
         return services;
     }
 
+    /// <summary>
+    /// Setup the database context for the application
+    /// </summary>
     public static IServiceCollection SetupDatabase(this IServiceCollection services, WebApplicationBuilder builder)
     {
         if (builder.Environment.IsProduction())
@@ -94,13 +92,18 @@ public static class ServiceExtensions
         return services;
     }
 
-    public static IServiceCollection AddLowercaseControllers(this IServiceCollection services) {
-        services.AddControllers(options =>
+    /// <summary>
+    /// Setup controllers and routing with lowercase URLs and query strings
+    /// </summary>
+    public static IServiceCollection SetupRouting(this IServiceCollection services)
+    {
+        services.AddControllers();
+        services.AddRouting(options =>
         {
-            options.Conventions.Add(
-                    new RouteTokenTransformerConvention(new LowercaseParameterTransformer())
-            );
+            options.LowercaseUrls = true;
+            options.LowercaseQueryStrings = true;
         });
+
         return services;
     }
 }
