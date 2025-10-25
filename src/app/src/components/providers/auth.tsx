@@ -1,16 +1,18 @@
 "use client";
 
-import { API_KEY } from "@/environment";
+import { API_URL } from "@/environment";
 import { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext<{
-  token: string | null;
+  user: any;
   login: (email: string, password: string) => Promise<void>;
+  loginWithToken: (token: string) => void;
   logout: () => void;
   register: (name: string, email: string, password: string) => Promise<void>;
 }>({
-  token: null,
+  user: null,
   login: async () => {},
+  loginWithToken: () => {},
   logout: () => {},
   register: async () => {},
 });
@@ -19,11 +21,21 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
+export function LoggedIn({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  return user ? children : null;
+}
+
+export function LoggedOut({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  return !user ? children : null;
+}
+
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
 
   const login = async (email: string, password: string) => {
-    const response = await fetch(`${API_KEY}/auth/login`, {
+    const response = await fetch(`${API_URL}/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -40,13 +52,18 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     localStorage.setItem("token", data.token);
   };
 
+  const loginWithToken = (token: string) => {
+    setToken(token);
+    localStorage.setItem("token", token);
+  };
+
   const logout = () => {
     setToken(null);
     localStorage.removeItem("token");
   };
 
   const register = async (name: string, email: string, password: string) => {
-    const response = await fetch(`${API_KEY}/auth/register`, {
+    const response = await fetch(`${API_URL}/auth/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -70,5 +87,5 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     }
   }, []);
 
-  return <AuthContext.Provider value={{ token, login, logout, register }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user: token, login, loginWithToken, logout, register }}>{children}</AuthContext.Provider>;
 }

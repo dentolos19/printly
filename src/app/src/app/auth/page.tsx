@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { API_KEY } from "@/environment";
+import { API_URL } from "@/environment";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -27,6 +27,11 @@ export default function Page() {
         toast.error("Login failed! Please try again later.");
       });
   });
+
+  const handleGoogle = () => {
+    const returnUrl = `${window.location.origin}/auth/callback`;
+    window.location.href = `${API_URL}/auth/google?returnUrl=${encodeURIComponent(returnUrl)}`;
+  };
 
   return (
     <Form {...form}>
@@ -66,8 +71,8 @@ export default function Page() {
             <Button className={"w-full"} type={"submit"} variant={"default"}>
               Login
             </Button>
-            <Button className={"w-full"} type={"button"} variant={"outline"} asChild>
-              <Link href={`${API_KEY}/login/google`}>Login with Google</Link>
+            <Button className={"w-full"} type={"button"} variant={"outline"} onClick={handleGoogle}>
+              Login with Google
             </Button>
             <p className={"mt-2 text-muted-foreground text-sm"}>
               Don't have an account?{" "}
