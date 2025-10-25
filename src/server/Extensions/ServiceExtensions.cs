@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using EnterpriseServer.Auth;
 using EnterpriseServer.Models;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -39,6 +40,14 @@ public static class ServiceExtensions
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+            })
+            .AddCookie()
+            .AddGoogle(options =>
+            {
+                options.ClientId = builder.Configuration["GOOGLE_CLIENT_ID"]!;
+                options.ClientSecret = builder.Configuration["GOOGLE_CLIENT_SECRET"]!;
+                options.SignInScheme = IdentityConstants.ExternalScheme;
             })
             .AddJwtBearer(options =>
             {

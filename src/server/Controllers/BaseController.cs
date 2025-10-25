@@ -28,7 +28,7 @@ namespace EnterpriseServer.Controllers;
 /// </example>
 /// <param name="context">A readonly reference to the database (this part is handled by ASP already via the builder instructions in the main Program.cs file), used inside each controller via the inherited property <see cref="Context"/></param>
 [ApiController]
-[Route("[controller]/[action]")]
+[Route("[controller]")]
 public class BaseController(AppDbContext context) : ControllerBase
 {
     protected readonly AppDbContext Context = context;
