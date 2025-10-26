@@ -1,5 +1,5 @@
-import { LoggedIn, LoggedOut } from "@/components/providers/auth";
 import { Button } from "@/components/ui/button";
+import { LoggedIn, LoggedOut } from "@/lib/providers/auth";
 import Link from "next/link";
 
 export default function Page() {

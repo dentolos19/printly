@@ -11,4 +11,6 @@ public class User : IdentityUser
     //PhoneNumber
     //SecurityStamp (defined as "a random value that must change whenever a users credentials change)
     //ConcurrencyStamp
+
+    public List<RefreshToken> RefreshTokens { get; set; } = [];
 }

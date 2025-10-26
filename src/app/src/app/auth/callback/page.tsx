@@ -1,7 +1,7 @@
 "use client";
 
-import { useAuth } from "@/components/providers/auth";
 import { Spinner } from "@/components/ui/spinner";
+import { useAuth } from "@/lib/providers/auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -13,8 +13,9 @@ export default function Page() {
 
   useEffect(() => {
     const token = searchParams.get("token");
-    if (token) {
-      auth.loginWithToken(token);
+    const refreshToken = searchParams.get("refreshToken");
+    if (token && refreshToken) {
+      auth.loginWithToken(token, refreshToken);
       toast.success("Logged in successfully with Google!");
       router.push("/");
     } else {
