@@ -1,6 +1,7 @@
 using DotNetEnv.Configuration;
 using EnterpriseServer.Extensions;
 using EnterpriseServer.Models;
+using EnterpriseServer.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,9 @@ builder.Services.SetupAuth(builder);
 builder.Services.SetupDatabase(builder);
 builder.Services.SetupRouting();
 builder.Services.SetupDocumentation();
+
+builder.Services.AddSingleton<StorageService>();
+builder.Services.AddSingleton<GeminiService>();
 
 var app = builder.Build();
 
