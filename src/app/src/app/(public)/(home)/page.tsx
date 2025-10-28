@@ -6,11 +6,11 @@ export default function Page() {
   return (
     <div>
       <div className={"flex items-center justify-between h-16 border-b px-4"}>
-        <h1 className={"font-mono font-bold text-xl"}>Enterprise</h1>
+        <h1 className={"font-mono font-bold text-xl"}>Makemix</h1>
         <div>
           <LoggedIn>
             <Button variant={"default"} asChild>
-              <Link href={"/platform"}>Dashboard</Link>
+              <Link href={"/dashboard"}>Dashboard</Link>
             </Button>
           </LoggedIn>
           <LoggedOut>

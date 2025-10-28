@@ -1,3 +1,2 @@
-# See https://developers.cloudflare.com/workers/static-assets/headers for more details
 /_next/static/*
   Cache-Control: public, max-age=31536000, immutable
