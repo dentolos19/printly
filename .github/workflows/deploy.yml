@@ -43,6 +43,7 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ID }}
           apiToken: ${{ secrets.CLOUDFLARE_TOKEN }}
           command: deploy
+          args: --containers-rollout immediate
           workingDirectory: src/server-worker
 
   app:

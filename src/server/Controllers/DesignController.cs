@@ -6,7 +6,7 @@ namespace EnterpriseServer.Controllers;
 public class DesignController(AppDbContext context) : BaseController(context)
 {
     [HttpGet]
-    [Route("/generate")]
+    [Route("generate")]
     public async Task<IActionResult> GenerateImage(
         [FromServices] GeminiService geminiService,
         [FromQuery] string prompt
