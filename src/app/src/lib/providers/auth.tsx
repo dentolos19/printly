@@ -5,25 +5,25 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext<{
   user: any;
-  auth: {
-    userToken: string;
+  tokens: {
+    accessToken: string;
     refreshToken: string;
   } | null;
   login: (email: string, password: string) => Promise<void>;
-  loginWithToken: (token: string, refreshToken: string) => void;
+  loginWithToken: (accessToken: string, refreshToken: string) => void;
   logout: () => void;
   register: (name: string, email: string, password: string) => Promise<void>;
-  refreshToken: () => Promise<void>;
-  revokeToken: () => Promise<void>;
+  refreshAccess: () => Promise<void>;
+  revokeAccess: () => Promise<void>;
 }>({
   user: null,
-  auth: null,
+  tokens: null,
   login: async () => {},
   loginWithToken: () => {},
   logout: () => {},
   register: async () => {},
-  refreshToken: async () => {},
-  revokeToken: async () => {},
+  refreshAccess: async () => {},
+  revokeAccess: async () => {},
 });
 
 export function useAuth() {
@@ -41,8 +41,8 @@ export function LoggedOut({ children }: { children: React.ReactNode }) {
 }
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState<string | null>(null);
-  const [storedRefreshToken, setStoredRefreshToken] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState<string | null>(null);
 
   const login = async (email: string, password: string) => {
     const response = await fetch(`${API_URL}/auth/login`, {
@@ -57,38 +57,38 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       throw new Error("Login failed");
     }
 
-    const data = (await response.json()) as { token: string; refreshToken: string };
-    setToken(data.token);
-    setStoredRefreshToken(data.refreshToken);
-    localStorage.setItem("token", data.token);
+    const data = (await response.json()) as { accessToken: string; refreshToken: string };
+    setAccessToken(data.accessToken);
+    setRefreshToken(data.refreshToken);
+    localStorage.setItem("accessToken", data.accessToken);
     localStorage.setItem("refreshToken", data.refreshToken);
   };
 
-  const loginWithToken = (token: string, refreshToken: string) => {
-    setToken(token);
-    setStoredRefreshToken(refreshToken);
-    localStorage.setItem("token", token);
+  const loginWithToken = (accessToken: string, refreshToken: string) => {
+    setAccessToken(accessToken);
+    setRefreshToken(refreshToken);
+    localStorage.setItem("accessToken", accessToken);
     localStorage.setItem("refreshToken", refreshToken);
   };
 
   const logout = async () => {
-    if (storedRefreshToken) {
+    if (refreshToken) {
       try {
         await fetch(`${API_URL}/auth/revoke`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ refreshToken: storedRefreshToken }),
+          body: JSON.stringify({ refreshToken: refreshToken }),
         });
       } catch (error) {
         console.error("Failed to revoke token:", error);
       }
     }
 
-    setToken(null);
-    setStoredRefreshToken(null);
-    localStorage.removeItem("token");
+    setAccessToken(null);
+    setRefreshToken(null);
+    localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
   };
 
@@ -106,8 +106,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     }
   };
 
-  const refreshToken = async () => {
-    if (!storedRefreshToken) {
+  const refreshAccess = async () => {
+    if (!refreshToken) {
       throw new Error("No refresh token available");
     }
 
@@ -116,7 +116,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ refreshToken: storedRefreshToken }),
+      body: JSON.stringify({ refreshToken: refreshToken }),
     });
 
     if (!response.ok) {
@@ -125,15 +125,15 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       throw new Error("Token refresh failed");
     }
 
-    const data = (await response.json()) as { token: string; refreshToken: string };
-    setToken(data.token);
-    setStoredRefreshToken(data.refreshToken);
-    localStorage.setItem("token", data.token);
+    const data = (await response.json()) as { accessToken: string; refreshToken: string };
+    setAccessToken(data.accessToken);
+    setRefreshToken(data.refreshToken);
+    localStorage.setItem("accessToken", data.accessToken);
     localStorage.setItem("refreshToken", data.refreshToken);
   };
 
-  const revokeToken = async () => {
-    if (!storedRefreshToken) {
+  const revokeAccess = async () => {
+    if (!refreshToken) {
       throw new Error("No refresh token available");
     }
 
@@ -142,41 +142,37 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ refreshToken: storedRefreshToken }),
+      body: JSON.stringify({ refreshToken: refreshToken }),
     });
 
     if (!response.ok) {
       throw new Error("Token revocation failed");
     }
 
-    setToken(null);
-    setStoredRefreshToken(null);
-    localStorage.removeItem("token");
+    setAccessToken(null);
+    setRefreshToken(null);
+    localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
   };
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
+    const storedToken = localStorage.getItem("accessToken");
     const storedRefresh = localStorage.getItem("refreshToken");
-    if (storedToken) {
-      setToken(storedToken);
-    }
-    if (storedRefresh) {
-      setStoredRefreshToken(storedRefresh);
-    }
+    if (storedToken) setAccessToken(storedToken);
+    if (storedRefresh) setRefreshToken(storedRefresh);
   }, []);
 
   return (
     <AuthContext.Provider
       value={{
-        user: token,
-        auth: token && storedRefreshToken ? { userToken: token, refreshToken: storedRefreshToken } : null,
+        user: accessToken,
+        tokens: accessToken && refreshToken ? { accessToken: accessToken, refreshToken: refreshToken } : null,
         login,
         loginWithToken,
         logout,
         register,
-        refreshToken,
-        revokeToken,
+        refreshAccess,
+        revokeAccess,
       }}
     >
       {children}

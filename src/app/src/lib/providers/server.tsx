@@ -16,14 +16,14 @@ export function useServer() {
 }
 
 export default function ServerProvider({ children }: { children: React.ReactNode }) {
-  const { auth } = useAuth();
+  const { tokens: auth } = useAuth();
 
   const fetch = async (info: RequestInfo, init?: RequestInit): Promise<Response> => {
     return await fetch(info, {
       ...init,
       headers: {
         ...init?.headers,
-        Authorization: auth ? `Bearer ${auth.userToken}` : "",
+        Authorization: auth ? `Bearer ${auth.accessToken}` : "",
       },
     });
   };

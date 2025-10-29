@@ -22,7 +22,7 @@ public class AuthController(AppDbContext context, IConfiguration configuration, 
 
     public record RefreshDto(string RefreshToken);
 
-    public record AuthResponse(string Token, string RefreshToken);
+    public record AuthResponse(string AccessToken, string RefreshToken);
 
     [HttpPost]
     [Route("register")]
@@ -49,9 +49,9 @@ public class AuthController(AppDbContext context, IConfiguration configuration, 
         if (user == null || !await userManager.CheckPasswordAsync(user, dto.Password))
             return Unauthorized();
 
-        var token = await GenerateJwtToken(user);
+        var accessToken = await GenerateAccessToken(user);
         var refreshToken = await GenerateRefreshToken(user);
-        return Ok(new AuthResponse(token, refreshToken.Token));
+        return Ok(new AuthResponse(accessToken, refreshToken.Token));
     }
 
     [HttpGet]
@@ -93,28 +93,25 @@ public class AuthController(AppDbContext context, IConfiguration configuration, 
                 return BadRequest(roleResult.Errors);
         }
 
-        var token = await GenerateJwtToken(user);
+        var accessToken = await GenerateAccessToken(user);
         var refreshToken = await GenerateRefreshToken(user);
-        return Redirect($"{returnUrl}?token={token}&refreshToken={refreshToken.Token}");
+        return Redirect($"{returnUrl}?accessToken={accessToken}&refreshToken={refreshToken.Token}");
     }
 
     [HttpPost]
     [Route("refresh")]
     public async Task<IActionResult> Refresh([FromBody] RefreshDto dto)
     {
-        var refreshToken = await Context
+        var currentRefreshToken = await Context
             .RefreshTokens.Include(rt => rt.User)
             .FirstOrDefaultAsync(rt => rt.Token == dto.RefreshToken);
 
-        if (refreshToken == null || !refreshToken.IsActive)
+        if (currentRefreshToken == null || !currentRefreshToken.IsActive)
             return Unauthorized(new { message = "Invalid refresh token" });
 
-        var user = refreshToken.User;
-
-        var newRefreshToken = await RotateRefreshToken(refreshToken);
-        var newToken = await GenerateJwtToken(user);
-
-        return Ok(new AuthResponse(newToken, newRefreshToken.Token));
+        var accessToken = await GenerateAccessToken(currentRefreshToken.User);
+        var refreshToken = await RotateRefreshToken(currentRefreshToken);
+        return Ok(new AuthResponse(accessToken, refreshToken.Token));
     }
 
     [HttpPost]
@@ -132,7 +129,7 @@ public class AuthController(AppDbContext context, IConfiguration configuration, 
         return Ok(new { message = "Token revoked" });
     }
 
-    private async Task<string> GenerateJwtToken(User user)
+    private async Task<string> GenerateAccessToken(User user)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["SECRET_KEY"]!));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
