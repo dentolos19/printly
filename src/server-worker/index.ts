@@ -1,7 +1,7 @@
-import { Container, getRandom } from "@cloudflare/containers";
+import { Container as CloudflareContainer, getRandom } from "@cloudflare/containers";
 import { Hono } from "hono";
 
-export class ServerContainer extends Container<CloudflareEnv> {
+export class Container extends CloudflareContainer<CloudflareEnv> {
   // Port the container listens on (default: 8080)
   defaultPort = 8080;
 
@@ -21,18 +21,18 @@ export class ServerContainer extends Container<CloudflareEnv> {
   }
 
   override onStop() {
-    console.log("Container successfully shut down!");
+    console.log("Container successfully stopped!");
   }
 
-  override onError(error: unknown) {
-    console.log("Container error:", error);
+  override onError(error: any) {
+    console.error(error);
   }
 }
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
 app.all("*", async (c) => {
-  const container = await getRandom(c.env.SERVER_CONTAINER, 3);
+  const container = await getRandom(c.env.CONTAINER, 3);
   return await container.fetch(c.req.raw);
 });
 

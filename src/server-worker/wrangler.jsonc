@@ -1,16 +1,15 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "enterprise-server",
+  "name": "mockly-server",
   "main": "index.ts",
   "compatibility_date": "2025-10-01",
   "compatibility_flags": ["nodejs_compat"],
-  "upload_source_maps": true,
   "observability": {
     "enabled": true
   },
   "containers": [
     {
-      "class_name": "ServerContainer",
+      "class_name": "Container",
       "image": "../server/Dockerfile",
       "max_instances": 5
     }
@@ -18,15 +17,15 @@
   "durable_objects": {
     "bindings": [
       {
-        "class_name": "ServerContainer",
-        "name": "SERVER_CONTAINER",
+        "name": "CONTAINER",
+        "class_name": "Container"
       }
     ]
   },
   "migrations": [
     {
-      "new_sqlite_classes": ["ServerContainer"],
-      "tag": "v1"
+      "tag": "v1",
+      "new_sqlite_classes": ["Container"]
     }
   ]
 }

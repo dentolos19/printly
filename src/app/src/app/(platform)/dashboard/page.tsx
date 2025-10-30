@@ -10,7 +10,7 @@ export default function Page() {
       {/* Header */}
       <div className={"flex justify-between mb-8"}>
         <div>
-          <h1 className={"font-bold mb-2 text-4xl"}>Welcome to Makemix</h1>
+          <h1 className={"font-bold mb-2 text-4xl"}>Welcome to Mockly</h1>
           <p className={"text-muted-foreground"}>This is your dashboard where you can manage your projects.</p>
         </div>
         <Button size={"lg"}>

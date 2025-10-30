@@ -4,7 +4,7 @@
     "lib": ["es2021"],
     "jsx": "react-jsx",
     "module": "es2022",
-    "moduleResolution": "Bundler",
+    "moduleResolution": "bundler",
     "types": ["./cloudflare-env.d.ts", "node"],
     "resolveJsonModule": true,
     "allowJs": true,
@@ -16,6 +16,5 @@
     "strict": true,
     "skipLibCheck": true
   },
-  "exclude": ["test"],
-  "include": ["cloudflare-env.d.ts", "src/**/*.ts", "index.ts"]
+  "include": ["cloudflare-env.d.ts", "index.ts"]
 }
