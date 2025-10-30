@@ -10,5 +10,11 @@
   },
   "observability": {
     "enabled": true
-  }
+  },
+    "routes": [
+    {
+      "pattern": "mockly.dennise.me",
+      "custom_domain": true
+    }
+  ]
 }
