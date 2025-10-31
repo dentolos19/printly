@@ -48,6 +48,7 @@ public static class ServiceExtensions
                 options.ClientId = builder.Configuration["GOOGLE_CLIENT_ID"]!;
                 options.ClientSecret = builder.Configuration["GOOGLE_CLIENT_SECRET"]!;
                 options.SignInScheme = IdentityConstants.ExternalScheme;
+                options.CallbackPath = "/auth/google/callback";
             })
             .AddJwtBearer(options =>
             {

@@ -58,20 +58,14 @@ public class AuthController(AppDbContext context, IConfiguration configuration, 
     [Route("google")]
     public IActionResult LoginGoogle([FromQuery] string returnUrl)
     {
-        var redirectUrl = Url.Action(
-            nameof(LoginGoogleCallback),
-            "Auth",
-            new { returnUrl },
-            HttpContext.Request.Scheme
-        );
-
+        var redirectUrl = Url.Action(nameof(LoginGoogleSuccess), "Auth", new { returnUrl }, HttpContext.Request.Scheme);
         var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
         return Challenge(properties, GoogleDefaults.AuthenticationScheme);
     }
 
     [HttpGet]
-    [Route("google/callback")]
-    public async Task<IActionResult> LoginGoogleCallback([FromQuery] string returnUrl)
+    [Route("google/success")]
+    public async Task<IActionResult> LoginGoogleSuccess([FromQuery] string returnUrl)
     {
         var result = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
         if (!result.Succeeded || result.Principal == null)
