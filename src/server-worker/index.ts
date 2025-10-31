@@ -1,4 +1,4 @@
-import { Container as CloudflareContainer, getRandom } from "@cloudflare/containers";
+import { Container as CloudflareContainer, getContainer } from "@cloudflare/containers";
 import { Hono } from "hono";
 
 export class Container extends CloudflareContainer<CloudflareEnv> {
@@ -32,8 +32,7 @@ export class Container extends CloudflareContainer<CloudflareEnv> {
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
 app.all("*", async (c) => {
-  const container = await getRandom(c.env.CONTAINER, 3);
-  return await container.fetch(c.req.raw);
+  return await getContainer(c.env.CONTAINER).fetch(c.req.raw);
 });
 
 export default app;

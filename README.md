@@ -4,9 +4,9 @@ An AI-powered product design tool for creating mockups of clothes, mugs, etc.
 
 ## Assignment
 
-This project is an assignment for Enterprise Development Project (IT2166) module at Nanyang Polytechnic.
+This project is an assignment for the Enterprise Development Project (IT2166) module at Nanyang Polytechnic.
 
-### Team
+### Team Members
 
 - [Dennise](https://github.com/dentolos19) (Leader)
 - [Ivan](https://github.com/angrybirdsblanket)
