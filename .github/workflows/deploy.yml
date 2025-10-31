@@ -59,7 +59,7 @@ jobs:
         with:
           accountId: ${{ secrets.CLOUDFLARE_ID }}
           apiToken: ${{ secrets.CLOUDFLARE_TOKEN }}
-          command: deploy --containers-rollout immediate
+          command: deploy
           workingDirectory: src/server-worker
 
       - name: Deploy App to Cloudflare

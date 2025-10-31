@@ -6,7 +6,7 @@ export class Container extends CloudflareContainer<CloudflareEnv> {
   defaultPort = 8080;
 
   // Time before container sleeps due to inactivity (default: 30s)
-  sleepAfter = "10m";
+  sleepAfter = "1m";
 
   // Environment variables passed to the container
   envVars = {
