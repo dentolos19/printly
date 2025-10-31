@@ -34,7 +34,7 @@ jobs:
         working-directory: src/app
         run: pnpm install
 
-      - name: Install Dependencies for Server Worker
+      - name: Install Dependencies for Server
         working-directory: src/server-worker
         run: pnpm install
 
@@ -42,17 +42,19 @@ jobs:
         working-directory: src/app
         run: pnpm run cf:gen
 
-      - name: Generate Types for Server Worker
+      - name: Generate Types for Server
         working-directory: src/server-worker
         run: pnpm run cf:gen
 
       - name: Build Project
         working-directory: src/app
         run: pnpm run cf:build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
 
       # TODO: Add migrations
 
-      - name: Deploy Server Worker to Cloudflare
+      - name: Deploy Server to Cloudflare
         uses: cloudflare/wrangler-action@v3
         with:
           accountId: ${{ secrets.CLOUDFLARE_ID }}
