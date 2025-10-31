@@ -1,7 +1,6 @@
-# Enterprise Development Project
+# Mockly
 
-- Live Production: `https://enterprise.dentolos19.workers.dev`
-- Live Backend: `https://enterprise-server.dentolos19.workers.dev`
+An AI-powered product design tool for creating mockups of clothes, mugs, etc.
 
 ## Contributing
 
@@ -10,3 +9,7 @@
 - [Node.js](https://nodejs.org) 22+
 - [pnpm](https://pnpm.io) 9+
 - [.NET](https://dot.net) 9+
+
+## License
+
+Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
