@@ -18,6 +18,7 @@ builder.Services.AddSingleton<GeminiService>();
 
 var app = builder.Build();
 
+app.SetupMiddlewares();
 app.SetupCors();
 app.SetupAuth();
 app.SetupDocumentation();

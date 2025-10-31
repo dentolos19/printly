@@ -1,11 +1,21 @@
 ﻿using System.Security.Claims;
 using EnterpriseServer.Auth;
+using EnterpriseServer.Middlewares;
 using Microsoft.AspNetCore.Identity;
 
 namespace EnterpriseServer.Extensions;
 
 public static class AppExtensions
 {
+    /// <summary>
+    /// Setup middlewares for logging, etc.
+    /// </summary>
+    public static WebApplication SetupMiddlewares(this WebApplication app)
+    {
+        app.UseMiddleware<LoggingMiddleware>();
+        return app;
+    }
+
     /// <summary>
     /// Setup Cross-Origin Resource Sharing (CORS) to allow our app to access this server
     /// </summary>
