@@ -1,10 +1,11 @@
 "use client";
 
 import { API_URL } from "@/environment";
+import { jwtDecode } from "jwt-decode";
 import { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext<{
-  user: any;
+  claims: UserClaims | null;
   tokens: {
     accessToken: string;
     refreshToken: string;
@@ -16,7 +17,7 @@ const AuthContext = createContext<{
   refreshAccess: () => Promise<void>;
   revokeAccess: () => Promise<void>;
 }>({
-  user: null,
+  claims: null,
   tokens: null,
   login: async () => {},
   loginWithToken: () => {},
@@ -31,18 +32,34 @@ export function useAuth() {
 }
 
 export function LoggedIn({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
-  return user ? children : null;
+  const { tokens } = useAuth();
+  return tokens ? children : null;
 }
 
 export function LoggedOut({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
-  return !user ? children : null;
+  const { tokens } = useAuth();
+  return !tokens ? children : null;
 }
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
+  const [claims, setClaims] = useState<UserClaims | null>(null);
+
+  const decode = (token: string): UserClaims => {
+    const decoded = jwtDecode<{
+      sub: string;
+      email: string;
+      role?: string;
+      "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"?: string;
+      // exp: number;
+    }>(token);
+    return {
+      id: decoded.sub,
+      email: decoded.email,
+      role: (decoded.role as any) || decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || "user",
+    };
+  };
 
   const login = async (email: string, password: string) => {
     const response = await fetch(`${API_URL}/auth/login`, {
@@ -58,15 +75,23 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     }
 
     const data = (await response.json()) as { accessToken: string; refreshToken: string };
+    const claims = decode(data.accessToken);
+
     setAccessToken(data.accessToken);
     setRefreshToken(data.refreshToken);
+    setClaims(claims);
+
     localStorage.setItem("accessToken", data.accessToken);
     localStorage.setItem("refreshToken", data.refreshToken);
   };
 
   const loginWithToken = (accessToken: string, refreshToken: string) => {
+    const claims = decode(accessToken);
+
     setAccessToken(accessToken);
     setRefreshToken(refreshToken);
+    setClaims(claims);
+
     localStorage.setItem("accessToken", accessToken);
     localStorage.setItem("refreshToken", refreshToken);
   };
@@ -88,6 +113,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
     setAccessToken(null);
     setRefreshToken(null);
+    setClaims(null);
+
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
   };
@@ -126,8 +153,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     }
 
     const data = (await response.json()) as { accessToken: string; refreshToken: string };
+    const claims = decode(data.accessToken);
+
     setAccessToken(data.accessToken);
     setRefreshToken(data.refreshToken);
+    setClaims(claims);
+
     localStorage.setItem("accessToken", data.accessToken);
     localStorage.setItem("refreshToken", data.refreshToken);
   };
@@ -151,6 +182,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
     setAccessToken(null);
     setRefreshToken(null);
+    setClaims(null);
+
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
   };
@@ -158,14 +191,22 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     const storedToken = localStorage.getItem("accessToken");
     const storedRefresh = localStorage.getItem("refreshToken");
-    if (storedToken) setAccessToken(storedToken);
-    if (storedRefresh) setRefreshToken(storedRefresh);
+
+    if (storedToken) {
+      const claims = decode(storedToken);
+      setAccessToken(storedToken);
+      setClaims(claims);
+    }
+
+    if (storedRefresh) {
+      setRefreshToken(storedRefresh);
+    }
   }, []);
 
   return (
     <AuthContext.Provider
       value={{
-        user: accessToken,
+        claims,
         tokens: accessToken && refreshToken ? { accessToken: accessToken, refreshToken: refreshToken } : null,
         login,
         loginWithToken,
