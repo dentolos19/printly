@@ -1,5 +1,5 @@
 {
-  "name": "enterprise-server",
+  "name": "mockly-server",
   "private": true,
   "scripts": {
     "dev": "wrangler dev",

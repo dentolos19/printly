@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace EnterpriseServer.Controllers;
+namespace MocklyServer.Controllers;
 
 public class RootController(AppDbContext context) : BaseController(context)
 {
@@ -8,7 +8,7 @@ public class RootController(AppDbContext context) : BaseController(context)
     [Route("/")]
     public IActionResult GetRoot()
     {
-        return Ok("Welcome to Enterprise API!");
+        return Ok("Welcome to Mockly Server!");
     }
 
     [HttpGet]

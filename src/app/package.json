@@ -1,5 +1,5 @@
 {
-  "name": "enterprise",
+  "name": "mockly",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",

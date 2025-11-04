@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 
-namespace EnterpriseServer.Models;
+namespace MocklyServer.Models;
 
 public class User : IdentityUser
 {

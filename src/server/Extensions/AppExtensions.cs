@@ -1,9 +1,9 @@
 ﻿using System.Security.Claims;
-using EnterpriseServer.Auth;
-using EnterpriseServer.Middlewares;
 using Microsoft.AspNetCore.Identity;
+using MocklyServer.Auth;
+using MocklyServer.Middlewares;
 
-namespace EnterpriseServer.Extensions;
+namespace MocklyServer.Extensions;
 
 public static class AppExtensions
 {

@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
 
-namespace EnterpriseServer.Auth;
+namespace MocklyServer.Auth;
 
 /// <summary>
 /// A collection of C# <see cref="Claim"/> strings that

@@ -1,8 +1,8 @@
-using EnterpriseServer.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using MocklyServer.Models;
 
-namespace EnterpriseServer;
+namespace MocklyServer;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbContext<User>(options)
 {

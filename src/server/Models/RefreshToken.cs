@@ -1,4 +1,4 @@
-namespace EnterpriseServer.Models;
+namespace MocklyServer.Models;
 
 public class RefreshToken
 {

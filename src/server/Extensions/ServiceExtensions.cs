@@ -1,13 +1,12 @@
 ﻿using System.Text;
-using EnterpriseServer.Auth;
-using EnterpriseServer.Models;
-using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using MocklyServer.Auth;
+using MocklyServer.Models;
 
-namespace EnterpriseServer.Extensions;
+namespace MocklyServer.Extensions;
 
 public static class ServiceExtensions
 {

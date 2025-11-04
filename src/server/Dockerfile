@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 
 WORKDIR /src
 
-COPY EnterpriseServer.csproj .
+COPY MocklyServer.csproj .
 RUN dotnet restore
 
 COPY . .
@@ -22,4 +22,4 @@ EXPOSE 8080
 
 COPY --from=publish /app/publish .
 
-ENTRYPOINT ["dotnet", "EnterpriseServer.dll"]
+ENTRYPOINT ["dotnet", "MocklyServer.dll"]

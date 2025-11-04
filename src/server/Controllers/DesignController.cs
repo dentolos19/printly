@@ -1,7 +1,7 @@
-using EnterpriseServer.Services;
 using Microsoft.AspNetCore.Mvc;
+using MocklyServer.Services;
 
-namespace EnterpriseServer.Controllers;
+namespace MocklyServer.Controllers;
 
 public class DesignController(AppDbContext context) : BaseController(context)
 {

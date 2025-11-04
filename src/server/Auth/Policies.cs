@@ -1,4 +1,4 @@
-﻿namespace EnterpriseServer.Auth;
+﻿namespace MocklyServer.Auth;
 
 public static class Policies
 {

@@ -2,16 +2,16 @@
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using EnterpriseServer.Auth;
-using EnterpriseServer.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using MocklyServer.Auth;
+using MocklyServer.Models;
 
-namespace EnterpriseServer.Controllers;
+namespace MocklyServer.Controllers;
 
 public class AuthController(AppDbContext context, IConfiguration configuration, UserManager<User> userManager)
     : BaseController(context)

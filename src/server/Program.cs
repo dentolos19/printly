@@ -1,7 +1,7 @@
 using DotNetEnv.Configuration;
-using EnterpriseServer.Extensions;
-using EnterpriseServer.Models;
-using EnterpriseServer.Services;
+using MocklyServer.Extensions;
+using MocklyServer.Models;
+using MocklyServer.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

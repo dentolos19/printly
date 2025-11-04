@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace EnterpriseServer.Controllers;
+namespace MocklyServer.Controllers;
 
 /// <summary>
 /// A custom implementation of <see cref="ControllerBase"/> that

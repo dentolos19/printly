@@ -1,6 +1,6 @@
 using MimeDetective;
 
-namespace EnterpriseServer;
+namespace MocklyServer;
 
 public static class Utilities
 {

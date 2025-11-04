@@ -1,8 +1,7 @@
 using System.Text;
 using System.Text.Json;
-using SQLitePCL;
 
-namespace EnterpriseServer.Services;
+namespace MocklyServer.Services;
 
 public class GeminiService
 {
