@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.Security.Cryptography;
+using System.Text;
+using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -32,8 +34,13 @@ public static class ServiceExtensions
     /// <summary>
     /// Setup authentication and authorization using JWT and Identity
     /// </summary>
-    public static IServiceCollection SetupAuth(this IServiceCollection services, WebApplicationBuilder builder)
+    public static IServiceCollection SetupAuth(this IServiceCollection services)
     {
+        // Load environment variables
+        var secretKey = Env.GetString("SECRET_KEY");
+        var googleClientId = Env.GetString("GOOGLE_CLIENT_ID")!;
+        var googleClientSecret = Env.GetString("GOOGLE_CLIENT_SECRET")!;
+
         services
             .AddAuthentication(options =>
             {
@@ -44,8 +51,8 @@ public static class ServiceExtensions
             .AddCookie()
             .AddGoogle(options =>
             {
-                options.ClientId = builder.Configuration["GOOGLE_CLIENT_ID"]!;
-                options.ClientSecret = builder.Configuration["GOOGLE_CLIENT_SECRET"]!;
+                options.ClientId = googleClientId;
+                options.ClientSecret = googleClientSecret;
                 options.SignInScheme = IdentityConstants.ExternalScheme;
                 options.CallbackPath = "/auth/google/callback";
             })
@@ -57,9 +64,7 @@ public static class ServiceExtensions
                     ValidateAudience = false,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(builder.Configuration["SECRET_KEY"]!)
-                    ),
+                    IssuerSigningKey = new SymmetricSecurityKey(SHA256.HashData(Encoding.UTF8.GetBytes(secretKey))),
                 };
             });
 
@@ -73,7 +78,7 @@ public static class ServiceExtensions
         services
             .AddIdentityApiEndpoints<User>()
             .AddRoles<IdentityRole>()
-            .AddEntityFrameworkStores<AppDbContext>()
+            .AddEntityFrameworkStores<Database>()
             .AddDefaultTokenProviders();
 
         return services;
@@ -82,20 +87,9 @@ public static class ServiceExtensions
     /// <summary>
     /// Setup the database context for the application
     /// </summary>
-    public static IServiceCollection SetupDatabase(this IServiceCollection services, WebApplicationBuilder builder)
+    public static IServiceCollection SetupDatabase(this IServiceCollection services)
     {
-        if (builder.Environment.IsProduction())
-        {
-            var databaseUri = new Uri(builder.Configuration["DATABASE_URL"]!);
-            var databaseInfo = databaseUri.UserInfo.Split(':');
-            var connectionString =
-                $"Host={databaseUri.Host};Database={databaseUri.AbsolutePath.TrimStart('/')};Username={databaseInfo[0]};Password={databaseInfo[1]};Ssl Mode=Require;Trust Server Certificate=true;";
-            services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
-        }
-        else
-        {
-            services.AddDbContext<AppDbContext>(options => options.UseSqlite("Data Source=data.db"));
-        }
+        services.AddDbContext<Database>(options => options.UseDatabase());
 
         return services;
     }

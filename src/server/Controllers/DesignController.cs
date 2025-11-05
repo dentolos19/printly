@@ -3,7 +3,7 @@ using MocklyServer.Services;
 
 namespace MocklyServer.Controllers;
 
-public class DesignController(AppDbContext context) : BaseController(context)
+public class DesignController(Database context) : BaseController(context)
 {
     [HttpGet]
     [Route("generate")]

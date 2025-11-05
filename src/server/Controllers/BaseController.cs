@@ -6,7 +6,7 @@ namespace MocklyServer.Controllers;
 /// A custom implementation of <see cref="ControllerBase"/> that
 /// <list type="bullet">
 /// <item><description>
-/// Automatically injects the project's global database context (<see cref="AppDbContext"/>)
+/// Automatically injects the project's global database context (<see cref="Database"/>)
 /// </description></item>
 /// <item><description>
 /// Implements <see cref="ApiControllerAttribute"/> such that all controllers inheriting from it will receive it as well
@@ -28,7 +28,7 @@ namespace MocklyServer.Controllers;
 /// <param name="context">A readonly reference to the database (this part is handled by ASP already via the builder instructions in the main Program.cs file), used inside each controller via the inherited property <see cref="Context"/></param>
 [ApiController]
 [Route("[controller]")]
-public class BaseController(AppDbContext context) : ControllerBase
+public class BaseController(Database context) : ControllerBase
 {
-    protected readonly AppDbContext Context = context;
+    protected readonly Database Context = context;
 }

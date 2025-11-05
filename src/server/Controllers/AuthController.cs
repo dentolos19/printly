@@ -13,7 +13,7 @@ using MocklyServer.Models;
 
 namespace MocklyServer.Controllers;
 
-public class AuthController(AppDbContext context, IConfiguration configuration, UserManager<User> userManager)
+public class AuthController(Database context, IConfiguration configuration, UserManager<User> userManager)
     : BaseController(context)
 {
     public record RegisterDto(string Name, string Email, string Password);
@@ -125,7 +125,8 @@ public class AuthController(AppDbContext context, IConfiguration configuration, 
 
     private async Task<string> GenerateAccessToken(User user)
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["SECRET_KEY"]!));
+        var keyData = SHA256.HashData(Encoding.UTF8.GetBytes(configuration["SECRET_KEY"]!));
+        var key = new SymmetricSecurityKey(keyData);
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var roles = await userManager.GetRolesAsync(user);
 

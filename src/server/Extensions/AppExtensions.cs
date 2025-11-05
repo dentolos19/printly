@@ -49,11 +49,8 @@ public static class AppExtensions
     {
         using var scope = app.Services.CreateScope();
 
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var db = scope.ServiceProvider.GetRequiredService<Database>();
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-
-        // NOTE: Temporary, so that I can run operations without creating migrations.
-        await db.Database.EnsureCreatedAsync();
 
         foreach (string name in Roles.GetRoles())
         {

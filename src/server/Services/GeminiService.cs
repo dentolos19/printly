@@ -11,11 +11,11 @@ public class GeminiService
     public GeminiService(IConfiguration configuration, StorageService storage)
     {
         // Load environment variables
-        var apiKey = configuration["GOOGLE_API_KEY"]!;
+        var googleApiKey = configuration["GOOGLE_API_KEY"]!;
 
         // Initialize HTTP client
         _http = new HttpClient();
-        _http.DefaultRequestHeaders.Add("X-Goog-Api-Key", apiKey);
+        _http.DefaultRequestHeaders.Add("X-Goog-Api-Key", googleApiKey);
 
         // Attach services
         _storage = storage;

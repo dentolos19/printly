@@ -1,4 +1,6 @@
 using DotNetEnv.Configuration;
+using Microsoft.EntityFrameworkCore;
+using MocklyServer;
 using MocklyServer.Extensions;
 using MocklyServer.Models;
 using MocklyServer.Services;
@@ -8,8 +10,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddDotNetEnv();
 
 builder.Services.SetupCors();
-builder.Services.SetupAuth(builder);
-builder.Services.SetupDatabase(builder);
+builder.Services.SetupAuth();
+builder.Services.SetupDatabase();
 builder.Services.SetupRouting();
 builder.Services.SetupDocumentation();
 
@@ -29,11 +31,18 @@ app.MapControllers();
 
 if (app.Environment.IsProduction())
 {
+    // Redirect HTTP requests to HTTPS in production
     app.UseHttpsRedirection();
 }
 else
 {
+    // Use the developer exception page for detailed error information during development
     app.UseDeveloperExceptionPage();
+
+    // Ensure database is created and migrations for quick iterations
+    var database = app.Services.GetRequiredService<Database>().Database;
+    await database.EnsureCreatedAsync();
+    await database.MigrateAsync();
 }
 
 app.Run();
