@@ -3,17 +3,13 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using MocklyServer.Auth;
-using MocklyServer.Models;
 using MocklyServer.Services;
 
 namespace MocklyServer.Controllers;
 
 [Route("auth")]
 [Tags("Authentication")]
-public class AuthController(DatabaseContext context, IdentityService identityService, UserManager<User> userManager)
-    : BaseController(context)
+public class AuthController(DatabaseContext context, IdentityService identityService) : BaseController(context)
 {
     public record RegisterDto(string Name, string Email, string Password);
 
@@ -70,11 +66,10 @@ public class AuthController(DatabaseContext context, IdentityService identitySer
 
         // Extract email from claims
         var email = result.Principal.FindFirstValue(ClaimTypes.Email);
-        var user = await userManager.FindByEmailAsync(email!);
+        var user = await identityService.GetUser(email!);
 
         // Create user if not exists
-        if (user == null)
-            user = await identityService.CreateUser(email!);
+        user ??= await identityService.CreateUser(email!);
 
         // Grant access token and generate refresh token
         var (accessToken, refreshToken) = await identityService.GrantUserAccess(user);
@@ -88,26 +83,23 @@ public class AuthController(DatabaseContext context, IdentityService identitySer
     public async Task<IActionResult> RefreshToken([FromBody] RefreshDto body)
     {
         // Find current refresh token
-        var currentRefreshToken = await identityService.FindRefreshToken(body.RefreshToken);
+        var refreshToken = await identityService.FindRefreshToken(body.RefreshToken);
 
         // Validate the current refresh token
-        if (currentRefreshToken == null || !currentRefreshToken.IsActive)
+        if (refreshToken == null || !refreshToken.IsActive)
             return Unauthorized();
 
         // Rotate the refresh token and generate a new access token
-        var (accessToken, refreshToken) = await identityService.ExtendUserAccess(
-            currentRefreshToken.User,
-            currentRefreshToken
-        );
+        var (accessToken, newRefreshToken) = await identityService.ExtendUserAccess(refreshToken.User, refreshToken);
 
-        return Ok(new AuthResponse(accessToken, refreshToken));
+        return Ok(new AuthResponse(accessToken, newRefreshToken));
     }
 
     [HttpPost]
     [Route("revoke")]
     public async Task<IActionResult> RevokeToken([FromBody] RefreshDto body)
     {
-        var refreshToken = await Context.RefreshTokens.FirstOrDefaultAsync(token => token.Token == body.RefreshToken);
+        var refreshToken = await identityService.FindRefreshToken(body.RefreshToken);
 
         // Validate the refresh token
         if (refreshToken == null || !refreshToken.IsActive)

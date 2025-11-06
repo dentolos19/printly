@@ -109,6 +109,12 @@ public class IdentityService(IConfiguration configuration, DatabaseContext datab
         return user;
     }
 
+    public async Task<User> GetUser(string email)
+    {
+        var user = await userManager.FindByEmailAsync(email) ?? throw new Exception("User not found.");
+        return user;
+    }
+
     public async Task<(string, string)> GrantUserAccess(User user)
     {
         var accessToken = await GenerateAccessToken(user);
