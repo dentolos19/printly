@@ -58,7 +58,7 @@ public static class AppExtensions
 
         // Apply migrations to database for production
         var database = scope.ServiceProvider.GetRequiredService<DatabaseContext>().Database;
-        await database.MigrateAsync();
+        await database.MigrateAsync(); // NOTE: This doesn't work for some reason, alternatively run the migration task manually.
 
         return app;
     }
@@ -78,7 +78,7 @@ public static class AppExtensions
 
         // Ensure database is created for development
         var database = scope.ServiceProvider.GetRequiredService<DatabaseContext>().Database;
-        await database.EnsureCreatedAsync();
+        await database.EnsureCreatedAsync(); // NOTE: Delete the local database file manually to update the schema.
 
         return app;
     }
