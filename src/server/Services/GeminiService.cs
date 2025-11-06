@@ -21,9 +21,9 @@ public class GeminiService
         _storage = storage;
     }
 
-    public async Task<byte[]> GenerateImageAsync(string prompt, int count = 1)
+    public async Task<byte[]> GenerateImageAsync(string prompt)
     {
-        var requestBody = new { instances = new[] { new { prompt } }, parameters = new { sampleCount = count } };
+        var requestBody = new { instances = new[] { new { prompt } }, parameters = new { sampleCount = 1 } };
         var requestJson = JsonSerializer.Serialize(requestBody);
 
         var response = await _http.PostAsync(
@@ -34,13 +34,16 @@ public class GeminiService
         if (!response.IsSuccessStatusCode)
             throw new Exception("Failed to generate image.");
 
+        // Extract and parse the response
         var responseBody = await response.Content.ReadAsStringAsync();
         using var responseJson = JsonDocument.Parse(responseBody);
 
+        // Extract image data from the response
         var predictions = responseJson.RootElement.GetProperty("predictions");
         var encodedData = predictions[0].GetProperty("bytesBase64Encoded").GetString()!;
         var bytesData = Convert.FromBase64String(encodedData);
 
+        // Store the generated image to storage
         using var stream = new MemoryStream(bytesData);
         await _storage.UploadFileAsync(stream, $"generated/{Guid.NewGuid()}.png");
 

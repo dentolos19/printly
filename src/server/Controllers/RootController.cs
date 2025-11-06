@@ -2,17 +2,18 @@
 
 namespace MocklyServer.Controllers;
 
-public class RootController(Database context) : BaseController(context)
+[Route("/")]
+public class RootController(DatabaseContext context) : BaseController(context)
 {
     [HttpGet]
-    [Route("/")]
+    [Route("")]
     public IActionResult GetRoot()
     {
         return Ok("Welcome to Mockly Server!");
     }
 
     [HttpGet]
-    [Route("/environment")]
+    [Route("environment")]
     public IActionResult GetEnvironment()
     {
         var variables = Environment

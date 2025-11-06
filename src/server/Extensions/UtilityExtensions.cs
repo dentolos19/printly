@@ -14,14 +14,14 @@ public static class UtilityExtensions
         if (string.IsNullOrEmpty(databaseUrl))
         {
             // Use a local SQLite database for development
-            options.UseNpgsql("Data Source=data.db");
+            options.UseSqlite("Data Source=data.db");
         }
         else
         {
-            // Use a remote PostgreSQL database for production
             var connectionInfo = new Uri(databaseUrl);
             var userInfo = connectionInfo.UserInfo.Split(':');
 
+            // Use a remote PostgreSQL database for production
             options.UseNpgsql(
                 new NpgsqlConnectionStringBuilder
                 {

@@ -13,7 +13,9 @@ using MocklyServer.Models;
 
 namespace MocklyServer.Controllers;
 
-public class AuthController(Database context, IConfiguration configuration, UserManager<User> userManager)
+[Route("auth")]
+[Tags("Authentication")]
+public class AuthController(DatabaseContext context, IConfiguration configuration, UserManager<User> userManager)
     : BaseController(context)
 {
     public record RegisterDto(string Name, string Email, string Password);

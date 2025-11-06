@@ -46,6 +46,7 @@ public class StorageService
             UseChunkEncoding = false,
         };
 
+        // Execute upload request
         await _client.PutObjectAsync(request);
     }
 
@@ -57,7 +58,10 @@ public class StorageService
             Key = $"{_bucketPrefix}/{name}",
         };
 
+        // Execute download request
         var response = await _client.GetObjectAsync(request);
+
+        // Return the response stream
         return response.ResponseStream;
     }
 
@@ -69,6 +73,7 @@ public class StorageService
             Key = $"{_bucketPrefix}/{name}",
         };
 
+        // Execute delete request
         await _client.DeleteObjectAsync(request);
     }
 
@@ -81,6 +86,7 @@ public class StorageService
             Expires = DateTime.UtcNow.AddMinutes(60),
         };
 
+        // Generate and return the pre-signed URL
         return _client.GetPreSignedURL(request);
     }
 }

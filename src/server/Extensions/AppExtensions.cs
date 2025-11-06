@@ -45,11 +45,31 @@ public static class AppExtensions
         return app;
     }
 
+    /// <summary>
+    /// Setup development environment configurations
+    /// </summary>
+    public static async Task<WebApplication> SetupDevelopmentAsync(this WebApplication app)
+    {
+        using var scope = app.Services.CreateScope();
+
+        // Use the developer exception page for detailed error information during development
+        app.UseDeveloperExceptionPage();
+
+        // Ensure database is created during development
+        var database = scope.ServiceProvider.GetRequiredService<DatabaseContext>().Database;
+        await database.EnsureCreatedAsync();
+
+        return app;
+    }
+
+    /// <summary>
+    /// Setup default roles and claims in the Identity system
+    /// </summary>
     public static async Task<WebApplication> SetupRolesAsync(this WebApplication app)
     {
         using var scope = app.Services.CreateScope();
 
-        var db = scope.ServiceProvider.GetRequiredService<Database>();
+        var db = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
         foreach (string name in Roles.GetRoles())
