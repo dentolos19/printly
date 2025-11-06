@@ -8,10 +8,8 @@ public static class UtilityExtensions
 {
     public static DbContextOptionsBuilder UseDatabase(this DbContextOptionsBuilder options)
     {
-        Env.Load();
-
         // Load environment variables
-        var databaseUrl = Env.GetString("DATABASE_URL");
+        var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
         if (string.IsNullOrEmpty(databaseUrl))
         {
@@ -33,7 +31,6 @@ public static class UtilityExtensions
                     Password = userInfo[1],
                     Database = connectionInfo.AbsolutePath.TrimStart('/'),
                     SslMode = SslMode.Require,
-                    TrustServerCertificate = true,
                 }.ConnectionString
             );
         }

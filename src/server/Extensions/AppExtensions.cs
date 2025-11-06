@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using MocklyServer.Auth;
 using MocklyServer.Middlewares;
 
@@ -57,7 +58,7 @@ public static class AppExtensions
 
         // Ensure database is created during development
         var database = scope.ServiceProvider.GetRequiredService<AppDatabase>().Database;
-        await database.EnsureCreatedAsync();
+        await database.MigrateAsync();
 
         return app;
     }

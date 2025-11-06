@@ -36,12 +36,10 @@ public static class ServiceExtensions
     /// </summary>
     public static IServiceCollection SetupAuth(this IServiceCollection services)
     {
-        Env.Load();
-
         // Load environment variables
-        var secretKey = Env.GetString("SECRET_KEY");
-        var googleClientId = Env.GetString("GOOGLE_CLIENT_ID")!;
-        var googleClientSecret = Env.GetString("GOOGLE_CLIENT_SECRET")!;
+        var secretKey = Environment.GetEnvironmentVariable("SECRET_KEY");
+        var googleClientId = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID")!;
+        var googleClientSecret = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET")!;
 
         services
             .AddAuthentication(options =>
