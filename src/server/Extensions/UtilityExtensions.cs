@@ -8,6 +8,8 @@ public static class UtilityExtensions
 {
     public static DbContextOptionsBuilder UseDatabase(this DbContextOptionsBuilder options)
     {
+        Env.Load();
+
         // Load environment variables
         var databaseUrl = Env.GetString("DATABASE_URL");
 

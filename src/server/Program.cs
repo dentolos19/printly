@@ -1,9 +1,6 @@
-using DotNetEnv;
 using DotNetEnv.Configuration;
 using MocklyServer.Extensions;
 using MocklyServer.Services;
-
-Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
