@@ -5,7 +5,7 @@ using MocklyServer.Models;
 
 namespace MocklyServer;
 
-public class DatabaseContext(DbContextOptions<DatabaseContext> options) : IdentityDbContext<User>(options)
+public class AppDatabase(DbContextOptions<AppDatabase> options) : IdentityDbContext<User>(options)
 {
     public DbSet<RefreshToken> RefreshTokens { get; set; }
 

@@ -56,7 +56,7 @@ public static class AppExtensions
         app.UseDeveloperExceptionPage();
 
         // Ensure database is created during development
-        var database = scope.ServiceProvider.GetRequiredService<DatabaseContext>().Database;
+        var database = scope.ServiceProvider.GetRequiredService<AppDatabase>().Database;
         await database.EnsureCreatedAsync();
 
         return app;
@@ -69,7 +69,7 @@ public static class AppExtensions
     {
         using var scope = app.Services.CreateScope();
 
-        var db = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+        var db = scope.ServiceProvider.GetRequiredService<AppDatabase>();
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
         foreach (string name in Roles.GetRoles())

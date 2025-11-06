@@ -10,16 +10,27 @@ using MocklyServer.Models;
 
 namespace MocklyServer.Services;
 
-public class IdentityService(IConfiguration configuration, DatabaseContext database, UserManager<User> userManager)
+public class IdentityService
 {
+    private readonly IConfiguration _configuration;
+    private readonly AppDatabase _context;
+    private readonly UserManager<User> _userManager;
+
+    public IdentityService(IConfiguration configuration, AppDatabase context, UserManager<User> userManager)
+    {
+        _configuration = configuration;
+        _context = context;
+        _userManager = userManager;
+    }
+
     private async Task<string> GenerateAccessToken(User user)
     {
         // Generate signing credentials
-        var keyData = SHA256.HashData(Encoding.UTF8.GetBytes(configuration["SECRET_KEY"]!));
+        var keyData = SHA256.HashData(Encoding.UTF8.GetBytes(_configuration["SECRET_KEY"]!));
         var key = new SymmetricSecurityKey(keyData);
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        var roles = await userManager.GetRolesAsync(user);
+        var roles = await _userManager.GetRolesAsync(user);
 
         // Define claims accessible for the frontend
         var claims = new List<Claim>
@@ -52,8 +63,8 @@ public class IdentityService(IConfiguration configuration, DatabaseContext datab
         };
 
         // Save the refresh token to the database
-        database.RefreshTokens.Add(token);
-        await database.SaveChangesAsync();
+        _context.RefreshTokens.Add(token);
+        await _context.SaveChangesAsync();
 
         return token;
     }
@@ -71,15 +82,15 @@ public class IdentityService(IConfiguration configuration, DatabaseContext datab
         // Replace and revoke the old refresh token
         refreshToken.RevokedAt = DateTime.UtcNow;
         refreshToken.ReplacedByToken = token.Token;
-        database.RefreshTokens.Add(token);
-        await database.SaveChangesAsync();
+        _context.RefreshTokens.Add(token);
+        await _context.SaveChangesAsync();
 
         return token;
     }
 
     public async Task<RefreshToken?> FindRefreshToken(string token)
     {
-        return await database.RefreshTokens.Include(rt => rt.User).FirstOrDefaultAsync(rt => rt.Token == token);
+        return await _context.RefreshTokens.Include(rt => rt.User).FirstOrDefaultAsync(rt => rt.Token == token);
     }
 
     public async Task<User> CreateUser(string email, string? password = null)
@@ -87,13 +98,13 @@ public class IdentityService(IConfiguration configuration, DatabaseContext datab
         var user = new User { UserName = email, Email = email };
 
         var userResult = string.IsNullOrEmpty(password)
-            ? await userManager.CreateAsync(user)
-            : await userManager.CreateAsync(user, password);
+            ? await _userManager.CreateAsync(user)
+            : await _userManager.CreateAsync(user, password);
 
         if (!userResult.Succeeded)
             throw new Exception("Failed to create user.");
 
-        var roleResult = await userManager.AddToRoleAsync(user, Roles.User);
+        var roleResult = await _userManager.AddToRoleAsync(user, Roles.User);
 
         if (!roleResult.Succeeded)
             throw new Exception("Failed to assign role to user.");
@@ -103,13 +114,13 @@ public class IdentityService(IConfiguration configuration, DatabaseContext datab
 
     public async Task<User?> GetUser(string email)
     {
-        return await userManager.FindByEmailAsync(email);
+        return await _userManager.FindByEmailAsync(email);
     }
 
     public async Task<User?> GetUserWithPassword(string email, string password)
     {
-        var user = await userManager.FindByEmailAsync(email);
-        return user != null && await userManager.CheckPasswordAsync(user, password) ? user : null;
+        var user = await _userManager.FindByEmailAsync(email);
+        return user != null && await _userManager.CheckPasswordAsync(user, password) ? user : null;
     }
 
     public async Task<(string, string)> GrantUserAccess(User user)
@@ -129,6 +140,6 @@ public class IdentityService(IConfiguration configuration, DatabaseContext datab
     public async Task RevokeUserToken(RefreshToken token)
     {
         token.RevokedAt = DateTime.UtcNow;
-        await database.SaveChangesAsync();
+        await _context.SaveChangesAsync();
     }
 }

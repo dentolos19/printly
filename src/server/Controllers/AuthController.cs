@@ -9,7 +9,7 @@ namespace MocklyServer.Controllers;
 
 [Route("auth")]
 [Tags("Authentication")]
-public class AuthController(DatabaseContext context, IdentityService identityService) : BaseController(context)
+public class AuthController(AppDatabase database, IdentityService identityService) : BaseController(database)
 {
     public record RegisterDto(string Name, string Email, string Password);
 
