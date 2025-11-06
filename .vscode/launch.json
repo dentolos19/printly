@@ -15,10 +15,11 @@
     },
     {
       "name": "Server",
-      "type": "node-terminal",
+      "type": "coreclr",
       "request": "launch",
       "cwd": "${workspaceFolder}/src/server",
-      "command": "dotnet run"
+      "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/MocklyServer.dll",
+      "preLaunchTask": "Build Server"
     }
   ],
   "compounds": [

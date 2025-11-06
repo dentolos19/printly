@@ -58,7 +58,7 @@ public static class AppExtensions
 
         // Ensure database is created during development
         var database = scope.ServiceProvider.GetRequiredService<AppDatabase>().Database;
-        await database.MigrateAsync();
+        await database.EnsureCreatedAsync();
 
         return app;
     }
