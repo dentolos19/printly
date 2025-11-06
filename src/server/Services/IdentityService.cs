@@ -13,10 +13,10 @@ namespace MocklyServer.Services;
 public class IdentityService
 {
     private readonly IConfiguration _configuration;
-    private readonly AppDatabase _context;
+    private readonly DatabaseContext _context;
     private readonly UserManager<User> _userManager;
 
-    public IdentityService(IConfiguration configuration, AppDatabase context, UserManager<User> userManager)
+    public IdentityService(IConfiguration configuration, DatabaseContext context, UserManager<User> userManager)
     {
         _configuration = configuration;
         _context = context;

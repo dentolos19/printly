@@ -4,7 +4,7 @@ using MocklyServer.Services;
 namespace MocklyServer.Controllers;
 
 [Route("design")]
-public class DesignController(AppDatabase context, GeminiService geminiService) : BaseController(context)
+public class DesignController(DatabaseContext context, GeminiService geminiService) : BaseController(context)
 {
     [HttpGet]
     [Route("generate")]

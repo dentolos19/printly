@@ -3,7 +3,7 @@
 namespace MocklyServer.Controllers;
 
 [Route("/")]
-public class RootController(AppDatabase context) : BaseController(context)
+public class RootController(DatabaseContext context) : BaseController(context)
 {
     [HttpGet]
     [Route("")]

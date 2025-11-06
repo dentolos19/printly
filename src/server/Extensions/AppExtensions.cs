@@ -51,13 +51,13 @@ public static class AppExtensions
     /// </summary>
     public static async Task<WebApplication> SetupProductionAsync(this WebApplication app)
     {
-        if (app.Environment.IsProduction())
+        if (!app.Environment.IsProduction())
             return app;
 
         using var scope = app.Services.CreateScope();
 
         // Apply migrations to database for production
-        var database = scope.ServiceProvider.GetRequiredService<AppDatabase>().Database;
+        var database = scope.ServiceProvider.GetRequiredService<DatabaseContext>().Database;
         await database.MigrateAsync();
 
         return app;
@@ -77,7 +77,7 @@ public static class AppExtensions
         app.UseDeveloperExceptionPage();
 
         // Ensure database is created for development
-        var database = scope.ServiceProvider.GetRequiredService<AppDatabase>().Database;
+        var database = scope.ServiceProvider.GetRequiredService<DatabaseContext>().Database;
         await database.EnsureCreatedAsync();
 
         return app;
@@ -90,7 +90,7 @@ public static class AppExtensions
     {
         using var scope = app.Services.CreateScope();
 
-        var db = scope.ServiceProvider.GetRequiredService<AppDatabase>();
+        var db = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
         foreach (string name in Roles.GetRoles())

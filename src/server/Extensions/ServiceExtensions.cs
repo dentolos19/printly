@@ -78,7 +78,7 @@ public static class ServiceExtensions
         services
             .AddIdentityApiEndpoints<User>()
             .AddRoles<IdentityRole>()
-            .AddEntityFrameworkStores<AppDatabase>()
+            .AddEntityFrameworkStores<DatabaseContext>()
             .AddDefaultTokenProviders();
 
         return services;
@@ -89,7 +89,7 @@ public static class ServiceExtensions
     /// </summary>
     public static IServiceCollection SetupDatabase(this IServiceCollection services)
     {
-        services.AddDbContext<AppDatabase>(options => options.UseDatabase());
+        services.AddDbContext<DatabaseContext>(options => options.UseDatabase());
         return services;
     }
 
