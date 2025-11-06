@@ -32,7 +32,7 @@ public class AuthController(DatabaseContext context, IdentityService identitySer
     public async Task<IActionResult> LoginUser([FromBody] LoginDto body)
     {
         // Verify user credentials
-        var user = await identityService.VerifyUserCredentials(body.Email, body.Password);
+        var user = await identityService.GetUserWithPassword(body.Email, body.Password);
 
         // Check if credentials are valid
         if (user == null)
@@ -66,9 +66,9 @@ public class AuthController(DatabaseContext context, IdentityService identitySer
 
         // Extract email from claims
         var email = result.Principal.FindFirstValue(ClaimTypes.Email);
-        var user = await identityService.GetUser(email!);
 
-        // Create user if not exists
+        // Find or create the user
+        var user = await identityService.GetUser(email!);
         user ??= await identityService.CreateUser(email!);
 
         // Grant access token and generate refresh token

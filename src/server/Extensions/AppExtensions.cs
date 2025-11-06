@@ -63,7 +63,7 @@ public static class AppExtensions
     }
 
     /// <summary>
-    /// Setup default roles and claims in the Identity system
+    /// Setup default roles and claims in the identity system
     /// </summary>
     public static async Task<WebApplication> SetupRolesAsync(this WebApplication app)
     {

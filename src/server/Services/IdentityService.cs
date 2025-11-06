@@ -24,6 +24,8 @@ public class IdentityService(IConfiguration configuration, DatabaseContext datab
         // Define claims accessible for the frontend
         var claims = new List<Claim>
         {
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+            new Claim(JwtRegisteredClaimNames.Email, user.Email!),
             new Claim(ClaimTypes.Email, user.Email!),
             new Claim(ClaimTypes.Role, roles.FirstOrDefault() ?? Roles.User),
         };
@@ -75,16 +77,6 @@ public class IdentityService(IConfiguration configuration, DatabaseContext datab
         return token;
     }
 
-    public async Task<User?> VerifyUserCredentials(string email, string password)
-    {
-        var user = await userManager.FindByEmailAsync(email);
-
-        if (user == null || !await userManager.CheckPasswordAsync(user, password))
-            return null;
-
-        return user;
-    }
-
     public async Task<RefreshToken?> FindRefreshToken(string token)
     {
         return await database.RefreshTokens.Include(rt => rt.User).FirstOrDefaultAsync(rt => rt.Token == token);
@@ -109,10 +101,15 @@ public class IdentityService(IConfiguration configuration, DatabaseContext datab
         return user;
     }
 
-    public async Task<User> GetUser(string email)
+    public async Task<User?> GetUser(string email)
     {
-        var user = await userManager.FindByEmailAsync(email) ?? throw new Exception("User not found.");
-        return user;
+        return await userManager.FindByEmailAsync(email);
+    }
+
+    public async Task<User?> GetUserWithPassword(string email, string password)
+    {
+        var user = await userManager.FindByEmailAsync(email);
+        return user != null && await userManager.CheckPasswordAsync(user, password) ? user : null;
     }
 
     public async Task<(string, string)> GrantUserAccess(User user)
