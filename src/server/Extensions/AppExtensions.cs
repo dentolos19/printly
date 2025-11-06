@@ -47,16 +47,36 @@ public static class AppExtensions
     }
 
     /// <summary>
+    /// Setup production environment configurations
+    /// </summary>
+    public static async Task<WebApplication> SetupProductionAsync(this WebApplication app)
+    {
+        if (app.Environment.IsProduction())
+            return app;
+
+        using var scope = app.Services.CreateScope();
+
+        // Apply migrations to database for production
+        var database = scope.ServiceProvider.GetRequiredService<AppDatabase>().Database;
+        await database.MigrateAsync();
+
+        return app;
+    }
+
+    /// <summary>
     /// Setup development environment configurations
     /// </summary>
     public static async Task<WebApplication> SetupDevelopmentAsync(this WebApplication app)
     {
+        if (!app.Environment.IsDevelopment())
+            return app;
+
         using var scope = app.Services.CreateScope();
 
         // Use the developer exception page for detailed error information during development
         app.UseDeveloperExceptionPage();
 
-        // Ensure database is created during development
+        // Ensure database is created for development
         var database = scope.ServiceProvider.GetRequiredService<AppDatabase>().Database;
         await database.EnsureCreatedAsync();
 

@@ -52,15 +52,6 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
 
-      - name: Run Migrations
-        working-directory: src/server
-        run: |
-          dotnet tool install --global dotnet-ef
-          dotnet tool restore
-          dotnet ef database update
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
       - name: Deploy Server to Cloudflare
         uses: cloudflare/wrangler-action@v3
         with:

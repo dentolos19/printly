@@ -18,6 +18,10 @@ public static class UtilityExtensions
         }
         else
         {
+            // Removes surrounding quotes if present
+            databaseUrl = databaseUrl.TrimStart('"').TrimEnd('"');
+
+            // Break down the connection string
             var connectionInfo = new Uri(databaseUrl);
             var userInfo = connectionInfo.UserInfo.Split(':');
 
@@ -26,7 +30,7 @@ public static class UtilityExtensions
                 new NpgsqlConnectionStringBuilder
                 {
                     Host = connectionInfo.Host,
-                    Port = connectionInfo.Port,
+                    Port = connectionInfo.Port > 0 ? connectionInfo.Port : 5432,
                     Username = userInfo[0],
                     Password = userInfo[1],
                     Database = connectionInfo.AbsolutePath.TrimStart('/'),

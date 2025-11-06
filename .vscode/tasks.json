@@ -10,6 +10,32 @@
         "kind": "build",
         "isDefault": true
       }
+    },
+    {
+      "label": "Run Migrations",
+      "type": "shell",
+      "command": "pwsh -ExecutionPolicy Bypass -File migrate.ps1",
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}/src/server"
+      }
+    },
+    {
+      "label": "Add Migration",
+      "type": "shell",
+      "command": "pwsh -ExecutionPolicy Bypass -File migrate.ps1 -MigrationName ${input:migrationName}",
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}/src/server"
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "migrationName",
+      "type": "promptString",
+      "description": "Enter the name for the new migration",
+      "default": "Migration"
     }
   ]
 }

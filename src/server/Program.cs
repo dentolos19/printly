@@ -23,6 +23,7 @@ app.SetupCors();
 app.SetupAuth();
 app.SetupDocumentation();
 
+await app.SetupProductionAsync();
 await app.SetupDevelopmentAsync();
 await app.SetupRolesAsync();
 

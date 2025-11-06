@@ -11,7 +11,7 @@ using MocklyServer;
 namespace MocklyServer.Migrations
 {
     [DbContext(typeof(AppDatabase))]
-    [Migration("20251106064455_Initial")]
+    [Migration("20251106111641_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
