@@ -15,6 +15,7 @@ builder.Services.SetupDatabase();
 builder.Services.SetupRouting();
 builder.Services.SetupDocumentation();
 
+builder.Services.AddSingleton<IdentityService>();
 builder.Services.AddSingleton<StorageService>();
 builder.Services.AddSingleton<GeminiService>();
 

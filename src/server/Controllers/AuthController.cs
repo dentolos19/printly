@@ -1,21 +1,18 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using MocklyServer.Auth;
 using MocklyServer.Models;
+using MocklyServer.Services;
 
 namespace MocklyServer.Controllers;
 
 [Route("auth")]
 [Tags("Authentication")]
-public class AuthController(DatabaseContext context, IConfiguration configuration, UserManager<User> userManager)
+public class AuthController(DatabaseContext context, IdentityService identityService, UserManager<User> userManager)
     : BaseController(context)
 {
     public record RegisterDto(string Name, string Email, string Password);
@@ -28,40 +25,35 @@ public class AuthController(DatabaseContext context, IConfiguration configuratio
 
     [HttpPost]
     [Route("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterDto dto)
+    public async Task<IActionResult> RegisterUser([FromBody] RegisterDto body)
     {
-        var userDto = new User { UserName = dto.Email, Email = dto.Email };
-
-        var userResult = await userManager.CreateAsync(userDto, dto.Password);
-        if (!userResult.Succeeded)
-            return BadRequest(userResult.Errors);
-
-        var roleResult = await userManager.AddToRoleAsync(userDto, Roles.User);
-        if (!roleResult.Succeeded)
-            return BadRequest(roleResult.Errors);
-
-        return Ok(new { message = "User registered" });
+        await identityService.CreateUser(body.Email, body.Password);
+        return Ok();
     }
 
     [HttpPost]
     [Route("login")]
-    public async Task<IActionResult> Login([FromBody] LoginDto dto)
+    public async Task<IActionResult> LoginUser([FromBody] LoginDto body)
     {
-        var user = await userManager.FindByEmailAsync(dto.Email);
-        if (user == null || !await userManager.CheckPasswordAsync(user, dto.Password))
+        // Verify user credentials
+        var user = await identityService.VerifyUserCredentials(body.Email, body.Password);
+
+        // Check if credentials are valid
+        if (user == null)
             return Unauthorized();
 
-        var accessToken = await GenerateAccessToken(user);
-        var refreshToken = await GenerateRefreshToken(user);
-        return Ok(new AuthResponse(accessToken, refreshToken.Token));
+        // Grant access token and generate refresh token
+        var (accessToken, refreshToken) = await identityService.GrantUserAccess(user);
+
+        return Ok(new AuthResponse(accessToken, refreshToken));
     }
 
     [HttpGet]
     [Route("google")]
     public IActionResult LoginGoogle([FromQuery] string returnUrl)
     {
-        var redirectUrl = Url.Action(nameof(LoginGoogleSuccess), "Auth", new { returnUrl }, HttpContext.Request.Scheme);
-        var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
+        var url = Url.Action(nameof(LoginGoogleSuccess), "Auth", new { returnUrl }, HttpContext.Request.Scheme);
+        var properties = new AuthenticationProperties { RedirectUri = url };
         return Challenge(properties, GoogleDefaults.AuthenticationScheme);
     }
 
@@ -69,127 +61,61 @@ public class AuthController(DatabaseContext context, IConfiguration configuratio
     [Route("google/success")]
     public async Task<IActionResult> LoginGoogleSuccess([FromQuery] string returnUrl)
     {
+        // Authenticate the user with Google
         var result = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
+
+        // Check if authentication was successful
         if (!result.Succeeded || result.Principal == null)
             return Unauthorized();
 
+        // Extract email from claims
         var email = result.Principal.FindFirstValue(ClaimTypes.Email);
         var user = await userManager.FindByEmailAsync(email!);
 
+        // Create user if not exists
         if (user == null)
-        {
-            user = new User { UserName = email, Email = email };
+            user = await identityService.CreateUser(email!);
 
-            var userResult = await userManager.CreateAsync(user);
-            if (!userResult.Succeeded)
-                return BadRequest(userResult.Errors);
+        // Grant access token and generate refresh token
+        var (accessToken, refreshToken) = await identityService.GrantUserAccess(user);
 
-            var roleResult = await userManager.AddToRoleAsync(user, Roles.User);
-            if (!roleResult.Succeeded)
-                return BadRequest(roleResult.Errors);
-        }
-
-        var accessToken = await GenerateAccessToken(user);
-        var refreshToken = await GenerateRefreshToken(user);
-        return Redirect($"{returnUrl}?accessToken={accessToken}&refreshToken={refreshToken.Token}");
+        // Redirect to the return URL with tokens
+        return Redirect($"{returnUrl}?accessToken={accessToken}&refreshToken={refreshToken}");
     }
 
     [HttpPost]
     [Route("refresh")]
-    public async Task<IActionResult> Refresh([FromBody] RefreshDto dto)
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshDto body)
     {
-        var currentRefreshToken = await Context
-            .RefreshTokens.Include(rt => rt.User)
-            .FirstOrDefaultAsync(rt => rt.Token == dto.RefreshToken);
+        // Find current refresh token
+        var currentRefreshToken = await identityService.FindRefreshToken(body.RefreshToken);
 
+        // Validate the current refresh token
         if (currentRefreshToken == null || !currentRefreshToken.IsActive)
-            return Unauthorized(new { message = "Invalid refresh token" });
+            return Unauthorized();
 
-        var accessToken = await GenerateAccessToken(currentRefreshToken.User);
-        var refreshToken = await RotateRefreshToken(currentRefreshToken);
-        return Ok(new AuthResponse(accessToken, refreshToken.Token));
+        // Rotate the refresh token and generate a new access token
+        var (accessToken, refreshToken) = await identityService.ExtendUserAccess(
+            currentRefreshToken.User,
+            currentRefreshToken
+        );
+
+        return Ok(new AuthResponse(accessToken, refreshToken));
     }
 
     [HttpPost]
     [Route("revoke")]
-    public async Task<IActionResult> Revoke([FromBody] RefreshDto dto)
+    public async Task<IActionResult> RevokeToken([FromBody] RefreshDto body)
     {
-        var refreshToken = await Context.RefreshTokens.FirstOrDefaultAsync(rt => rt.Token == dto.RefreshToken);
+        var refreshToken = await Context.RefreshTokens.FirstOrDefaultAsync(token => token.Token == body.RefreshToken);
 
+        // Validate the refresh token
         if (refreshToken == null || !refreshToken.IsActive)
-            return BadRequest(new { message = "Invalid refresh token" });
+            return BadRequest();
 
-        refreshToken.RevokedAt = DateTime.UtcNow;
-        await Context.SaveChangesAsync();
+        // Revoke the refresh token
+        await identityService.RevokeUserToken(refreshToken);
 
-        return Ok(new { message = "Token revoked" });
-    }
-
-    private async Task<string> GenerateAccessToken(User user)
-    {
-        var keyData = SHA256.HashData(Encoding.UTF8.GetBytes(configuration["SECRET_KEY"]!));
-        var key = new SymmetricSecurityKey(keyData);
-        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-        var roles = await userManager.GetRolesAsync(user);
-
-        var claims = new List<Claim>
-        {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-            new Claim(ClaimTypes.Name, user.UserName ?? ""),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
-        };
-
-        claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
-
-        var token = new JwtSecurityToken(
-            claims: claims,
-            expires: DateTime.UtcNow.AddDays(7),
-            signingCredentials: credentials
-        );
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
-    }
-
-    private async Task<RefreshToken> GenerateRefreshToken(User user)
-    {
-        var refreshToken = new RefreshToken
-        {
-            Token = GenerateSecureToken(),
-            ExpiresAt = DateTime.UtcNow.AddDays(30),
-            CreatedAt = DateTime.UtcNow,
-            UserId = user.Id,
-        };
-
-        Context.RefreshTokens.Add(refreshToken);
-        await Context.SaveChangesAsync();
-
-        return refreshToken;
-    }
-
-    private async Task<RefreshToken> RotateRefreshToken(RefreshToken refreshToken)
-    {
-        refreshToken.RevokedAt = DateTime.UtcNow;
-
-        var newRefreshToken = new RefreshToken
-        {
-            Token = GenerateSecureToken(),
-            ExpiresAt = DateTime.UtcNow.AddDays(30),
-            CreatedAt = DateTime.UtcNow,
-            UserId = refreshToken.UserId,
-        };
-
-        refreshToken.ReplacedByToken = newRefreshToken.Token;
-        Context.RefreshTokens.Add(newRefreshToken);
-        await Context.SaveChangesAsync();
-
-        return newRefreshToken;
-    }
-
-    private string GenerateSecureToken()
-    {
-        var randomBytes = new byte[64];
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(randomBytes);
-        return Convert.ToBase64String(randomBytes);
+        return Ok();
     }
 }

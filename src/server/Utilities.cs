@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using MimeDetective;
 using MimeDetective.Definitions;
 
@@ -14,5 +15,17 @@ public static class Utilities
             .FirstOrDefault()
             ?.MimeType;
         return contentType ?? defaultType;
+    }
+
+    public static string GenerateSecureToken()
+    {
+        var token = new byte[64];
+
+        // Generate secure random bytes
+        using var generator = RandomNumberGenerator.Create();
+        generator.GetBytes(token);
+
+        // Convert and return as string
+        return Convert.ToBase64String(token);
     }
 }
