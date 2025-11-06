@@ -46,19 +46,29 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [claims, setClaims] = useState<UserClaims | null>(null);
 
-  const decode = (token: string): UserClaims => {
-    const decoded = jwtDecode<{
+  const decodeAccess = (token: string): UserClaims => {
+    const data = jwtDecode<{
       sub: string;
       email: string;
       role?: string;
       "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"?: string;
-      // exp: number;
+      exp: number;
     }>(token);
     return {
-      id: decoded.sub,
-      email: decoded.email,
-      role: (decoded.role as any) || decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || "user",
+      id: data.sub,
+      email: data.email,
+      role: (data.role as any) || data["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || "user",
     };
+  };
+
+  const validateAccess = (token: string): boolean => {
+    try {
+      const decodedToken = jwtDecode<{ exp: number }>(token);
+      const currentTime = Math.floor(Date.now() / 1000);
+      return decodedToken.exp > currentTime + 60 * 10;
+    } catch {
+      return false;
+    }
   };
 
   const login = async (email: string, password: string) => {
@@ -71,11 +81,11 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     });
 
     if (!response.ok) {
-      throw new Error("Login failed");
+      throw new Error("Failed to login.");
     }
 
     const data = (await response.json()) as { accessToken: string; refreshToken: string };
-    const claims = decode(data.accessToken);
+    const claims = decodeAccess(data.accessToken);
 
     setAccessToken(data.accessToken);
     setRefreshToken(data.refreshToken);
@@ -86,7 +96,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   };
 
   const loginWithToken = (accessToken: string, refreshToken: string) => {
-    const claims = decode(accessToken);
+    const claims = decodeAccess(accessToken);
 
     setAccessToken(accessToken);
     setRefreshToken(refreshToken);
@@ -107,7 +117,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           body: JSON.stringify({ refreshToken: refreshToken }),
         });
       } catch (error) {
-        console.error("Failed to revoke token:", error);
+        console.error("Failed to revoke token.");
       }
     }
 
@@ -129,7 +139,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     });
 
     if (!response.ok) {
-      throw new Error("Registration failed");
+      throw new Error("Failed to register.");
     }
   };
 
@@ -147,13 +157,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     });
 
     if (!response.ok) {
-      // If refresh fails, logout the user
       logout();
-      throw new Error("Token refresh failed");
+      throw new Error("Failed to refresh token.");
     }
 
     const data = (await response.json()) as { accessToken: string; refreshToken: string };
-    const claims = decode(data.accessToken);
+    const claims = decodeAccess(data.accessToken);
 
     setAccessToken(data.accessToken);
     setRefreshToken(data.refreshToken);
@@ -165,7 +174,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   const revokeAccess = async () => {
     if (!refreshToken) {
-      throw new Error("No refresh token available");
+      throw new Error("No refresh token available.");
     }
 
     const response = await fetch(`${API_URL}/auth/revoke`, {
@@ -189,18 +198,67 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   };
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("accessToken");
-    const storedRefresh = localStorage.getItem("refreshToken");
+    (async () => {
+      const storedToken = localStorage.getItem("accessToken");
+      const storedRefresh = localStorage.getItem("refreshToken");
 
-    if (storedToken) {
-      const claims = decode(storedToken);
-      setAccessToken(storedToken);
-      setClaims(claims);
-    }
+      if (storedToken && storedRefresh) {
+        // Check if access token is still valid
+        if (validateAccess(storedToken)) {
+          const claims = decodeAccess(storedToken);
+          setAccessToken(storedToken);
+          setRefreshToken(storedRefresh);
+          setClaims(claims);
+        } else {
+          // Try to refresh the access token
+          try {
+            const response = await fetch(`${API_URL}/auth/refresh`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ refreshToken: storedRefresh }),
+            });
 
-    if (storedRefresh) {
-      setRefreshToken(storedRefresh);
-    }
+            if (response.ok) {
+              const data = (await response.json()) as { accessToken: string; refreshToken: string };
+              const claims = decodeAccess(data.accessToken);
+
+              setAccessToken(data.accessToken);
+              setRefreshToken(data.refreshToken);
+              setClaims(claims);
+
+              localStorage.setItem("accessToken", data.accessToken);
+              localStorage.setItem("refreshToken", data.refreshToken);
+            } else {
+              // Logout if refresh fails
+              localStorage.removeItem("accessToken");
+              localStorage.removeItem("refreshToken");
+              setAccessToken(null);
+              setRefreshToken(null);
+              setClaims(null);
+            }
+          } catch (error) {
+            console.error("Failed to refresh token.");
+
+            setAccessToken(null);
+            setRefreshToken(null);
+            setClaims(null);
+
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+          }
+        }
+      } else if (storedToken) {
+        if (validateAccess(storedToken)) {
+          const claims = decodeAccess(storedToken);
+          setAccessToken(storedToken);
+          setClaims(claims);
+        } else {
+          localStorage.removeItem("accessToken");
+        }
+      }
+    })();
   }, []);
 
   return (
