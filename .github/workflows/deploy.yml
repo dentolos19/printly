@@ -21,22 +21,13 @@ jobs:
         with:
           version: 9
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-          cache-dependency-path: |
-            src/app/pnpm-lock.yaml
-            src/server-worker/pnpm-lock.yaml
-
       - name: Install Dependencies for App
         working-directory: src/app
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Install Dependencies for Server
         working-directory: src/server-worker
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Generate Types for App
         working-directory: src/app
