@@ -37,11 +37,15 @@ jobs:
         working-directory: src/server-worker
         run: pnpm run cf:gen
 
-      - name: Build Project
+      - name: Build App
         working-directory: src/app
         run: pnpm run cf:build
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
+
+      - name: Build Server
+        working-directory: src/server
+        run: dotnet build --configuration Release
 
       - name: Run Migrations
         working-directory: src/server
