@@ -23,11 +23,11 @@ public class GeminiService
 
     public async Task<byte[]> GenerateImageAsync(string prompt)
     {
-        var requestBody = new { instances = new[] { new { prompt } }, parameters = new { sampleCount = 1 } };
+        var requestBody = new { contents = new[] { new { parts = new[] { new { text = prompt } } } } };
         var requestJson = JsonSerializer.Serialize(requestBody);
 
         var response = await _http.PostAsync(
-            "https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict",
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent",
             new StringContent(requestJson, Encoding.UTF8, "application/json")
         );
 
@@ -39,8 +39,9 @@ public class GeminiService
         using var responseJson = JsonDocument.Parse(responseBody);
 
         // Extract image data from the response
-        var predictions = responseJson.RootElement.GetProperty("predictions");
-        var encodedData = predictions[0].GetProperty("bytesBase64Encoded").GetString()!;
+        var candidates = responseJson.RootElement.GetProperty("candidates");
+        var inlineData = candidates[0].GetProperty("content").GetProperty("parts")[0].GetProperty("inlineData");
+        var encodedData = inlineData.GetProperty("data").GetString()!;
         var bytesData = Convert.FromBase64String(encodedData);
 
         // Store the generated image to storage
