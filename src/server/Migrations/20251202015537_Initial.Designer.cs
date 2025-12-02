@@ -11,14 +11,14 @@ using MocklyServer;
 namespace MocklyServer.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20251129060959_Initial")]
+    [Migration("20251202015537_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.4");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
@@ -148,7 +148,7 @@ namespace MocklyServer.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("MocklyServer.Models.Asset", b =>
+            modelBuilder.Entity("MocklyServer.Entities.Asset", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -185,7 +185,7 @@ namespace MocklyServer.Migrations
                     b.ToTable("Assets");
                 });
 
-            modelBuilder.Entity("MocklyServer.Models.Design", b =>
+            modelBuilder.Entity("MocklyServer.Entities.Design", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -220,7 +220,7 @@ namespace MocklyServer.Migrations
                     b.ToTable("Designs");
                 });
 
-            modelBuilder.Entity("MocklyServer.Models.RefreshToken", b =>
+            modelBuilder.Entity("MocklyServer.Entities.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -256,7 +256,7 @@ namespace MocklyServer.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
-            modelBuilder.Entity("MocklyServer.Models.User", b =>
+            modelBuilder.Entity("MocklyServer.Entities.User", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
@@ -331,7 +331,7 @@ namespace MocklyServer.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("MocklyServer.Models.User", null)
+                    b.HasOne("MocklyServer.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -340,7 +340,7 @@ namespace MocklyServer.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("MocklyServer.Models.User", null)
+                    b.HasOne("MocklyServer.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -355,7 +355,7 @@ namespace MocklyServer.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("MocklyServer.Models.User", null)
+                    b.HasOne("MocklyServer.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -364,25 +364,25 @@ namespace MocklyServer.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("MocklyServer.Models.User", null)
+                    b.HasOne("MocklyServer.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("MocklyServer.Models.Asset", b =>
+            modelBuilder.Entity("MocklyServer.Entities.Asset", b =>
                 {
-                    b.HasOne("MocklyServer.Models.User", "User")
+                    b.HasOne("MocklyServer.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId");
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("MocklyServer.Models.Design", b =>
+            modelBuilder.Entity("MocklyServer.Entities.Design", b =>
                 {
-                    b.HasOne("MocklyServer.Models.User", "User")
+                    b.HasOne("MocklyServer.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -391,9 +391,9 @@ namespace MocklyServer.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("MocklyServer.Models.RefreshToken", b =>
+            modelBuilder.Entity("MocklyServer.Entities.RefreshToken", b =>
                 {
-                    b.HasOne("MocklyServer.Models.User", "User")
+                    b.HasOne("MocklyServer.Entities.User", "User")
                         .WithMany("RefreshTokens")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -402,7 +402,7 @@ namespace MocklyServer.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("MocklyServer.Models.User", b =>
+            modelBuilder.Entity("MocklyServer.Entities.User", b =>
                 {
                     b.Navigation("RefreshTokens");
                 });

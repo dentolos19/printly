@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MocklyServer.Auth;
-using MocklyServer.Models;
+using MocklyServer.Entities;
 
 namespace MocklyServer.Services;
 

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using MocklyServer.Entities;
 using MocklyServer.Extensions;
-using MocklyServer.Models;
 
 namespace MocklyServer;
 

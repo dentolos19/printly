@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace MocklyServer.Models;
+namespace MocklyServer.Entities;
 
 public class BaseEntity
 {

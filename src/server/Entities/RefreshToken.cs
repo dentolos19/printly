@@ -1,4 +1,4 @@
-namespace MocklyServer.Models;
+namespace MocklyServer.Entities;
 
 public class RefreshToken : BaseEntity
 {
