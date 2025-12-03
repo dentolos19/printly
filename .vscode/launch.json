@@ -18,7 +18,7 @@
       "type": "coreclr",
       "request": "launch",
       "cwd": "${workspaceFolder}/src/server",
-      "program": "${workspaceFolder}/src/server/bin/Debug/net9.0/MocklyServer.dll",
+      "program": "${workspaceFolder}/src/server/bin/Debug/net10.0/MocklyServer.dll",
       "preLaunchTask": "Build Server"
     }
   ],
