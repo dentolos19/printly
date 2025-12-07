@@ -25,7 +25,7 @@ export default function Layout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang={"en"}>
+    <html lang={"en"} className={"scroll-smooth"}>
       <body className={`${fontSans.variable} ${fontMono.variable} antialiased`}>
         <AuthProvider>
           <ServerProvider>
