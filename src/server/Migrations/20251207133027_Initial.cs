@@ -4,7 +4,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace MocklyServer.Migrations
+namespace PrintlyServer.Migrations
 {
     /// <inheritdoc />
     public partial class Initial : Migration
