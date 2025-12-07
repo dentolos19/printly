@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
-using MocklyServer.Extensions;
+using PrintlyServer.Extensions;
 
-namespace MocklyServer;
+namespace PrintlyServer;
 
 public class DatabaseContextFactory : IDesignTimeDbContextFactory<DatabaseContext>
 {

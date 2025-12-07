@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace MocklyServer.Middlewares;
+namespace PrintlyServer.Middlewares;
 
 public class LoggingMiddleware(RequestDelegate next, ILogger<LoggingMiddleware> logger)
 {

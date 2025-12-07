@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
-namespace MocklyServer.Extensions;
+namespace PrintlyServer.Extensions;
 
 public static class UtilityExtensions
 {

@@ -1,4 +1,4 @@
-# Mockly
+# Printly
 
 An AI-powered product design tool for creating mockups of clothes, mugs, and more!
 

@@ -1,4 +1,4 @@
-# Mockly Coding Instructions
+# Printly Coding Instructions
 
 This repository contains two main projects:
 
@@ -12,7 +12,7 @@ These commands assume that you are in the workspace root.
 ### Build Server
 
 ```pwsh
-dotnet build src/server/MocklyServer.csproj --configuration Debug
+dotnet build src/server/PrintlyServer.csproj --configuration Debug
 ```
 
 ### Run Migrations

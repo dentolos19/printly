@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using MocklyServer.Services;
+using PrintlyServer.Services;
 
-namespace MocklyServer.Controllers;
+namespace PrintlyServer.Controllers;
 
 [Route("design")]
 public class DesignController(DatabaseContext context, GeminiService geminiService) : BaseController(context)

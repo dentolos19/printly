@@ -1,4 +1,4 @@
-﻿namespace MocklyServer.Auth;
+﻿namespace PrintlyServer.Auth;
 
 public static class Policies
 {

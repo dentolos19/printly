@@ -1,7 +1,7 @@
 using Amazon.Runtime;
 using Amazon.S3;
 
-namespace MocklyServer.Services;
+namespace PrintlyServer.Services;
 
 public class StorageService
 {

@@ -2,7 +2,7 @@ using System.Security.Cryptography;
 using MimeDetective;
 using MimeDetective.Definitions;
 
-namespace MocklyServer;
+namespace PrintlyServer;
 
 public static class Utilities
 {

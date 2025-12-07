@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 
-namespace MocklyServer.Services;
+namespace PrintlyServer.Services;
 
 public class GeminiService
 {

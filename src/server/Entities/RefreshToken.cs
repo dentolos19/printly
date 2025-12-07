@@ -1,4 +1,4 @@
-namespace MocklyServer.Entities;
+namespace PrintlyServer.Entities;
 
 public class RefreshToken : BaseEntity
 {

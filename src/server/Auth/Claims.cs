@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
 
-namespace MocklyServer.Auth;
+namespace PrintlyServer.Auth;
 
 /// <summary>
 /// A collection of C# <see cref="Claim"/> strings that

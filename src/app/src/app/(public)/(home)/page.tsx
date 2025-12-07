@@ -6,7 +6,7 @@ export default function Page() {
   return (
     <div>
       <div className={"flex items-center justify-between h-16 border-b px-4"}>
-        <h1 className={"font-mono font-bold text-xl"}>Mockly</h1>
+        <h1 className={"font-mono font-bold text-xl"}>Printly</h1>
         <div>
           <LoggedIn>
             <Button variant={"default"} asChild>

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 
-namespace MocklyServer.Entities;
+namespace PrintlyServer.Entities;
 
 public class User : IdentityUser
 {

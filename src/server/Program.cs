@@ -1,6 +1,6 @@
 using DotNetEnv.Configuration;
-using MocklyServer.Extensions;
-using MocklyServer.Services;
+using PrintlyServer.Extensions;
+using PrintlyServer.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

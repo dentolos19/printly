@@ -5,10 +5,10 @@ using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using MocklyServer.Auth;
-using MocklyServer.Entities;
+using PrintlyServer.Auth;
+using PrintlyServer.Entities;
 
-namespace MocklyServer.Services;
+namespace PrintlyServer.Services;
 
 public class IdentityService
 {

@@ -5,10 +5,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using MocklyServer.Auth;
-using MocklyServer.Entities;
+using PrintlyServer.Auth;
+using PrintlyServer.Entities;
 
-namespace MocklyServer.Extensions;
+namespace PrintlyServer.Extensions;
 
 public static class ServiceExtensions
 {

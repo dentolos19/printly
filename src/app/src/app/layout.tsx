@@ -16,7 +16,7 @@ const fontMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mockly",
+  title: "Printly",
 };
 
 export default function Layout({

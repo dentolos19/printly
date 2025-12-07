@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "mockly",
+  "name": "printly",
   "main": ".open-next/worker.js",
   "compatibility_date": "2025-10-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
@@ -24,7 +24,7 @@
   },
   "routes": [
     {
-      "pattern": "mockly.dennise.me",
+      "pattern": "printly.dennise.me",
       "custom_domain": true
     }
   ]

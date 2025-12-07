@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using MocklyServer.Services;
+using PrintlyServer.Services;
 
-namespace MocklyServer.Controllers;
+namespace PrintlyServer.Controllers;
 
 [Route("auth")]
 [Tags("Authentication")]

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace MocklyServer.Controllers;
+namespace PrintlyServer.Controllers;
 
 [Route("/")]
 public class RootController(DatabaseContext context) : BaseController(context)
@@ -9,7 +9,7 @@ public class RootController(DatabaseContext context) : BaseController(context)
     [Route("")]
     public IActionResult GetRoot()
     {
-        return Ok("Welcome to Mockly Server!");
+        return Ok("Welcome to Printly Server!");
     }
 
     [HttpGet]

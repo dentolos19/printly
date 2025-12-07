@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using MocklyServer.Entities;
-using MocklyServer.Extensions;
+using PrintlyServer.Entities;
+using PrintlyServer.Extensions;
 
-namespace MocklyServer;
+namespace PrintlyServer;
 
 public class DatabaseContext(DbContextOptions<DatabaseContext> options) : IdentityDbContext<User>(options)
 {

@@ -1,10 +1,10 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using MocklyServer.Auth;
-using MocklyServer.Middlewares;
+using PrintlyServer.Auth;
+using PrintlyServer.Middlewares;
 
-namespace MocklyServer.Extensions;
+namespace PrintlyServer.Extensions;
 
 public static class AppExtensions
 {

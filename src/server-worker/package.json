@@ -1,5 +1,5 @@
 {
-  "name": "mockly-server",
+  "name": "printly-server",
   "private": true,
   "scripts": {
     "dev": "wrangler dev",

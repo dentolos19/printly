@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
 
-namespace MocklyServer.Auth;
+namespace PrintlyServer.Auth;
 
 /// <summary>
 /// A helper class that exposes constants for each role, along with methods for getting each role's <see cref="Claims"/>
