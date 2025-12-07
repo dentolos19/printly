@@ -23,8 +23,14 @@ function NestedPage() {
   const auth = useAuth();
 
   useEffect(() => {
+    if (auth.tokens) {
+      router.push("/");
+      return;
+    }
+
     const accessToken = searchParams.get("accessToken");
     const refreshToken = searchParams.get("refreshToken");
+
     if (accessToken && refreshToken) {
       auth.loginWithToken(accessToken, refreshToken);
       toast.success("Logged in successfully with Google!");
