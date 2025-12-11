@@ -17,6 +17,19 @@ public static class Utilities
         return contentType ?? defaultType;
     }
 
+    public static string ComputeHash(Stream stream)
+    {
+        // Reset stream position
+        stream.Seek(0, SeekOrigin.Begin);
+
+        // Compute hash using SHA256
+        using var sha256 = SHA256.Create();
+        var hashBytes = sha256.ComputeHash(stream);
+
+        // Convert hash to hexadecimal string
+        return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+    }
+
     public static string GenerateSecureToken()
     {
         var token = new byte[64];
