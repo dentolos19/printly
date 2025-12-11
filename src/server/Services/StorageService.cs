@@ -61,7 +61,7 @@ public class StorageService
         // Execute upload request
         await _client.PutObjectAsync(request);
 
-        // Record asset in database
+        // Record file in the database
         var asset = _context.Add(new Asset
         {
             Id = fileId,
@@ -70,6 +70,7 @@ public class StorageService
             Hash = fileHash,
             Size = fileSize,
         });
+        await _context.SaveChangesAsync();
 
         return asset.Entity;
     }
@@ -102,6 +103,7 @@ public class StorageService
 
     public async Task DeleteFileAsync(Asset file)
     {
+        // Mark the file as deleted in the database
         file.IsDeleted = true;
         _context.Assets.Update(file);
         await _context.SaveChangesAsync();

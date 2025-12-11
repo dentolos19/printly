@@ -164,7 +164,6 @@ namespace PrintlyServer.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Hash")
@@ -215,7 +214,6 @@ namespace PrintlyServer.Migrations
                         .HasColumnType("jsonb");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Name")

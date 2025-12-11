@@ -13,8 +13,8 @@ builder.Services.SetupRouting();
 builder.Services.SetupDocumentation();
 
 builder.Services.AddScoped<IdentityService>();
-builder.Services.AddSingleton<StorageService>();
-builder.Services.AddSingleton<GeminiService>();
+builder.Services.AddScoped<StorageService>();
+builder.Services.AddScoped<GenerativeService>();
 
 var app = builder.Build();
 

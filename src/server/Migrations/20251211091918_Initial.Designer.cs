@@ -12,7 +12,7 @@ using PrintlyServer.Data;
 namespace PrintlyServer.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20251211071704_Initial")]
+    [Migration("20251211091918_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -167,7 +167,6 @@ namespace PrintlyServer.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Hash")
@@ -218,7 +217,6 @@ namespace PrintlyServer.Migrations
                         .HasColumnType("jsonb");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Name")

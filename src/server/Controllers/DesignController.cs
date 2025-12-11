@@ -5,13 +5,14 @@ using PrintlyServer.Services;
 namespace PrintlyServer.Controllers;
 
 [Route("design")]
-public class DesignController(DatabaseContext context, GeminiService geminiService) : BaseController(context)
+public class DesignController(DatabaseContext context, StorageService storageService, GenerativeService generativeService) : BaseController(context)
 {
     [HttpGet]
     [Route("generate")]
     public async Task<IActionResult> GenerateImage([FromQuery] string prompt)
     {
-        var data = await geminiService.GenerateImageAsync(prompt);
-        return File(data, "image/png");
+        var asset = await generativeService.GenerateImageAsync(prompt);
+        var stream = await storageService.StreamFileAsync(asset);
+        return File(stream, asset.Type);
     }
 }
