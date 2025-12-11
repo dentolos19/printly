@@ -1,4 +1,4 @@
-# Printly Coding Instructions
+# Printly Development
 
 This repository contains two main projects:
 
