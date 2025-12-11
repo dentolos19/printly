@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using PrintlyServer.Entities;
+using PrintlyServer.Data.Entities;
 using PrintlyServer.Extensions;
 
-namespace PrintlyServer;
+namespace PrintlyServer.Data;
 
 public class DatabaseContext(DbContextOptions<DatabaseContext> options) : IdentityDbContext<User>(options)
 {

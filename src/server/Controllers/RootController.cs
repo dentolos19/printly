@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using PrintlyServer.Data;
 
 namespace PrintlyServer.Controllers;
 

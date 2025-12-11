@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
 
-namespace PrintlyServer.Auth;
+namespace PrintlyServer.Data.Auth;
 
 /// <summary>
 /// A collection of C# <see cref="Claim"/> strings that

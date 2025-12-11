@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using PrintlyServer.Extensions;
 
-namespace PrintlyServer;
+namespace PrintlyServer.Data;
 
 public class DatabaseContextFactory : IDesignTimeDbContextFactory<DatabaseContext>
 {

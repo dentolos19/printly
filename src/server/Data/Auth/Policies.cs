@@ -1,4 +1,4 @@
-﻿namespace PrintlyServer.Auth;
+﻿namespace PrintlyServer.Data.Auth;
 
 public static class Policies
 {

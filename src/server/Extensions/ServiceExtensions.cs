@@ -5,8 +5,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using PrintlyServer.Auth;
-using PrintlyServer.Entities;
+using PrintlyServer.Data;
+using PrintlyServer.Data.Auth;
+using PrintlyServer.Data.Entities;
 
 namespace PrintlyServer.Extensions;
 

@@ -1,7 +1,8 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using PrintlyServer.Auth;
+using PrintlyServer.Data;
+using PrintlyServer.Data.Auth;
 using PrintlyServer.Middlewares;
 
 namespace PrintlyServer.Extensions;
