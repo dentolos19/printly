@@ -5,7 +5,11 @@ using PrintlyServer.Services;
 namespace PrintlyServer.Controllers;
 
 [Route("design")]
-public class DesignController(DatabaseContext context, StorageService storageService, GenerativeService generativeService) : BaseController(context)
+public class DesignController(
+    DatabaseContext context,
+    StorageService storageService,
+    GenerativeService generativeService
+) : BaseController(context)
 {
     [HttpGet]
     [Route("generate")]

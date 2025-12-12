@@ -32,7 +32,7 @@ public class StorageService
             {
                 RegionEndpoint = Amazon.RegionEndpoint.USEast1,
                 ServiceURL = bucketEndpointUrl,
-                ForcePathStyle = true
+                ForcePathStyle = true,
             }
         );
 
@@ -55,21 +55,23 @@ public class StorageService
             InputStream = file,
             ContentType = fileType,
             DisablePayloadSigning = true,
-            UseChunkEncoding = false
+            UseChunkEncoding = false,
         };
 
         // Execute upload request
         await _client.PutObjectAsync(request);
 
         // Record file in the database
-        var asset = _context.Add(new Asset
-        {
-            Id = fileId,
-            Name = name,
-            Type = fileType,
-            Hash = fileHash,
-            Size = fileSize,
-        });
+        var asset = _context.Add(
+            new Asset
+            {
+                Id = fileId,
+                Name = name,
+                Type = fileType,
+                Hash = fileHash,
+                Size = fileSize,
+            }
+        );
         await _context.SaveChangesAsync();
 
         return asset.Entity;
@@ -81,7 +83,7 @@ public class StorageService
         {
             BucketName = _bucketName,
             Key = $"{_bucketPrefix}/{file.Id}",
-            Expires = DateTime.UtcNow.AddMinutes(60)
+            Expires = DateTime.UtcNow.AddMinutes(60),
         };
 
         // Generate and return the pre-signed URL
@@ -90,11 +92,7 @@ public class StorageService
 
     public async Task<Stream> StreamFileAsync(Asset file)
     {
-        var request = new GetObjectRequest
-        {
-            BucketName = _bucketName,
-            Key = $"{_bucketPrefix}/{file.Id}"
-        };
+        var request = new GetObjectRequest { BucketName = _bucketName, Key = $"{_bucketPrefix}/{file.Id}" };
 
         // Execute request and return download stream
         var response = await _client.GetObjectAsync(request);
