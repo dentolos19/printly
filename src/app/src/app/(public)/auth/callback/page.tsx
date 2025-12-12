@@ -1,23 +1,12 @@
 "use client";
 
-import { Spinner } from "@/components/ui/spinner";
+import LoadingSpinner from "@/components/loading-spinner";
 import { useAuth } from "@/lib/providers/auth";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect } from "react";
+import { useEffect } from "react";
 import { toast } from "sonner";
 
-function LoadingDisplay() {
-  return (
-    <div className={"h-dvh grid place-items-center"}>
-      <div className={"flex flex-col items-center gap-4"}>
-        <Spinner />
-        <p className={"text-muted-foreground"}>Completing Google Login...</p>
-      </div>
-    </div>
-  );
-}
-
-function NestedPage() {
+export default function Page() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const auth = useAuth();
@@ -41,13 +30,5 @@ function NestedPage() {
     }
   }, [searchParams, auth, router]);
 
-  return <LoadingDisplay />;
-}
-
-export default function Page() {
-  return (
-    <Suspense fallback={<LoadingDisplay />}>
-      <NestedPage />
-    </Suspense>
-  );
+  return <LoadingSpinner className={"h-dvh"} />;
 }

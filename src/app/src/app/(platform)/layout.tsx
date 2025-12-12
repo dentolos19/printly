@@ -1,5 +1,6 @@
 "use client";
 
+import AccessDenied from "@/components/access-denied";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -27,6 +28,7 @@ import { useAuth } from "@/lib/providers/auth";
 import { BellIcon, LayoutDashboardIcon, LogOutIcon, MoreVerticalIcon, UserIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ReactNode } from "react";
 
 function NestedLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -125,7 +127,13 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default function Layout({ children }: { children: ReactNode }) {
+  const { claims } = useAuth();
+
+  if (!claims) {
+    return <AccessDenied className={"h-dvh"} />;
+  }
+
   return (
     <SidebarProvider>
       <NestedLayout>{children}</NestedLayout>

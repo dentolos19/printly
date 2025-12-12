@@ -42,6 +42,7 @@ public class GenerativeService
         var responseBody = await response.Content.ReadAsStringAsync();
         var responseJson = JsonSerializer.Deserialize<JsonElement>(responseBody);
 
+        // Extract and return generated text
         return responseJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString()
             ?? string.Empty;
     }
@@ -67,6 +68,7 @@ public class GenerativeService
         var responseBody = await response.Content.ReadAsStringAsync();
         var responseJson = JsonSerializer.Deserialize<JsonElement>(responseBody);
 
+        // Extract image URL from response
         var imageUrl =
             responseJson
                 .GetProperty("choices")[0]
@@ -76,11 +78,14 @@ public class GenerativeService
                 .GetProperty("url")
                 .GetString()
             ?? string.Empty;
+
+        // Convert base64 image to stream
         var imageText = imageUrl.Split(',')[1];
         var imageBytes = Convert.FromBase64String(imageText);
         var imageStream = new MemoryStream(imageBytes);
-        var imageAsset = await _storage.UploadFileAsync(imageStream, prompt);
 
+        // Upload image to storage and return asset
+        var imageAsset = await _storage.UploadFileAsync(imageStream, prompt);
         return imageAsset;
     }
 }

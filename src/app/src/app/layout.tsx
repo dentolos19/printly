@@ -3,6 +3,7 @@ import AuthProvider from "@/lib/providers/auth";
 import ServerProvider from "@/lib/providers/server";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ReactNode } from "react";
 import "./globals.css";
 
 const fontSans = Geist({
@@ -19,11 +20,7 @@ export const metadata: Metadata = {
   title: "Printly",
 };
 
-export default function Layout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function Layout({ children }: { children: ReactNode }) {
   return (
     <html lang={"en"} className={"scroll-smooth"}>
       <body className={`${fontSans.variable} ${fontMono.variable} antialiased`}>

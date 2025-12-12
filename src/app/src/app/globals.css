@@ -114,15 +114,8 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
-  }
-
-  h1.typo {
-    @apply scroll-m-20 text-center text-4xl font-extrabold tracking-tight text-balance;
-  }
-
-  p.typo {
-    @apply leading-7 [&:not(:first-child)]:mt-6;
   }
 }

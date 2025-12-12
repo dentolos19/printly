@@ -1,11 +1,15 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { LoggedIn, LoggedOut } from "@/lib/providers/auth";
+import { LoggedIn, LoggedOut, useAuth } from "@/lib/providers/auth";
 import { Check, Package, Palette, Truck } from "lucide-react";
 import Link from "next/link";
 
 export default function Page() {
+  const { claims } = useAuth();
+
   return (
     <div className={"min-h-screen flex flex-col"}>
       {/* Header */}
@@ -32,11 +36,8 @@ export default function Page() {
             </Button>
           </LoggedIn>
           <LoggedOut>
-            <Button variant="ghost" asChild className="mr-2">
-              <Link href="/auth">Log in</Link>
-            </Button>
             <Button variant="default" asChild>
-              <Link href="/auth?mode=signup">Sign up</Link>
+              <Link href="/auth">Login</Link>
             </Button>
           </LoggedOut>
         </div>
