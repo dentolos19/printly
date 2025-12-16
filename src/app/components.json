@@ -3,6 +3,7 @@
   "style": "new-york",
   "rsc": true,
   "tsx": true,
+  "iconLibrary": "lucide",
   "tailwind": {
     "config": "",
     "css": "src/app/globals.css",
@@ -10,13 +11,12 @@
     "cssVariables": true,
     "prefix": ""
   },
-  "iconLibrary": "lucide",
   "aliases": {
-    "components": "@/components",
-    "ui": "@/components/ui",
     "lib": "@/lib",
     "hooks": "@/lib/hooks",
-    "utils": "@/lib/utils"
+    "utils": "@/lib/utils",
+    "components": "@/components",
+    "ui": "@/components/ui"
   },
   "registries": {}
 }
