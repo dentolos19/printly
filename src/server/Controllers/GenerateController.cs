@@ -4,15 +4,23 @@ using PrintlyServer.Services;
 
 namespace PrintlyServer.Controllers;
 
-[Route("design")]
-public class DesignController(
+[Route("generate")]
+public class GenerateController(
     DatabaseContext context,
     StorageService storageService,
     GenerativeService generativeService
 ) : BaseController(context)
 {
     [HttpGet]
-    [Route("generate")]
+    [Route("text")]
+    public async Task<IActionResult> GenerateText([FromQuery] string prompt)
+    {
+        var text = await generativeService.GenerateTextAsync(prompt);
+        return Ok(text);
+    }
+
+    [HttpGet]
+    [Route("image")]
     public async Task<IActionResult> GenerateImage([FromQuery] string prompt)
     {
         var asset = await generativeService.GenerateImageAsync(prompt);

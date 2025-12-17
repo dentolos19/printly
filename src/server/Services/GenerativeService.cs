@@ -1,7 +1,6 @@
 ﻿using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using PrintlyServer.Data.Entities;
 
 namespace PrintlyServer.Services;
@@ -21,6 +20,8 @@ public class GenerativeService
         // Initialize HTTP client
         _http = new HttpClient();
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        _http.DefaultRequestHeaders.Add("HTTP-Referer", "https://printly.dennise.me");
+        _http.DefaultRequestHeaders.Add("X-Title", "Printly");
     }
 
     public async Task<string> GenerateTextAsync(string prompt)
