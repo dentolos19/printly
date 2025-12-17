@@ -7,7 +7,7 @@ export default function LoadingSpinner(props: ComponentProps<"div">) {
     <div className={cn("flex items-center justify-center", props.className)}>
       <div className={"space-y-2"}>
         <Spinner className={"mx-auto size-6"} />
-        <p className={"text-sm text-muted-foreground"}>Making your prints more lively...</p>
+        <p className={"text-muted-foreground text-sm"}>Making your prints more lively...</p>
       </div>
     </div>
   );

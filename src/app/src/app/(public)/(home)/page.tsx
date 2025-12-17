@@ -11,14 +11,14 @@ export default function Page() {
   const { claims } = useAuth();
 
   return (
-    <div className={"min-h-screen flex flex-col"}>
+    <div className={"flex min-h-screen flex-col"}>
       {/* Header */}
-      <header className="flex items-center justify-between h-16 border-b px-4 lg:px-8 sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
+      <header className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 flex h-16 items-center justify-between border-b px-4 backdrop-blur lg:px-8">
         <div className="flex items-center gap-2">
           <img src={"/icon.png"} className={"size-6"} />
-          <h1 className="font-mono font-bold text-xl">Printly</h1>
+          <h1 className="font-mono text-xl font-bold">Printly</h1>
         </div>
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+        <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
           <Link href="#products" className="hover:underline">
             Products
           </Link>
@@ -45,10 +45,10 @@ export default function Page() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="py-20 px-4 lg:px-8 text-center bg-muted/30">
-          <div className="max-w-3xl mx-auto space-y-6">
+        <section className="bg-muted/30 px-4 py-20 text-center lg:px-8">
+          <div className="mx-auto max-w-3xl space-y-6">
             <h2 className="text-4xl font-extrabold tracking-tight lg:text-5xl">Custom Apparel for Your Brand</h2>
-            <p className="text-xl text-muted-foreground">
+            <p className="text-muted-foreground text-xl">
               Design and print high-quality t-shirts, hoodies, and more. Perfect for teams, events, and merchandise.
             </p>
             <div className="flex justify-center gap-4 pt-4">
@@ -63,31 +63,31 @@ export default function Page() {
         </section>
 
         {/* Features Grid */}
-        <section className="py-16 px-4 lg:px-8 container mx-auto">
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="flex flex-col items-center text-center space-y-3">
-              <div className="p-3 bg-primary/10 rounded-full">
-                <Palette className="h-8 w-8 text-primary" />
+        <section className="container mx-auto px-4 py-16 lg:px-8">
+          <div className="grid gap-8 md:grid-cols-3">
+            <div className="flex flex-col items-center space-y-3 text-center">
+              <div className="bg-primary/10 rounded-full p-3">
+                <Palette className="text-primary h-8 w-8" />
               </div>
-              <h3 className="font-bold text-xl">Easy Design Tool</h3>
+              <h3 className="text-xl font-bold">Easy Design Tool</h3>
               <p className="text-muted-foreground">
                 Upload your artwork or use our intuitive design studio to create stunning apparel.
               </p>
             </div>
-            <div className="flex flex-col items-center text-center space-y-3">
-              <div className="p-3 bg-primary/10 rounded-full">
-                <Package className="h-8 w-8 text-primary" />
+            <div className="flex flex-col items-center space-y-3 text-center">
+              <div className="bg-primary/10 rounded-full p-3">
+                <Package className="text-primary h-8 w-8" />
               </div>
-              <h3 className="font-bold text-xl">Premium Quality</h3>
+              <h3 className="text-xl font-bold">Premium Quality</h3>
               <p className="text-muted-foreground">
                 We use only the best fabrics and printing techniques to ensure your gear lasts.
               </p>
             </div>
-            <div className="flex flex-col items-center text-center space-y-3">
-              <div className="p-3 bg-primary/10 rounded-full">
-                <Truck className="h-8 w-8 text-primary" />
+            <div className="flex flex-col items-center space-y-3 text-center">
+              <div className="bg-primary/10 rounded-full p-3">
+                <Truck className="text-primary h-8 w-8" />
               </div>
-              <h3 className="font-bold text-xl">Fast Shipping</h3>
+              <h3 className="text-xl font-bold">Fast Shipping</h3>
               <p className="text-muted-foreground">
                 Get your order delivered to your doorstep quickly with our reliable shipping partners.
               </p>
@@ -96,13 +96,13 @@ export default function Page() {
         </section>
 
         {/* Product List */}
-        <section id="products" className="py-16 px-4 lg:px-8 bg-muted/30">
+        <section id="products" className="bg-muted/30 px-4 py-16 lg:px-8">
           <div className="container mx-auto space-y-10">
-            <div className="text-center space-y-2">
+            <div className="space-y-2 text-center">
               <h2 className="text-3xl font-bold">Popular Products</h2>
               <p className="text-muted-foreground">Choose from our best-selling items.</p>
             </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 {
                   name: "Classic Tee",
@@ -126,7 +126,7 @@ export default function Page() {
                 },
               ].map((product, i) => (
                 <Card key={i}>
-                  <div className="aspect-square bg-muted rounded-t-xl flex items-center justify-center text-muted-foreground">
+                  <div className="bg-muted text-muted-foreground flex aspect-square items-center justify-center rounded-t-xl">
                     Product Image
                   </div>
                   <CardHeader>
@@ -134,7 +134,7 @@ export default function Page() {
                     <CardDescription>{product.desc}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p className="font-bold text-lg">{product.price}</p>
+                    <p className="text-lg font-bold">{product.price}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -143,9 +143,9 @@ export default function Page() {
         </section>
 
         {/* Bulk Order Section */}
-        <section id="bulk" className="py-20 px-4 lg:px-8 container mx-auto">
-          <div className="bg-primary text-primary-foreground rounded-3xl p-8 md:p-16 flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="space-y-4 max-w-xl">
+        <section id="bulk" className="container mx-auto px-4 py-20 lg:px-8">
+          <div className="bg-primary text-primary-foreground flex flex-col items-center justify-between gap-8 rounded-3xl p-8 md:flex-row md:p-16">
+            <div className="max-w-xl space-y-4">
               <h2 className="text-3xl font-bold">Ordering for a Large Team?</h2>
               <p className="text-primary-foreground/90 text-lg">
                 We offer exclusive discounts for bulk orders over 50 items. Get a dedicated account manager and free
@@ -163,8 +163,8 @@ export default function Page() {
                 </li>
               </ul>
             </div>
-            <div className="bg-background text-foreground p-6 rounded-xl w-full max-w-md shadow-lg">
-              <h3 className="font-bold text-xl mb-4">Get a Bulk Quote</h3>
+            <div className="bg-background text-foreground w-full max-w-md rounded-xl p-6 shadow-lg">
+              <h3 className="mb-4 text-xl font-bold">Get a Bulk Quote</h3>
               <form className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -199,8 +199,8 @@ export default function Page() {
         </section>
 
         {/* Contact Section */}
-        <section id="contact" className="py-16 px-4 lg:px-8 bg-muted/30">
-          <div className="container mx-auto max-w-2xl text-center space-y-8">
+        <section id="contact" className="bg-muted/30 px-4 py-16 lg:px-8">
+          <div className="container mx-auto max-w-2xl space-y-8 text-center">
             <h2 className="text-3xl font-bold">Still have questions?</h2>
             <p className="text-muted-foreground">
               Our support team is here to help you with any questions about products, design, or shipping.
@@ -217,8 +217,8 @@ export default function Page() {
         </section>
       </main>
 
-      <footer className="py-8 border-t text-center text-sm text-muted-foreground">
-        <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
+      <footer className="text-muted-foreground border-t py-8 text-center text-sm">
+        <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 md:flex-row">
           <p>&copy; 2025 Printly. All rights reserved.</p>
           <div className="flex gap-6">
             <Link href="#" className="hover:underline">

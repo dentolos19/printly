@@ -345,7 +345,7 @@ export default function Designer(props: ComponentProps<"div">) {
   return (
     <div {...props} className={cn(props.className, "grid grid-cols-[auto_1fr] grid-rows-[auto_1fr]")}>
       {/* Menu */}
-      <Menubar className={"col-span-2 rounded-none border-b bg-sidebar"}>
+      <Menubar className={"bg-sidebar col-span-2 rounded-none border-b"}>
         <MenubarMenu>
           <MenubarTrigger>File</MenubarTrigger>
           <MenubarContent>
@@ -403,7 +403,7 @@ export default function Designer(props: ComponentProps<"div">) {
       </Menubar>
 
       {/* Tools */}
-      <div className={"border-r p-1 flex flex-col gap-1 shadow bg-background"}>
+      <div className={"bg-background flex flex-col gap-1 border-r p-1 shadow"}>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -518,7 +518,7 @@ export default function Designer(props: ComponentProps<"div">) {
 
       {/* Canvas */}
       <div className={"grid place-items-center"}>
-        <canvas ref={canvasRef} className={"border rounded-lg shadow"}></canvas>
+        <canvas ref={canvasRef} className={"rounded-lg border shadow"}></canvas>
         <input ref={fileRef} type={"file"} accept={"image/*"} className={"hidden"} onChange={handleImageSelected} />
       </div>
     </div>

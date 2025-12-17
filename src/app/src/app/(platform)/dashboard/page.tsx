@@ -6,10 +6,10 @@ import Link from "next/link";
 
 export default function Page() {
   return (
-    <div className={"p-6 w-full"}>
-      <div className={"flex justify-between mb-8"}>
+    <div className={"w-full p-6"}>
+      <div className={"mb-8 flex justify-between"}>
         <div>
-          <h1 className={"font-bold mb-2 text-4xl"}>Welcome to Printly</h1>
+          <h1 className={"mb-2 text-4xl font-bold"}>Welcome to Printly</h1>
           <p className={"text-muted-foreground"}>This is your dashboard where you can manage your projects.</p>
         </div>
         <Button size={"lg"} asChild>

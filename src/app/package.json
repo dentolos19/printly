@@ -4,6 +4,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
+    "format": "prettier . --write",
     "cf:types": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "cf:build": "opennextjs-cloudflare build"
   },
