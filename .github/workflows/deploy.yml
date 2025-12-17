@@ -31,11 +31,11 @@ jobs:
 
       - name: Generate Types for App
         working-directory: src/app
-        run: pnpm run cf:gen
+        run: pnpm run cf:types
 
       - name: Generate Types for Server
         working-directory: src/server-worker
-        run: pnpm run cf:gen
+        run: pnpm run cf:types
 
       - name: Build App
         working-directory: src/app
