@@ -12,12 +12,12 @@ public class RootController(DatabaseContext context) : BaseController(context)
     [Route("")]
     public IActionResult GetRoot()
     {
-        return Ok("Welcome to Printly Server!");
+        return Redirect("/swagger");
     }
 
     [HttpGet]
     [Route("environment")]
-    [Authorize(Roles = Roles.User)]
+    [Authorize(Roles = Roles.Admin)]
     public IActionResult GetEnvironment()
     {
         var variables = Environment
