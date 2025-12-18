@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PrintlyServer.Data;
+using PrintlyServer.Data.Auth;
 
 namespace PrintlyServer.Controllers;
 
@@ -15,6 +17,7 @@ public class RootController(DatabaseContext context) : BaseController(context)
 
     [HttpGet]
     [Route("environment")]
+    [Authorize(Roles = Roles.User)]
     public IActionResult GetEnvironment()
     {
         var variables = Environment
