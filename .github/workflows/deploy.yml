@@ -1,4 +1,4 @@
-name: Cloudflare Deployment
+name: Deployment
 on:
   push:
     branches:
