@@ -55,6 +55,9 @@ public static class AppExtensions
         if (!app.Environment.IsProduction())
             return app;
 
+        // Enforce secure HTTP connections in production
+        app.UseHttpsRedirection();
+
         using var scope = app.Services.CreateScope();
 
         // Apply migrations to database for production
@@ -72,10 +75,10 @@ public static class AppExtensions
         if (!app.Environment.IsDevelopment())
             return app;
 
-        using var scope = app.Services.CreateScope();
-
         // Use the developer exception page for detailed error information during development
         app.UseDeveloperExceptionPage();
+
+        using var scope = app.Services.CreateScope();
 
         // Ensure database is created for development
         var database = scope.ServiceProvider.GetRequiredService<DatabaseContext>().Database;

@@ -1,10 +1,13 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PrintlyServer.Data;
+using PrintlyServer.Data.Auth;
 using PrintlyServer.Services;
 
 namespace PrintlyServer.Controllers;
 
 [Route("generate")]
+[Authorize(Roles = Roles.User)]
 public class GenerateController(
     DatabaseContext context,
     StorageService storageService,

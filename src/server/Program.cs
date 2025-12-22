@@ -27,7 +27,6 @@ await app.SetupProductionAsync();
 await app.SetupDevelopmentAsync();
 await app.SetupRolesAsync();
 
-app.UseHttpsRedirection();
 app.MapControllers();
 
 app.Run();

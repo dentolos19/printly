@@ -24,7 +24,7 @@ public static class ServiceExtensions
                 "AllowAll",
                 policy =>
                 {
-                    policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+                    policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().AllowCredentials();
                 }
             );
         });
