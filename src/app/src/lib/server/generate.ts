@@ -1,6 +1,6 @@
 import { ServerFetch } from "@/types";
 
-export default function generateController(fetch: ServerFetch) {
+export default function initGenerateController(fetch: ServerFetch) {
   return {
     generateText: async (prompt: string) => {
       const response = await fetch(`/generate/text?${new URLSearchParams({ prompt })}`, {
