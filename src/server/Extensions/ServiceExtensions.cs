@@ -24,7 +24,7 @@ public static class ServiceExtensions
                 "AllowAll",
                 policy =>
                 {
-                    policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().AllowCredentials();
+                    policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
                 }
             );
         });
@@ -69,12 +69,10 @@ public static class ServiceExtensions
                 };
             });
 
-        services.AddAuthorization(options =>
-        {
-            // Role-based policies
-            options.AddPolicy(Policies.AdminOnly, policy => policy.RequireRole(Roles.Admin));
-            options.AddPolicy(Policies.LoggedIn, policy => policy.RequireRole(Roles.Admin, Roles.User));
-        });
+        services
+            .AddAuthorizationBuilder()
+            .AddPolicy(Policies.AdminOnly, policy => policy.RequireRole(Roles.Admin))
+            .AddPolicy(Policies.LoggedIn, policy => policy.RequireRole(Roles.Admin, Roles.User));
 
         services
             .AddIdentityApiEndpoints<User>()
