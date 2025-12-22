@@ -1,14 +1,17 @@
 "use client";
 
+import { API_URL } from "@/environment";
 import { useAuth } from "@/lib/providers/auth";
+import generateServerFunctions from "@/lib/server";
+import { ServerFetch, ServerFunctions } from "@/types";
 import { createContext, useContext } from "react";
 
 const ServerContext = createContext<{
-  fetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>;
+  fetch: ServerFetch;
+  api: ServerFunctions;
 }>({
-  fetch: async () => {
-    return new Response();
-  },
+  fetch: async () => new Response(),
+  api: generateServerFunctions(async () => new Response()),
 });
 
 export function useServer() {
@@ -16,17 +19,20 @@ export function useServer() {
 }
 
 export default function ServerProvider({ children }: { children: React.ReactNode }) {
-  const { tokens: auth } = useAuth();
+  const { tokens } = useAuth();
 
-  const fetch = async (info: RequestInfo, init?: RequestInit): Promise<Response> => {
-    return await fetch(info, {
+  const fetch = async (endpoint: string, init?: RequestInit): Promise<Response> => {
+    return await globalThis.fetch(`${API_URL}${endpoint}`, {
       ...init,
+      credentials: "include",
       headers: {
         ...init?.headers,
-        Authorization: auth ? `Bearer ${auth.accessToken}` : "",
+        ...(tokens && { Authorization: `Bearer ${tokens.accessToken}` }),
       },
     });
   };
 
-  return <ServerContext.Provider value={{ fetch }}>{children}</ServerContext.Provider>;
+  const api = generateServerFunctions(fetch);
+
+  return <ServerContext.Provider value={{ fetch, api }}>{children}</ServerContext.Provider>;
 }

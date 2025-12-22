@@ -1,6 +1,7 @@
 "use client";
 
 import { API_URL } from "@/environment";
+import { UserClaims } from "@/types";
 import { jwtDecode } from "jwt-decode";
 import { createContext, useContext, useEffect, useState } from "react";
 
