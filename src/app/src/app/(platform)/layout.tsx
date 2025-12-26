@@ -17,7 +17,7 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -25,7 +25,16 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/providers/auth";
-import { BellIcon, LayoutDashboardIcon, LogOutIcon, MoreVerticalIcon, UserIcon } from "lucide-react";
+import {
+  BellIcon,
+  BookDashedIcon,
+  BookIcon,
+  LayoutDashboardIcon,
+  LogOutIcon,
+  MoreVerticalIcon,
+  PackageIcon,
+  UserIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ReactNode } from "react";
@@ -43,9 +52,20 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Sidebar>
+        <SidebarHeader>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild className={"data-[slot=sidebar-menu-button]:p-1.5!"}>
+                <Link href={"/dashboard"} className={"flex items-center gap-2"}>
+                  <img src={"/icon.png"} className={"size-5"} />
+                  <span className={"text-base font-semibold"}>Printly</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>Platform</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
@@ -53,6 +73,30 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                     <Link href={"/dashboard"}>
                       <LayoutDashboardIcon />
                       <span>Dashboard</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href={"/projects"}>
+                      <BookIcon />
+                      <span>Projects</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href={"/templates"}>
+                      <BookDashedIcon />
+                      <span>Templates</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href={"/orders"}>
+                      <PackageIcon />
+                      <span>Orders</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -69,9 +113,8 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                     size={"lg"}
                     className={"data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"}
                   >
-                    <Avatar className={"h-8 w-8 rounded-lg grayscale"}>
-                      {/* TODO: Add avatar */}
-                      <AvatarImage src={""} alt={"Avatar"} />
+                    <Avatar className={"h-8 w-8 rounded-lg"}>
+                      <AvatarImage src={"/assets/profile.png"} alt={"Avatar"} />
                       <AvatarFallback className={"rounded-lg"}>X</AvatarFallback>
                     </Avatar>
                     <div className={"grid flex-1 text-left text-sm leading-tight"}>
@@ -90,8 +133,7 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                   <DropdownMenuLabel className={"p-0 font-normal"}>
                     <div className={"flex items-center gap-2 px-1 py-1.5 text-left text-sm"}>
                       <Avatar className={"h-8 w-8 rounded-lg"}>
-                        {/* TODO: Add avatar */}
-                        <AvatarImage src={""} alt={"Avatar"} />
+                        <AvatarImage src={"/assets/profile.png"} alt={"Avatar"} />
                         <AvatarFallback className={"rounded-lg"}>X</AvatarFallback>
                       </Avatar>
                       <div className={"grid flex-1 text-left text-sm leading-tight"}>
@@ -102,14 +144,26 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
-                    <DropdownMenuItem>
-                      <UserIcon />
-                      <span>Account</span>
+                    <DropdownMenuItem asChild>
+                      <Link href={"/account"}>
+                        <UserIcon />
+                        <span>Account</span>
+                      </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <BellIcon />
-                      <span>Notifications</span>
+                    <DropdownMenuItem asChild>
+                      <Link href={"/notifications"}>
+                        <BellIcon />
+                        <span>Notifications</span>
+                      </Link>
                     </DropdownMenuItem>
+                    {claims?.role === "admin" && (
+                      <DropdownMenuItem asChild>
+                        <Link href={"/admin"}>
+                          <BellIcon />
+                          <span>Administration</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
