@@ -3,6 +3,9 @@ import type { NextConfig } from "next";
 
 initOpenNextCloudflareForDev();
 
-const config: NextConfig = {};
+const config: NextConfig = {
+  reactStrictMode: false,
+  devIndicators: false,
+};
 
 export default config;
