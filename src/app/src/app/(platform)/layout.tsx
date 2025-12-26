@@ -79,9 +79,9 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <Link href={"/projects"}>
+                    <Link href={"/designs"}>
                       <BookIcon />
-                      <span>Projects</span>
+                      <span>Designs</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
