@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PrintlyServer.Data;
@@ -26,7 +27,13 @@ public class GenerateController(
     [Route("image")]
     public async Task<IActionResult> GenerateImage([FromQuery] string prompt)
     {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var asset = await generativeService.GenerateImageAsync(prompt);
+
+        asset.IsGenerated = true;
+        asset.UserId = userId;
+        await Context.SaveChangesAsync();
+
         var stream = await storageService.StreamFileAsync(asset);
         return File(stream, asset.Type);
     }

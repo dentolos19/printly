@@ -24,7 +24,6 @@ export default function ServerProvider({ children }: { children: React.ReactNode
   const fetch = async (endpoint: string, init?: RequestInit): Promise<Response> => {
     return await globalThis.fetch(`${API_URL}${endpoint}`, {
       ...init,
-      credentials: "include",
       headers: {
         ...init?.headers,
         ...(tokens && { Authorization: `Bearer ${tokens.accessToken}` }),

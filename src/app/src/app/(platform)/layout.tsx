@@ -29,6 +29,7 @@ import {
   BellIcon,
   BookDashedIcon,
   BookIcon,
+  ImageIcon,
   LayoutDashboardIcon,
   LogOutIcon,
   MoreVerticalIcon,
@@ -89,6 +90,14 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                     <Link href={"/templates"}>
                       <BookDashedIcon />
                       <span>Templates</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href={"/assets"}>
+                      <ImageIcon />
+                      <span>Assets</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
