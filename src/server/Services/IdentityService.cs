@@ -34,9 +34,11 @@ public class IdentityService
         var roles = await _userManager.GetRolesAsync(user);
 
         // Define claims accessible for the frontend
+        // NOTE: ClaimTypes.NameIdentifier is required for SignalR's Context.UserIdentifier
         var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+            new Claim(ClaimTypes.NameIdentifier, user.Id),
             new Claim(JwtRegisteredClaimNames.Email, user.Email!),
             new Claim(ClaimTypes.Email, user.Email!),
             new Claim(ClaimTypes.Role, roles.FirstOrDefault() ?? Roles.User),

@@ -3,10 +3,11 @@ param(
     [string]$MigrationName
 )
 
-Write-Host "Loading environment variables from production environment file..." -ForegroundColor Cyan
+Write-Host "Checking for environment file..." -ForegroundColor Cyan
 
-# Load environment variables
+# Load environment variables if file exists
 if (Test-Path ".env.production") {
+    Write-Host "Loading environment variables from production environment file..." -ForegroundColor Cyan
     Get-Content ".env.production" | ForEach-Object {
         if ($_ -match '^\s*([^#][^=]+)=(.*)$') {
             $key = $matches[1].Trim()
@@ -17,8 +18,8 @@ if (Test-Path ".env.production") {
     }
     Write-Host ""
 } else {
-    Write-Host "Environment file not found!" -ForegroundColor Red
-    exit 1
+    Write-Host "Running in Dev Mode (no .env.production found, using default SQLite connection)" -ForegroundColor Yellow
+    Write-Host ""
 }
 
 # Run migrations or add migration

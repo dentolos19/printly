@@ -1,4 +1,5 @@
-﻿using DotNetEnv;
+﻿using System.Security.Claims;
+using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -6,6 +7,16 @@ namespace PrintlyServer.Extensions;
 
 public static class UtilityExtensions
 {
+    /// <summary>
+    /// Gets the user ID from claims, supporting both "sub" claim (when MapInboundClaims = false)
+    /// and the standard NameIdentifier claim.
+    /// </summary>
+    public static string? GetUserId(this ClaimsPrincipal user)
+    {
+        return user.FindFirst("sub")?.Value
+            ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    }
+
     public static DbContextOptionsBuilder UseDatabase(this DbContextOptionsBuilder options)
     {
         // Load environment variables

@@ -25,7 +25,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/providers/auth";
-import { BellIcon, LayoutDashboardIcon, LogOutIcon, MoreVerticalIcon, UserIcon } from "lucide-react";
+import { BellIcon, LayoutDashboardIcon, LogOutIcon, MessageCircleIcon, MoreVerticalIcon, UserIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ReactNode } from "react";
@@ -53,6 +53,14 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                     <Link href={"/dashboard"}>
                       <LayoutDashboardIcon />
                       <span>Dashboard</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href={"/chat"}>
+                      <MessageCircleIcon />
+                      <span>Chat</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
