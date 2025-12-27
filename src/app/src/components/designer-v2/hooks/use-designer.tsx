@@ -744,6 +744,51 @@ export function DesignerProvider({
   );
 
   // ============================================================================
+  // Initial design loading
+  // ============================================================================
+
+  const hasLoadedInitialDesign = useRef(false);
+
+  useEffect(() => {
+    // Load the design when canvas is ready and we have an initial design ID
+    if (canvas && initialDesignId && onLoad && !hasLoadedInitialDesign.current) {
+      hasLoadedInitialDesign.current = true;
+
+      onLoad(initialDesignId)
+        .then((result) => {
+          setDesignName(result.name);
+
+          const data = JSON.parse(result.data);
+          if (data.canvasSize) {
+            setCanvasSize(data.canvasSize);
+            // Update canvas dimensions
+            canvas.setDimensions({
+              width: data.canvasSize.width,
+              height: data.canvasSize.height,
+            });
+          }
+          if (data.backgroundColor) {
+            canvas.backgroundColor = data.backgroundColor;
+          }
+
+          // Load objects onto the canvas
+          return canvas.loadFromJSON({ objects: data.objects || [] });
+        })
+        .then(() => {
+          canvas.renderAll();
+          setIsDirty(false);
+          setSaveStatus("saved");
+          setLastSavedAt(new Date());
+          // Save initial state to history
+          saveHistory();
+        })
+        .catch((error) => {
+          console.error("Failed to load design:", error);
+        });
+    }
+  }, [canvas, initialDesignId, onLoad, saveHistory]);
+
+  // ============================================================================
   // Cleanup
   // ============================================================================
 
