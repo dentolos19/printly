@@ -1,44 +1,51 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useEffect } from "react";
 import { useDesigner } from "./use-designer";
 
-export const useKeyboardShortcuts = () => {
+export function useKeyboardShortcuts() {
   const {
     canvas,
+    canUndo,
+    canRedo,
     undo,
     redo,
     deleteSelected,
     duplicateSelected,
     groupSelected,
     ungroupSelected,
-    canUndo,
-    canRedo,
-    selectedObjects,
+    saveDesign,
   } = useDesigner();
 
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (!canvas) return;
-
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      // Ignore shortcuts when typing in an input
       const target = e.target as HTMLElement;
-      const isInputFocused = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) {
+        return;
+      }
 
-      if (isInputFocused) return;
-
-      const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+      const isCtrlOrMeta = e.ctrlKey || e.metaKey;
+      const isShift = e.shiftKey;
 
       // Undo: Ctrl+Z
-      if (isCtrlOrCmd && e.key === "z" && !e.shiftKey) {
+      if (isCtrlOrMeta && !isShift && e.key === "z") {
         e.preventDefault();
         if (canUndo) undo();
         return;
       }
 
       // Redo: Ctrl+Shift+Z or Ctrl+Y
-      if ((isCtrlOrCmd && e.key === "z" && e.shiftKey) || (isCtrlOrCmd && e.key === "y")) {
+      if (isCtrlOrMeta && ((isShift && e.key === "z") || e.key === "y")) {
         e.preventDefault();
         if (canRedo) redo();
+        return;
+      }
+
+      // Save: Ctrl+S
+      if (isCtrlOrMeta && e.key === "s") {
+        e.preventDefault();
+        saveDesign();
         return;
       }
 
@@ -50,100 +57,96 @@ export const useKeyboardShortcuts = () => {
       }
 
       // Duplicate: Ctrl+D
-      if (isCtrlOrCmd && e.key === "d") {
+      if (isCtrlOrMeta && e.key === "d") {
         e.preventDefault();
         duplicateSelected();
         return;
       }
 
       // Group: Ctrl+G
-      if (isCtrlOrCmd && e.key === "g" && !e.shiftKey) {
+      if (isCtrlOrMeta && !isShift && e.key === "g") {
         e.preventDefault();
         groupSelected();
         return;
       }
 
       // Ungroup: Ctrl+Shift+G
-      if (isCtrlOrCmd && e.key === "g" && e.shiftKey) {
+      if (isCtrlOrMeta && isShift && e.key === "g") {
         e.preventDefault();
         ungroupSelected();
         return;
       }
 
       // Select All: Ctrl+A
-      if (isCtrlOrCmd && e.key === "a") {
+      if (isCtrlOrMeta && e.key === "a") {
         e.preventDefault();
-        canvas.discardActiveObject();
-        const objects = canvas.getObjects();
-        if (objects.length > 0) {
-          const { ActiveSelection } = require("fabric");
-          const selection = new ActiveSelection(objects, { canvas });
-          canvas.setActiveObject(selection);
+        if (canvas) {
+          const objects = canvas.getObjects();
+          if (objects.length > 0) {
+            canvas.discardActiveObject();
+            const selection = new (require("fabric").ActiveSelection)(objects, { canvas });
+            canvas.setActiveObject(selection);
+            canvas.renderAll();
+          }
+        }
+        return;
+      }
+
+      // Deselect: Escape
+      if (e.key === "Escape") {
+        e.preventDefault();
+        if (canvas) {
+          canvas.discardActiveObject();
           canvas.renderAll();
         }
         return;
       }
 
-      // Escape: Deselect
-      if (e.key === "Escape") {
-        e.preventDefault();
-        canvas.discardActiveObject();
-        canvas.renderAll();
-        return;
-      }
+      // Move with arrow keys
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+        if (!canvas) return;
 
-      // Arrow keys: Move selected objects
-      if (selectedObjects.length > 0) {
-        const step = e.shiftKey ? 10 : 1;
+        const activeObject = canvas.getActiveObject();
+        if (!activeObject) return;
+
+        e.preventDefault();
+        const step = isShift ? 10 : 1;
 
         switch (e.key) {
           case "ArrowUp":
-            e.preventDefault();
-            for (const obj of selectedObjects) {
-              obj.set({ top: (obj.top || 0) - step });
-            }
-            canvas.renderAll();
+            activeObject.set({ top: (activeObject.top || 0) - step });
             break;
           case "ArrowDown":
-            e.preventDefault();
-            for (const obj of selectedObjects) {
-              obj.set({ top: (obj.top || 0) + step });
-            }
-            canvas.renderAll();
+            activeObject.set({ top: (activeObject.top || 0) + step });
             break;
           case "ArrowLeft":
-            e.preventDefault();
-            for (const obj of selectedObjects) {
-              obj.set({ left: (obj.left || 0) - step });
-            }
-            canvas.renderAll();
+            activeObject.set({ left: (activeObject.left || 0) - step });
             break;
           case "ArrowRight":
-            e.preventDefault();
-            for (const obj of selectedObjects) {
-              obj.set({ left: (obj.left || 0) + step });
-            }
-            canvas.renderAll();
+            activeObject.set({ left: (activeObject.left || 0) + step });
             break;
         }
-      }
-    },
-    [
-      canvas,
-      undo,
-      redo,
-      deleteSelected,
-      duplicateSelected,
-      groupSelected,
-      ungroupSelected,
-      canUndo,
-      canRedo,
-      selectedObjects,
-    ],
-  );
 
-  useEffect(() => {
+        activeObject.setCoords();
+        canvas.renderAll();
+        return;
+      }
+    }
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleKeyDown]);
-};
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [
+    canvas,
+    canUndo,
+    canRedo,
+    undo,
+    redo,
+    deleteSelected,
+    duplicateSelected,
+    groupSelected,
+    ungroupSelected,
+    saveDesign,
+  ]);
+}

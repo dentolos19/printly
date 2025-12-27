@@ -2,6 +2,10 @@
 
 import type { Canvas, FabricObject } from "fabric";
 
+// ============================================================================
+// Canvas Types
+// ============================================================================
+
 export type CanvasSize = {
   width: number;
   height: number;
@@ -14,6 +18,10 @@ export type CanvasPreset = {
   category: "social" | "print" | "presentation" | "custom";
 };
 
+// ============================================================================
+// Layer Types
+// ============================================================================
+
 export type LayerItem = {
   id: string;
   name: string;
@@ -23,10 +31,31 @@ export type LayerItem = {
   object: FabricObject;
 };
 
+// ============================================================================
+// History Types
+// ============================================================================
+
 export type HistoryState = {
   json: string;
   timestamp: number;
 };
+
+// ============================================================================
+// Tool Types
+// ============================================================================
+
+export type ToolType =
+  | "select"
+  | "text"
+  | "rectangle"
+  | "circle"
+  | "triangle"
+  | "line"
+  | "image"
+  | "draw"
+  | "shapes"
+  | "stickers"
+  | "ai-generator";
 
 export type AlignmentType = "left" | "center" | "right" | "top" | "middle" | "bottom";
 
@@ -34,9 +63,69 @@ export type DistributionType = "horizontal" | "vertical";
 
 export type ExportFormat = "png" | "jpg" | "svg" | "json";
 
-export type ToolType = "select" | "text" | "rectangle" | "circle" | "triangle" | "line" | "image" | "draw";
+// ============================================================================
+// Blend Mode Types
+// ============================================================================
+
+export type BlendMode =
+  | "normal"
+  | "multiply"
+  | "screen"
+  | "overlay"
+  | "darken"
+  | "lighten"
+  | "color-dodge"
+  | "color-burn"
+  | "hard-light"
+  | "soft-light"
+  | "difference"
+  | "exclusion";
+
+export const BLEND_MODES: { value: BlendMode; label: string }[] = [
+  { value: "normal", label: "Normal" },
+  { value: "multiply", label: "Multiply" },
+  { value: "screen", label: "Screen" },
+  { value: "overlay", label: "Overlay" },
+  { value: "darken", label: "Darken" },
+  { value: "lighten", label: "Lighten" },
+  { value: "color-dodge", label: "Color Dodge" },
+  { value: "color-burn", label: "Color Burn" },
+  { value: "hard-light", label: "Hard Light" },
+  { value: "soft-light", label: "Soft Light" },
+  { value: "difference", label: "Difference" },
+  { value: "exclusion", label: "Exclusion" },
+];
+
+// ============================================================================
+// Design Persistence Types
+// ============================================================================
+
+export type DesignData = {
+  version: string;
+  canvasSize: CanvasSize;
+  backgroundColor: string;
+  objects: object[];
+};
+
+export type SaveStatus = "idle" | "saving" | "saved" | "error";
+
+// ============================================================================
+// AI Generator Types
+// ============================================================================
+
+export type GeneratedImage = {
+  id: string;
+  url: string;
+  prompt: string;
+  createdAt: Date;
+};
+
+// ============================================================================
+// Designer Context Value
+// ============================================================================
 
 export type DesignerContextValue = {
+  // Canvas state
   canvas: Canvas | null;
   setCanvas: (canvas: Canvas | null) => void;
   selectedObjects: FabricObject[];
@@ -53,6 +142,8 @@ export type DesignerContextValue = {
   setGridEnabled: (enabled: boolean) => void;
   gridSize: number;
   setGridSize: (size: number) => void;
+
+  // History
   history: HistoryState[];
   historyIndex: number;
   canUndo: boolean;
@@ -60,6 +151,18 @@ export type DesignerContextValue = {
   saveHistory: () => void;
   undo: () => void;
   redo: () => void;
+
+  // Design persistence
+  designId: string | null;
+  designName: string;
+  setDesignName: (name: string) => void;
+  saveStatus: SaveStatus;
+  lastSavedAt: Date | null;
+  isDirty: boolean;
+  saveDesign: () => Promise<void>;
+  loadDesign: (id: string) => Promise<void>;
+
+  // Object actions
   addText: (text?: string) => void;
   addRectangle: () => void;
   addCircle: () => void;
@@ -70,15 +173,30 @@ export type DesignerContextValue = {
   duplicateSelected: () => void;
   groupSelected: () => void;
   ungroupSelected: () => void;
+
+  // Alignment & distribution
   alignObjects: (alignment: AlignmentType) => void;
   distributeObjects: (distribution: DistributionType) => void;
+
+  // Layer ordering
   bringForward: () => void;
   sendBackward: () => void;
   bringToFront: () => void;
   sendToBack: () => void;
+
+  // Export
   exportCanvas: (format: ExportFormat) => void;
   clearCanvas: () => void;
+
+  // AI Generator
+  generatedImages: GeneratedImage[];
+  isGenerating: boolean;
+  generateImage: (prompt: string) => Promise<void>;
 };
+
+// ============================================================================
+// Canvas Presets
+// ============================================================================
 
 export const CANVAS_PRESETS: CanvasPreset[] = [
   // Social Media
@@ -95,6 +213,7 @@ export const CANVAS_PRESETS: CanvasPreset[] = [
   { name: "Letter Portrait", width: 2550, height: 3300, category: "print" },
   { name: "Letter Landscape", width: 3300, height: 2550, category: "print" },
   { name: "Business Card", width: 1050, height: 600, category: "print" },
+  { name: "T-Shirt Design", width: 2800, height: 3200, category: "print" },
 
   // Presentation
   { name: "16:9 HD", width: 1920, height: 1080, category: "presentation" },
@@ -103,6 +222,8 @@ export const CANVAS_PRESETS: CanvasPreset[] = [
 ];
 
 export const DEFAULT_CANVAS_SIZE: CanvasSize = {
-  width: 800,
-  height: 600,
+  width: 2800,
+  height: 3200,
 };
+
+export const DESIGN_DATA_VERSION = "1.0.0";

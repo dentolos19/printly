@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Pipette } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { HexColorInput, HexColorPicker } from "react-colorful";
 
 type ColorPickerProps = {
@@ -38,17 +38,14 @@ const PRESET_COLORS = [
   "#78716c",
 ];
 
-export const ColorPicker = ({ color, onChange, label, className }: ColorPickerProps) => {
+export function ColorPicker({ color, onChange, label, className }: ColorPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const handlePresetClick = useCallback(
-    (presetColor: string) => {
-      onChange(presetColor);
-    },
-    [onChange],
-  );
+  function handlePresetClick(presetColor: string) {
+    onChange(presetColor);
+  }
 
-  const handleEyeDropper = useCallback(() => {
+  function handleEyeDropper() {
     if ("EyeDropper" in window) {
       const eyeDropper = new (
         window as typeof window & { EyeDropper: new () => { open: () => Promise<{ sRGBHex: string }> } }
@@ -57,7 +54,7 @@ export const ColorPicker = ({ color, onChange, label, className }: ColorPickerPr
         onChange(result.sRGBHex);
       });
     }
-  }, [onChange]);
+  }
 
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
@@ -65,6 +62,7 @@ export const ColorPicker = ({ color, onChange, label, className }: ColorPickerPr
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button
+            type={"button"}
             variant={"outline"}
             className={cn("h-8 w-full justify-start gap-2 px-2", !color && "text-muted-foreground")}
           >
@@ -92,7 +90,13 @@ export const ColorPicker = ({ color, onChange, label, className }: ColorPickerPr
                 />
               </div>
               {"EyeDropper" in window && (
-                <Button variant={"outline"} size={"icon"} className={"h-8 w-8"} onClick={handleEyeDropper}>
+                <Button
+                  type={"button"}
+                  variant={"outline"}
+                  size={"icon"}
+                  className={"h-8 w-8"}
+                  onClick={handleEyeDropper}
+                >
                   <Pipette className={"h-3.5 w-3.5"} />
                 </Button>
               )}
@@ -120,4 +124,4 @@ export const ColorPicker = ({ color, onChange, label, className }: ColorPickerPr
       </Popover>
     </div>
   );
-};
+}

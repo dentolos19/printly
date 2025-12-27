@@ -3,13 +3,13 @@
 import { cn } from "@/lib/utils";
 import { Canvas } from "fabric";
 import { useCallback, useEffect, useRef } from "react";
-import { useDesigner } from "./hooks/use-designer";
+import { useDesigner } from "./hooks";
 
 type DesignerCanvasProps = {
   className?: string;
 };
 
-export const DesignerCanvas = ({ className }: DesignerCanvasProps) => {
+export function DesignerCanvas({ className }: DesignerCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const fabricRef = useRef<Canvas | null>(null);
@@ -33,26 +33,7 @@ export const DesignerCanvas = ({ className }: DesignerCanvasProps) => {
     setLayers(newLayers.reverse());
   }, [setLayers]);
 
-  const drawGrid = useCallback(
-    (canvas: Canvas) => {
-      if (!gridEnabled) return;
-
-      const gridLines: string[] = [];
-      const width = canvasSize.width;
-      const height = canvasSize.height;
-
-      for (let i = 0; i <= width; i += gridSize) {
-        gridLines.push(`M ${i} 0 L ${i} ${height}`);
-      }
-      for (let i = 0; i <= height; i += gridSize) {
-        gridLines.push(`M 0 ${i} L ${width} ${i}`);
-      }
-
-      // We'll handle grid via CSS background instead to avoid polluting canvas
-    },
-    [gridEnabled, gridSize, canvasSize],
-  );
-
+  // Initialize canvas
   useEffect(() => {
     if (!canvasRef.current) return;
 
@@ -133,9 +114,9 @@ export const DesignerCanvas = ({ className }: DesignerCanvasProps) => {
 
     const canvas = fabricRef.current;
 
-    const handleObjectMoving = (e: {
+    function handleObjectMoving(e: {
       target?: { left?: number; top?: number; set: (opts: { left?: number; top?: number }) => void };
-    }) => {
+    }) {
       if (!gridEnabled || !e.target) return;
 
       const obj = e.target;
@@ -146,7 +127,7 @@ export const DesignerCanvas = ({ className }: DesignerCanvasProps) => {
         left,
         top,
       });
-    };
+    }
 
     canvas.on("object:moving", handleObjectMoving);
 
@@ -166,17 +147,60 @@ export const DesignerCanvas = ({ className }: DesignerCanvasProps) => {
     : {};
 
   return (
-    <div ref={containerRef} className={cn("bg-muted/50 flex items-center justify-center overflow-auto p-8", className)}>
-      <div
-        className={cn("relative shadow-lg", "ring-border ring-1")}
-        style={{
-          width: canvasSize.width * zoom,
-          height: canvasSize.height * zoom,
-          ...gridBackground,
-        }}
-      >
-        <canvas ref={canvasRef} />
+    <div
+      ref={containerRef}
+      className={cn("bg-muted/50 flex flex-1 items-center justify-center overflow-auto", className)}
+    >
+      {/* Canvas container with drop shadow effect like in Mockly */}
+      <div className={"relative"}>
+        {/* Shadow/reflection effect */}
+        <div
+          className={"absolute -bottom-4 left-1/2 -translate-x-1/2 transform"}
+          style={{
+            width: canvasSize.width * zoom * 0.8,
+            height: 20,
+            background: "radial-gradient(ellipse at center, rgba(0,0,0,0.15) 0%, transparent 70%)",
+          }}
+        />
+
+        {/* Corner shadows for print-effect */}
+        <div
+          className={"absolute top-1/2 -left-4 -translate-y-1/2 transform"}
+          style={{
+            width: 20,
+            height: canvasSize.height * zoom * 0.6,
+            background: "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.08) 100%)",
+          }}
+        />
+        <div
+          className={"absolute top-1/2 -right-4 -translate-y-1/2 transform"}
+          style={{
+            width: 20,
+            height: canvasSize.height * zoom * 0.6,
+            background: "linear-gradient(to left, transparent 0%, rgba(0,0,0,0.08) 100%)",
+          }}
+        />
+        <div
+          className={"absolute -top-4 left-1/2 -translate-x-1/2 transform"}
+          style={{
+            width: canvasSize.width * zoom * 0.6,
+            height: 20,
+            background: "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.08) 100%)",
+          }}
+        />
+
+        {/* Main canvas wrapper */}
+        <div
+          className={cn("relative bg-white shadow-xl ring-1 ring-black/5")}
+          style={{
+            width: canvasSize.width * zoom,
+            height: canvasSize.height * zoom,
+            ...gridBackground,
+          }}
+        >
+          <canvas ref={canvasRef} />
+        </div>
       </div>
     </div>
   );
-};
+}

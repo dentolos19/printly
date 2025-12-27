@@ -3,43 +3,113 @@
 import type { FabricObject } from "fabric";
 import { ActiveSelection, Canvas, Circle, FabricImage, Group, Line, Rect, Textbox, Triangle } from "fabric";
 import type { ReactNode } from "react";
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type {
   AlignmentType,
   CanvasSize,
   DesignerContextValue,
   DistributionType,
   ExportFormat,
+  GeneratedImage,
   HistoryState,
   LayerItem,
+  SaveStatus,
   ToolType,
 } from "../types";
-import { DEFAULT_CANVAS_SIZE } from "../types";
+import { DEFAULT_CANVAS_SIZE, DESIGN_DATA_VERSION } from "../types";
 
 const DesignerContext = createContext<DesignerContextValue | null>(null);
 
 const MAX_HISTORY_SIZE = 50;
+const AUTO_SAVE_DELAY = 3000; // 3 seconds
 
 type DesignerProviderProps = {
   children: ReactNode;
+  initialDesignId?: string | null;
+  initialDesignName?: string;
+  onSave?: (data: { name: string; data: string }) => Promise<{ id: string }>;
+  onLoad?: (id: string) => Promise<{ name: string; data: string }>;
+  onGenerateImage?: (prompt: string) => Promise<string>;
 };
 
-export const DesignerProvider = ({ children }: DesignerProviderProps) => {
+export function DesignerProvider({
+  children,
+  initialDesignId = null,
+  initialDesignName = "Untitled Design",
+  onSave,
+  onLoad,
+  onGenerateImage,
+}: DesignerProviderProps) {
+  // Canvas state
   const [canvas, setCanvas] = useState<Canvas | null>(null);
   const [selectedObjects, setSelectedObjects] = useState<FabricObject[]>([]);
   const [layers, setLayers] = useState<LayerItem[]>([]);
   const [activeTool, setActiveTool] = useState<ToolType>("select");
   const [canvasSize, setCanvasSize] = useState<CanvasSize>(DEFAULT_CANVAS_SIZE);
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(0.25); // Start at 25% zoom for large canvases
   const [gridEnabled, setGridEnabled] = useState(false);
   const [gridSize, setGridSize] = useState(20);
 
+  // History state
   const [history, setHistory] = useState<HistoryState[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const isHistoryAction = useRef(false);
 
+  // Design persistence state
+  const [designId, setDesignId] = useState<string | null>(initialDesignId);
+  const [designName, setDesignName] = useState(initialDesignName);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // AI Generator state
+  const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
+
+  // ============================================================================
+  // Auto-save functionality
+  // ============================================================================
+
+  const triggerAutoSave = useCallback(() => {
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+
+    setIsDirty(true);
+
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      if (onSave && canvas) {
+        setSaveStatus("saving");
+        const canvasData = JSON.stringify({
+          version: DESIGN_DATA_VERSION,
+          canvasSize,
+          backgroundColor: canvas.backgroundColor,
+          objects: canvas.toJSON().objects,
+        });
+
+        onSave({ name: designName, data: canvasData })
+          .then((result) => {
+            if (result.id && !designId) {
+              setDesignId(result.id);
+            }
+            setSaveStatus("saved");
+            setLastSavedAt(new Date());
+            setIsDirty(false);
+          })
+          .catch(() => {
+            setSaveStatus("error");
+          });
+      }
+    }, AUTO_SAVE_DELAY);
+  }, [canvas, canvasSize, designId, designName, onSave]);
+
+  // ============================================================================
+  // History management
+  // ============================================================================
 
   const saveHistory = useCallback(() => {
     if (!canvas || isHistoryAction.current) return;
@@ -60,7 +130,10 @@ export const DesignerProvider = ({ children }: DesignerProviderProps) => {
       return newHistory;
     });
     setHistoryIndex((prev) => Math.min(prev + 1, MAX_HISTORY_SIZE - 1));
-  }, [canvas, historyIndex]);
+
+    // Trigger auto-save after history change
+    triggerAutoSave();
+  }, [canvas, historyIndex, triggerAutoSave]);
 
   const undo = useCallback(() => {
     if (!canvas || !canUndo) return;
@@ -71,8 +144,9 @@ export const DesignerProvider = ({ children }: DesignerProviderProps) => {
       canvas.renderAll();
       setHistoryIndex((prev) => prev - 1);
       isHistoryAction.current = false;
+      triggerAutoSave();
     });
-  }, [canvas, canUndo, history, historyIndex]);
+  }, [canvas, canUndo, history, historyIndex, triggerAutoSave]);
 
   const redo = useCallback(() => {
     if (!canvas || !canRedo) return;
@@ -83,8 +157,87 @@ export const DesignerProvider = ({ children }: DesignerProviderProps) => {
       canvas.renderAll();
       setHistoryIndex((prev) => prev + 1);
       isHistoryAction.current = false;
+      triggerAutoSave();
     });
-  }, [canvas, canRedo, history, historyIndex]);
+  }, [canvas, canRedo, history, historyIndex, triggerAutoSave]);
+
+  // ============================================================================
+  // Design persistence
+  // ============================================================================
+
+  const saveDesign = useCallback(() => {
+    return new Promise<void>((resolve, reject) => {
+      if (!onSave || !canvas) {
+        resolve();
+        return;
+      }
+
+      setSaveStatus("saving");
+      const canvasData = JSON.stringify({
+        version: DESIGN_DATA_VERSION,
+        canvasSize,
+        backgroundColor: canvas.backgroundColor,
+        objects: canvas.toJSON().objects,
+      });
+
+      onSave({ name: designName, data: canvasData })
+        .then((result) => {
+          if (result.id && !designId) {
+            setDesignId(result.id);
+          }
+          setSaveStatus("saved");
+          setLastSavedAt(new Date());
+          setIsDirty(false);
+          resolve();
+        })
+        .catch((error) => {
+          setSaveStatus("error");
+          reject(error);
+        });
+    });
+  }, [canvas, canvasSize, designId, designName, onSave]);
+
+  const loadDesign = useCallback(
+    (id: string) => {
+      return new Promise<void>((resolve, reject) => {
+        if (!onLoad || !canvas) {
+          resolve();
+          return;
+        }
+
+        onLoad(id)
+          .then((result) => {
+            setDesignId(id);
+            setDesignName(result.name);
+
+            const data = JSON.parse(result.data);
+            if (data.canvasSize) {
+              setCanvasSize(data.canvasSize);
+            }
+            if (data.backgroundColor) {
+              canvas.backgroundColor = data.backgroundColor;
+            }
+
+            return canvas.loadFromJSON({ objects: data.objects });
+          })
+          .then(() => {
+            canvas.renderAll();
+            setIsDirty(false);
+            setSaveStatus("saved");
+            setLastSavedAt(new Date());
+            resolve();
+          })
+          .catch((error) => {
+            reject(error);
+          });
+      });
+    },
+    [canvas, onLoad],
+  );
+
+  // ============================================================================
+  // Layer management
+  // ============================================================================
 
   const updateLayers = useCallback(() => {
     if (!canvas) return;
@@ -102,6 +255,10 @@ export const DesignerProvider = ({ children }: DesignerProviderProps) => {
     setLayers(newLayers.reverse());
   }, [canvas]);
 
+  // ============================================================================
+  // Object creation
+  // ============================================================================
+
   const addText = useCallback(
     (text = "Double-click to edit") => {
       if (!canvas) return;
@@ -110,14 +267,14 @@ export const DesignerProvider = ({ children }: DesignerProviderProps) => {
         left: canvasSize.width / 2 - 100,
         top: canvasSize.height / 2 - 20,
         width: 200,
-        fontSize: 24,
+        fontSize: 48,
         fontFamily: "Inter, sans-serif",
         fill: "#000000",
         textAlign: "center",
       });
 
       (textbox as unknown as { id: string }).id = `text-${Date.now()}`;
-      (textbox as unknown as { name: string }).name = "Text";
+      (textbox as unknown as { name: string }).name = "Text Layer";
 
       canvas.add(textbox);
       canvas.setActiveObject(textbox);
@@ -132,10 +289,10 @@ export const DesignerProvider = ({ children }: DesignerProviderProps) => {
     if (!canvas) return;
 
     const rect = new Rect({
-      left: canvasSize.width / 2 - 50,
-      top: canvasSize.height / 2 - 50,
-      width: 100,
-      height: 100,
+      left: canvasSize.width / 2 - 100,
+      top: canvasSize.height / 2 - 100,
+      width: 200,
+      height: 200,
       fill: "#3b82f6",
       stroke: "#1d4ed8",
       strokeWidth: 2,
@@ -157,9 +314,9 @@ export const DesignerProvider = ({ children }: DesignerProviderProps) => {
     if (!canvas) return;
 
     const circle = new Circle({
-      left: canvasSize.width / 2 - 50,
-      top: canvasSize.height / 2 - 50,
-      radius: 50,
+      left: canvasSize.width / 2 - 100,
+      top: canvasSize.height / 2 - 100,
+      radius: 100,
       fill: "#10b981",
       stroke: "#059669",
       strokeWidth: 2,
@@ -179,10 +336,10 @@ export const DesignerProvider = ({ children }: DesignerProviderProps) => {
     if (!canvas) return;
 
     const triangle = new Triangle({
-      left: canvasSize.width / 2 - 50,
-      top: canvasSize.height / 2 - 50,
-      width: 100,
-      height: 100,
+      left: canvasSize.width / 2 - 100,
+      top: canvasSize.height / 2 - 100,
+      width: 200,
+      height: 200,
       fill: "#f59e0b",
       stroke: "#d97706",
       strokeWidth: 2,
@@ -202,10 +359,10 @@ export const DesignerProvider = ({ children }: DesignerProviderProps) => {
     if (!canvas) return;
 
     const line = new Line(
-      [canvasSize.width / 2 - 50, canvasSize.height / 2, canvasSize.width / 2 + 50, canvasSize.height / 2],
+      [canvasSize.width / 2 - 100, canvasSize.height / 2, canvasSize.width / 2 + 100, canvasSize.height / 2],
       {
         stroke: "#000000",
-        strokeWidth: 3,
+        strokeWidth: 4,
       },
     );
 
@@ -247,6 +404,10 @@ export const DesignerProvider = ({ children }: DesignerProviderProps) => {
     },
     [canvas, canvasSize, updateLayers, saveHistory],
   );
+
+  // ============================================================================
+  // Object manipulation
+  // ============================================================================
 
   const deleteSelected = useCallback(() => {
     if (!canvas) return;
@@ -343,6 +504,10 @@ export const DesignerProvider = ({ children }: DesignerProviderProps) => {
     saveHistory();
   }, [canvas, updateLayers, saveHistory]);
 
+  // ============================================================================
+  // Alignment & Distribution
+  // ============================================================================
+
   const alignObjects = useCallback(
     (alignment: AlignmentType) => {
       if (!canvas) return;
@@ -437,6 +602,10 @@ export const DesignerProvider = ({ children }: DesignerProviderProps) => {
     [canvas, saveHistory],
   );
 
+  // ============================================================================
+  // Layer ordering
+  // ============================================================================
+
   const bringForward = useCallback(() => {
     if (!canvas) return;
 
@@ -485,19 +654,21 @@ export const DesignerProvider = ({ children }: DesignerProviderProps) => {
     saveHistory();
   }, [canvas, updateLayers, saveHistory]);
 
+  // ============================================================================
+  // Export
+  // ============================================================================
+
   const exportCanvas = useCallback(
     (format: ExportFormat) => {
       if (!canvas) return;
 
       let data: string;
       let filename: string;
-      let mimeType: string;
 
       switch (format) {
         case "png":
           data = canvas.toDataURL({ format: "png", multiplier: 2 });
-          filename = `design-${Date.now()}.png`;
-          mimeType = "image/png";
+          filename = `${designName}-${Date.now()}.png`;
           break;
         case "jpg":
           data = canvas.toDataURL({
@@ -505,18 +676,15 @@ export const DesignerProvider = ({ children }: DesignerProviderProps) => {
             quality: 0.9,
             multiplier: 2,
           });
-          filename = `design-${Date.now()}.jpg`;
-          mimeType = "image/jpeg";
+          filename = `${designName}-${Date.now()}.jpg`;
           break;
         case "svg":
           data = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(canvas.toSVG())}`;
-          filename = `design-${Date.now()}.svg`;
-          mimeType = "image/svg+xml";
+          filename = `${designName}-${Date.now()}.svg`;
           break;
         case "json":
           data = `data:application/json;charset=utf-8,${encodeURIComponent(JSON.stringify(canvas.toJSON(), null, 2))}`;
-          filename = `design-${Date.now()}.json`;
-          mimeType = "application/json";
+          filename = `${designName}-${Date.now()}.json`;
           break;
       }
 
@@ -527,7 +695,7 @@ export const DesignerProvider = ({ children }: DesignerProviderProps) => {
       link.click();
       document.body.removeChild(link);
     },
-    [canvas],
+    [canvas, designName],
   );
 
   const clearCanvas = useCallback(() => {
@@ -539,6 +707,102 @@ export const DesignerProvider = ({ children }: DesignerProviderProps) => {
     updateLayers();
     saveHistory();
   }, [canvas, updateLayers, saveHistory]);
+
+  // ============================================================================
+  // AI Generator
+  // ============================================================================
+
+  const generateImage = useCallback(
+    (prompt: string) => {
+      return new Promise<void>((resolve, reject) => {
+        if (!onGenerateImage) {
+          reject(new Error("Image generation not configured"));
+          return;
+        }
+
+        setIsGenerating(true);
+
+        onGenerateImage(prompt)
+          .then((url) => {
+            const newImage: GeneratedImage = {
+              id: `gen-${Date.now()}`,
+              url,
+              prompt,
+              createdAt: new Date(),
+            };
+            setGeneratedImages((prev) => [newImage, ...prev]);
+            setIsGenerating(false);
+            resolve();
+          })
+          .catch((error) => {
+            setIsGenerating(false);
+            reject(error);
+          });
+      });
+    },
+    [onGenerateImage],
+  );
+
+  // ============================================================================
+  // Initial design loading
+  // ============================================================================
+
+  const hasLoadedInitialDesign = useRef(false);
+
+  useEffect(() => {
+    // Load the design when canvas is ready and we have an initial design ID
+    if (canvas && initialDesignId && onLoad && !hasLoadedInitialDesign.current) {
+      hasLoadedInitialDesign.current = true;
+
+      onLoad(initialDesignId)
+        .then((result) => {
+          setDesignName(result.name);
+
+          const data = JSON.parse(result.data);
+          if (data.canvasSize) {
+            setCanvasSize(data.canvasSize);
+            // Update canvas dimensions
+            canvas.setDimensions({
+              width: data.canvasSize.width,
+              height: data.canvasSize.height,
+            });
+          }
+          if (data.backgroundColor) {
+            canvas.backgroundColor = data.backgroundColor;
+          }
+
+          // Load objects onto the canvas
+          return canvas.loadFromJSON({ objects: data.objects || [] });
+        })
+        .then(() => {
+          canvas.renderAll();
+          setIsDirty(false);
+          setSaveStatus("saved");
+          setLastSavedAt(new Date());
+          // Save initial state to history
+          saveHistory();
+        })
+        .catch((error) => {
+          console.error("Failed to load design:", error);
+        });
+    }
+  }, [canvas, initialDesignId, onLoad, saveHistory]);
+
+  // ============================================================================
+  // Cleanup
+  // ============================================================================
+
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // ============================================================================
+  // Context value
+  // ============================================================================
 
   const value = useMemo<DesignerContextValue>(
     () => ({
@@ -565,6 +829,14 @@ export const DesignerProvider = ({ children }: DesignerProviderProps) => {
       saveHistory,
       undo,
       redo,
+      designId,
+      designName,
+      setDesignName,
+      saveStatus,
+      lastSavedAt,
+      isDirty,
+      saveDesign,
+      loadDesign,
       addText,
       addRectangle,
       addCircle,
@@ -583,6 +855,9 @@ export const DesignerProvider = ({ children }: DesignerProviderProps) => {
       sendToBack,
       exportCanvas,
       clearCanvas,
+      generatedImages,
+      isGenerating,
+      generateImage,
     }),
     [
       canvas,
@@ -600,6 +875,13 @@ export const DesignerProvider = ({ children }: DesignerProviderProps) => {
       saveHistory,
       undo,
       redo,
+      designId,
+      designName,
+      saveStatus,
+      lastSavedAt,
+      isDirty,
+      saveDesign,
+      loadDesign,
       addText,
       addRectangle,
       addCircle,
@@ -618,16 +900,19 @@ export const DesignerProvider = ({ children }: DesignerProviderProps) => {
       sendToBack,
       exportCanvas,
       clearCanvas,
+      generatedImages,
+      isGenerating,
+      generateImage,
     ],
   );
 
   return <DesignerContext.Provider value={value}>{children}</DesignerContext.Provider>;
-};
+}
 
-export const useDesigner = (): DesignerContextValue => {
+export function useDesigner(): DesignerContextValue {
   const context = useContext(DesignerContext);
   if (!context) {
     throw new Error("useDesigner must be used within a DesignerProvider");
   }
   return context;
-};
+}

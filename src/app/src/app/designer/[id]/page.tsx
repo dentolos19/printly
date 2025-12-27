@@ -1,6 +1,6 @@
 "use client";
 
-import Designer from "@/components/designer-v2";
+import Designer from "@/components/designer";
 import { useServer } from "@/lib/providers/server";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";

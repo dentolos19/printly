@@ -1,48 +1,73 @@
 "use client";
 
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { DesignerCanvas } from "./canvas";
-import { DesignerProvider } from "./hooks/use-designer";
-import { useKeyboardShortcuts } from "./hooks/use-keyboard";
-import { DesignerSidebar } from "./sidebar";
-import { DesignerToolbar } from "./toolbar";
+import { DesignerProvider, useKeyboardShortcuts } from "./hooks";
+import { IconToolbar } from "./icon-toolbar";
+import { LeftPanel, RightPanel } from "./panels";
+import { StatusBar } from "./status-bar";
+import { ToolbarHeader } from "./toolbar-header";
 
 type DesignerProps = {
   className?: string;
+  designId?: string | null;
+  designName?: string;
+  onSave?: (data: { name: string; data: string }) => Promise<{ id: string }>;
+  onLoad?: (id: string) => Promise<{ name: string; data: string }>;
+  onGenerateImage?: (prompt: string) => Promise<string>;
 };
 
-const DesignerContent = ({ className }: DesignerProps) => {
+function DesignerContent({ className }: { className?: string }) {
   useKeyboardShortcuts();
 
   return (
     <div className={cn("flex h-full flex-col", className)}>
-      <DesignerToolbar />
+      {/* Top toolbar/menu bar */}
+      <ToolbarHeader />
 
-      <ResizablePanelGroup direction={"horizontal"} className={"flex-1"}>
-        <ResizablePanel defaultSize={75} minSize={50}>
-          <DesignerCanvas className={"h-full"} />
-        </ResizablePanel>
+      {/* Main content area */}
+      <div className={"flex flex-1 overflow-hidden"}>
+        {/* Left icon toolbar */}
+        <IconToolbar />
 
-        <ResizableHandle withHandle />
+        {/* Left expandable panel */}
+        <LeftPanel />
 
-        <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
-          <DesignerSidebar />
-        </ResizablePanel>
-      </ResizablePanelGroup>
+        {/* Main canvas area */}
+        <DesignerCanvas />
+
+        {/* Right properties panel */}
+        <RightPanel />
+      </div>
+
+      {/* Bottom status bar */}
+      <StatusBar />
     </div>
   );
-};
+}
 
-export const Designer = ({ className }: DesignerProps) => {
+export function Designer({
+  className,
+  designId,
+  designName = "Untitled Design",
+  onSave,
+  onLoad,
+  onGenerateImage,
+}: DesignerProps) {
   return (
     <TooltipProvider delayDuration={300}>
-      <DesignerProvider>
+      <DesignerProvider
+        initialDesignId={designId}
+        initialDesignName={designName}
+        onSave={onSave}
+        onLoad={onLoad}
+        onGenerateImage={onGenerateImage}
+      >
         <DesignerContent className={className} />
       </DesignerProvider>
     </TooltipProvider>
   );
-};
+}
 
 export default Designer;
