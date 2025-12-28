@@ -10,11 +10,31 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<Design> Designs { get; set; }
     public DbSet<Asset> Assets { get; set; }
+    public DbSet<Message> Messages { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
         if (!options.IsConfigured)
             options.UseDatabase();
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        // Configure Message entity with two foreign keys to User
+        // This prevents cascade delete issues with multiple paths to the same table
+        modelBuilder.Entity<Message>()
+            .HasOne(m => m.Sender)
+            .WithMany()
+            .HasForeignKey(m => m.SenderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Message>()
+            .HasOne(m => m.Receiver)
+            .WithMany()
+            .HasForeignKey(m => m.ReceiverId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 
     public override int SaveChanges()

@@ -32,6 +32,7 @@ import {
   ImageIcon,
   LayoutDashboardIcon,
   LogOutIcon,
+  MessageCircleIcon,
   MoreVerticalIcon,
   PackageIcon,
   UserIcon,
@@ -106,6 +107,14 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                     <Link href={"/orders"}>
                       <PackageIcon />
                       <span>Orders</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href={"/chat"}>
+                      <MessageCircleIcon />
+                      <span>Chat</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

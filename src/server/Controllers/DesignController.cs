@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PrintlyServer.Data;
 using PrintlyServer.Data.Entities;
+using PrintlyServer.Extensions;
 
 namespace PrintlyServer.Controllers;
 
@@ -31,7 +32,7 @@ public class DesignController(DatabaseContext context) : BaseController(context)
     [HttpGet]
     public async Task<ActionResult<IEnumerable<DesignResponse>>> GetDesigns()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = User.GetUserId();
         if (userId is null)
             return Unauthorized();
 
@@ -52,7 +53,7 @@ public class DesignController(DatabaseContext context) : BaseController(context)
     [HttpGet("{id}")]
     public async Task<ActionResult<DesignResponse>> GetDesign(string id)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = User.GetUserId();
         if (userId is null)
             return Unauthorized();
 
@@ -75,7 +76,7 @@ public class DesignController(DatabaseContext context) : BaseController(context)
     [HttpPost]
     public async Task<ActionResult<DesignResponse>> CreateDesign([FromBody] CreateDesignDto body)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = User.GetUserId();
         if (userId is null)
             return Unauthorized();
 
@@ -114,7 +115,7 @@ public class DesignController(DatabaseContext context) : BaseController(context)
     [HttpPut("{id}")]
     public async Task<ActionResult<DesignResponse>> UpdateDesign(string id, [FromBody] UpdateDesignDto body)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = User.GetUserId();
         if (userId is null)
             return Unauthorized();
 
@@ -156,7 +157,7 @@ public class DesignController(DatabaseContext context) : BaseController(context)
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteDesign(string id)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = User.GetUserId();
         if (userId is null)
             return Unauthorized();
 
