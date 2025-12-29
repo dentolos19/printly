@@ -8,7 +8,7 @@ using PrintlyServer.Services;
 namespace PrintlyServer.Controllers;
 
 [Route("asset")]
-[Authorize(Roles = "User")]
+[Authorize(Roles = "User,Admin")]
 public class AssetController(DatabaseContext context, StorageService storageService) : BaseController(context)
 {
     public record AssetResponse(

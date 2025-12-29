@@ -9,7 +9,21 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import * as signalR from "@microsoft/signalr";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Send, Loader2, WifiOff, Wifi, ArrowLeft, Users, RefreshCw, Circle, AlertCircle } from "lucide-react";
+import {
+  Send,
+  Loader2,
+  WifiOff,
+  Wifi,
+  ArrowLeft,
+  Users,
+  RefreshCw,
+  Circle,
+  AlertCircle,
+  Check,
+  CheckCheck,
+  Edit2,
+  Trash2,
+} from "lucide-react";
 
 /** Message response type matching the backend DTO */
 interface Message {
@@ -18,6 +32,12 @@ interface Message {
   senderId: string;
   senderName: string;
   receiverId: string;
+  isRead: boolean;
+  readAt?: string;
+  isEdited: boolean;
+  editedAt?: string;
+  isDeleted: boolean;
+  deletedAt?: string;
   createdAt: string;
 }
 
@@ -26,6 +46,7 @@ interface User {
   id: string;
   name: string;
   email: string;
+  unreadCount: number;
 }
 
 /** SignalR Hub URL - uses API_URL from environment */
@@ -300,6 +321,56 @@ export default function ChatInterface() {
         }
       });
 
+      // Handle message read events (single message)
+      connection.on("MessageRead", (data: { messageId: string; readAt: string }) => {
+        console.log("[Chat] Message read:", data);
+        if (isMountedRef.current) {
+          setMessages((prev) =>
+            prev.map((msg) => (msg.id === data.messageId ? { ...msg, isRead: true, readAt: data.readAt } : msg)),
+          );
+        }
+      });
+
+      // Handle bulk read events
+      connection.on("MessagesRead", (data: { messageIds: string[]; readAt: string }) => {
+        console.log("[Chat] Messages read:", data);
+        if (isMountedRef.current) {
+          setMessages((prev) =>
+            prev.map((msg) => (data.messageIds.includes(msg.id) ? { ...msg, isRead: true, readAt: data.readAt } : msg)),
+          );
+          // Also update unread count in users list
+          fetchUsers();
+        }
+      });
+
+      // Handle message edits
+      connection.on("MessageEdited", (data: { id: string; content: string; isEdited: boolean; editedAt: string }) => {
+        console.log("[Chat] Message edited:", data);
+        if (isMountedRef.current) {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === data.id
+                ? { ...msg, content: data.content, isEdited: data.isEdited, editedAt: data.editedAt }
+                : msg,
+            ),
+          );
+        }
+      });
+
+      // Handle message deletes
+      connection.on("MessageDeleted", (data: { id: string; isDeleted: boolean; deletedAt: string }) => {
+        console.log("[Chat] Message deleted:", data);
+        if (isMountedRef.current) {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === data.id
+                ? { ...msg, content: "This message was deleted", isDeleted: data.isDeleted, deletedAt: data.deletedAt }
+                : msg,
+            ),
+          );
+        }
+      });
+
       // Handle reconnecting state
       connection.onreconnecting((error) => {
         console.log("[Chat] Reconnecting...", error?.message);
@@ -396,6 +467,19 @@ export default function ChatInterface() {
           if (!abortController.signal.aborted && isMountedRef.current) {
             console.log(`[Chat] Loaded ${conversation.length} messages from database`);
             setMessages(conversation);
+
+            // Mark messages as read when opening conversation
+            if (connectionRef.current && connectionRef.current.state === signalR.HubConnectionState.Connected) {
+              try {
+                await connectionRef.current.invoke("MarkAllMessagesAsRead", selectedUser.id);
+                console.log("[Chat] Marked messages as read");
+                // Refresh user list to update unread counts
+                fetchUsers();
+              } catch (err) {
+                console.error("[Chat] Failed to mark messages as read:", err);
+              }
+            }
+
             setTimeout(() => {
               scrollRef.current?.scrollIntoView({ behavior: "auto" });
             }, 100);
@@ -448,6 +532,32 @@ export default function ChatInterface() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+
+  /** Edit a message */
+  const handleEditMessage = async (messageId: string, newContent: string) => {
+    if (!connectionRef.current || connectionState !== "connected") return;
+
+    try {
+      await connectionRef.current.invoke("EditMessage", messageId, newContent);
+      console.log("[Chat] Message edited successfully");
+    } catch (error) {
+      console.error("[Chat] Failed to edit message:", error);
+      setConnectionError(error instanceof Error ? error.message : "Failed to edit message");
+    }
+  };
+
+  /** Delete a message */
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!connectionRef.current || connectionState !== "connected") return;
+
+    try {
+      await connectionRef.current.invoke("DeleteMessage", messageId);
+      console.log("[Chat] Message deleted successfully");
+    } catch (error) {
+      console.error("[Chat] Failed to delete message:", error);
+      setConnectionError(error instanceof Error ? error.message : "Failed to delete message");
     }
   };
 
@@ -591,6 +701,11 @@ export default function ChatInterface() {
                           {isOnline ? <span className="text-green-600">Online</span> : user.email}
                         </p>
                       </div>
+                      {user.unreadCount > 0 && (
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                          {user.unreadCount > 9 ? "9+" : user.unreadCount}
+                        </div>
+                      )}
                     </button>
                   );
                 })}
@@ -657,16 +772,14 @@ export default function ChatInterface() {
                 const isOwnMessage = message.senderId === auth.claims?.id;
 
                 return (
-                  <div key={message.id} className={`flex flex-col ${isOwnMessage ? "items-end" : "items-start"}`}>
-                    <div
-                      className={`max-w-[75%] rounded-lg px-4 py-2 ${
-                        isOwnMessage ? "bg-primary text-primary-foreground" : "bg-muted"
-                      }`}
-                    >
-                      <p className="text-sm break-words">{message.content}</p>
-                    </div>
-                    <span className="text-muted-foreground mt-1 text-xs">{formatTime(message.createdAt)}</span>
-                  </div>
+                  <MessageBubble
+                    key={message.id}
+                    message={message}
+                    isOwnMessage={isOwnMessage}
+                    onEdit={handleEditMessage}
+                    onDelete={handleDeleteMessage}
+                    formatTime={formatTime}
+                  />
                 );
               })
             )}
@@ -697,5 +810,121 @@ export default function ChatInterface() {
         </div>
       </CardFooter>
     </Card>
+  );
+}
+
+/** Message bubble component with edit/delete support */
+function MessageBubble({
+  message,
+  isOwnMessage,
+  onEdit,
+  onDelete,
+  formatTime,
+}: {
+  message: Message;
+  isOwnMessage: boolean;
+  onEdit: (id: string, content: string) => void;
+  onDelete: (id: string) => void;
+  formatTime: (date: string) => string;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(message.content);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  // Reset edit value when message changes
+  useEffect(() => {
+    setEditValue(message.content);
+  }, [message.content]);
+
+  const handleSave = () => {
+    if (editValue.trim() && editValue.trim() !== message.content) {
+      onEdit(message.id, editValue.trim());
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setEditValue(message.content);
+    setIsEditing(false);
+  };
+
+  return (
+    <div className={`group flex flex-col ${isOwnMessage ? "items-end" : "items-start"}`}>
+      <div className="relative flex items-center gap-2">
+        {/* Edit/Delete buttons for own messages (shown on hover) */}
+        {isOwnMessage && !message.isDeleted && !isEditing && (
+          <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            <button
+              onClick={() => setIsEditing(true)}
+              className="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700"
+              title="Edit message"
+            >
+              <Edit2 className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => onDelete(message.id)}
+              className="rounded p-1 text-gray-400 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30"
+              title="Delete message"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
+
+        <div
+          className={`max-w-[75%] rounded-lg px-4 py-2 ${
+            isOwnMessage ? "bg-primary text-primary-foreground" : "bg-muted"
+          } ${message.isDeleted ? "italic opacity-60" : ""}`}
+        >
+          {isEditing ? (
+            <div className="flex flex-col gap-2">
+              <Input
+                ref={inputRef}
+                type="text"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSave();
+                  if (e.key === "Escape") handleCancel();
+                }}
+                className="h-8 bg-white/20 text-sm"
+              />
+              <div className="flex justify-end gap-1">
+                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={handleCancel}>
+                  Cancel
+                </Button>
+                <Button variant="secondary" size="sm" className="h-6 px-2 text-xs" onClick={handleSave}>
+                  Save
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm break-words">{message.content}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Timestamp, edited indicator, and read receipt */}
+      <div className="mt-1 flex items-center gap-1">
+        {message.isEdited && !message.isDeleted && <span className="text-muted-foreground text-[10px]">edited</span>}
+        <span className="text-muted-foreground text-xs">{formatTime(message.createdAt)}</span>
+        {isOwnMessage && (
+          <span className="ml-0.5">
+            {message.isRead ? (
+              <CheckCheck className="h-3.5 w-3.5 text-blue-500" />
+            ) : (
+              <Check className="text-muted-foreground h-3.5 w-3.5" />
+            )}
+          </span>
+        )}
+      </div>
+    </div>
   );
 }

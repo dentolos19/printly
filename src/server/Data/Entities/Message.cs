@@ -33,4 +33,16 @@ public class Message : BaseEntity
     /// </summary>
     [ForeignKey(nameof(ReceiverId))]
     public User Receiver { get; set; } = null!;
+
+    // Read tracking
+    public bool IsRead { get; set; } = false;
+    public DateTime? ReadAt { get; set; }
+
+    // Edit tracking
+    public bool IsEdited { get; set; } = false;
+    public DateTime? EditedAt { get; set; }
+
+    // Soft delete tracking
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
 }

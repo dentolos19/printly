@@ -11,7 +11,7 @@ namespace PrintlyServer.Hubs;
 /// <summary>
 /// SignalR hub for real-time private messaging between users.
 /// </summary>
-[Authorize(Roles = "User")]
+[Authorize(Roles = "User,Admin")]
 public class ChatHub(DatabaseContext context, ILogger<ChatHub> logger) : Hub
 {
     private readonly DatabaseContext _context = context;
@@ -31,6 +31,12 @@ public class ChatHub(DatabaseContext context, ILogger<ChatHub> logger) : Hub
         string SenderId,
         string SenderName,
         string ReceiverId,
+        bool IsRead,
+        DateTime? ReadAt,
+        bool IsEdited,
+        DateTime? EditedAt,
+        bool IsDeleted,
+        DateTime? DeletedAt,
         DateTime CreatedAt
     );
 
@@ -112,6 +118,12 @@ public class ChatHub(DatabaseContext context, ILogger<ChatHub> logger) : Hub
             msg.SenderId,
             sender.UserName ?? sender.Email ?? "Unknown",
             msg.ReceiverId,
+            msg.IsRead,
+            msg.ReadAt,
+            msg.IsEdited,
+            msg.EditedAt,
+            msg.IsDeleted,
+            msg.DeletedAt,
             msg.CreatedAt
         );
 
@@ -179,4 +191,208 @@ public class ChatHub(DatabaseContext context, ILogger<ChatHub> logger) : Hub
     /// Gets currently online user IDs.
     /// </summary>
     public Task<List<string>> GetOnlineUsers() => Task.FromResult(OnlineUsers.Keys.ToList());
+
+    /// <summary>
+    /// Mark a single message as read.
+    /// </summary>
+    public async Task MarkMessageAsRead(Guid messageId)
+    {
+        var userId = GetUserId();
+        if (userId == null)
+        {
+            throw new HubException("User not authenticated");
+        }
+
+        var message = await _context.Messages.FindAsync(messageId);
+        if (message == null)
+        {
+            _logger.LogWarning("Message {MessageId} not found", messageId);
+            return;
+        }
+
+        // Only the receiver can mark as read
+        if (message.ReceiverId != userId)
+        {
+            return;
+        }
+
+        if (!message.IsRead)
+        {
+            message.IsRead = true;
+            message.ReadAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            // Notify sender that message was read
+            if (OnlineUsers.TryGetValue(message.SenderId, out var senderConnections))
+            {
+                foreach (var connectionId in senderConnections)
+                {
+                    await Clients.Client(connectionId).SendAsync("MessageRead", new
+                    {
+                        messageId = message.Id,
+                        readAt = message.ReadAt
+                    });
+                }
+            }
+
+            _logger.LogInformation("Message {MessageId} marked as read by {UserId}", messageId, userId);
+        }
+    }
+
+    /// <summary>
+    /// Mark all messages from a specific user as read.
+    /// </summary>
+    public async Task MarkAllMessagesAsRead(string senderId)
+    {
+        var userId = GetUserId();
+        if (userId == null)
+        {
+            throw new HubException("User not authenticated");
+        }
+
+        var unreadMessages = await _context.Messages
+            .Where(m => m.SenderId == senderId && m.ReceiverId == userId && !m.IsRead)
+            .ToListAsync();
+
+        if (unreadMessages.Count == 0)
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        foreach (var message in unreadMessages)
+        {
+            message.IsRead = true;
+            message.ReadAt = now;
+        }
+
+        await _context.SaveChangesAsync();
+
+        // Notify sender that messages were read
+        if (OnlineUsers.TryGetValue(senderId, out var senderConnections))
+        {
+            foreach (var connectionId in senderConnections)
+            {
+                await Clients.Client(connectionId).SendAsync("MessagesRead", new
+                {
+                    readBy = userId,
+                    messageIds = unreadMessages.Select(m => m.Id).ToList(),
+                    readAt = now
+                });
+            }
+        }
+
+        _logger.LogInformation("Marked {Count} messages as read from {SenderId}", unreadMessages.Count, senderId);
+    }
+
+    /// <summary>
+    /// Edit your own message.
+    /// </summary>
+    public async Task EditMessage(Guid messageId, string newContent)
+    {
+        var senderId = GetUserId();
+        if (senderId == null)
+        {
+            throw new HubException("User not authenticated");
+        }
+
+        var message = await _context.Messages.FindAsync(messageId);
+        if (message == null)
+        {
+            throw new HubException("Message not found");
+        }
+
+        // Only sender can edit their own message
+        if (message.SenderId != senderId)
+        {
+            throw new HubException("You can only edit your own messages");
+        }
+
+        // Cant edit deleted messages
+        if (message.IsDeleted)
+        {
+            throw new HubException("Cannot edit a deleted message");
+        }
+
+        // Update message
+        message.Content = newContent;
+        message.IsEdited = true;
+        message.EditedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        var response = new
+        {
+            id = message.Id,
+            content = message.Content,
+            isEdited = message.IsEdited,
+            editedAt = message.EditedAt
+        };
+
+        // Notify receiver
+        if (OnlineUsers.TryGetValue(message.ReceiverId, out var receiverConnections))
+        {
+            foreach (var connId in receiverConnections)
+            {
+                await Clients.Client(connId).SendAsync("MessageEdited", response);
+            }
+        }
+
+        // Notify sender (for multiple devices)
+        await Clients.Caller.SendAsync("MessageEdited", response);
+
+        _logger.LogInformation("Message {MessageId} edited by {UserId}", messageId, senderId);
+    }
+
+    /// <summary>
+    /// Delete your own message (soft delete).
+    /// </summary>
+    public async Task DeleteMessage(Guid messageId)
+    {
+        var senderId = GetUserId();
+        if (senderId == null)
+        {
+            throw new HubException("User not authenticated");
+        }
+
+        var message = await _context.Messages.FindAsync(messageId);
+        if (message == null)
+        {
+            throw new HubException("Message not found");
+        }
+
+        // Only sender can delete their own message
+        if (message.SenderId != senderId)
+        {
+            throw new HubException("You can only delete your own messages");
+        }
+
+        // Soft delete
+        message.IsDeleted = true;
+        message.DeletedAt = DateTime.UtcNow;
+        message.Content = "This message was deleted";
+
+        await _context.SaveChangesAsync();
+
+        var response = new
+        {
+            id = message.Id,
+            isDeleted = true,
+            deletedAt = message.DeletedAt
+        };
+
+        // Notify receiver
+        if (OnlineUsers.TryGetValue(message.ReceiverId, out var receiverConnections))
+        {
+            foreach (var connId in receiverConnections)
+            {
+                await Clients.Client(connId).SendAsync("MessageDeleted", response);
+            }
+        }
+
+        // Notify sender
+        await Clients.Caller.SendAsync("MessageDeleted", response);
+
+        _logger.LogInformation("Message {MessageId} deleted by {UserId}", messageId, senderId);
+    }
 }

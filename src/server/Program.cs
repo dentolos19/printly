@@ -31,5 +31,6 @@ await app.SetupRolesAsync();
 
 app.MapControllers();
 app.MapHub<ChatHub>("/hubs/chat");
+app.MapHub<SupportHub>("/hubs/support");
 
 app.Run();

@@ -11,6 +11,9 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
     public DbSet<Design> Designs { get; set; }
     public DbSet<Asset> Assets { get; set; }
     public DbSet<Message> Messages { get; set; }
+    public DbSet<Ticket> Tickets { get; set; }
+    public DbSet<TicketMessage> TicketMessages { get; set; }
+    public DbSet<Broadcast> Broadcasts { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
@@ -34,6 +37,33 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .HasOne(m => m.Receiver)
             .WithMany()
             .HasForeignKey(m => m.ReceiverId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Ticket relationships
+        modelBuilder.Entity<Ticket>()
+            .HasOne(t => t.Customer)
+            .WithMany()
+            .HasForeignKey(t => t.CustomerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Ticket>()
+            .HasMany(t => t.Messages)
+            .WithOne(m => m.Ticket)
+            .HasForeignKey(m => m.TicketId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // TicketMessage relationships
+        modelBuilder.Entity<TicketMessage>()
+            .HasOne(m => m.Sender)
+            .WithMany()
+            .HasForeignKey(m => m.SenderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Broadcast relationships
+        modelBuilder.Entity<Broadcast>()
+            .HasOne(b => b.Sender)
+            .WithMany()
+            .HasForeignKey(b => b.SenderId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 

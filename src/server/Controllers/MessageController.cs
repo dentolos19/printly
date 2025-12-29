@@ -10,7 +10,7 @@ namespace PrintlyServer.Controllers;
 /// Controller for managing private chat messages between users.
 /// </summary>
 [Route("message")]
-[Authorize(Roles = "User")]
+[Authorize(Roles = "User,Admin")]
 public class MessageController(DatabaseContext context) : BaseController(context)
 {
     /// <summary>
@@ -22,6 +22,12 @@ public class MessageController(DatabaseContext context) : BaseController(context
         string SenderId,
         string SenderName,
         string ReceiverId,
+        bool IsRead,
+        DateTime? ReadAt,
+        bool IsEdited,
+        DateTime? EditedAt,
+        bool IsDeleted,
+        DateTime? DeletedAt,
         DateTime CreatedAt
     );
 
@@ -31,50 +37,54 @@ public class MessageController(DatabaseContext context) : BaseController(context
     public record UserResponse(
         string Id,
         string Name,
-        string Email
+        string Email,
+        int UnreadCount
     );
 
     /// <summary>
-    /// Gets all users that the current user can chat with.
+    /// Gets all users that the current user can chat with, with unread counts.
     /// </summary>
-    /// <returns>A list of users excluding the current user.</returns>
     [HttpGet("users")]
     public async Task<ActionResult<IEnumerable<UserResponse>>> GetUsers()
     {
-        // With MapInboundClaims = false, "sub" claim stays as "sub"
         var currentUserId = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        var users = await Context
-            .Users
+        // Get all users except current user
+        var users = await Context.Users
             .Where(u => u.Id != currentUserId)
-            .Select(u => new UserResponse(
-                u.Id,
-                u.UserName ?? "Unknown",
-                u.Email ?? ""
-            ))
             .ToListAsync();
 
-        return Ok(users);
+        // Calculate unread count for each user
+        var userResponses = new List<UserResponse>();
+        foreach (var user in users)
+        {
+            var unreadCount = await Context.Messages
+                .CountAsync(m => m.SenderId == user.Id && m.ReceiverId == currentUserId && !m.IsRead);
+
+            userResponses.Add(new UserResponse(
+                user.Id,
+                user.UserName ?? "Unknown",
+                user.Email ?? "",
+                unreadCount
+            ));
+        }
+
+        return Ok(userResponses);
     }
 
     /// <summary>
     /// Gets the conversation history between the current user and another user.
     /// </summary>
-    /// <param name="userId">The ID of the other user in the conversation.</param>
-    /// <returns>The last 50 messages between both users.</returns>
     [HttpGet("{userId}")]
     public async Task<ActionResult<IEnumerable<MessageResponse>>> GetMessages(string userId)
     {
-        // With MapInboundClaims = false, "sub" claim stays as "sub"
         var currentUserId = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (currentUserId is null)
         {
             return Unauthorized();
         }
 
-        // Get messages where current user is either sender or receiver with the other user
-        var messages = await Context
-            .Messages
+        var messages = await Context.Messages
             .Include(m => m.Sender)
             .Where(m =>
                 (m.SenderId == currentUserId && m.ReceiverId == userId) ||
@@ -87,6 +97,12 @@ public class MessageController(DatabaseContext context) : BaseController(context
                 m.SenderId,
                 m.Sender.UserName ?? "Unknown",
                 m.ReceiverId,
+                m.IsRead,
+                m.ReadAt,
+                m.IsEdited,
+                m.EditedAt,
+                m.IsDeleted,
+                m.DeletedAt,
                 m.CreatedAt
             ))
             .ToListAsync();

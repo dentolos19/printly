@@ -9,7 +9,7 @@ using PrintlyServer.Extensions;
 namespace PrintlyServer.Controllers;
 
 [Route("design")]
-[Authorize(Roles = "User")]
+[Authorize(Roles = "User,Admin")]
 public class DesignController(DatabaseContext context) : BaseController(context)
 {
     public record CreateDesignDto(string Name, string? Description, string Data);
