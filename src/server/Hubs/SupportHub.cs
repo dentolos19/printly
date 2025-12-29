@@ -4,14 +4,16 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using PrintlyServer.Data;
 using PrintlyServer.Data.Entities;
+using PrintlyServer.Services;
 
 namespace PrintlyServer.Hubs;
 
 [Authorize(Roles = "User,Admin")]
-public class SupportHub(DatabaseContext context, ILogger<SupportHub> logger) : Hub
+public class SupportHub(DatabaseContext context, ILogger<SupportHub> logger, INotificationService notificationService) : Hub
 {
     private readonly DatabaseContext _context = context;
     private readonly ILogger<SupportHub> _logger = logger;
+    private readonly INotificationService _notificationService = notificationService;
 
     public record TicketMessageResponse(
         Guid Id,
@@ -139,6 +141,33 @@ public class SupportHub(DatabaseContext context, ILogger<SupportHub> logger) : H
 
         // Send to the customer
         await Clients.User(ticket.CustomerId).SendAsync("ReceiveTicketMessage", response);
+
+        // Send notification
+        if (isAdmin)
+        {
+            // Admin replied - notify customer
+            await _notificationService.CreateNotificationAsync(
+                ticket.CustomerId,
+                NotificationType.NewMessage,
+                "New Reply from Support",
+                $"{sender.UserName ?? "Admin"} replied to your ticket",
+                ticketId,
+                message.Id,
+                NotificationPriority.Normal,
+                $"/support?ticket={ticketId}"
+            );
+        }
+        else
+        {
+            // Customer sent message - notify all admins
+            await _notificationService.NotifyAdminsAsync(
+                NotificationType.NewMessage,
+                "New Customer Message",
+                $"{sender.UserName ?? sender.Email} sent a message in ticket: {ticket.Subject}",
+                ticketId,
+                NotificationPriority.Normal
+            );
+        }
 
         _logger.LogInformation("[SupportHub] Message sent in ticket {TicketId}", ticketId);
     }

@@ -17,6 +17,8 @@ builder.Services.SetupDocumentation();
 builder.Services.AddScoped<IdentityService>();
 builder.Services.AddScoped<StorageService>();
 builder.Services.AddScoped<GenerativeService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddHostedService<NotificationCleanupService>();
 
 var app = builder.Build();
 

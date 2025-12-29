@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PrintlyServer.Data;
 using PrintlyServer.Data.Entities;
+using PrintlyServer.Services;
 
 namespace PrintlyServer.Controllers;
 
@@ -12,8 +13,9 @@ namespace PrintlyServer.Controllers;
 /// </summary>
 [Route("ticket")]
 [Authorize(Roles = "User,Admin")]
-public class TicketController(DatabaseContext context) : BaseController(context)
+public class TicketController(DatabaseContext context, INotificationService notificationService) : BaseController(context)
 {
+    private readonly INotificationService _notificationService = notificationService;
     public record CreateTicketRequest(string Subject, Guid? OrderId);
 
     public record TicketResponse(
@@ -80,6 +82,15 @@ public class TicketController(DatabaseContext context) : BaseController(context)
 
         await Context.Tickets.AddAsync(ticket);
         await Context.SaveChangesAsync();
+
+        // Notify all admins about new ticket
+        await _notificationService.NotifyAdminsAsync(
+            NotificationType.TicketCreated,
+            "New Support Ticket",
+            $"{user.UserName ?? user.Email} created a new ticket: {ticket.Subject}",
+            ticket.Id,
+            NotificationPriority.Normal
+        );
 
         return Ok(new TicketResponse(
             ticket.Id,
@@ -263,8 +274,21 @@ public class TicketController(DatabaseContext context) : BaseController(context)
         var ticket = await Context.Tickets.FindAsync(ticketId);
         if (ticket == null) return NotFound();
 
+        var oldStatus = ticket.Status;
         ticket.Status = request.Status;
         await Context.SaveChangesAsync();
+
+        // Notify customer about status change
+        await _notificationService.CreateNotificationAsync(
+            ticket.CustomerId,
+            NotificationType.TicketStatusChanged,
+            "Ticket Status Updated",
+            $"Your ticket status changed from {oldStatus} to {request.Status}",
+            ticket.Id,
+            null,
+            NotificationPriority.Normal,
+            $"/support?ticket={ticketId}"
+        );
 
         return Ok();
     }
@@ -279,8 +303,21 @@ public class TicketController(DatabaseContext context) : BaseController(context)
         var ticket = await Context.Tickets.FindAsync(ticketId);
         if (ticket == null) return NotFound();
 
+        var oldPriority = ticket.Priority;
         ticket.Priority = priority;
         await Context.SaveChangesAsync();
+
+        // Notify customer about priority change
+        await _notificationService.CreateNotificationAsync(
+            ticket.CustomerId,
+            NotificationType.TicketPriorityChanged,
+            "Ticket Priority Changed",
+            $"Your ticket priority changed from {oldPriority} to {priority}",
+            ticket.Id,
+            null,
+            NotificationPriority.Normal,
+            $"/support?ticket={ticketId}"
+        );
 
         return Ok();
     }

@@ -14,6 +14,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
     public DbSet<Ticket> Tickets { get; set; }
     public DbSet<TicketMessage> TicketMessages { get; set; }
     public DbSet<Broadcast> Broadcasts { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
@@ -65,6 +66,26 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .WithMany()
             .HasForeignKey(b => b.SenderId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Notification relationships
+        modelBuilder.Entity<Notification>()
+            .HasOne(n => n.User)
+            .WithMany()
+            .HasForeignKey(n => n.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Notification>()
+            .HasOne(n => n.Ticket)
+            .WithMany()
+            .HasForeignKey(n => n.TicketId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Index for faster queries
+        modelBuilder.Entity<Notification>()
+            .HasIndex(n => new { n.UserId, n.IsRead, n.IsDeleted });
+
+        modelBuilder.Entity<Notification>()
+            .HasIndex(n => n.CreatedAt);
     }
 
     public override int SaveChanges()
