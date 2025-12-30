@@ -1,6 +1,7 @@
 "use client";
 
 import AccessDenied from "@/components/access-denied";
+import { ChatbotWidget } from "@/components/chatbot-widget";
 import { NotificationBell } from "@/components/notification-bell";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -207,6 +208,7 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
         </header>
         <main className="flex-1 overflow-auto">{children}</main>
       </SidebarInset>
+      <ChatbotWidget />
     </>
   );
 }
