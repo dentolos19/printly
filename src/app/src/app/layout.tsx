@@ -1,19 +1,21 @@
 import { Toaster } from "@/components/ui/sonner";
 import AuthProvider from "@/lib/providers/auth";
 import ServerProvider from "@/lib/providers/server";
+import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Fira_Mono, Inter } from "next/font/google";
 import { ReactNode } from "react";
 import "./globals.css";
 
-const fontSans = Geist({
+const fontSans = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
 });
 
-const fontMono = Geist_Mono({
+const fontMono = Fira_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
+  weight: ["400"],
 });
 
 export const metadata: Metadata = {
@@ -23,7 +25,7 @@ export const metadata: Metadata = {
 export default function Layout({ children }: { children: ReactNode }) {
   return (
     <html lang={"en"} className={"scroll-smooth"}>
-      <body className={`${fontSans.variable} ${fontMono.variable} antialiased`}>
+      <body className={cn(fontSans.variable, fontMono.variable, "antialiased")}>
         <AuthProvider>
           <ServerProvider>
             {children}
