@@ -110,4 +110,23 @@ public class AuthController(DatabaseContext database, IdentityService identitySe
 
         return Ok();
     }
+
+    [HttpGet]
+    [Route("verify")]
+    public async Task<IActionResult> VerifyUser()
+    {
+        // Get user ID from claims
+        var userId = User.FindFirst("sub")?.Value;
+
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized();
+
+        // Check if user exists in database
+        var user = await identityService.GetUser(userId);
+
+        if (user == null)
+            return Unauthorized();
+
+        return Ok();
+    }
 }
