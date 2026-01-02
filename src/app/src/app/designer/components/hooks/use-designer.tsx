@@ -15,8 +15,8 @@ import type {
   LayerItem,
   SaveStatus,
   ToolType,
-} from "../types";
-import { DEFAULT_CANVAS_SIZE, DESIGN_DATA_VERSION } from "../types";
+} from "../../types";
+import { DEFAULT_CANVAS_SIZE, DESIGN_DATA_VERSION } from "../../types";
 
 const DesignerContext = createContext<DesignerContextValue | null>(null);
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { BLEND_MODES, BlendMode, LayerItem } from "@/app/designer/types";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
@@ -32,8 +33,6 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDesigner } from "../hooks";
-import type { BlendMode, LayerItem } from "../types";
-import { BLEND_MODES } from "../types";
 
 type RightPanelProps = {
   className?: string;

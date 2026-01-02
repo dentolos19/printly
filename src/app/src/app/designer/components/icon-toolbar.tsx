@@ -1,5 +1,7 @@
 "use client";
 
+import { useDesigner } from "@/app/designer/components/hooks";
+import { ToolType } from "@/app/designer/types";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -17,8 +19,6 @@ import {
   Triangle,
   Type,
 } from "lucide-react";
-import { useDesigner } from "./hooks";
-import type { ToolType } from "./types";
 
 type ToolItem = {
   id: ToolType;
