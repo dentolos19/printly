@@ -17,24 +17,27 @@ public static class ServiceExtensions
 {
     /// <summary>
     /// Setup Cross-Origin Resource Sharing (CORS) to allow our app to access this server.
-    /// Uses explicit origins with credentials support required for SignalR WebSocket connections.
-    /// CRITICAL: AllowAnyOrigin is INCOMPATIBLE with AllowCredentials - must use WithOrigins.
     /// </summary>
     public static IServiceCollection SetupCors(this IServiceCollection services)
     {
         services.AddCors(options =>
         {
-            options.AddPolicy("AllowAll", policy =>
-            {
-                policy.WithOrigins(
-                        "http://localhost:3000",   // Development frontend HTTP
-                        "https://localhost:3000"   // Development frontend HTTPS
-                      )
-                      .AllowAnyMethod()
-                      .AllowAnyHeader()
-                      .AllowCredentials()          // Required for SignalR
-                      .SetIsOriginAllowedToAllowWildcardSubdomains();
-            });
+            options.AddPolicy(
+                "AllowAll",
+                policy =>
+                {
+                    policy
+                        .WithOrigins(
+                            "https://printly.dennise.me", // Production
+                            "http://localhost:3000", // Development
+                            "https://localhost:3000" // Development with HTTPS
+                        )
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials()
+                        .SetIsOriginAllowedToAllowWildcardSubdomains();
+                }
+            );
         });
 
         return services;
@@ -121,7 +124,7 @@ public static class ServiceExtensions
                         }
 
                         return Task.CompletedTask;
-                    }
+                    },
                 };
             });
 
