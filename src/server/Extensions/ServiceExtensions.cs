@@ -29,8 +29,10 @@ public static class ServiceExtensions
                     policy
                         .WithOrigins(
                             "https://printly.dennise.me", // Production
-                            "http://localhost:3000", // Development
-                            "https://localhost:3000" // Development with HTTPS
+                            "http://localhost:3000", // Development Frontend
+                            "https://localhost:3000", // Development with HTTPS
+                            "http://localhost:3001", // Development API
+                            "https://localhost:3001" // Development API with HTTPS
                         )
                         .AllowAnyMethod()
                         .AllowAnyHeader()
@@ -46,7 +48,7 @@ public static class ServiceExtensions
     /// <summary>
     /// Setup SignalR for real-time communication with proper timeout configuration.
     /// </summary>
-    public static IServiceCollection SetupSignalR(this IServiceCollection services)
+    public static IServiceCollection SetupCommunications(this IServiceCollection services)
     {
         services.AddSignalR(options =>
         {
@@ -115,14 +117,9 @@ public static class ServiceExtensions
                     OnMessageReceived = context =>
                     {
                         var accessToken = context.Request.Query["access_token"];
-
-                        // If the request is for the SignalR hub
                         var path = context.HttpContext.Request.Path;
                         if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/chat"))
-                        {
                             context.Token = accessToken;
-                        }
-
                         return Task.CompletedTask;
                     },
                 };

@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using PrintlyServer.Data;
@@ -48,13 +49,13 @@ public class AuthController(DatabaseContext database, IdentityService identitySe
     [Route("verify")]
     public async Task<IActionResult> VerifyUser()
     {
-        // Get user ID from claims
-        var userId = User.FindFirst("sub")?.Value;
-        if (string.IsNullOrEmpty(userId))
+        // Get user email from claims
+        var email = User.FindFirst("email")?.Value;
+        if (string.IsNullOrEmpty(email))
             return Unauthorized();
 
         // Check if user exists in database
-        var user = await identityService.GetUser(userId);
+        var user = await identityService.GetUser(email);
         if (user == null)
             return Unauthorized();
 

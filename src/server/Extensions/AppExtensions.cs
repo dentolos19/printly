@@ -3,12 +3,23 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PrintlyServer.Data;
 using PrintlyServer.Data.Auth;
+using PrintlyServer.Hubs;
 using PrintlyServer.Middlewares;
 
 namespace PrintlyServer.Extensions;
 
 public static class AppExtensions
 {
+    /// <summary>
+    /// Map SignalR hubs for real-time communication
+    /// </summary>
+    public static WebApplication MapHubs(this WebApplication app)
+    {
+        app.MapHub<ChatHub>("/hubs/chat");
+        app.MapHub<SupportHub>("/hubs/support");
+        return app;
+    }
+
     /// <summary>
     /// Setup middlewares for logging, etc.
     /// </summary>
