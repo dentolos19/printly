@@ -72,16 +72,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     }
   };
 
-  const getAccessTokenExpiry = (token: string): number | null => {
-    try {
-      const decodedToken = jwtDecode<{ exp: number; iat: number }>(token);
-      return decodedToken.exp;
-    } catch {
-      return null;
-    }
-  };
-
-  const shouldProactivelyRefresh = (token: string): boolean => {
+  const shouldRefresh = (token: string): boolean => {
     try {
       const decodedToken = jwtDecode<{ exp: number; iat: number }>(token);
       const currentTime = Math.floor(Date.now() / 1000);
@@ -310,7 +301,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           }
 
           // Check if access token should be proactively refreshed (older than 3.5 days)
-          if (shouldProactivelyRefresh(accessToken)) {
+          if (shouldRefresh(accessToken)) {
             console.log("Proactively refreshing tokens");
             refreshAccess().catch((error) => {
               console.error("Failed to refresh tokens:", error);

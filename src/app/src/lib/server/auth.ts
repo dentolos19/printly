@@ -1,10 +1,5 @@
 import { ServerFetch } from "@/types";
 
-export type AuthResponse = {
-  accessToken: string;
-  refreshToken: string;
-};
-
 export type RegisterDto = {
   name: string;
   email: string;
@@ -17,6 +12,11 @@ export type LoginDto = {
 };
 
 export type RefreshDto = {
+  refreshToken: string;
+};
+
+export type AuthResponse = {
+  accessToken: string;
   refreshToken: string;
 };
 
@@ -52,6 +52,16 @@ export default function initAuthController(fetch: ServerFetch) {
       return response.json();
     },
 
+    verify: async (): Promise<void> => {
+      const response = await fetch("/auth/verify", {
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        throw new Error("User verification failed");
+      }
+    },
+
     refresh: async (body: RefreshDto): Promise<AuthResponse> => {
       const response = await fetch("/auth/refresh", {
         method: "POST",
@@ -79,16 +89,6 @@ export default function initAuthController(fetch: ServerFetch) {
 
       if (!response.ok) {
         throw new Error("Failed to revoke token");
-      }
-    },
-
-    verify: async (): Promise<void> => {
-      const response = await fetch("/auth/verify", {
-        method: "GET",
-      });
-
-      if (!response.ok) {
-        throw new Error("User verification failed");
       }
     },
   };
