@@ -13,9 +13,11 @@ namespace PrintlyServer.Controllers;
 /// </summary>
 [Route("ticket")]
 [Authorize(Roles = "User,Admin")]
-public class TicketController(DatabaseContext context, INotificationService notificationService) : BaseController(context)
+public class TicketController(DatabaseContext context, INotificationService notificationService)
+    : BaseController(context)
 {
     private readonly INotificationService _notificationService = notificationService;
+
     public record CreateTicketRequest(string Subject, Guid? OrderId);
 
     public record TicketResponse(
@@ -46,16 +48,12 @@ public class TicketController(DatabaseContext context, INotificationService noti
     private async Task<bool> IsAdmin()
     {
         var userId = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null) return false;
+        if (userId == null)
+            return false;
 
-        var userRoles = await Context.UserRoles
-            .Where(ur => ur.UserId == userId)
-            .Select(ur => ur.RoleId)
-            .ToListAsync();
+        var userRoles = await Context.UserRoles.Where(ur => ur.UserId == userId).Select(ur => ur.RoleId).ToListAsync();
 
-        return await Context.Roles
-            .Where(r => userRoles.Contains(r.Id) && r.Name == "Admin")
-            .AnyAsync();
+        return await Context.Roles.Where(r => userRoles.Contains(r.Id) && r.Name == "Admin").AnyAsync();
     }
 
     /// <summary>
@@ -65,10 +63,12 @@ public class TicketController(DatabaseContext context, INotificationService noti
     public async Task<ActionResult<TicketResponse>> CreateTicket([FromBody] CreateTicketRequest request)
     {
         var userId = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
         var user = await Context.Users.FindAsync(userId);
-        if (user == null) return NotFound("User not found");
+        if (user == null)
+            return NotFound("User not found");
 
         var ticket = new Ticket
         {
@@ -77,7 +77,7 @@ public class TicketController(DatabaseContext context, INotificationService noti
             OrderId = request.OrderId,
             Status = TicketStatus.Pending,
             Priority = TicketPriority.Normal,
-            LastMessageAt = DateTime.UtcNow
+            LastMessageAt = DateTime.UtcNow,
         };
 
         await Context.Tickets.AddAsync(ticket);
@@ -92,18 +92,20 @@ public class TicketController(DatabaseContext context, INotificationService noti
             NotificationPriority.Normal
         );
 
-        return Ok(new TicketResponse(
-            ticket.Id,
-            ticket.CustomerId,
-            user.UserName ?? user.Email ?? "Unknown",
-            ticket.Subject,
-            ticket.Status,
-            ticket.Priority,
-            ticket.OrderId,
-            ticket.LastMessageAt,
-            ticket.UnreadCount,
-            ticket.CreatedAt
-        ));
+        return Ok(
+            new TicketResponse(
+                ticket.Id,
+                ticket.CustomerId,
+                user.UserName ?? user.Email ?? "Unknown",
+                ticket.Subject,
+                ticket.Status,
+                ticket.Priority,
+                ticket.OrderId,
+                ticket.LastMessageAt,
+                ticket.UnreadCount,
+                ticket.CreatedAt
+            )
+        );
     }
 
     /// <summary>
@@ -113,7 +115,8 @@ public class TicketController(DatabaseContext context, INotificationService noti
     public async Task<ActionResult<List<TicketResponse>>> GetTickets([FromQuery] TicketStatus? status = null)
     {
         var userId = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
         var isAdmin = await IsAdmin();
 
@@ -157,13 +160,13 @@ public class TicketController(DatabaseContext context, INotificationService noti
     public async Task<ActionResult<TicketResponse>> GetTicket(Guid ticketId)
     {
         var userId = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
-        var ticket = await Context.Tickets
-            .Include(t => t.Customer)
-            .FirstOrDefaultAsync(t => t.Id == ticketId);
+        var ticket = await Context.Tickets.Include(t => t.Customer).FirstOrDefaultAsync(t => t.Id == ticketId);
 
-        if (ticket == null) return NotFound("Ticket not found");
+        if (ticket == null)
+            return NotFound("Ticket not found");
 
         var isAdmin = await IsAdmin();
         if (!isAdmin && ticket.CustomerId != userId)
@@ -171,18 +174,20 @@ public class TicketController(DatabaseContext context, INotificationService noti
             return Forbid();
         }
 
-        return Ok(new TicketResponse(
-            ticket.Id,
-            ticket.CustomerId,
-            ticket.Customer.UserName ?? ticket.Customer.Email ?? "Unknown",
-            ticket.Subject,
-            ticket.Status,
-            ticket.Priority,
-            ticket.OrderId,
-            ticket.LastMessageAt,
-            ticket.UnreadCount,
-            ticket.CreatedAt
-        ));
+        return Ok(
+            new TicketResponse(
+                ticket.Id,
+                ticket.CustomerId,
+                ticket.Customer.UserName ?? ticket.Customer.Email ?? "Unknown",
+                ticket.Subject,
+                ticket.Status,
+                ticket.Priority,
+                ticket.OrderId,
+                ticket.LastMessageAt,
+                ticket.UnreadCount,
+                ticket.CreatedAt
+            )
+        );
     }
 
     /// <summary>
@@ -192,10 +197,12 @@ public class TicketController(DatabaseContext context, INotificationService noti
     public async Task<ActionResult<List<TicketMessageResponse>>> GetTicketMessages(Guid ticketId)
     {
         var userId = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
         var ticket = await Context.Tickets.FindAsync(ticketId);
-        if (ticket == null) return NotFound("Ticket not found");
+        if (ticket == null)
+            return NotFound("Ticket not found");
 
         var isAdmin = await IsAdmin();
         if (!isAdmin && ticket.CustomerId != userId)
@@ -203,8 +210,8 @@ public class TicketController(DatabaseContext context, INotificationService noti
             return Forbid();
         }
 
-        var messages = await Context.TicketMessages
-            .Include(m => m.Sender)
+        var messages = await Context
+            .TicketMessages.Include(m => m.Sender)
             .Where(m => m.TicketId == ticketId)
             .OrderBy(m => m.CreatedAt)
             .Select(m => new TicketMessageResponse(
@@ -228,10 +235,12 @@ public class TicketController(DatabaseContext context, INotificationService noti
     public async Task<IActionResult> MarkAsRead(Guid ticketId)
     {
         var userId = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
         var ticket = await Context.Tickets.FindAsync(ticketId);
-        if (ticket == null) return NotFound();
+        if (ticket == null)
+            return NotFound();
 
         var isAdmin = await IsAdmin();
         if (!isAdmin && ticket.CustomerId != userId)
@@ -239,9 +248,7 @@ public class TicketController(DatabaseContext context, INotificationService noti
             return Forbid();
         }
 
-        var messages = await Context.TicketMessages
-            .Where(m => m.TicketId == ticketId)
-            .ToListAsync();
+        var messages = await Context.TicketMessages.Where(m => m.TicketId == ticketId).ToListAsync();
 
         foreach (var msg in messages)
         {
@@ -272,7 +279,8 @@ public class TicketController(DatabaseContext context, INotificationService noti
     public async Task<IActionResult> UpdateTicketStatus(Guid ticketId, [FromBody] UpdateStatusRequest request)
     {
         var ticket = await Context.Tickets.FindAsync(ticketId);
-        if (ticket == null) return NotFound();
+        if (ticket == null)
+            return NotFound();
 
         var oldStatus = ticket.Status;
         ticket.Status = request.Status;
@@ -301,7 +309,8 @@ public class TicketController(DatabaseContext context, INotificationService noti
     public async Task<IActionResult> UpdateTicketPriority(Guid ticketId, [FromBody] TicketPriority priority)
     {
         var ticket = await Context.Tickets.FindAsync(ticketId);
-        if (ticket == null) return NotFound();
+        if (ticket == null)
+            return NotFound();
 
         var oldPriority = ticket.Priority;
         ticket.Priority = priority;

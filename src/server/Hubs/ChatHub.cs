@@ -51,8 +51,7 @@ public class ChatHub(DatabaseContext context, ILogger<ChatHub> logger) : Hub
 
         // Fallback: Try to get from "sub" claim directly (with MapInboundClaims = false)
         var user = Context.User;
-        return user?.FindFirst("sub")?.Value
-            ?? user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return user?.FindFirst("sub")?.Value ?? user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     }
 
     /// <summary>
@@ -62,7 +61,11 @@ public class ChatHub(DatabaseContext context, ILogger<ChatHub> logger) : Hub
     {
         var senderId = GetUserId();
 
-        _logger.LogInformation("SendMessage called - SenderId: {SenderId}, ReceiverId: {ReceiverId}", senderId, receiverId);
+        _logger.LogInformation(
+            "SendMessage called - SenderId: {SenderId}, ReceiverId: {ReceiverId}",
+            senderId,
+            receiverId
+        );
 
         // Debug: Log all claims
         if (Context.User?.Claims != null)
@@ -141,7 +144,11 @@ public class ChatHub(DatabaseContext context, ILogger<ChatHub> logger) : Hub
     {
         var userId = GetUserId();
 
-        _logger.LogInformation("User connecting - UserId: {UserId}, ConnectionId: {ConnectionId}", userId, Context.ConnectionId);
+        _logger.LogInformation(
+            "User connecting - UserId: {UserId}, ConnectionId: {ConnectionId}",
+            userId,
+            Context.ConnectionId
+        );
 
         if (!string.IsNullOrEmpty(userId))
         {
@@ -150,7 +157,10 @@ public class ChatHub(DatabaseContext context, ILogger<ChatHub> logger) : Hub
                 _ => [Context.ConnectionId],
                 (_, connections) =>
                 {
-                    lock (connections) { connections.Add(Context.ConnectionId); }
+                    lock (connections)
+                    {
+                        connections.Add(Context.ConnectionId);
+                    }
                     return connections;
                 }
             );
@@ -227,11 +237,9 @@ public class ChatHub(DatabaseContext context, ILogger<ChatHub> logger) : Hub
             {
                 foreach (var connectionId in senderConnections)
                 {
-                    await Clients.Client(connectionId).SendAsync("MessageRead", new
-                    {
-                        messageId = message.Id,
-                        readAt = message.ReadAt
-                    });
+                    await Clients
+                        .Client(connectionId)
+                        .SendAsync("MessageRead", new { messageId = message.Id, readAt = message.ReadAt });
                 }
             }
 
@@ -250,8 +258,8 @@ public class ChatHub(DatabaseContext context, ILogger<ChatHub> logger) : Hub
             throw new HubException("User not authenticated");
         }
 
-        var unreadMessages = await _context.Messages
-            .Where(m => m.SenderId == senderId && m.ReceiverId == userId && !m.IsRead)
+        var unreadMessages = await _context
+            .Messages.Where(m => m.SenderId == senderId && m.ReceiverId == userId && !m.IsRead)
             .ToListAsync();
 
         if (unreadMessages.Count == 0)
@@ -273,12 +281,17 @@ public class ChatHub(DatabaseContext context, ILogger<ChatHub> logger) : Hub
         {
             foreach (var connectionId in senderConnections)
             {
-                await Clients.Client(connectionId).SendAsync("MessagesRead", new
-                {
-                    readBy = userId,
-                    messageIds = unreadMessages.Select(m => m.Id).ToList(),
-                    readAt = now
-                });
+                await Clients
+                    .Client(connectionId)
+                    .SendAsync(
+                        "MessagesRead",
+                        new
+                        {
+                            readBy = userId,
+                            messageIds = unreadMessages.Select(m => m.Id).ToList(),
+                            readAt = now,
+                        }
+                    );
             }
         }
 
@@ -326,7 +339,7 @@ public class ChatHub(DatabaseContext context, ILogger<ChatHub> logger) : Hub
             id = message.Id,
             content = message.Content,
             isEdited = message.IsEdited,
-            editedAt = message.EditedAt
+            editedAt = message.EditedAt,
         };
 
         // Notify receiver
@@ -378,7 +391,7 @@ public class ChatHub(DatabaseContext context, ILogger<ChatHub> logger) : Hub
         {
             id = message.Id,
             isDeleted = true,
-            deletedAt = message.DeletedAt
+            deletedAt = message.DeletedAt,
         };
 
         // Notify receiver

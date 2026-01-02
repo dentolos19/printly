@@ -123,7 +123,7 @@ public class AuthController(DatabaseContext database, IdentityService identitySe
             return BadRequest();
 
         // Revoke the refresh token
-        await identityService.RevokeUserToken(refreshToken);
+        await identityService.RevokeRefreshToken(refreshToken);
 
         return Ok();
     }

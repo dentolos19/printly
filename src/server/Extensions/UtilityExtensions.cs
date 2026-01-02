@@ -13,8 +13,7 @@ public static class UtilityExtensions
     /// </summary>
     public static string? GetUserId(this ClaimsPrincipal user)
     {
-        return user.FindFirst("sub")?.Value
-            ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return user.FindFirst("sub")?.Value ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     }
 
     public static DbContextOptionsBuilder UseDatabase(this DbContextOptionsBuilder options)

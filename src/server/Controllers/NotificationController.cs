@@ -40,13 +40,14 @@ public class NotificationController(DatabaseContext context) : BaseController(co
     public async Task<ActionResult<List<NotificationResponse>>> GetNotifications(
         [FromQuery] bool? isRead = null,
         [FromQuery] bool includeArchived = false,
-        [FromQuery] int limit = 50)
+        [FromQuery] int limit = 50
+    )
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
-        var query = Context.Notifications
-            .Where(n => n.UserId == userId && !n.IsDeleted);
+        var query = Context.Notifications.Where(n => n.UserId == userId && !n.IsDeleted);
 
         // Filter by read status
         if (isRead.HasValue)
@@ -88,10 +89,12 @@ public class NotificationController(DatabaseContext context) : BaseController(co
     public async Task<ActionResult<int>> GetUnreadCount()
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
-        var count = await Context.Notifications
-            .CountAsync(n => n.UserId == userId && !n.IsRead && !n.IsDeleted && !n.IsArchived);
+        var count = await Context.Notifications.CountAsync(n =>
+            n.UserId == userId && !n.IsRead && !n.IsDeleted && !n.IsArchived
+        );
 
         return Ok(count);
     }
@@ -103,12 +106,13 @@ public class NotificationController(DatabaseContext context) : BaseController(co
     public async Task<IActionResult> MarkAsRead(Guid id)
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
-        var notification = await Context.Notifications
-            .FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
+        var notification = await Context.Notifications.FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
 
-        if (notification == null) return NotFound();
+        if (notification == null)
+            return NotFound();
 
         if (!notification.IsRead)
         {
@@ -127,10 +131,11 @@ public class NotificationController(DatabaseContext context) : BaseController(co
     public async Task<IActionResult> MarkAllAsRead()
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
-        var unreadNotifications = await Context.Notifications
-            .Where(n => n.UserId == userId && !n.IsRead && !n.IsDeleted)
+        var unreadNotifications = await Context
+            .Notifications.Where(n => n.UserId == userId && !n.IsRead && !n.IsDeleted)
             .ToListAsync();
 
         var now = DateTime.UtcNow;
@@ -152,12 +157,13 @@ public class NotificationController(DatabaseContext context) : BaseController(co
     public async Task<IActionResult> Archive(Guid id)
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
-        var notification = await Context.Notifications
-            .FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
+        var notification = await Context.Notifications.FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
 
-        if (notification == null) return NotFound();
+        if (notification == null)
+            return NotFound();
 
         notification.IsArchived = true;
         notification.ArchivedAt = DateTime.UtcNow;
@@ -173,12 +179,13 @@ public class NotificationController(DatabaseContext context) : BaseController(co
     public async Task<IActionResult> Delete(Guid id)
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
-        var notification = await Context.Notifications
-            .FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
+        var notification = await Context.Notifications.FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
 
-        if (notification == null) return NotFound();
+        if (notification == null)
+            return NotFound();
 
         notification.IsDeleted = true;
         notification.DeletedAt = DateTime.UtcNow;
@@ -194,11 +201,10 @@ public class NotificationController(DatabaseContext context) : BaseController(co
     public async Task<IActionResult> DeleteAll()
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
-        var notifications = await Context.Notifications
-            .Where(n => n.UserId == userId && !n.IsDeleted)
-            .ToListAsync();
+        var notifications = await Context.Notifications.Where(n => n.UserId == userId && !n.IsDeleted).ToListAsync();
 
         var now = DateTime.UtcNow;
         foreach (var notification in notifications)

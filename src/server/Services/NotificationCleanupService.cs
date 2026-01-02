@@ -10,9 +10,7 @@ public class NotificationCleanupService : BackgroundService
     private readonly TimeSpan _cleanupInterval = TimeSpan.FromHours(24); // Run daily
     private readonly TimeSpan _deletionThreshold = TimeSpan.FromDays(7); // Delete after 7 days
 
-    public NotificationCleanupService(
-        IServiceProvider serviceProvider,
-        ILogger<NotificationCleanupService> logger)
+    public NotificationCleanupService(IServiceProvider serviceProvider, ILogger<NotificationCleanupService> logger)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
@@ -52,8 +50,8 @@ public class NotificationCleanupService : BackgroundService
         var cutoffDate = DateTime.UtcNow - _deletionThreshold;
 
         // Find notifications older than 7 days that are deleted or archived
-        var oldNotifications = await context.Notifications
-            .Where(n => n.CreatedAt < cutoffDate && (n.IsDeleted || n.IsArchived))
+        var oldNotifications = await context
+            .Notifications.Where(n => n.CreatedAt < cutoffDate && (n.IsDeleted || n.IsArchived))
             .ToListAsync();
 
         if (oldNotifications.Count > 0)

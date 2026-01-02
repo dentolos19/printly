@@ -22,7 +22,7 @@ namespace PrintlyServer.Migrations
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -32,8 +32,10 @@ namespace PrintlyServer.Migrations
                         column: x => x.SenderId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
+                        onDelete: ReferentialAction.Restrict
+                    );
+                }
+            );
 
             migrationBuilder.CreateTable(
                 name: "Messages",
@@ -50,7 +52,7 @@ namespace PrintlyServer.Migrations
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -60,14 +62,17 @@ namespace PrintlyServer.Migrations
                         column: x => x.ReceiverId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Restrict
+                    );
                     table.ForeignKey(
                         name: "FK_Messages_AspNetUsers_SenderId",
                         column: x => x.SenderId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
+                        onDelete: ReferentialAction.Restrict
+                    );
+                }
+            );
 
             migrationBuilder.CreateTable(
                 name: "Tickets",
@@ -82,7 +87,7 @@ namespace PrintlyServer.Migrations
                     LastMessageAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UnreadCount = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -92,8 +97,10 @@ namespace PrintlyServer.Migrations
                         column: x => x.CustomerId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
+                        onDelete: ReferentialAction.Restrict
+                    );
+                }
+            );
 
             migrationBuilder.CreateTable(
                 name: "Notifications",
@@ -115,7 +122,7 @@ namespace PrintlyServer.Migrations
                     Priority = table.Column<int>(type: "integer", nullable: false),
                     ActionUrl = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -125,14 +132,17 @@ namespace PrintlyServer.Migrations
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Cascade
+                    );
                     table.ForeignKey(
                         name: "FK_Notifications_Tickets_TicketId",
                         column: x => x.TicketId,
                         principalTable: "Tickets",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                });
+                        onDelete: ReferentialAction.SetNull
+                    );
+                }
+            );
 
             migrationBuilder.CreateTable(
                 name: "TicketMessages",
@@ -151,7 +161,7 @@ namespace PrintlyServer.Migrations
                     CallDuration = table.Column<int>(type: "integer", nullable: true),
                     CallMissed = table.Column<bool>(type: "boolean", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -161,78 +171,65 @@ namespace PrintlyServer.Migrations
                         column: x => x.SenderId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Restrict
+                    );
                     table.ForeignKey(
                         name: "FK_TicketMessages_Tickets_TicketId",
                         column: x => x.TicketId,
                         principalTable: "Tickets",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
+                        onDelete: ReferentialAction.Cascade
+                    );
+                }
+            );
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Broadcasts_SenderId",
-                table: "Broadcasts",
-                column: "SenderId");
+            migrationBuilder.CreateIndex(name: "IX_Broadcasts_SenderId", table: "Broadcasts", column: "SenderId");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Messages_ReceiverId",
-                table: "Messages",
-                column: "ReceiverId");
+            migrationBuilder.CreateIndex(name: "IX_Messages_ReceiverId", table: "Messages", column: "ReceiverId");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Messages_SenderId",
-                table: "Messages",
-                column: "SenderId");
+            migrationBuilder.CreateIndex(name: "IX_Messages_SenderId", table: "Messages", column: "SenderId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Notifications_CreatedAt",
                 table: "Notifications",
-                column: "CreatedAt");
+                column: "CreatedAt"
+            );
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Notifications_TicketId",
-                table: "Notifications",
-                column: "TicketId");
+            migrationBuilder.CreateIndex(name: "IX_Notifications_TicketId", table: "Notifications", column: "TicketId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Notifications_UserId_IsRead_IsDeleted",
                 table: "Notifications",
-                columns: new[] { "UserId", "IsRead", "IsDeleted" });
+                columns: new[] { "UserId", "IsRead", "IsDeleted" }
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_TicketMessages_SenderId",
                 table: "TicketMessages",
-                column: "SenderId");
+                column: "SenderId"
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_TicketMessages_TicketId",
                 table: "TicketMessages",
-                column: "TicketId");
+                column: "TicketId"
+            );
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Tickets_CustomerId",
-                table: "Tickets",
-                column: "CustomerId");
+            migrationBuilder.CreateIndex(name: "IX_Tickets_CustomerId", table: "Tickets", column: "CustomerId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "Broadcasts");
+            migrationBuilder.DropTable(name: "Broadcasts");
 
-            migrationBuilder.DropTable(
-                name: "Messages");
+            migrationBuilder.DropTable(name: "Messages");
 
-            migrationBuilder.DropTable(
-                name: "Notifications");
+            migrationBuilder.DropTable(name: "Notifications");
 
-            migrationBuilder.DropTable(
-                name: "TicketMessages");
+            migrationBuilder.DropTable(name: "TicketMessages");
 
-            migrationBuilder.DropTable(
-                name: "Tickets");
+            migrationBuilder.DropTable(name: "Tickets");
         }
     }
 }

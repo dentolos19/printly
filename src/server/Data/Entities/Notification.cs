@@ -35,15 +35,15 @@ public class Notification : BaseEntity
 
 public enum NotificationType
 {
-    TicketCreated = 0,           // New ticket created
-    TicketAssigned = 1,          // Ticket assigned to admin
-    TicketStatusChanged = 2,     // Status updated
-    TicketPriorityChanged = 3,   // Priority changed
-    NewMessage = 4,              // New message in ticket
-    TicketClosed = 5,            // Ticket closed
-    MentionedInMessage = 6,      // @mentioned in message
-    AdminJoinedTicket = 7,       // Another admin joined
-    BroadcastSent = 8            // System broadcast
+    TicketCreated = 0, // New ticket created
+    TicketAssigned = 1, // Ticket assigned to admin
+    TicketStatusChanged = 2, // Status updated
+    TicketPriorityChanged = 3, // Priority changed
+    NewMessage = 4, // New message in ticket
+    TicketClosed = 5, // Ticket closed
+    MentionedInMessage = 6, // @mentioned in message
+    AdminJoinedTicket = 7, // Another admin joined
+    BroadcastSent = 8, // System broadcast
 }
 
 public enum NotificationPriority
@@ -51,5 +51,5 @@ public enum NotificationPriority
     Low = 0,
     Normal = 1,
     High = 2,
-    Urgent = 3
+    Urgent = 3,
 }

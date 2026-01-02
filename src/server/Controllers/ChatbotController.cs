@@ -9,9 +9,9 @@ namespace PrintlyServer.Controllers;
 /// <summary>
 /// Controller for AI-powered support chatbot
 /// </summary>
-public class ChatbotController(DatabaseContext context, ChatbotService chatbotService) : BaseController(context)
+public class ChatbotController(DatabaseContext context, ChatService chatbotService) : BaseController(context)
 {
-    private readonly ChatbotService _chatbotService = chatbotService;
+    private readonly ChatService _chatbotService = chatbotService;
 
     /// <summary>
     /// Send a message to the chatbot
@@ -34,11 +34,7 @@ public class ChatbotController(DatabaseContext context, ChatbotService chatbotSe
         }
 
         // Send message to chatbot service
-        var response = await _chatbotService.SendMessageAsync(
-            userId,
-            request.Message,
-            request.History
-        );
+        var response = await _chatbotService.SendMessageAsync(userId, request.Message, request.History);
 
         if (!response.Success)
         {
@@ -49,10 +45,7 @@ public class ChatbotController(DatabaseContext context, ChatbotService chatbotSe
             return BadRequest(new { error = response.Error });
         }
 
-        return Ok(new
-        {
-            message = response.Message
-        });
+        return Ok(new { message = response.Message });
     }
 
     /// <summary>
@@ -62,17 +55,19 @@ public class ChatbotController(DatabaseContext context, ChatbotService chatbotSe
     [HttpGet("status")]
     public IActionResult GetStatus()
     {
-        return Ok(new
-        {
-            available = true,
-            features = new[]
+        return Ok(
+            new
             {
-                "Multi-turn conversations",
-                "Platform navigation help",
-                "Feature explanations",
-                "General support"
+                available = true,
+                features = new[]
+                {
+                    "Multi-turn conversations",
+                    "Platform navigation help",
+                    "Feature explanations",
+                    "General support",
+                },
             }
-        });
+        );
     }
 }
 
