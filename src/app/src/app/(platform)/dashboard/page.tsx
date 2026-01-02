@@ -1,10 +1,42 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item";
-import { CheckIcon, ClockIcon, CoinsIcon, ImageIcon, PackageIcon, PhoneIcon, PlusIcon } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useServer } from "@/lib/providers/server";
+import type { Design } from "@/lib/server/design";
+import {
+  CheckIcon,
+  ClockIcon,
+  CoinsIcon,
+  FileTextIcon,
+  ImageIcon,
+  PackageIcon,
+  PhoneIcon,
+  PlusIcon,
+} from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export default function Page() {
+  const { api } = useServer();
+  const [designs, setDesigns] = useState<Design[]>([]);
+  const [loadingDesigns, setLoadingDesigns] = useState(true);
+
+  useEffect(() => {
+    api.design
+      .getDesigns()
+      .then((data) => {
+        setDesigns(data.slice(0, 5));
+      })
+      .catch((error) => {
+        console.error("Failed to load designs:", error);
+      })
+      .finally(() => {
+        setLoadingDesigns(false);
+      });
+  }, [api.design]);
   return (
     <div className={"p-6"}>
       <div className={"mb-6 flex gap-4 *:flex-1 max-md:flex-col"}>
@@ -46,7 +78,7 @@ export default function Page() {
         </Card>
       </div>
 
-      <div className={"flex max-md:flex-col-reverse"}>
+      <div className={"flex gap-6 max-md:flex-col-reverse"}>
         <div className={"flex-1 space-y-6"}>
           <div>
             <div className={"mb-4 flex items-center justify-between"}>
@@ -55,7 +87,44 @@ export default function Page() {
                 <Link href={"/designs"}>View All</Link>
               </Button>
             </div>
-            <div className={"space-y-4"}>Todo</div>
+            <div className={"space-y-4"}>
+              {loadingDesigns ? (
+                <>
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Item key={i} variant={"outline"}>
+                      <ItemMedia>
+                        <Skeleton className={"size-full"} />
+                      </ItemMedia>
+                      <ItemContent>
+                        <Skeleton className={"mb-2 h-5 w-32"} />
+                        <Skeleton className={"h-4 w-48"} />
+                      </ItemContent>
+                    </Item>
+                  ))}
+                </>
+              ) : designs.length > 0 ? (
+                designs.map((design) => (
+                  <Item key={design.id} variant={"outline"} asChild>
+                    <Link href={`/designer/${design.id}`}>
+                      <ItemMedia>
+                        <FileTextIcon />
+                      </ItemMedia>
+                      <ItemContent>
+                        <ItemTitle>{design.name}</ItemTitle>
+                        <ItemDescription>{design.description || "No description"}</ItemDescription>
+                      </ItemContent>
+                      <ItemActions />
+                    </Link>
+                  </Item>
+                ))
+              ) : (
+                <Item variant={"outline"}>
+                  <ItemContent>
+                    <ItemDescription>No designs yet. Create your first design to get started!</ItemDescription>
+                  </ItemContent>
+                </Item>
+              )}
+            </div>
           </div>
           <div>
             <div className={"mb-4 flex items-center justify-between"}>
