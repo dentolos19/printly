@@ -5,10 +5,10 @@ using System.Text.Json;
 
 namespace PrintlyServer.Services;
 
-public class ChatbotService
+public class ChatService
 {
     private readonly HttpClient _http;
-    private readonly ILogger<ChatbotService> _logger;
+    private readonly ILogger<ChatService> _logger;
 
     // Rate limiting: Track last request time per user
     private static readonly ConcurrentDictionary<string, DateTime> _lastRequestTime = new();
@@ -26,14 +26,14 @@ public class ChatbotService
     private static readonly string SystemPrompt = """
         You are Printly Assistant, a helpful and friendly AI support chatbot for the Printly application.
         Printly is a print-on-demand design platform where users can:
-        
+
         1. **Designs**: Create, edit, and manage print designs. Users can upload images, use templates, and customize their designs.
         2. **Assets**: Upload and manage images/files that can be used in designs.
         3. **Templates**: Pre-made design templates that users can customize.
         4. **Orders**: Place orders for printed products with their designs.
         5. **Chat/Support**: Get help through the support ticket system or live chat.
         6. **Notifications**: Receive updates about orders, tickets, and system announcements.
-        
+
         Navigation Guide:
         - Dashboard: Overview of recent activity and quick stats
         - Designer: Create and edit designs with drag-and-drop editor
@@ -41,7 +41,7 @@ public class ChatbotService
         - Orders: View and track your orders
         - Chat: Access support tickets and live chat
         - Notifications: View all your notifications
-        
+
         Guidelines:
         - Be concise and helpful
         - Guide users through the platform features
@@ -51,7 +51,7 @@ public class ChatbotService
         - Use friendly, professional tone
         """;
 
-    public ChatbotService(IConfiguration configuration, ILogger<ChatbotService> logger)
+    public ChatService(IConfiguration configuration, ILogger<ChatService> logger)
     {
         _logger = logger;
 
@@ -61,10 +61,7 @@ public class ChatbotService
             throw new InvalidOperationException("OPENROUTER_API_KEY is not configured");
         }
 
-        _http = new HttpClient
-        {
-            Timeout = TimeSpan.FromSeconds(RequestTimeoutSeconds)
-        };
+        _http = new HttpClient { Timeout = TimeSpan.FromSeconds(RequestTimeoutSeconds) };
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
         _http.DefaultRequestHeaders.Add("HTTP-Referer", "https://printly.dennise.me");
         _http.DefaultRequestHeaders.Add("X-Title", "Printly Chatbot");
@@ -83,7 +80,10 @@ public class ChatbotService
             var secondsSinceLastRequest = (now - lastTime).TotalSeconds;
             if (secondsSinceLastRequest < CooldownSeconds)
             {
-                return (true, $"Please wait {CooldownSeconds - (int)secondsSinceLastRequest} seconds before sending another message.");
+                return (
+                    true,
+                    $"Please wait {CooldownSeconds - (int)secondsSinceLastRequest} seconds before sending another message."
+                );
             }
         }
 
@@ -123,16 +123,16 @@ public class ChatbotService
     /// <summary>
     /// Send a message to the chatbot and get a response
     /// </summary>
-    public async Task<ChatbotResponse> SendMessageAsync(string userId, string message, List<ChatMessage>? conversationHistory = null)
+    public async Task<ChatbotResponse> SendMessageAsync(
+        string userId,
+        string message,
+        List<ChatMessage>? conversationHistory = null
+    )
     {
         // Validate input
         if (string.IsNullOrWhiteSpace(message))
         {
-            return new ChatbotResponse
-            {
-                Success = false,
-                Error = "Message cannot be empty."
-            };
+            return new ChatbotResponse { Success = false, Error = "Message cannot be empty." };
         }
 
         if (message.Length > 1000)
@@ -140,7 +140,7 @@ public class ChatbotService
             return new ChatbotResponse
             {
                 Success = false,
-                Error = "Message is too long. Please keep it under 1000 characters."
+                Error = "Message is too long. Please keep it under 1000 characters.",
             };
         }
 
@@ -152,24 +152,19 @@ public class ChatbotService
             {
                 Success = false,
                 Error = reason,
-                IsRateLimited = true
+                IsRateLimited = true,
             };
         }
 
         try
         {
             // Build messages array with system prompt and history
-            var messages = new List<object>
-            {
-                new { role = "system", content = SystemPrompt }
-            };
+            var messages = new List<object> { new { role = "system", content = SystemPrompt } };
 
             // Add conversation history (limited to prevent token overflow)
             if (conversationHistory != null)
             {
-                var recentHistory = conversationHistory
-                    .TakeLast(MaxConversationHistory)
-                    .ToList();
+                var recentHistory = conversationHistory.TakeLast(MaxConversationHistory).ToList();
 
                 foreach (var msg in recentHistory)
                 {
@@ -185,7 +180,7 @@ public class ChatbotService
                 model = "google/gemini-2.5-flash",
                 messages = messages,
                 max_tokens = MaxTokens,
-                temperature = 0.7
+                temperature = 0.7,
             };
 
             _logger.LogInformation("Sending chatbot request for user {UserId}", userId);
@@ -203,38 +198,28 @@ public class ChatbotService
                 return new ChatbotResponse
                 {
                     Success = false,
-                    Error = "I'm having trouble connecting right now. Please try again later."
+                    Error = "I'm having trouble connecting right now. Please try again later.",
                 };
             }
 
             var responseBody = await response.Content.ReadAsStringAsync();
             var responseJson = JsonSerializer.Deserialize<JsonElement>(responseBody);
 
-            var assistantMessage = responseJson
-                .GetProperty("choices")[0]
-                .GetProperty("message")
-                .GetProperty("content")
-                .GetString() ?? string.Empty;
+            var assistantMessage =
+                responseJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString()
+                ?? string.Empty;
 
             // Update rate limit tracking after successful request
             UpdateRateLimit(userId);
 
             _logger.LogInformation("Chatbot response sent for user {UserId}", userId);
 
-            return new ChatbotResponse
-            {
-                Success = true,
-                Message = assistantMessage
-            };
+            return new ChatbotResponse { Success = true, Message = assistantMessage };
         }
         catch (TaskCanceledException)
         {
             _logger.LogWarning("Chatbot request timed out for user {UserId}", userId);
-            return new ChatbotResponse
-            {
-                Success = false,
-                Error = "Request timed out. Please try again."
-            };
+            return new ChatbotResponse { Success = false, Error = "Request timed out. Please try again." };
         }
         catch (HttpRequestException ex)
         {
@@ -242,7 +227,7 @@ public class ChatbotService
             return new ChatbotResponse
             {
                 Success = false,
-                Error = "Connection error. Please check your internet and try again."
+                Error = "Connection error. Please check your internet and try again.",
             };
         }
         catch (Exception ex)
@@ -251,7 +236,7 @@ public class ChatbotService
             return new ChatbotResponse
             {
                 Success = false,
-                Error = "An unexpected error occurred. Please try again later."
+                Error = "An unexpected error occurred. Please try again later.",
             };
         }
     }

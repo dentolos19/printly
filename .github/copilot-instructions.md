@@ -36,5 +36,10 @@ pnpm run dev
 
 ```pwsh
 pwsh -ExecutionPolicy Bypass -File src/server/migrate.ps1
+```
+
+### Create Migration
+
+```pwsh
 pwsh -ExecutionPolicy Bypass -File src/server/migrate.ps1 -MigrationName MyMigration
 ```

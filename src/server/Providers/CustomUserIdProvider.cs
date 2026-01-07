@@ -12,7 +12,6 @@ public class CustomUserIdProvider : IUserIdProvider
     public string? GetUserId(HubConnectionContext connection)
     {
         // With MapInboundClaims = false, "sub" stays as "sub"
-        return connection.User?.FindFirst("sub")?.Value
-            ?? connection.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return connection.User?.FindFirst("sub")?.Value ?? connection.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     }
 }

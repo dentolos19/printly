@@ -34,12 +34,11 @@ public class IdentityService
         var roles = await _userManager.GetRolesAsync(user);
 
         // Define claims accessible for the frontend
-        // NOTE: ClaimTypes.NameIdentifier is required for SignalR's Context.UserIdentifier
         var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-            new Claim(ClaimTypes.NameIdentifier, user.Id),
             new Claim(JwtRegisteredClaimNames.Email, user.Email!),
+            new Claim(ClaimTypes.NameIdentifier, user.Id),
             new Claim(ClaimTypes.Email, user.Email!),
             new Claim(ClaimTypes.Role, roles.FirstOrDefault() ?? Roles.User),
         };
@@ -65,7 +64,6 @@ public class IdentityService
             UserId = user.Id,
         };
 
-        // Save the refresh token to the database
         _context.RefreshTokens.Add(token);
         await _context.SaveChangesAsync();
 
@@ -82,18 +80,12 @@ public class IdentityService
             UserId = refreshToken.UserId,
         };
 
-        // Replace and revoke the old refresh token
         refreshToken.RevokedAt = DateTime.UtcNow;
         refreshToken.ReplacedByToken = token.Token;
         _context.RefreshTokens.Add(token);
         await _context.SaveChangesAsync();
 
         return token;
-    }
-
-    public async Task<RefreshToken?> FindRefreshToken(string token)
-    {
-        return await _context.RefreshTokens.Include(rt => rt.User).FirstOrDefaultAsync(rt => rt.Token == token);
     }
 
     public async Task<User> CreateUser(string email, string? password = null)
@@ -140,7 +132,12 @@ public class IdentityService
         return (accessToken, refreshToken.Token);
     }
 
-    public async Task RevokeUserToken(RefreshToken token)
+    public async Task<RefreshToken?> FindRefreshToken(string token)
+    {
+        return await _context.RefreshTokens.Include(rt => rt.User).FirstOrDefaultAsync(rt => rt.Token == token);
+    }
+
+    public async Task RevokeRefreshToken(RefreshToken token)
     {
         token.RevokedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();

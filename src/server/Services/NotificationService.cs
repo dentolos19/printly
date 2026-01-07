@@ -31,7 +31,8 @@ public interface INotificationService
 public class NotificationService(
     DatabaseContext context,
     IHubContext<SupportHub> supportHubContext,
-    ILogger<NotificationService> logger) : INotificationService
+    ILogger<NotificationService> logger
+) : INotificationService
 {
     private readonly DatabaseContext _context = context;
     private readonly IHubContext<SupportHub> _supportHubContext = supportHubContext;
@@ -45,7 +46,8 @@ public class NotificationService(
         Guid? ticketId = null,
         Guid? messageId = null,
         NotificationPriority priority = NotificationPriority.Normal,
-        string? actionUrl = null)
+        string? actionUrl = null
+    )
     {
         var notification = new Notification
         {
@@ -58,24 +60,29 @@ public class NotificationService(
             Priority = priority,
             ActionUrl = actionUrl,
             CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            UpdatedAt = DateTime.UtcNow,
         };
 
         await _context.Notifications.AddAsync(notification);
         await _context.SaveChangesAsync();
 
         // Send real-time notification via SignalR
-        await _supportHubContext.Clients.User(userId).SendAsync("ReceiveNotification", new
-        {
-            id = notification.Id,
-            type = notification.Type.ToString(),
-            title = notification.Title,
-            message = notification.Message,
-            ticketId = notification.TicketId,
-            priority = notification.Priority.ToString(),
-            actionUrl = notification.ActionUrl,
-            createdAt = notification.CreatedAt
-        });
+        await _supportHubContext
+            .Clients.User(userId)
+            .SendAsync(
+                "ReceiveNotification",
+                new
+                {
+                    id = notification.Id,
+                    type = notification.Type.ToString(),
+                    title = notification.Title,
+                    message = notification.Message,
+                    ticketId = notification.TicketId,
+                    priority = notification.Priority.ToString(),
+                    actionUrl = notification.ActionUrl,
+                    createdAt = notification.CreatedAt,
+                }
+            );
 
         _logger.LogInformation("Notification created for user {UserId}: {Type}", userId, type);
     }
@@ -85,13 +92,11 @@ public class NotificationService(
         string title,
         string message,
         Guid? ticketId = null,
-        NotificationPriority priority = NotificationPriority.Normal)
+        NotificationPriority priority = NotificationPriority.Normal
+    )
     {
         // Get all admin users
-        var adminRoleId = await _context.Roles
-            .Where(r => r.Name == "Admin")
-            .Select(r => r.Id)
-            .FirstOrDefaultAsync();
+        var adminRoleId = await _context.Roles.Where(r => r.Name == "Admin").Select(r => r.Id).FirstOrDefaultAsync();
 
         if (adminRoleId == null)
         {
@@ -99,8 +104,8 @@ public class NotificationService(
             return;
         }
 
-        var adminUserIds = await _context.UserRoles
-            .Where(ur => ur.RoleId == adminRoleId)
+        var adminUserIds = await _context
+            .UserRoles.Where(ur => ur.RoleId == adminRoleId)
             .Select(ur => ur.UserId)
             .ToListAsync();
 

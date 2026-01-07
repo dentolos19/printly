@@ -28,11 +28,10 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/lib/providers/auth";
+import { cn } from "@/lib/utils";
 import {
   BellIcon,
-  BookDashedIcon,
   BookIcon,
   ImageIcon,
   LayoutDashboardIcon,
@@ -48,7 +47,7 @@ import { ReactNode } from "react";
 
 function NestedLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { isMobile } = useSidebar();
+  const { isMobile, state } = useSidebar();
   const { claims, logout } = useAuth();
 
   const handleLogout = () => {
@@ -58,18 +57,17 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <Sidebar>
-        <SidebarHeader>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild className={"data-[slot=sidebar-menu-button]:p-1.5!"}>
-                <Link href={"/dashboard"} className={"flex items-center gap-2"}>
-                  <img src={"/icon.png"} className={"size-5"} />
-                  <span className={"text-base font-semibold"}>Printly</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
+      <Sidebar collapsible={"icon"}>
+        <SidebarHeader
+          className={cn(
+            "h-14 flex-row items-center justify-between border-b",
+            state === "collapsed" && "justify-center",
+            state === "expanded" && "px-4",
+          )}
+        >
+          <img src={"/icon.png"} className={"size-6"} />
+          <h1 className={cn("font-mono text-lg font-bold", state === "collapsed" && "hidden")}>Printly</h1>
+          <NotificationBell className={cn(state === "collapsed" && "hidden")} />
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
@@ -88,14 +86,6 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                     <Link href={"/designs"}>
                       <BookIcon />
                       <span>Designs</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href={"/templates"}>
-                      <BookDashedIcon />
-                      <span>Templates</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -200,13 +190,10 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <div className="flex-1" />
-          <NotificationBell />
+        <header className={"bg-sidebar flex h-14 shrink-0 items-center gap-2 border-b px-4"}>
+          <SidebarTrigger />
         </header>
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className={"bg-background flex-1 overflow-auto"}>{children}</main>
       </SidebarInset>
       <ChatbotWidget />
     </>

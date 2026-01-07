@@ -8,7 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddDotNetEnv();
 
 builder.Services.SetupCors();
-builder.Services.SetupSignalR();
+builder.Services.SetupCommunications();
 builder.Services.SetupAuth();
 builder.Services.SetupDatabase();
 builder.Services.SetupRouting();
@@ -17,7 +17,7 @@ builder.Services.SetupDocumentation();
 builder.Services.AddScoped<IdentityService>();
 builder.Services.AddScoped<StorageService>();
 builder.Services.AddScoped<GenerativeService>();
-builder.Services.AddScoped<ChatbotService>();
+builder.Services.AddScoped<ChatService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddHostedService<NotificationCleanupService>();
 
@@ -33,7 +33,6 @@ await app.SetupDevelopmentAsync();
 await app.SetupRolesAsync();
 
 app.MapControllers();
-app.MapHub<ChatHub>("/hubs/chat");
-app.MapHub<SupportHub>("/hubs/support");
+app.MapHubs();
 
 app.Run();

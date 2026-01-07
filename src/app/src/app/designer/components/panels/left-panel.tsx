@@ -1,5 +1,7 @@
 "use client";
 
+import { useDesigner } from "@/app/designer/components/hooks";
+import { ToolType } from "@/app/designer/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,8 +11,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, Loader2, Sparkles, Upload } from "lucide-react";
 import { useRef, useState } from "react";
-import { useDesigner } from "../hooks";
-import type { ToolType } from "../types";
 
 type LeftPanelProps = {
   className?: string;

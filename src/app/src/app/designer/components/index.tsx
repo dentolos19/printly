@@ -1,10 +1,16 @@
+/**
+ * @deprecated This component is no longer used. The designer is now integrated directly into the page.
+ * Please use the designer page at /designer/[id] instead.
+ * This file is kept for reference only.
+ */
+
 "use client";
 
+import { IconToolbar } from "@/app/designer/components/icon-toolbar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { DesignerCanvas } from "./canvas";
 import { DesignerProvider, useKeyboardShortcuts } from "./hooks";
-import { IconToolbar } from "./icon-toolbar";
 import { LeftPanel, RightPanel } from "./panels";
 import { StatusBar } from "./status-bar";
 import { ToolbarHeader } from "./toolbar-header";

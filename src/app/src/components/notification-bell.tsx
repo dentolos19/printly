@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@/lib/providers/auth";
-import { API_URL } from "@/environment";
-import { Bell, CheckCheck, Archive, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useRouter } from "next/navigation";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { API_URL } from "@/environment";
+import { useAuth } from "@/lib/providers/auth";
 import * as signalR from "@microsoft/signalr";
+import { Archive, Bell, CheckCheck, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ComponentProps, useCallback, useEffect, useState } from "react";
 
 interface Notification {
   id: string;
@@ -25,7 +25,7 @@ interface Notification {
   createdAt: string;
 }
 
-export function NotificationBell() {
+export function NotificationBell(props: ComponentProps<typeof Button>) {
   const { tokens } = useAuth();
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -240,7 +240,7 @@ export function NotificationBell() {
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative" {...props}>
           <Bell className="size-5" />
           {unreadCount > 0 && (
             <Badge

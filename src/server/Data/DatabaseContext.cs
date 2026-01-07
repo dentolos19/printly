@@ -28,78 +28,78 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
 
         // Configure Message entity with two foreign keys to User
         // This prevents cascade delete issues with multiple paths to the same table
-        modelBuilder.Entity<Message>()
+        modelBuilder
+            .Entity<Message>()
             .HasOne(m => m.Sender)
             .WithMany()
             .HasForeignKey(m => m.SenderId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder.Entity<Message>()
+        modelBuilder
+            .Entity<Message>()
             .HasOne(m => m.Receiver)
             .WithMany()
             .HasForeignKey(m => m.ReceiverId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Ticket relationships
-        modelBuilder.Entity<Ticket>()
+        modelBuilder
+            .Entity<Ticket>()
             .HasOne(t => t.Customer)
             .WithMany()
             .HasForeignKey(t => t.CustomerId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder.Entity<Ticket>()
+        modelBuilder
+            .Entity<Ticket>()
             .HasMany(t => t.Messages)
             .WithOne(m => m.Ticket)
             .HasForeignKey(m => m.TicketId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // TicketMessage relationships
-        modelBuilder.Entity<TicketMessage>()
+        modelBuilder
+            .Entity<TicketMessage>()
             .HasOne(m => m.Sender)
             .WithMany()
             .HasForeignKey(m => m.SenderId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Broadcast relationships
-        modelBuilder.Entity<Broadcast>()
+        modelBuilder
+            .Entity<Broadcast>()
             .HasOne(b => b.Sender)
             .WithMany()
             .HasForeignKey(b => b.SenderId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Notification relationships
-        modelBuilder.Entity<Notification>()
+        modelBuilder
+            .Entity<Notification>()
             .HasOne(n => n.User)
             .WithMany()
             .HasForeignKey(n => n.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<Notification>()
+        modelBuilder
+            .Entity<Notification>()
             .HasOne(n => n.Ticket)
             .WithMany()
             .HasForeignKey(n => n.TicketId)
             .OnDelete(DeleteBehavior.SetNull);
 
         // Index for faster queries
-        modelBuilder.Entity<Notification>()
-            .HasIndex(n => new { n.UserId, n.IsRead, n.IsDeleted });
+        modelBuilder
+            .Entity<Notification>()
+            .HasIndex(n => new
+            {
+                n.UserId,
+                n.IsRead,
+                n.IsDeleted,
+            });
 
         modelBuilder.Entity<Notification>()
             .HasIndex(n => n.CreatedAt);
-
-        // Configure Message reply relationships (self-referencing)
-        modelBuilder.Entity<Message>()
-            .HasOne(m => m.ReplyToMessage)
-            .WithMany()
-            .HasForeignKey(m => m.ReplyToMessageId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        // Configure TicketMessage reply relationships (self-referencing)
-        modelBuilder.Entity<TicketMessage>()
-            .HasOne(m => m.ReplyToMessage)
-            .WithMany()
-            .HasForeignKey(m => m.ReplyToMessageId)
-            .OnDelete(DeleteBehavior.SetNull);
     }
 
     public override int SaveChanges()

@@ -17,24 +17,29 @@ public static class ServiceExtensions
 {
     /// <summary>
     /// Setup Cross-Origin Resource Sharing (CORS) to allow our app to access this server.
-    /// Uses explicit origins with credentials support required for SignalR WebSocket connections.
-    /// CRITICAL: AllowAnyOrigin is INCOMPATIBLE with AllowCredentials - must use WithOrigins.
     /// </summary>
     public static IServiceCollection SetupCors(this IServiceCollection services)
     {
         services.AddCors(options =>
         {
-            options.AddPolicy("AllowAll", policy =>
-            {
-                policy.WithOrigins(
-                        "http://localhost:3000",   // Development frontend HTTP
-                        "https://localhost:3000"   // Development frontend HTTPS
-                      )
-                      .AllowAnyMethod()
-                      .AllowAnyHeader()
-                      .AllowCredentials()          // Required for SignalR
-                      .SetIsOriginAllowedToAllowWildcardSubdomains();
-            });
+            options.AddPolicy(
+                "AllowAll",
+                policy =>
+                {
+                    policy
+                        .WithOrigins(
+                            "https://printly.dennise.me", // Production
+                            "http://localhost:3000", // Development Frontend
+                            "https://localhost:3000", // Development with HTTPS
+                            "http://localhost:3001", // Development API
+                            "https://localhost:3001" // Development API with HTTPS
+                        )
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials()
+                        .SetIsOriginAllowedToAllowWildcardSubdomains();
+                }
+            );
         });
 
         return services;
@@ -43,7 +48,7 @@ public static class ServiceExtensions
     /// <summary>
     /// Setup SignalR for real-time communication with proper timeout configuration.
     /// </summary>
-    public static IServiceCollection SetupSignalR(this IServiceCollection services)
+    public static IServiceCollection SetupCommunications(this IServiceCollection services)
     {
         services.AddSignalR(options =>
         {
@@ -112,16 +117,11 @@ public static class ServiceExtensions
                     OnMessageReceived = context =>
                     {
                         var accessToken = context.Request.Query["access_token"];
-
-                        // If the request is for the SignalR hub
                         var path = context.HttpContext.Request.Path;
                         if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/chat"))
-                        {
                             context.Token = accessToken;
-                        }
-
                         return Task.CompletedTask;
-                    }
+                    },
                 };
             });
 

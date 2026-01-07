@@ -14,9 +14,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   AlertTriangle,
+  ArrowLeft,
   ChevronDown,
   Cloud,
   Eye,
@@ -28,6 +30,7 @@ import {
   Share2,
   Undo2,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useDesigner } from "./hooks";
 
 type ToolbarHeaderProps = {
@@ -37,6 +40,7 @@ type ToolbarHeaderProps = {
 };
 
 export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }: ToolbarHeaderProps) {
+  const router = useRouter();
   const {
     designName,
     setDesignName,
@@ -76,6 +80,22 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
 
   return (
     <div className={cn("bg-background flex h-12 items-center border-b px-2", className)}>
+      {/* Back button */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type={"button"}
+            variant={"ghost"}
+            size={"icon"}
+            className={"mr-2 h-8 w-8"}
+            onClick={() => router.push("/dashboard")}
+          >
+            <ArrowLeft className={"h-4 w-4"} />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Back to Dashboard</TooltipContent>
+      </Tooltip>
+
       {/* Logo/Brand */}
       <div className={"flex items-center gap-2 pr-4"}>
         <span className={"text-primary text-lg font-bold"}>{title}</span>

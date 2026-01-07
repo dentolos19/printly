@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using PrintlyServer.Data;
@@ -42,6 +43,23 @@ public class AuthController(DatabaseContext database, IdentityService identitySe
         var (accessToken, refreshToken) = await identityService.GrantUserAccess(user);
 
         return Ok(new AuthResponse(accessToken, refreshToken));
+    }
+
+    [HttpGet]
+    [Route("verify")]
+    public async Task<IActionResult> VerifyUser()
+    {
+        // Get user email from claims
+        var email = User.FindFirst("email")?.Value;
+        if (string.IsNullOrEmpty(email))
+            return Unauthorized();
+
+        // Check if user exists in database
+        var user = await identityService.GetUser(email);
+        if (user == null)
+            return Unauthorized();
+
+        return Ok();
     }
 
     [HttpGet]
@@ -106,7 +124,7 @@ public class AuthController(DatabaseContext database, IdentityService identitySe
             return BadRequest();
 
         // Revoke the refresh token
-        await identityService.RevokeUserToken(refreshToken);
+        await identityService.RevokeRefreshToken(refreshToken);
 
         return Ok();
     }

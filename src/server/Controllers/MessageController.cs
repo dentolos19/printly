@@ -37,12 +37,7 @@ public class MessageController(DatabaseContext context) : BaseController(context
     /// <summary>
     /// Response DTO for a user (for the contacts list).
     /// </summary>
-    public record UserResponse(
-        string Id,
-        string Name,
-        string Email,
-        int UnreadCount
-    );
+    public record UserResponse(string Id, string Name, string Email, int UnreadCount);
 
     /// <summary>
     /// Gets all users that the current user can chat with, with unread counts.
@@ -53,23 +48,17 @@ public class MessageController(DatabaseContext context) : BaseController(context
         var currentUserId = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
         // Get all users except current user
-        var users = await Context.Users
-            .Where(u => u.Id != currentUserId)
-            .ToListAsync();
+        var users = await Context.Users.Where(u => u.Id != currentUserId).ToListAsync();
 
         // Calculate unread count for each user
         var userResponses = new List<UserResponse>();
         foreach (var user in users)
         {
-            var unreadCount = await Context.Messages
-                .CountAsync(m => m.SenderId == user.Id && m.ReceiverId == currentUserId && !m.IsRead);
+            var unreadCount = await Context.Messages.CountAsync(m =>
+                m.SenderId == user.Id && m.ReceiverId == currentUserId && !m.IsRead
+            );
 
-            userResponses.Add(new UserResponse(
-                user.Id,
-                user.UserName ?? "Unknown",
-                user.Email ?? "",
-                unreadCount
-            ));
+            userResponses.Add(new UserResponse(user.Id, user.UserName ?? "Unknown", user.Email ?? "", unreadCount));
         }
 
         return Ok(userResponses);
@@ -89,11 +78,10 @@ public class MessageController(DatabaseContext context) : BaseController(context
 
         var messages = await Context.Messages
             .Include(m => m.Sender)
-            .Include(m => m.ReplyToMessage)
-                .ThenInclude(rm => rm!.Sender)
             .Where(m =>
-                (m.SenderId == currentUserId && m.ReceiverId == userId) ||
-                (m.SenderId == userId && m.ReceiverId == currentUserId))
+                (m.SenderId == currentUserId && m.ReceiverId == userId)
+                || (m.SenderId == userId && m.ReceiverId == currentUserId)
+            )
             .OrderBy(m => m.CreatedAt)
             .Take(50)
             .Select(m => new MessageResponse(

@@ -9,7 +9,8 @@ using PrintlyServer.Services;
 namespace PrintlyServer.Hubs;
 
 [Authorize(Roles = "User,Admin")]
-public class SupportHub(DatabaseContext context, ILogger<SupportHub> logger, INotificationService notificationService) : Hub
+public class SupportHub(DatabaseContext context, ILogger<SupportHub> logger, INotificationService notificationService)
+    : Hub
 {
     private readonly DatabaseContext _context = context;
     private readonly ILogger<SupportHub> _logger = logger;
@@ -37,16 +38,12 @@ public class SupportHub(DatabaseContext context, ILogger<SupportHub> logger, INo
     private async Task<bool> IsAdmin()
     {
         var userId = GetUserId();
-        if (userId == null) return false;
+        if (userId == null)
+            return false;
 
-        var userRoles = await _context.UserRoles
-            .Where(ur => ur.UserId == userId)
-            .Select(ur => ur.RoleId)
-            .ToListAsync();
+        var userRoles = await _context.UserRoles.Where(ur => ur.UserId == userId).Select(ur => ur.RoleId).ToListAsync();
 
-        var adminRoles = await _context.Roles
-            .Where(r => userRoles.Contains(r.Id) && r.Name == "Admin")
-            .AnyAsync();
+        var adminRoles = await _context.Roles.Where(r => userRoles.Contains(r.Id) && r.Name == "Admin").AnyAsync();
 
         return adminRoles;
     }
@@ -89,9 +86,7 @@ public class SupportHub(DatabaseContext context, ILogger<SupportHub> logger, INo
             throw new HubException("Sender not found");
         }
 
-        var ticket = await _context.Tickets
-            .Include(t => t.Customer)
-            .FirstOrDefaultAsync(t => t.Id == ticketId);
+        var ticket = await _context.Tickets.Include(t => t.Customer).FirstOrDefaultAsync(t => t.Id == ticketId);
 
         if (ticket == null)
         {
@@ -120,7 +115,6 @@ public class SupportHub(DatabaseContext context, ILogger<SupportHub> logger, INo
             TicketId = ticketId,
             SenderId = senderId,
             Content = content,
-            ReplyToMessageId = replyToMessageId,
             IsReadByCustomer = isAdmin,   // If admin sends, customer hasn't read yet
             IsReadByAdmin = !isAdmin      // If customer sends, admin hasn't read yet
         };
@@ -282,20 +276,23 @@ public class SupportHub(DatabaseContext context, ILogger<SupportHub> logger, INo
             SenderId = senderId,
             Title = title,
             Content = content,
-            IsActive = true
+            IsActive = true,
         };
 
         await _context.Broadcasts.AddAsync(broadcast);
         await _context.SaveChangesAsync();
 
         // Send to ALL connected users
-        await Clients.All.SendAsync("ReceiveBroadcast", new
-        {
-            id = broadcast.Id,
-            title = broadcast.Title,
-            content = broadcast.Content,
-            createdAt = broadcast.CreatedAt
-        });
+        await Clients.All.SendAsync(
+            "ReceiveBroadcast",
+            new
+            {
+                id = broadcast.Id,
+                title = broadcast.Title,
+                content = broadcast.Content,
+                createdAt = broadcast.CreatedAt,
+            }
+        );
 
         _logger.LogInformation("[SupportHub] Broadcast sent: {Title}", title);
     }

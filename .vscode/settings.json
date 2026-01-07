@@ -7,5 +7,8 @@
   "[csharp]": {
     "editor.defaultFormatter": "csharpier.csharpier-vscode",
     "editor.tabSize": 4
+  },
+  "[xml]": {
+    "editor.defaultFormatter": "csharpier.csharpier-vscode"
   }
 }

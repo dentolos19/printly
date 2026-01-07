@@ -24,10 +24,10 @@ public class Ticket : BaseEntity
 
 public enum TicketStatus
 {
-    Pending = 0,    // New ticket, waiting for admin response
-    Active = 1,     // Admin is working on it
-    Resolved = 2,   // Issue fixed, waiting for customer confirmation
-    Closed = 3      // Ticket closed and archived
+    Pending = 0, // New ticket, waiting for admin response
+    Active = 1, // Admin is working on it
+    Resolved = 2, // Issue fixed, waiting for customer confirmation
+    Closed = 3, // Ticket closed and archived
 }
 
 public enum TicketPriority
@@ -35,5 +35,5 @@ public enum TicketPriority
     Low = 0,
     Normal = 1,
     High = 2,
-    Urgent = 3
+    Urgent = 3,
 }

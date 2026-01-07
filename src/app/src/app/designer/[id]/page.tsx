@@ -1,9 +1,45 @@
 "use client";
 
-import Designer from "@/components/designer";
+import { DesignerCanvas } from "@/app/designer/components/canvas";
+import { DesignerProvider, useKeyboardShortcuts } from "@/app/designer/components/hooks";
+import { IconToolbar } from "@/app/designer/components/icon-toolbar";
+import { LeftPanel, RightPanel } from "@/app/designer/components/panels";
+import { StatusBar } from "@/app/designer/components/status-bar";
+import { ToolbarHeader } from "@/app/designer/components/toolbar-header";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { useServer } from "@/lib/providers/server";
+import { cn } from "@/lib/utils";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+
+function DesignerContent({ className }: { className?: string }) {
+  useKeyboardShortcuts();
+
+  return (
+    <div className={cn("flex h-full flex-col", className)}>
+      {/* Top toolbar/menu bar */}
+      <ToolbarHeader />
+
+      {/* Main content area */}
+      <div className={"flex flex-1 overflow-hidden"}>
+        {/* Left icon toolbar */}
+        <IconToolbar />
+
+        {/* Left expandable panel */}
+        <LeftPanel />
+
+        {/* Main canvas area */}
+        <DesignerCanvas />
+
+        {/* Right properties panel */}
+        <RightPanel />
+      </div>
+
+      {/* Bottom status bar */}
+      <StatusBar />
+    </div>
+  );
+}
 
 export default function Page() {
   const router = useRouter();
@@ -118,14 +154,17 @@ export default function Page() {
 
   return (
     <div className={"h-dvh w-dvw"}>
-      <Designer
-        className={"size-full"}
-        designId={initialDesignId}
-        designName={initialDesignName}
-        onSave={handleSave}
-        onLoad={handleLoad}
-        onGenerateImage={handleGenerateImage}
-      />
+      <TooltipProvider delayDuration={300}>
+        <DesignerProvider
+          initialDesignId={initialDesignId}
+          initialDesignName={initialDesignName}
+          onSave={handleSave}
+          onLoad={handleLoad}
+          onGenerateImage={handleGenerateImage}
+        >
+          <DesignerContent className={"size-full"} />
+        </DesignerProvider>
+      </TooltipProvider>
     </div>
   );
 }
