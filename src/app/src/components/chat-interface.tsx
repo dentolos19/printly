@@ -538,7 +538,7 @@ export default function ChatInterface() {
 
     const messageContent = inputMessage.trim();
     const replyToId = replyToMessage?.id || null;
-    
+
     setIsSending(true);
     setInputMessage(""); // Clear input immediately for better UX
     setReplyToMessage(null); // Clear reply
@@ -855,11 +855,11 @@ export default function ChatInterface() {
             )}
             {/* Typing indicator */}
             {selectedUser && typingUsers.has(selectedUser.id) && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground px-2 py-1">
+              <div className="text-muted-foreground flex items-center gap-2 px-2 py-1 text-sm">
                 <div className="flex gap-1">
-                  <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
-                  <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
-                  <span className="w-2 h-2 bg-primary rounded-full animate-bounce" />
+                  <span className="bg-primary h-2 w-2 animate-bounce rounded-full [animation-delay:-0.3s]" />
+                  <span className="bg-primary h-2 w-2 animate-bounce rounded-full [animation-delay:-0.15s]" />
+                  <span className="bg-primary h-2 w-2 animate-bounce rounded-full" />
                 </div>
                 <span>{selectedUser.name || selectedUser.email.split("@")[0]} is typing...</span>
               </div>
@@ -872,16 +872,12 @@ export default function ChatInterface() {
       <CardFooter className="flex-col gap-0 border-t p-0">
         {/* Reply preview */}
         {replyToMessage && (
-          <div className="flex items-center gap-2 w-full px-3 py-2 bg-muted/50 border-b">
-            <div className="flex-1 min-w-0 border-l-4 border-primary pl-2">
-              <p className="text-xs font-medium text-primary truncate">
-                Replying to {replyToMessage.senderName}
-              </p>
-              <p className="text-sm text-muted-foreground truncate">
-                {replyToMessage.content}
-              </p>
+          <div className="bg-muted/50 flex w-full items-center gap-2 border-b px-3 py-2">
+            <div className="border-primary min-w-0 flex-1 border-l-4 pl-2">
+              <p className="text-primary truncate text-xs font-medium">Replying to {replyToMessage.senderName}</p>
+              <p className="text-muted-foreground truncate text-sm">{replyToMessage.content}</p>
             </div>
-            <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={() => setReplyToMessage(null)}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setReplyToMessage(null)}>
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -992,14 +988,16 @@ function MessageBubble({
         >
           {/* Reply context */}
           {message.replyToMessageId && message.replyToContent && (
-            <div className={`mb-2 border-l-2 pl-2 text-xs ${isOwnMessage ? "border-primary-foreground/50 opacity-80" : "border-primary"}`}>
+            <div
+              className={`mb-2 border-l-2 pl-2 text-xs ${isOwnMessage ? "border-primary-foreground/50 opacity-80" : "border-primary"}`}
+            >
               <p className={`font-medium ${isOwnMessage ? "" : "text-primary"}`}>
                 {message.replyToSenderName || "Unknown"}
               </p>
               <p className="truncate opacity-80">{message.replyToContent}</p>
             </div>
           )}
-          
+
           {isEditing ? (
             <div className="flex flex-col gap-2">
               <Input
