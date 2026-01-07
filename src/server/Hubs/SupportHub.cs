@@ -21,7 +21,10 @@ public class SupportHub(DatabaseContext context, ILogger<SupportHub> logger, INo
         string SenderId,
         string SenderName,
         string Content,
-        DateTime CreatedAt
+        DateTime CreatedAt,
+        Guid? ReplyToMessageId,
+        string? ReplyToContent,
+        string? ReplyToSenderName
     );
 
     private string? GetUserId()
@@ -72,7 +75,7 @@ public class SupportHub(DatabaseContext context, ILogger<SupportHub> logger, INo
     }
 
     // Send message in a support ticket
-    public async Task SendTicketMessage(Guid ticketId, string content)
+    public async Task SendTicketMessage(Guid ticketId, string content, Guid? replyToMessageId = null)
     {
         var senderId = GetUserId();
         if (senderId == null)
@@ -102,12 +105,22 @@ public class SupportHub(DatabaseContext context, ILogger<SupportHub> logger, INo
             throw new HubException("Unauthorized to access this ticket");
         }
 
+        // Validate reply-to message if provided
+        TicketMessage? replyToMessage = null;
+        if (replyToMessageId.HasValue)
+        {
+            replyToMessage = await _context.TicketMessages
+                .Include(m => m.Sender)
+                .FirstOrDefaultAsync(m => m.Id == replyToMessageId.Value);
+        }
+
         // Create the message
         var message = new TicketMessage
         {
             TicketId = ticketId,
             SenderId = senderId,
             Content = content,
+            ReplyToMessageId = replyToMessageId,
             IsReadByCustomer = isAdmin,   // If admin sends, customer hasn't read yet
             IsReadByAdmin = !isAdmin      // If customer sends, admin hasn't read yet
         };
@@ -127,13 +140,25 @@ public class SupportHub(DatabaseContext context, ILogger<SupportHub> logger, INo
 
         await _context.SaveChangesAsync();
 
+        // Build response with reply info
+        string? replyToContent = null;
+        string? replyToSenderName = null;
+        if (replyToMessage != null)
+        {
+            replyToContent = replyToMessage.Content;
+            replyToSenderName = replyToMessage.Sender?.UserName ?? replyToMessage.Sender?.Email ?? "Unknown";
+        }
+
         var response = new TicketMessageResponse(
             message.Id,
             message.TicketId,
             message.SenderId,
             sender.UserName ?? sender.Email ?? "Unknown",
             message.Content,
-            message.CreatedAt
+            message.CreatedAt,
+            message.ReplyToMessageId,
+            replyToContent,
+            replyToSenderName
         );
 
         // Send to all admins
@@ -170,6 +195,76 @@ public class SupportHub(DatabaseContext context, ILogger<SupportHub> logger, INo
         }
 
         _logger.LogInformation("[SupportHub] Message sent in ticket {TicketId}", ticketId);
+    }
+
+    /// <summary>
+    /// User started typing in ticket - ephemeral event
+    /// </summary>
+    public async Task StartTypingInTicket(Guid ticketId)
+    {
+        var senderId = GetUserId();
+        if (senderId == null) return;
+
+        var sender = await _context.Users.FindAsync(senderId);
+        if (sender == null) return;
+
+        var ticket = await _context.Tickets.FindAsync(ticketId);
+        if (ticket == null) return;
+
+        var isAdmin = await IsAdmin();
+
+        var typingData = new
+        {
+            userId = senderId,
+            userName = sender.UserName ?? sender.Email,
+            ticketId = ticketId
+        };
+
+        // Notify appropriate party
+        if (!isAdmin)
+        {
+            // Customer typing - notify all admins
+            await Clients.Group("Admins").SendAsync("UserStartedTyping", typingData);
+        }
+        else
+        {
+            // Admin typing - notify customer
+            await Clients.User(ticket.CustomerId).SendAsync("UserStartedTyping", typingData);
+        }
+
+        _logger.LogDebug("[SupportHub] {SenderId} started typing in ticket {TicketId}", senderId, ticketId);
+    }
+
+    /// <summary>
+    /// User stopped typing in ticket - ephemeral event
+    /// </summary>
+    public async Task StopTypingInTicket(Guid ticketId)
+    {
+        var senderId = GetUserId();
+        if (senderId == null) return;
+
+        var ticket = await _context.Tickets.FindAsync(ticketId);
+        if (ticket == null) return;
+
+        var isAdmin = await IsAdmin();
+
+        var typingData = new
+        {
+            userId = senderId,
+            ticketId = ticketId
+        };
+
+        // Notify appropriate party
+        if (!isAdmin)
+        {
+            await Clients.Group("Admins").SendAsync("UserStoppedTyping", typingData);
+        }
+        else
+        {
+            await Clients.User(ticket.CustomerId).SendAsync("UserStoppedTyping", typingData);
+        }
+
+        _logger.LogDebug("[SupportHub] {SenderId} stopped typing in ticket {TicketId}", senderId, ticketId);
     }
 
     // Admin broadcasts announcement to everyone

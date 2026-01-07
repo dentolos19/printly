@@ -86,6 +86,20 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
 
         modelBuilder.Entity<Notification>()
             .HasIndex(n => n.CreatedAt);
+
+        // Configure Message reply relationships (self-referencing)
+        modelBuilder.Entity<Message>()
+            .HasOne(m => m.ReplyToMessage)
+            .WithMany()
+            .HasForeignKey(m => m.ReplyToMessageId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Configure TicketMessage reply relationships (self-referencing)
+        modelBuilder.Entity<TicketMessage>()
+            .HasOne(m => m.ReplyToMessage)
+            .WithMany()
+            .HasForeignKey(m => m.ReplyToMessageId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 
     public override int SaveChanges()

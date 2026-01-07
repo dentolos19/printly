@@ -23,6 +23,8 @@ import {
   CheckCheck,
   Edit2,
   Trash2,
+  Reply,
+  X,
 } from "lucide-react";
 
 /** Message response type matching the backend DTO */
@@ -39,6 +41,9 @@ interface Message {
   isDeleted: boolean;
   deletedAt?: string;
   createdAt: string;
+  replyToMessageId?: string;
+  replyToContent?: string;
+  replyToSenderName?: string;
 }
 
 /** User response for contacts list */
@@ -65,10 +70,13 @@ export default function ChatInterface() {
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
+  const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isConnectingRef = useRef(false);
   const isMountedRef = useRef(true);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Use refs to track current values without triggering re-renders
   const selectedUserRef = useRef<User | null>(null);
@@ -371,6 +379,25 @@ export default function ChatInterface() {
         }
       });
 
+      // Handle typing indicators
+      connection.on("UserStartedTyping", (userId: string) => {
+        console.log("[Chat] User started typing:", userId);
+        if (isMountedRef.current) {
+          setTypingUsers((prev) => new Set(prev).add(userId));
+        }
+      });
+
+      connection.on("UserStoppedTyping", (userId: string) => {
+        console.log("[Chat] User stopped typing:", userId);
+        if (isMountedRef.current) {
+          setTypingUsers((prev) => {
+            const next = new Set(prev);
+            next.delete(userId);
+            return next;
+          });
+        }
+      });
+
       // Handle reconnecting state
       connection.onreconnecting((error) => {
         console.log("[Chat] Reconnecting...", error?.message);
@@ -510,12 +537,16 @@ export default function ChatInterface() {
     }
 
     const messageContent = inputMessage.trim();
+    const replyToId = replyToMessage?.id || null;
+    
     setIsSending(true);
     setInputMessage(""); // Clear input immediately for better UX
+    setReplyToMessage(null); // Clear reply
+    handleStopTyping(); // Stop typing indicator
 
     try {
-      console.log(`[Chat] Sending message to: ${selectedUser.id}`);
-      await connectionRef.current.invoke("SendMessage", selectedUser.id, messageContent);
+      console.log(`[Chat] Sending message to: ${selectedUser.id}${replyToId ? ` (reply to ${replyToId})` : ""}`);
+      await connectionRef.current.invoke("SendMessage", selectedUser.id, messageContent, replyToId);
       console.log("[Chat] Message sent successfully");
     } catch (error) {
       console.error("[Chat] Failed to send message:", error);
@@ -527,10 +558,48 @@ export default function ChatInterface() {
     }
   };
 
+  /** Handle input change with typing indicator */
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInputMessage(value);
+
+    if (!selectedUser || !connectionRef.current || connectionState !== "connected") return;
+
+    // Send typing indicator
+    if (value.length > 0) {
+      connectionRef.current.invoke("StartTyping", selectedUser.id).catch(console.error);
+
+      // Clear existing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      // Auto-stop typing after 3 seconds of no input
+      typingTimeoutRef.current = setTimeout(() => {
+        handleStopTyping();
+      }, 3000);
+    } else {
+      handleStopTyping();
+    }
+  };
+
+  /** Stop typing indicator */
+  const handleStopTyping = () => {
+    if (!selectedUser || !connectionRef.current || connectionState !== "connected") return;
+
+    connectionRef.current.invoke("StopTyping", selectedUser.id).catch(console.error);
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
+  };
+
   /** Handle Enter key press */
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
+      handleStopTyping();
       handleSendMessage();
     }
   };
@@ -778,23 +847,52 @@ export default function ChatInterface() {
                     isOwnMessage={isOwnMessage}
                     onEdit={handleEditMessage}
                     onDelete={handleDeleteMessage}
+                    onReply={() => setReplyToMessage(message)}
                     formatTime={formatTime}
                   />
                 );
               })
+            )}
+            {/* Typing indicator */}
+            {selectedUser && typingUsers.has(selectedUser.id) && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground px-2 py-1">
+                <div className="flex gap-1">
+                  <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
+                  <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
+                  <span className="w-2 h-2 bg-primary rounded-full animate-bounce" />
+                </div>
+                <span>{selectedUser.name || selectedUser.email.split("@")[0]} is typing...</span>
+              </div>
             )}
             <div ref={scrollRef} />
           </div>
         </ScrollArea>
       </CardContent>
 
-      <CardFooter className="border-t p-3">
-        <div className="flex w-full gap-2">
+      <CardFooter className="flex-col gap-0 border-t p-0">
+        {/* Reply preview */}
+        {replyToMessage && (
+          <div className="flex items-center gap-2 w-full px-3 py-2 bg-muted/50 border-b">
+            <div className="flex-1 min-w-0 border-l-4 border-primary pl-2">
+              <p className="text-xs font-medium text-primary truncate">
+                Replying to {replyToMessage.senderName}
+              </p>
+              <p className="text-sm text-muted-foreground truncate">
+                {replyToMessage.content}
+              </p>
+            </div>
+            <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={() => setReplyToMessage(null)}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+        <div className="flex w-full gap-2 p-3">
           <Input
             placeholder={connectionState === "connected" ? "Type a message..." : "Connecting..."}
             value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
+            onChange={handleInputChange}
             onKeyDown={handleKeyPress}
+            onBlur={handleStopTyping}
             disabled={connectionState !== "connected" || isSending}
             className="flex-1"
             autoComplete="off"
@@ -813,18 +911,20 @@ export default function ChatInterface() {
   );
 }
 
-/** Message bubble component with edit/delete support */
+/** Message bubble component with edit/delete/reply support */
 function MessageBubble({
   message,
   isOwnMessage,
   onEdit,
   onDelete,
+  onReply,
   formatTime,
 }: {
   message: Message;
   isOwnMessage: boolean;
   onEdit: (id: string, content: string) => void;
   onDelete: (id: string) => void;
+  onReply: () => void;
   formatTime: (date: string) => string;
 }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -858,9 +958,16 @@ function MessageBubble({
   return (
     <div className={`group flex flex-col ${isOwnMessage ? "items-end" : "items-start"}`}>
       <div className="relative flex items-center gap-2">
-        {/* Edit/Delete buttons for own messages (shown on hover) */}
+        {/* Reply button (shown on hover, left side for own messages) */}
         {isOwnMessage && !message.isDeleted && !isEditing && (
           <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            <button
+              onClick={onReply}
+              className="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700"
+              title="Reply"
+            >
+              <Reply className="h-3.5 w-3.5" />
+            </button>
             <button
               onClick={() => setIsEditing(true)}
               className="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700"
@@ -883,6 +990,16 @@ function MessageBubble({
             isOwnMessage ? "bg-primary text-primary-foreground" : "bg-muted"
           } ${message.isDeleted ? "italic opacity-60" : ""}`}
         >
+          {/* Reply context */}
+          {message.replyToMessageId && message.replyToContent && (
+            <div className={`mb-2 border-l-2 pl-2 text-xs ${isOwnMessage ? "border-primary-foreground/50 opacity-80" : "border-primary"}`}>
+              <p className={`font-medium ${isOwnMessage ? "" : "text-primary"}`}>
+                {message.replyToSenderName || "Unknown"}
+              </p>
+              <p className="truncate opacity-80">{message.replyToContent}</p>
+            </div>
+          )}
+          
           {isEditing ? (
             <div className="flex flex-col gap-2">
               <Input
@@ -909,6 +1026,19 @@ function MessageBubble({
             <p className="text-sm break-words">{message.content}</p>
           )}
         </div>
+
+        {/* Reply button for other's messages (right side) */}
+        {!isOwnMessage && !message.isDeleted && (
+          <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            <button
+              onClick={onReply}
+              className="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700"
+              title="Reply"
+            >
+              <Reply className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Timestamp, edited indicator, and read receipt */}

@@ -37,7 +37,10 @@ public class ChatHub(DatabaseContext context, ILogger<ChatHub> logger) : Hub
         DateTime? EditedAt,
         bool IsDeleted,
         DateTime? DeletedAt,
-        DateTime CreatedAt
+        DateTime CreatedAt,
+        Guid? ReplyToMessageId,
+        string? ReplyToContent,
+        string? ReplyToSenderName
     );
 
     /// <summary>
@@ -58,7 +61,7 @@ public class ChatHub(DatabaseContext context, ILogger<ChatHub> logger) : Hub
     /// <summary>
     /// Sends a private message to a specific user.
     /// </summary>
-    public async Task SendMessage(string receiverId, string message)
+    public async Task SendMessage(string receiverId, string message, Guid? replyToMessageId = null)
     {
         var senderId = GetUserId();
 
@@ -100,18 +103,40 @@ public class ChatHub(DatabaseContext context, ILogger<ChatHub> logger) : Hub
 
         _logger.LogInformation("Sender found: {Email}", sender.Email);
 
+        // Validate reply-to message if provided
+        Message? replyToMessage = null;
+        if (replyToMessageId.HasValue)
+        {
+            replyToMessage = await _context.Messages
+                .Include(m => m.Sender)
+                .FirstOrDefaultAsync(m => m.Id == replyToMessageId.Value);
+            if (replyToMessage == null)
+            {
+                _logger.LogWarning("Reply-to message {MessageId} not found", replyToMessageId);
+            }
+        }
+
         // Create message
         var msg = new Message
         {
             Content = message.Trim(),
             SenderId = senderId,
             ReceiverId = receiverId,
+            ReplyToMessageId = replyToMessageId,
         };
 
         _context.Messages.Add(msg);
         await _context.SaveChangesAsync();
 
-        // Build response
+        // Build response with reply info
+        string? replyToContent = null;
+        string? replyToSenderName = null;
+        if (replyToMessage != null)
+        {
+            replyToContent = replyToMessage.Content;
+            replyToSenderName = replyToMessage.Sender?.UserName ?? "Unknown";
+        }
+
         var response = new MessageResponse(
             msg.Id,
             msg.Content,
@@ -124,7 +149,10 @@ public class ChatHub(DatabaseContext context, ILogger<ChatHub> logger) : Hub
             msg.EditedAt,
             msg.IsDeleted,
             msg.DeletedAt,
-            msg.CreatedAt
+            msg.CreatedAt,
+            msg.ReplyToMessageId,
+            replyToContent,
+            replyToSenderName
         );
 
         // Send to both users
@@ -132,6 +160,46 @@ public class ChatHub(DatabaseContext context, ILogger<ChatHub> logger) : Hub
         await Clients.User(senderId).SendAsync("ReceiveMessage", response);
 
         _logger.LogInformation("Message sent successfully from {Sender} to {Receiver}", senderId, receiverId);
+    }
+
+    /// <summary>
+    /// User started typing - send ephemeral event to receiver
+    /// </summary>
+    public async Task StartTyping(string receiverId)
+    {
+        var senderId = GetUserId();
+        if (senderId == null) return;
+
+        // Only notify if receiver is online
+        if (OnlineUsers.TryGetValue(receiverId, out var receiverConnections))
+        {
+            foreach (var connectionId in receiverConnections)
+            {
+                await Clients.Client(connectionId).SendAsync("UserStartedTyping", senderId);
+            }
+        }
+
+        _logger.LogDebug("[ChatHub] {SenderId} started typing to {ReceiverId}", senderId, receiverId);
+    }
+
+    /// <summary>
+    /// User stopped typing - send ephemeral event to receiver
+    /// </summary>
+    public async Task StopTyping(string receiverId)
+    {
+        var senderId = GetUserId();
+        if (senderId == null) return;
+
+        // Only notify if receiver is online
+        if (OnlineUsers.TryGetValue(receiverId, out var receiverConnections))
+        {
+            foreach (var connectionId in receiverConnections)
+            {
+                await Clients.Client(connectionId).SendAsync("UserStoppedTyping", senderId);
+            }
+        }
+
+        _logger.LogDebug("[ChatHub] {SenderId} stopped typing to {ReceiverId}", senderId, receiverId);
     }
 
     /// <summary>
