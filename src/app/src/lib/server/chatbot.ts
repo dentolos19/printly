@@ -14,18 +14,29 @@ export interface ChatbotStatus {
   features: string[];
 }
 
+export interface AIModel {
+  id: string;
+  displayName: string;
+  description: string;
+  isDefault: boolean;
+}
+
+export interface ModelsResponse {
+  models: AIModel[];
+}
+
 export default function initChatbotController(fetch: ServerFetch) {
   return {
     /**
      * Send a message to the chatbot
      */
-    sendMessage: async (message: string, history?: ChatMessage[]): Promise<ChatbotResponse> => {
+    sendMessage: async (message: string, history?: ChatMessage[], model?: string): Promise<ChatbotResponse> => {
       const response = await fetch("/chatbot/message", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message, history }),
+        body: JSON.stringify({ message, history, model }),
       });
 
       if (!response.ok) {
@@ -46,6 +57,21 @@ export default function initChatbotController(fetch: ServerFetch) {
 
       if (!response.ok) {
         throw new Error("Failed to get chatbot status");
+      }
+
+      return response.json();
+    },
+
+    /**
+     * Get available AI models
+     */
+    getModels: async (): Promise<ModelsResponse> => {
+      const response = await fetch("/chatbot/models", {
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get AI models");
       }
 
       return response.json();

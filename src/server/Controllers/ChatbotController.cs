@@ -69,6 +69,48 @@ public class ChatbotController(DatabaseContext context, ChatService chatbotServi
             }
         );
     }
+
+    /// <summary>
+    /// Get available AI models for chatbot
+    /// </summary>
+    [Authorize]
+    [HttpGet("models")]
+    public IActionResult GetModels()
+    {
+        var models = new[]
+        {
+            new
+            {
+                id = "google/gemini-2.5-flash",
+                displayName = "Gemini 2.5 Flash",
+                description = "Fast and efficient, great for quick responses",
+                isDefault = true,
+            },
+            new
+            {
+                id = "openai/gpt-4o",
+                displayName = "GPT-4o",
+                description = "Advanced reasoning and comprehensive answers",
+                isDefault = false,
+            },
+            new
+            {
+                id = "anthropic/claude-sonnet-4",
+                displayName = "Claude Sonnet 4",
+                description = "Balanced performance with nuanced understanding",
+                isDefault = false,
+            },
+            new
+            {
+                id = "meta-llama/llama-3.1-70b-instruct",
+                displayName = "Llama 3.1 70B",
+                description = "Open source model with strong capabilities",
+                isDefault = false,
+            },
+        };
+
+        return Ok(new { models });
+    }
 }
 
 /// <summary>
@@ -78,4 +120,5 @@ public class ChatbotRequest
 {
     public required string Message { get; set; }
     public List<ChatMessage>? History { get; set; }
+    public string? Model { get; set; }
 }

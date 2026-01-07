@@ -22,7 +22,18 @@ public class ChatService
     private const int MaxTokens = 1000; // Max tokens per response
     private const int RequestTimeoutSeconds = 30; // Request timeout
 
-    // System prompt that defines the chatbot's behavior
+    // supported ai models - users can choose from these options
+    private static readonly HashSet<string> SupportedModels =
+        [
+            "google/gemini-2.5-flash", // Default - fast and efficient
+            "openai/gpt-4o", // Advanced reasoning
+            "anthropic/claude-sonnet-4", // Balanced performance
+            "meta-llama/llama-3.1-70b-instruct", // Open source option
+        ];
+
+    private const string DefaultModel = "google/gemini-2.5-flash";
+
+    // system prompt that defines the chatbot's behavior
     private static readonly string SystemPrompt = """
         You are Printly Assistant, a helpful and friendly AI support chatbot for the Printly application.
         Printly is a print-on-demand design platform where users can:
@@ -126,7 +137,8 @@ public class ChatService
     public async Task<ChatbotResponse> SendMessageAsync(
         string userId,
         string message,
-        List<ChatMessage>? conversationHistory = null
+        List<ChatMessage>? conversationHistory = null,
+        string? model = null
     )
     {
         // Validate input
@@ -142,6 +154,15 @@ public class ChatService
                 Success = false,
                 Error = "Message is too long. Please keep it under 1000 characters.",
             };
+        }
+
+        // Validate and set model
+        var selectedModel = string.IsNullOrWhiteSpace(model) ? DefaultModel : model;
+
+        if (!SupportedModels.Contains(selectedModel))
+        {
+            _logger.LogWarning("Invalid model requested: {Model}. Using default.", selectedModel);
+            selectedModel = DefaultModel;
         }
 
         // Check rate limit
@@ -177,13 +198,13 @@ public class ChatService
 
             var requestBody = new
             {
-                model = "google/gemini-2.5-flash",
+                model = selectedModel,
                 messages = messages,
                 max_tokens = MaxTokens,
                 temperature = 0.7,
             };
 
-            _logger.LogInformation("Sending chatbot request for user {UserId}", userId);
+            _logger.LogInformation("Sending chatbot request for user {UserId} with model {Model}", userId, selectedModel);
 
             var response = await _http.PostAsync(
                 "https://openrouter.ai/api/v1/chat/completions",
