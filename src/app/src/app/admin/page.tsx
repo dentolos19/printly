@@ -411,7 +411,7 @@ export default function Page() {
                   <Skeleton className="h-4 w-full" />
                 </div>
               ) : aiAnalysis ? (
-                <div className="prose prose-sm dark:prose-invert max-w-none py-4">
+                <div className="py-4 [&>h1]:mb-4 [&>h1]:text-2xl [&>h1]:font-bold [&>h2]:mt-6 [&>h2]:mb-3 [&>h2]:text-lg [&>h2]:font-semibold [&>p]:mb-4 [&>p]:leading-relaxed [&>ul]:mb-4 [&>ul]:list-disc [&>ul]:pl-6 [&>ul>li]:mb-1">
                   <ReactMarkdown>{aiAnalysis.analysis}</ReactMarkdown>
                 </div>
               ) : null}
