@@ -1,3 +1,4 @@
+import initAnalysisController from "@/lib/server/analysis";
 import initAssetController from "@/lib/server/asset";
 import initAuthController from "@/lib/server/auth";
 import initChatbotController from "@/lib/server/chatbot";
@@ -11,6 +12,7 @@ import { ServerFetch } from "@/types";
 
 export default function generateServerFunctions(fetch: ServerFetch) {
   return {
+    analysis: initAnalysisController(fetch),
     asset: initAssetController(fetch),
     auth: initAuthController(fetch),
     chatbot: initChatbotController(fetch),

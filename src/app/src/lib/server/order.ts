@@ -129,11 +129,6 @@ export type AdminOrderStatsResponse = {
   statusDistribution: OrderStatusData[];
 };
 
-export type AiSalesAnalysisResponse = {
-  analysis: string;
-  generatedAt: string;
-};
-
 export default function initOrderController(fetch: ServerFetch) {
   return {
     // ==================== User Endpoints ====================
@@ -305,18 +300,6 @@ export default function initOrderController(fetch: ServerFetch) {
         const error = await response.json().catch(() => ({ message: "Failed to delete order" }));
         throw new Error(error.message || "Failed to delete order");
       }
-    },
-
-    // Get AI sales analysis (admin only)
-    getAiSalesAnalysis: async (): Promise<AiSalesAnalysisResponse> => {
-      const response = await fetch("/orders/analysis", { method: "GET" });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to generate AI analysis" }));
-        throw new Error(error.message || "Failed to generate AI analysis");
-      }
-
-      return response.json();
     },
   };
 }

@@ -133,6 +133,7 @@ public class VariantController(DatabaseContext context) : BaseController(context
             ProductId = dto.ProductId,
             Size = dto.Size,
             Color = dto.Color,
+            Inventory = new Inventory { Quantity = 0, ReorderLevel = 10 },
         };
 
         Context.ProductVariants.Add(variant);

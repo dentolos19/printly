@@ -13,12 +13,8 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useServer } from "@/lib/providers/server";
-import {
-  AdminOrderStatsResponse,
-  AiSalesAnalysisResponse,
-  MonthlyRevenueData,
-  OrderStatusData,
-} from "@/lib/server/order";
+import { AiSalesAnalysisResponse } from "@/lib/server/analysis";
+import { AdminOrderStatsResponse, MonthlyRevenueData, OrderStatusData } from "@/lib/server/order";
 import {
   AlertTriangle,
   Box,
@@ -256,7 +252,7 @@ export default function Page() {
     setLoadingAiAnalysis(true);
     setAiDialogOpen(true);
     try {
-      const analysis = await api.order.getAiSalesAnalysis();
+      const analysis = await api.analysis.getAiSalesAnalysis();
       setAiAnalysis(analysis);
     } catch (error) {
       toast.error("Failed to generate AI analysis");

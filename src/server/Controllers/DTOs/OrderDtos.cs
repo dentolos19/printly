@@ -108,8 +108,3 @@ public record AdminOrderStatsResponse(
 public record MonthlyRevenueData(string Month, decimal Revenue, int OrderCount);
 
 public record OrderStatusData(string Status, int Count);
-
-/// <summary>
-/// DTO for AI sales analysis response
-/// </summary>
-public record AiSalesAnalysisResponse(string Analysis, DateTime GeneratedAt);
