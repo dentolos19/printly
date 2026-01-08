@@ -102,7 +102,7 @@ public class AnalysisController(DatabaseContext context, GenerativeService gener
         var prompt =
             $@"You are a business analyst for Printly, an e-commerce company selling customizable printed products (t-shirts, hoodies, etc.). 
 
-Analyze the following business data and provide actionable insights:
+Analyze the following business data and provide a CONCISE analysis:
 
 ## SALES OVERVIEW
 - Total Orders: {totalOrders}
@@ -130,15 +130,28 @@ Analyze the following business data and provide actionable insights:
 ## ORDER STATUS BREAKDOWN
 {statusBreakdown}
 
-Please provide:
-1. **Executive Summary**: A brief overview of business health
-2. **Key Strengths**: What the business is doing well
-3. **Areas for Improvement**: Specific issues that need attention
-4. **Actionable Recommendations**: Concrete steps to improve sales and operations
-5. **Inventory Recommendations**: Suggestions for stock management
-6. **Growth Opportunities**: Potential areas for expansion or improvement
+Provide a SHORT and CONCISE analysis with the following sections. Use proper markdown heading hierarchy (# for main title, ## for sections). Keep each section to 2-3 bullet points maximum:
 
-Keep the analysis professional, data-driven, and actionable. Format with clear headers and bullet points. Make sure the analysis is short and concise and add extra a newline between paragraphs";
+# Business Analysis Report
+
+## Executive Summary
+(2-3 sentences only)
+
+## Key Strengths
+(2-3 bullet points)
+
+## Areas for Improvement
+(2-3 bullet points)
+
+## Recommendations
+(3-4 actionable bullet points covering sales, inventory, and growth)
+
+IMPORTANT FORMATTING RULES:
+- Use ## for all section headings
+- Keep bullet points brief (one line each)
+- Add TWO blank lines between each section for spacing
+- Total response should be under 300 words
+- Be direct and actionable, avoid filler words";
 
         var analysis = await generativeService.GenerateTextAsync(prompt);
 
