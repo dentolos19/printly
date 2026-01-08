@@ -117,6 +117,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .HasOne(v => v.Inventory)
             .WithOne(i => i.Variant)
             .HasForeignKey<Inventory>(i => i.VariantId)
+            .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
 
         // Unique constraint to prevent duplicate variants (same product, size, color)

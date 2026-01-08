@@ -31,5 +31,5 @@ public class ProductVariant : BaseEntity
 
     // Navigation properties
     public Product Product { get; set; } = null!;
-    public Inventory? Inventory { get; set; }
+    public Inventory Inventory { get; set; } = null!;
 }
