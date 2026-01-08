@@ -19,12 +19,11 @@ const navItems = [
 
 export default function Layout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const { claims } = useAuth();
 
-  // TODO: Re-enable admin role check later
-  // const { claims } = useAuth();
-  // if (claims?.role !== "admin") {
-  //   return <AccessDenied className={"h-dvh"} />;
-  // }
+  if (claims?.role?.toLowerCase() !== "admin") {
+    return <AccessDenied className={"h-dvh"} />;
+  }
 
   return (
     <div className="flex min-h-screen">

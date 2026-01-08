@@ -139,7 +139,7 @@ function ProductsSection() {
 
 function HeaderButtons() {
   const { claims } = useAuth();
-  const isAdmin = claims?.role === "admin";
+  const isAdmin = claims?.role?.toLowerCase() === "admin";
 
   return (
     <div className="flex items-center gap-2">
