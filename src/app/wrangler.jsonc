@@ -5,27 +5,28 @@
   "compatibility_date": "2025-10-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "keep_vars": true,
-  "assets": {
-    "binding": "ASSETS",
-    "directory": ".open-next/assets"
-  },
   "observability": {
     "logs": {
       "enabled": true,
-      "persist": true,
-      "invocation_logs": true,
-      "head_sampling_rate": 1
     },
     "traces": {
       "enabled": true,
-      "persist": true,
-      "head_sampling_rate": 1
-    }
+    },
   },
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".open-next/assets",
+  },
+  "services": [
+    {
+      "binding": "SERVER",
+      "service": "printly-server",
+    },
+  ],
   "routes": [
     {
       "pattern": "printly.dennise.me",
-      "custom_domain": true
-    }
-  ]
+      "custom_domain": true,
+    },
+  ],
 }

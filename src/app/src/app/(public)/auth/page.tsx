@@ -35,7 +35,7 @@ export default function Page() {
 
   return (
     <Form {...form}>
-      <form className={"h-dvh grid place-items-center"} onSubmit={handleSubmit}>
+      <form className={"grid h-dvh place-items-center"} onSubmit={handleSubmit}>
         <Card className={"w-100"}>
           <CardHeader>
             <CardTitle>Login into your account</CardTitle>
@@ -74,9 +74,9 @@ export default function Page() {
             <Button className={"w-full"} type={"button"} variant={"outline"} onClick={handleGoogle}>
               Login with Google
             </Button>
-            <p className={"mt-2 text-muted-foreground text-sm"}>
+            <p className={"text-muted-foreground mt-2 text-sm"}>
               Don't have an account?{" "}
-              <Link className={"underline hover:text-foreground"} href={"/auth/new"}>
+              <Link className={"hover:text-foreground underline"} href={"/auth/new"}>
                 Sign up
               </Link>
             </p>

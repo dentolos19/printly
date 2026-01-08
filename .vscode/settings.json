@@ -8,9 +8,7 @@
     "editor.defaultFormatter": "csharpier.csharpier-vscode",
     "editor.tabSize": 4
   },
-
-  "files.readonlyInclude": {
-    "src/app/src/components/ui/**": true,
-    "src/server/Migrations/**": true
+  "[xml]": {
+    "editor.defaultFormatter": "csharpier.csharpier-vscode"
   }
 }

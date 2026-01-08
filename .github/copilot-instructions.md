@@ -1,41 +1,45 @@
-# Printly Development
+# Copilot Instructions
 
-This repository contains two main projects:
+This repository contains two main projects and one helper project:
 
-- **Frontend (Next.js + Cloudflare)**: `src/app` — Running Next.js with `@opennextjs/cloudflare`.
-- **Backend (.NET + Cloudflare)**: `src/server` — ASP.NET Core Web API using Entity Framework Core. Powered by Cloudflare Workers via `src/server-worker`.
+- `src/app`: The frontend application built with Next.js and hosted on Cloudflare.
+- `src/server`: The backend server built with ASP.NET Core and Entity Framework Core.
+- `src/server-worker`: A helper project that allows the backend to run on Cloudflare Workers.
 
-## Development Commands
+## Requirements
+
+- You must use pnpm as the package manager for the frontend application.
+- Synchorize the backend controllers `src/server/Controllers` to the frontend connectors `src/app/src/lib/server`.
+
+## Commands
 
 These commands assume that you are in the workspace root.
 
 ### Build Server
 
 ```pwsh
-dotnet build src/server/PrintlyServer.csproj --configuration Debug
+cd src/server
+dotnet restore
+dotnet build --configuration Debug
+```
+
+### Run Server
+
+```pwsh
+cd src/app
+pnpm install
+pnpm run cf:gen
+pnpm run dev
 ```
 
 ### Run Migrations
 
 ```pwsh
 pwsh -ExecutionPolicy Bypass -File src/server/migrate.ps1
-pwsh -ExecutionPolicy Bypass -File src/server/migrate.ps1 -MigrationName Migration # To add a migration
 ```
 
-### Frontend Commands
+### Create Migration
 
 ```pwsh
-cd src/app
-pnpm install
-pnpm dev # Runs `next dev --turbopack`
-pnpm run cf:gen # Generate Cloudflare types
+pwsh -ExecutionPolicy Bypass -File src/server/migrate.ps1 -MigrationName MyMigration
 ```
-
-## Project Patterns
-
-- Dependency and middleware setup lives in `src/server/Extensions` (e.g. `ServiceExtensions.cs`, `AppExtensions.cs`). Prefer editing these for global DI/middleware changes.
-
-## Important Points
-
-- The script file for `src/server/migrate.ps1` requires `.env.production` to be present for migrations in the backend project.
-- The frontend calls the API controllers exposed by the backend; changes to controller routes require frontend updates and possibly migration updates.

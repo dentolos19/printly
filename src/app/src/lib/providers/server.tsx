@@ -1,14 +1,17 @@
 "use client";
 
+import { API_URL } from "@/environment";
 import { useAuth } from "@/lib/providers/auth";
-import { createContext, useContext } from "react";
+import generateServerFunctions from "@/lib/server";
+import { ServerFetch, ServerFunctions } from "@/types";
+import { createContext, useContext, useRef } from "react";
 
 const ServerContext = createContext<{
-  fetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>;
+  fetch: ServerFetch;
+  api: ServerFunctions;
 }>({
-  fetch: async () => {
-    return new Response();
-  },
+  fetch: async () => new Response(),
+  api: generateServerFunctions(async () => new Response()),
 });
 
 export function useServer() {
@@ -16,17 +19,48 @@ export function useServer() {
 }
 
 export default function ServerProvider({ children }: { children: React.ReactNode }) {
-  const { tokens: auth } = useAuth();
+  const { tokens, refreshAccess, logout } = useAuth();
+  const isRefreshing = useRef(false);
+  const refreshPromise = useRef<Promise<void> | null>(null);
 
-  const fetch = async (info: RequestInfo, init?: RequestInit): Promise<Response> => {
-    return await fetch(info, {
+  const fetch = async (endpoint: string, init?: RequestInit, retry = true): Promise<Response> => {
+    const response = await globalThis.fetch(`${API_URL}${endpoint}`, {
       ...init,
       headers: {
         ...init?.headers,
-        Authorization: auth ? `Bearer ${auth.accessToken}` : "",
+        ...(tokens && { Authorization: `Bearer ${tokens.accessToken}` }),
       },
     });
+
+    // Handle 401 Unauthorized - attempt token refresh and retry
+    if (response.status === 401 && retry && tokens?.refreshToken) {
+      try {
+        // If already refreshing, wait for that refresh to complete
+        if (isRefreshing.current && refreshPromise.current) {
+          await refreshPromise.current;
+        } else {
+          // Start new refresh
+          isRefreshing.current = true;
+          refreshPromise.current = refreshAccess();
+          await refreshPromise.current;
+          isRefreshing.current = false;
+          refreshPromise.current = null;
+        }
+
+        // Retry the original request with new token (retry=false to prevent infinite loop)
+        return fetch(endpoint, init, false);
+      } catch (error) {
+        // Refresh failed, log out user
+        console.error("Token refresh failed:", error);
+        logout();
+        throw new Error("Session expired");
+      }
+    }
+
+    return response;
   };
 
-  return <ServerContext.Provider value={{ fetch }}>{children}</ServerContext.Provider>;
+  const api = generateServerFunctions(fetch);
+
+  return <ServerContext.Provider value={{ fetch, api }}>{children}</ServerContext.Provider>;
 }

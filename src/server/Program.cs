@@ -1,5 +1,6 @@
 using DotNetEnv.Configuration;
 using PrintlyServer.Extensions;
+using PrintlyServer.Hubs;
 using PrintlyServer.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddDotNetEnv();
 
 builder.Services.SetupCors();
+builder.Services.SetupCommunications();
 builder.Services.SetupAuth();
 builder.Services.SetupDatabase();
 builder.Services.SetupRouting();
@@ -15,6 +17,9 @@ builder.Services.SetupDocumentation();
 builder.Services.AddScoped<IdentityService>();
 builder.Services.AddScoped<StorageService>();
 builder.Services.AddScoped<GenerativeService>();
+builder.Services.AddScoped<ChatService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddHostedService<NotificationCleanupService>();
 
 var app = builder.Build();
 
@@ -27,7 +32,7 @@ await app.SetupProductionAsync();
 await app.SetupDevelopmentAsync();
 await app.SetupRolesAsync();
 
-app.UseHttpsRedirection();
 app.MapControllers();
+app.MapHubs();
 
 app.Run();

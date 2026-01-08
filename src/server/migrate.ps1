@@ -1,40 +1,44 @@
 param(
-    [Parameter(Mandatory=$false)]
-    [string]$MigrationName
+  [Parameter(Mandatory = $false)]
+  [string]$MigrationName
 )
 
-Write-Host "Loading environment variables from production environment file..." -ForegroundColor Cyan
+Write-Host "Checking for production environment..."
 
-# Load environment variables
 if (Test-Path ".env.production") {
-    Get-Content ".env.production" | ForEach-Object {
-        if ($_ -match '^\s*([^#][^=]+)=(.*)$') {
-            $key = $matches[1].Trim()
-            $value = $matches[2].Trim()
-            [Environment]::SetEnvironmentVariable($key, $value, "Process")
-            Write-Host "  Loaded: $key" -ForegroundColor Gray
-        }
+  Write-Host "Loading production environment..."
+  Get-Content ".env.production" | ForEach-Object {
+    if ($_ -match '^\s*([^#][^=]+)=(.*)$') {
+      $key = $matches[1].Trim()
+      $value = $matches[2].Trim()
+      [Environment]::SetEnvironmentVariable($key, $value, "Process")
     }
-    Write-Host ""
-} else {
-    Write-Host "Environment file not found!" -ForegroundColor Red
-    exit 1
+  }
+}
+else {
+  Write-Host "No production environment found."
+  if (![string]::IsNullOrWhiteSpace($MigrationName)) {
+    $currentDatabaseUrl = [Environment]::GetEnvironmentVariable("DATABASE_URL", "Process")
+    if ([string]::IsNullOrEmpty($currentDatabaseUrl)) {
+      $defaultPostgresUrl = "postgresql://user:password@localhost:5432/printly"
+      [Environment]::SetEnvironmentVariable("DATABASE_URL", $defaultPostgresUrl, "Process")
+    }
+  }
 }
 
-# Run migrations or add migration
 if ([string]::IsNullOrWhiteSpace($MigrationName)) {
-    Write-Host "Running migrations..." -ForegroundColor Yellow
-    dotnet ef database update
-} else {
-    Write-Host "Adding migration: $MigrationName" -ForegroundColor Yellow
-    dotnet ef migrations add $MigrationName
+  Write-Host "Running migrations..."
+  dotnet ef database update
+}
+else {
+  Write-Host "Adding migration: $MigrationName"
+  dotnet ef migrations add $MigrationName
 }
 
 if ($LASTEXITCODE -eq 0) {
-    Write-Host ""
-    Write-Host "Operation completed successfully!" -ForegroundColor Green
-} else {
-    Write-Host ""
-    Write-Host "Operation failed with exit code: $LASTEXITCODE" -ForegroundColor Red
-    exit $LASTEXITCODE
+  Write-Host "Operation completed successfully!"
+}
+else {
+  Write-Host "Operation failed with exit code: $LASTEXITCODE"
+  exit $LASTEXITCODE
 }

@@ -1,6 +1,8 @@
 "use client";
 
 import AccessDenied from "@/components/access-denied";
+import { ChatbotWidget } from "@/components/chatbot-widget";
+import { NotificationBell } from "@/components/notification-bell";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -17,22 +19,35 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInset,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
+  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/providers/auth";
-import { BellIcon, LayoutDashboardIcon, LogOutIcon, MoreVerticalIcon, UserIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  BellIcon,
+  BookIcon,
+  ImageIcon,
+  LayoutDashboardIcon,
+  LogOutIcon,
+  MessageCircleIcon,
+  MoreVerticalIcon,
+  PackageIcon,
+  UserIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ReactNode } from "react";
 
 function NestedLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { isMobile } = useSidebar();
+  const { isMobile, state } = useSidebar();
   const { claims, logout } = useAuth();
 
   const handleLogout = () => {
@@ -42,10 +57,20 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <Sidebar>
+      <Sidebar collapsible={"icon"}>
+        <SidebarHeader
+          className={cn(
+            "h-14 flex-row items-center justify-between border-b",
+            state === "collapsed" && "justify-center",
+            state === "expanded" && "px-4",
+          )}
+        >
+          <img src={"/icon.png"} className={"size-6"} />
+          <h1 className={cn("font-mono text-lg font-bold", state === "collapsed" && "hidden")}>Printly</h1>
+          <NotificationBell className={cn(state === "collapsed" && "hidden")} />
+        </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>Platform</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
@@ -53,6 +78,38 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                     <Link href={"/dashboard"}>
                       <LayoutDashboardIcon />
                       <span>Dashboard</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href={"/designs"}>
+                      <BookIcon />
+                      <span>Designs</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href={"/assets"}>
+                      <ImageIcon />
+                      <span>Assets</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href={"/orders"}>
+                      <PackageIcon />
+                      <span>Orders</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href={"/chat"}>
+                      <MessageCircleIcon />
+                      <span>Chat</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -69,9 +126,8 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                     size={"lg"}
                     className={"data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"}
                   >
-                    <Avatar className={"h-8 w-8 rounded-lg grayscale"}>
-                      {/* TODO: Add avatar */}
-                      <AvatarImage src={""} alt={"Avatar"} />
+                    <Avatar className={"h-8 w-8 rounded-lg"}>
+                      <AvatarImage src={"/assets/profile.png"} alt={"Avatar"} />
                       <AvatarFallback className={"rounded-lg"}>X</AvatarFallback>
                     </Avatar>
                     <div className={"grid flex-1 text-left text-sm leading-tight"}>
@@ -90,8 +146,7 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                   <DropdownMenuLabel className={"p-0 font-normal"}>
                     <div className={"flex items-center gap-2 px-1 py-1.5 text-left text-sm"}>
                       <Avatar className={"h-8 w-8 rounded-lg"}>
-                        {/* TODO: Add avatar */}
-                        <AvatarImage src={""} alt={"Avatar"} />
+                        <AvatarImage src={"/assets/profile.png"} alt={"Avatar"} />
                         <AvatarFallback className={"rounded-lg"}>X</AvatarFallback>
                       </Avatar>
                       <div className={"grid flex-1 text-left text-sm leading-tight"}>
@@ -102,14 +157,26 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
-                    <DropdownMenuItem>
-                      <UserIcon />
-                      <span>Account</span>
+                    <DropdownMenuItem asChild>
+                      <Link href={"/account"}>
+                        <UserIcon />
+                        <span>Account</span>
+                      </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <BellIcon />
-                      <span>Notifications</span>
+                    <DropdownMenuItem asChild>
+                      <Link href={"/notifications"}>
+                        <BellIcon />
+                        <span>Notifications</span>
+                      </Link>
                     </DropdownMenuItem>
+                    {claims?.role === "admin" && (
+                      <DropdownMenuItem asChild>
+                        <Link href={"/admin"}>
+                          <BellIcon />
+                          <span>Administration</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
@@ -122,7 +189,13 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
           </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
-      {children}
+      <SidebarInset>
+        <header className={"bg-sidebar flex h-14 shrink-0 items-center gap-2 border-b px-4"}>
+          <SidebarTrigger />
+        </header>
+        <main className={"bg-background flex-1 overflow-auto"}>{children}</main>
+      </SidebarInset>
+      <ChatbotWidget />
     </>
   );
 }

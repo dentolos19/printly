@@ -3,12 +3,23 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PrintlyServer.Data;
 using PrintlyServer.Data.Auth;
+using PrintlyServer.Hubs;
 using PrintlyServer.Middlewares;
 
 namespace PrintlyServer.Extensions;
 
 public static class AppExtensions
 {
+    /// <summary>
+    /// Map SignalR hubs for real-time communication
+    /// </summary>
+    public static WebApplication MapHubs(this WebApplication app)
+    {
+        app.MapHub<ChatHub>("/hubs/chat");
+        app.MapHub<SupportHub>("/hubs/support");
+        return app;
+    }
+
     /// <summary>
     /// Setup middlewares for logging, etc.
     /// </summary>
@@ -55,6 +66,9 @@ public static class AppExtensions
         if (!app.Environment.IsProduction())
             return app;
 
+        // Enforce secure HTTP connections in production
+        app.UseHttpsRedirection();
+
         using var scope = app.Services.CreateScope();
 
         // Apply migrations to database for production
@@ -72,10 +86,10 @@ public static class AppExtensions
         if (!app.Environment.IsDevelopment())
             return app;
 
-        using var scope = app.Services.CreateScope();
-
         // Use the developer exception page for detailed error information during development
         app.UseDeveloperExceptionPage();
+
+        using var scope = app.Services.CreateScope();
 
         // Ensure database is created for development
         var database = scope.ServiceProvider.GetRequiredService<DatabaseContext>().Database;

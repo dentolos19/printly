@@ -1,6 +1,7 @@
 "use client";
 
 import { API_URL } from "@/environment";
+import { UserClaims } from "@/types";
 import { jwtDecode } from "jwt-decode";
 import { createContext, useContext, useEffect, useState } from "react";
 
@@ -66,6 +67,19 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       const decodedToken = jwtDecode<{ exp: number }>(token);
       const currentTime = Math.floor(Date.now() / 1000);
       return decodedToken.exp > currentTime + 60 * 10;
+    } catch {
+      return false;
+    }
+  };
+
+  const shouldRefresh = (token: string): boolean => {
+    try {
+      const decodedToken = jwtDecode<{ exp: number; iat: number }>(token);
+      const currentTime = Math.floor(Date.now() / 1000);
+      const tokenAge = currentTime - (decodedToken.iat || currentTime);
+
+      // Proactively refresh if access token is older than 3.5 days (halfway through 7-day lifetime)
+      return tokenAge >= 3.5 * 24 * 60 * 60;
     } catch {
       return false;
     }
@@ -260,6 +274,67 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       }
     })();
   }, []);
+
+  // Background validation timer - checks tokens every 5 minutes
+  useEffect(() => {
+    if (!accessToken || !refreshToken) {
+      return;
+    }
+
+    let hasRunInitialValidation = false;
+
+    const validateAndRefresh = () => {
+      (async () => {
+        try {
+          // Verify user still exists in database
+          const verifyResponse = await fetch(`${API_URL}/auth/verify`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          });
+
+          if (!verifyResponse.ok) {
+            console.error("User verification failed");
+            logout();
+            return;
+          }
+
+          // Check if access token should be proactively refreshed (older than 3.5 days)
+          if (shouldRefresh(accessToken)) {
+            console.log("Proactively refreshing tokens");
+            refreshAccess().catch((error) => {
+              console.error("Failed to refresh tokens:", error);
+              // Only logout if it's actually an auth error, not a network error
+              if (error.message?.includes("Failed to refresh")) {
+                logout();
+              }
+            });
+          }
+        } catch (error) {
+          console.error("Token validation error:", error);
+          // Don't logout on network errors, will retry in next interval
+        }
+      })();
+    };
+
+    // Run validation immediately when user visits site (e.g., after page refresh)
+    // This ensures deleted users get logged out quickly
+    const immediateTimeout = setTimeout(() => {
+      if (!hasRunInitialValidation) {
+        hasRunInitialValidation = true;
+        validateAndRefresh();
+      }
+    }, 1000);
+
+    // Set up interval for periodic validation (every 5 minutes)
+    const interval = setInterval(validateAndRefresh, 5 * 60 * 1000);
+
+    return () => {
+      clearTimeout(immediateTimeout);
+      clearInterval(interval);
+    };
+  }, [accessToken, refreshToken]);
 
   return (
     <AuthContext.Provider

@@ -3,15 +3,15 @@
   "private": true,
   "scripts": {
     "dev": "wrangler dev",
-    "cf:gen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+    "cf:types": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "devDependencies": {
-    "@types/node": "^24.8.1",
+    "@types/node": "^24.10.4",
     "typescript": "^5.9.3",
-    "wrangler": "^4.43.0"
+    "wrangler": "^4.55.0"
   },
   "dependencies": {
     "@cloudflare/containers": "^0.0.28",
-    "hono": "^4.10.1"
+    "hono": "^4.11.1"
   }
 }

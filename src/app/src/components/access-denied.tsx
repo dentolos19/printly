@@ -8,7 +8,7 @@ import { ComponentProps } from "react";
 export default function AccessDenied(props: ComponentProps<"div">) {
   return (
     <div className={cn("flex items-center justify-center", props.className)}>
-      <Card className={"w-full max-w-md m-2"}>
+      <Card className={"m-2 w-full max-w-md"}>
         <CardHeader className={"text-center"}>
           <div className={"mx-auto flex size-16 items-center justify-center rounded-full bg-red-200"}>
             <ShieldAlertIcon className={"size-8 text-red-600"} />
@@ -17,7 +17,7 @@ export default function AccessDenied(props: ComponentProps<"div">) {
           <CardDescription>You don't have permission to access this resource.</CardDescription>
         </CardHeader>
         <CardContent className={"space-y-4"}>
-          <p className={"text-center text-sm text-muted-foreground"}>
+          <p className={"text-muted-foreground text-center text-sm"}>
             This page or resource requires authentication or special permissions. If you believe this is an error,
             please contact support.
           </p>

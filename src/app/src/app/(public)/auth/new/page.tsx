@@ -29,7 +29,7 @@ export default function Page() {
 
   return (
     <Form {...form}>
-      <form className={"h-dvh grid place-items-center"} onSubmit={handleSubmit}>
+      <form className={"grid h-dvh place-items-center"} onSubmit={handleSubmit}>
         <Card className={"w-100"}>
           <CardHeader>
             <CardTitle>Create an account</CardTitle>
@@ -77,9 +77,9 @@ export default function Page() {
             <Button className={"w-full"} type={"submit"} variant={"default"}>
               Register
             </Button>
-            <p className={"mt-2 text-muted-foreground text-sm"}>
+            <p className={"text-muted-foreground mt-2 text-sm"}>
               Already have an account?{" "}
-              <Link className={"underline hover:text-foreground"} href={"/auth"}>
+              <Link className={"hover:text-foreground underline"} href={"/auth"}>
                 Login
               </Link>
             </p>
