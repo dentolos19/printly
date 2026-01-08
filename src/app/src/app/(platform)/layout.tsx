@@ -65,8 +65,10 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
             state === "expanded" && "px-4",
           )}
         >
-          <img src={"/icon.png"} className={"size-6"} />
-          <h1 className={cn("font-mono text-lg font-bold", state === "collapsed" && "hidden")}>Printly</h1>
+          <Link href="/" className="flex items-center gap-2">
+            <img src={"/icon.png"} className={"size-6"} />
+            <h1 className={cn("font-mono text-lg font-bold", state === "collapsed" && "hidden")}>Printly</h1>
+          </Link>
           <NotificationBell className={cn(state === "collapsed" && "hidden")} />
         </SidebarHeader>
         <SidebarContent>

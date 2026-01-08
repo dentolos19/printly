@@ -1,10 +1,167 @@
+"use client";
+
+import { CartButton } from "@/components/cart-button";
+import { ProductModal } from "@/components/product-modal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { LoggedIn, LoggedOut } from "@/lib/providers/auth";
+import { Skeleton } from "@/components/ui/skeleton";
+import { LoggedIn, LoggedOut, useAuth } from "@/lib/providers/auth";
+import { useServer } from "@/lib/providers/server";
+import { ProductResponse } from "@/lib/server/product";
 import { Check, Package, Palette, Truck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+
+function ProductsSkeleton() {
+  return (
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {[1, 2, 3, 4].map((i) => (
+        <Card key={i}>
+          <Skeleton className="aspect-square rounded-t-xl" />
+          <CardHeader>
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-6 w-16" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function ProductCard({ product, onClick }: { product: ProductResponse; onClick: () => void }) {
+  const totalStock = product.variants.reduce((sum, v) => sum + (v.inventory?.quantity ?? 0), 0);
+
+  // Get unique sizes and colors for description
+  const uniqueSizes = [...new Set(product.variants.map((v) => v.size))];
+  const uniqueColors = [...new Set(product.variants.map((v) => v.color))];
+
+  return (
+    <Card className="cursor-pointer transition-shadow hover:shadow-lg" onClick={onClick}>
+      <div className="bg-muted text-muted-foreground flex aspect-square items-center justify-center rounded-t-xl">
+        <Package className="h-16 w-16" />
+      </div>
+      <CardHeader>
+        <CardTitle>{product.name}</CardTitle>
+        <CardDescription>
+          {uniqueSizes.length} sizes • {uniqueColors.length} colors
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex items-center justify-between">
+        <span className="text-lg font-bold">${product.basePrice.toFixed(2)}</span>
+        {totalStock > 0 ? (
+          <span className="text-muted-foreground text-sm">{totalStock} in stock</span>
+        ) : (
+          <span className="text-sm text-red-500">Out of stock</span>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ProductsSection() {
+  const server = useServer();
+  const [products, setProducts] = useState<ProductResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState<ProductResponse | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        // Only fetch active products
+        const data = await server.api.product.getProducts(true);
+        setProducts(data);
+      } catch (error) {
+        console.error("Failed to fetch products:", error);
+        toast.error("Failed to load products", {
+          description: "Please try refreshing the page.",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [server]);
+
+  const handleProductClick = (product: ProductResponse) => {
+    setSelectedProduct(product);
+    setModalOpen(true);
+  };
+
+  const displayedProducts = showAll ? products : products.slice(0, 4);
+
+  return (
+    <>
+      {loading ? (
+        <ProductsSkeleton />
+      ) : products.length === 0 ? (
+        <div className="text-muted-foreground py-12 text-center">
+          <Package className="mx-auto mb-4 h-12 w-12" />
+          <p className="text-lg">No products available at the moment.</p>
+          <p className="text-sm">Check back soon!</p>
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {displayedProducts.map((product) => (
+              <ProductCard key={product.id} product={product} onClick={() => handleProductClick(product)} />
+            ))}
+          </div>
+          {products.length > 4 && !showAll && (
+            <div className="mt-8 flex justify-center">
+              <Button size="lg" variant="outline" onClick={() => setShowAll(true)}>
+                Show All Products ({products.length})
+              </Button>
+            </div>
+          )}
+          {showAll && products.length > 4 && (
+            <div className="mt-8 flex justify-center">
+              <Button size="lg" variant="outline" onClick={() => setShowAll(false)}>
+                Show Less
+              </Button>
+            </div>
+          )}
+        </>
+      )}
+
+      <ProductModal product={selectedProduct} open={modalOpen} onOpenChange={setModalOpen} />
+    </>
+  );
+}
+
+function HeaderButtons() {
+  const { claims } = useAuth();
+  const isAdmin = claims?.role === "admin";
+
+  return (
+    <div className="flex items-center gap-2">
+      <CartButton />
+      <LoggedIn>
+        {isAdmin && (
+          <Button variant="outline" asChild>
+            <Link href="/admin">Admin</Link>
+          </Button>
+        )}
+        <Button variant="default" asChild>
+          <Link href="/dashboard">Dashboard</Link>
+        </Button>
+      </LoggedIn>
+      <LoggedOut>
+        <Button variant="default" asChild>
+          <Link href="/auth">Login</Link>
+        </Button>
+      </LoggedOut>
+    </div>
+  );
+}
 
 export default function Page() {
   return (
@@ -26,18 +183,7 @@ export default function Page() {
             Contact
           </Link>
         </nav>
-        <div>
-          <LoggedIn>
-            <Button variant="default" asChild>
-              <Link href="/dashboard">Dashboard</Link>
-            </Button>
-          </LoggedIn>
-          <LoggedOut>
-            <Button variant="default" asChild>
-              <Link href="/auth">Login</Link>
-            </Button>
-          </LoggedOut>
-        </div>
+        <HeaderButtons />
       </header>
 
       {/* Hero Section */}
@@ -98,43 +244,7 @@ export default function Page() {
             <h2 className="text-3xl font-bold">Popular Products</h2>
             <p className="text-muted-foreground">Choose from our best-selling items.</p>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              {
-                name: "Classic Tee",
-                price: "$15",
-                desc: "100% Cotton, Heavyweight",
-              },
-              {
-                name: "Premium Blend",
-                price: "$22",
-                desc: "Soft Tri-blend fabric",
-              },
-              {
-                name: "Pullover Hoodie",
-                price: "$35",
-                desc: "Fleece lined, warm & cozy",
-              },
-              {
-                name: "Performance Polo",
-                price: "$28",
-                desc: "Moisture-wicking fabric",
-              },
-            ].map((product, i) => (
-              <Card key={i}>
-                <div className="bg-muted text-muted-foreground flex aspect-square items-center justify-center rounded-t-xl">
-                  Product Image
-                </div>
-                <CardHeader>
-                  <CardTitle>{product.name}</CardTitle>
-                  <CardDescription>{product.desc}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-lg font-bold">{product.price}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <ProductsSection />
         </div>
       </section>
       {/* Bulk Order Section */}
