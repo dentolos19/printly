@@ -15,6 +15,9 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
     public DbSet<TicketMessage> TicketMessages { get; set; }
     public DbSet<Broadcast> Broadcasts { get; set; }
     public DbSet<Notification> Notifications { get; set; }
+    public DbSet<Product> Products { get; set; }
+    public DbSet<ProductVariant> ProductVariants { get; set; }
+    public DbSet<Inventory> Inventories { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
@@ -99,6 +102,34 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             });
 
         modelBuilder.Entity<Notification>().HasIndex(n => n.CreatedAt);
+
+        modelBuilder
+            .Entity<Product>()
+            .HasMany(p => p.Variants)
+            .WithOne(v => v.Product)
+            .HasForeignKey(v => v.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder
+            .Entity<ProductVariant>()
+            .HasOne(v => v.Inventory)
+            .WithOne(i => i.Variant)
+            .HasForeignKey<Inventory>(i => i.VariantId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Unique constraint to prevent duplicate variants (same product, size, color)
+        modelBuilder
+            .Entity<ProductVariant>()
+            .HasIndex(v => new
+            {
+                v.ProductId,
+                v.Size,
+                v.Color,
+            })
+            .IsUnique();
+
+        // Index for querying active products
+        modelBuilder.Entity<Product>().HasIndex(p => p.IsActive);
     }
 
     public override int SaveChanges()

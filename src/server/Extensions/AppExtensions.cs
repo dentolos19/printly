@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PrintlyServer.Data;
 using PrintlyServer.Data.Auth;
+using PrintlyServer.Data.Entities;
 using PrintlyServer.Hubs;
 using PrintlyServer.Middlewares;
 
@@ -92,10 +93,96 @@ public static class AppExtensions
         using var scope = app.Services.CreateScope();
 
         // Ensure database is created for development
-        var database = scope.ServiceProvider.GetRequiredService<DatabaseContext>().Database;
-        await database.EnsureCreatedAsync(); // NOTE: Delete the local database file manually to update the schema.
+        var db = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+        await db.Database.EnsureCreatedAsync();
+
+        // Seed sample product data
+        await SeedProductDataAsync(db);
 
         return app;
+    }
+
+    private static async Task SeedProductDataAsync(DatabaseContext db)
+    {
+        // Skip seeding if products already exist
+        if (await db.Products.AnyAsync())
+            return;
+
+        var products = new List<Product>
+        {
+            new()
+            {
+                Name = "T-Shirt",
+                BasePrice = 19.99m,
+                IsActive = true,
+            },
+            new()
+            {
+                Name = "Mug",
+                BasePrice = 12.99m,
+                IsActive = true,
+            },
+            new()
+            {
+                Name = "Tote Bag",
+                BasePrice = 15.99m,
+                IsActive = true,
+            },
+            new()
+            {
+                Name = "Cap",
+                BasePrice = 14.99m,
+                IsActive = true,
+            },
+            new()
+            {
+                Name = "Polo Shirt",
+                BasePrice = 29.99m,
+                IsActive = true,
+            },
+        };
+
+        await db.Products.AddRangeAsync(products);
+        await db.SaveChangesAsync();
+
+        // Create variants and inventory for each product
+        var variants = new List<ProductVariant>();
+        var inventories = new List<Inventory>();
+
+        var sizes = Enum.GetValues<ProductSize>();
+        var colors = Enum.GetValues<ProductColor>();
+        var random = new Random(42); // Fixed seed for reproducible data
+
+        foreach (var product in products)
+        {
+            foreach (var size in sizes)
+            {
+                foreach (var color in colors)
+                {
+                    var variant = new ProductVariant
+                    {
+                        ProductId = product.Id,
+                        Size = size,
+                        Color = color,
+                    };
+                    variants.Add(variant);
+
+                    // Create inventory for each variant
+                    inventories.Add(
+                        new Inventory
+                        {
+                            VariantId = variant.Id,
+                            Quantity = random.Next(0, 100),
+                            ReorderLevel = random.Next(5, 20),
+                        }
+                    );
+                }
+            }
+        }
+
+        await db.ProductVariants.AddRangeAsync(variants);
+        await db.Inventories.AddRangeAsync(inventories);
+        await db.SaveChangesAsync();
     }
 
     /// <summary>
