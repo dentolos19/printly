@@ -6,7 +6,7 @@ public enum PostVisibility
     Deleted
 }
 
-public enum Status
+public enum PostStatus
 {
     Published,
     Draft,
@@ -30,7 +30,7 @@ public class Post : BaseEntity
     public Guid PhotoId { get; set; }
 
     public PostVisibility Visibility { get; set; } = PostVisibility.Visible;
-    public Status Status { get; set; } = Status.Draft;
+    public PostStatus PostStatus { get; set; } = PostStatus.Draft;
 
     // public ICollection<PostComment> Comments { get; set; } = new List<PostComment>();
     // public ICollection<PostReaction> Reactions { get; set; } = new List<PostReaction>();
