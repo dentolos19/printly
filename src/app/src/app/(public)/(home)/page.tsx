@@ -41,10 +41,17 @@ function ProductCard({ product, onClick }: { product: ProductResponse; onClick: 
   const uniqueSizes = [...new Set(product.variants.map((v) => v.size))];
   const uniqueColors = [...new Set(product.variants.map((v) => v.color))];
 
+  // Get the first variant with an image for display
+  const displayImage = product.variants.find((v) => v.imageUrl)?.imageUrl ?? null;
+
   return (
     <Card className="cursor-pointer transition-shadow hover:shadow-lg" onClick={onClick}>
-      <div className="bg-muted text-muted-foreground flex aspect-square items-center justify-center rounded-t-xl">
-        <Package className="h-16 w-16" />
+      <div className="bg-muted relative flex aspect-square items-center justify-center overflow-hidden rounded-t-xl">
+        {displayImage ? (
+          <Image src={displayImage} alt={product.name} fill className="object-cover" />
+        ) : (
+          <Package className="text-muted-foreground h-16 w-16" />
+        )}
       </div>
       <CardHeader>
         <CardTitle>{product.name}</CardTitle>

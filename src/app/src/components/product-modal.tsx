@@ -56,12 +56,13 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
     if (selectedVariant?.imageUrl) return selectedVariant.imageUrl;
 
     // If we have a selected color, show the first variant image for that color
+    // If no image exists for this color, show placeholder (return null)
     if (selectedColor) {
       const colorVariant = product.variants.find((v) => v.color === selectedColor && v.imageUrl);
-      if (colorVariant?.imageUrl) return colorVariant.imageUrl;
+      return colorVariant?.imageUrl ?? null;
     }
 
-    // Fall back to first variant with an image
+    // No color selected yet - show first variant with an image as preview
     const variantWithImage = product.variants.find((v) => v.imageUrl);
     return variantWithImage?.imageUrl ?? null;
   }, [product, selectedVariant, selectedColor]);

@@ -67,10 +67,7 @@ public record CreateProductVariantDto(
     [Required] [StringLength(50, MinimumLength = 1)] string Color
 );
 
-public record UpdateProductVariantDto(
-    ProductSize? Size,
-    [StringLength(50, MinimumLength = 1)] string? Color
-);
+public record UpdateProductVariantDto(ProductSize? Size, [StringLength(50, MinimumLength = 1)] string? Color);
 
 public record InventoryResponse(
     Guid Id,
