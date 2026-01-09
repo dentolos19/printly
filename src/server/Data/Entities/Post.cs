@@ -32,7 +32,7 @@ public class Post : BaseEntity
     public PostVisibility Visibility { get; set; } = PostVisibility.Visible;
     public PostStatus PostStatus { get; set; } = PostStatus.Draft;
 
-    // public ICollection<PostComment> Comments { get; set; } = new List<PostComment>();
+    public ICollection<PostComment> Comments { get; set; } = new List<PostComment>();
     // public ICollection<PostReaction> Reactions { get; set; } = new List<PostReaction>();
     // public ICollection<PostBookmark> Bookmarks { get; set; } = new List<PostBookmark>();
 }
