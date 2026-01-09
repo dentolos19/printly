@@ -13,15 +13,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCart } from "@/lib/providers/cart";
 import {
-  ProductColor,
-  ProductColorLabels,
   ProductResponse,
   ProductSize,
   ProductSizeLabels,
   ProductVariantResponse,
 } from "@/lib/server/product";
-import { Minus, Palette, Plus, ShoppingCart } from "lucide-react";
-import Link from "next/link";
+import { Minus, Package, Palette, Plus, ShoppingCart } from "lucide-react";
+import Image from "next/image";
 import { useMemo, useState } from "react";
 
 type ProductModalProps = {
@@ -33,7 +31,7 @@ type ProductModalProps = {
 export function ProductModal({ product, open, onOpenChange }: ProductModalProps) {
   const { addItem } = useCart();
   const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null);
-  const [selectedColor, setSelectedColor] = useState<ProductColor | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
 
   // Get unique available sizes and colors from variants
@@ -46,7 +44,7 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
   const availableColors = useMemo(() => {
     if (!product) return [];
     const colors = new Set(product.variants.map((v) => v.color));
-    return Array.from(colors).sort((a, b) => a - b);
+    return Array.from(colors).sort();
   }, [product]);
 
   // Get the selected variant
@@ -54,6 +52,24 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
     if (!product || selectedSize === null || selectedColor === null) return null;
     return product.variants.find((v) => v.size === selectedSize && v.color === selectedColor) ?? null;
   }, [product, selectedSize, selectedColor]);
+
+  // Get the display image - show selected variant image or first variant with image for the selected color
+  const displayImage = useMemo(() => {
+    if (!product) return null;
+    
+    // If we have a selected variant with an image, show it
+    if (selectedVariant?.imageUrl) return selectedVariant.imageUrl;
+    
+    // If we have a selected color, show the first variant image for that color
+    if (selectedColor) {
+      const colorVariant = product.variants.find((v) => v.color === selectedColor && v.imageUrl);
+      if (colorVariant?.imageUrl) return colorVariant.imageUrl;
+    }
+    
+    // Fall back to first variant with an image
+    const variantWithImage = product.variants.find((v) => v.imageUrl);
+    return variantWithImage?.imageUrl ?? null;
+  }, [product, selectedVariant, selectedColor]);
 
   // Check stock availability
   const stock = selectedVariant?.inventory?.quantity ?? 0;
@@ -91,7 +107,7 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{product.name}</DialogTitle>
           <DialogDescription>
@@ -100,6 +116,22 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* Product Image */}
+          <div className="relative mx-auto aspect-square w-full max-w-[280px] overflow-hidden rounded-lg border bg-muted">
+            {displayImage ? (
+              <Image
+                src={displayImage}
+                alt={product.name}
+                fill
+                className="object-cover transition-opacity duration-200"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                <Package className="h-16 w-16" />
+              </div>
+            )}
+          </div>
+
           {/* Price Display */}
           <div className="text-center">
             <span className="text-3xl font-bold">${product.basePrice.toFixed(2)}</span>
@@ -129,16 +161,16 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
           <div className="space-y-2">
             <Label>Color</Label>
             <Select
-              value={selectedColor !== null ? String(selectedColor) : undefined}
-              onValueChange={(value) => setSelectedColor(Number(value) as ProductColor)}
+              value={selectedColor ?? undefined}
+              onValueChange={(value) => setSelectedColor(value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select color" />
               </SelectTrigger>
               <SelectContent>
                 {availableColors.map((color) => (
-                  <SelectItem key={color} value={String(color)}>
-                    {ProductColorLabels[color]}
+                  <SelectItem key={color} value={color}>
+                    {color}
                   </SelectItem>
                 ))}
               </SelectContent>

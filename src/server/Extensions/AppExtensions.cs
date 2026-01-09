@@ -153,7 +153,7 @@ public static class AppExtensions
         var inventories = new List<Inventory>();
 
         var sizes = Enum.GetValues<ProductSize>();
-        var colors = Enum.GetValues<ProductColor>();
+        var colors = new[] { "Red", "Blue", "Green", "Black", "White", "Navy" };
         var random = new Random(42); // Fixed seed for reproducible data
 
         foreach (var product in products)

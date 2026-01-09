@@ -28,11 +28,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useServer } from "@/lib/providers/server";
 import type { ProductResponse, ProductVariantResponse } from "@/lib/server/product";
-import { ProductSize, ProductColor, ProductSizeLabels, ProductColorLabels } from "@/lib/server/product";
-import { ArrowLeft, Edit, Package, Plus, Trash2 } from "lucide-react";
+import { ProductSize, ProductSizeLabels, CommonColors } from "@/lib/server/product";
+import { ArrowLeft, Edit, ImageIcon, Package, Plus, Trash2, Upload, X } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 export default function ProductDetailPage() {
@@ -49,6 +50,7 @@ export default function ProductDetailPage() {
   const [editVariantOpen, setEditVariantOpen] = useState(false);
   const [deleteVariantOpen, setDeleteVariantOpen] = useState(false);
   const [editInventoryOpen, setEditInventoryOpen] = useState(false);
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariantResponse | null>(null);
 
   // Form states
@@ -57,6 +59,12 @@ export default function ProductDetailPage() {
   const [formQuantity, setFormQuantity] = useState("");
   const [formReorderLevel, setFormReorderLevel] = useState("");
   const [formSubmitting, setFormSubmitting] = useState(false);
+
+  // Image upload states
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadProduct = useCallback(async () => {
     setLoading(true);
@@ -87,8 +95,8 @@ export default function ProductDetailPage() {
   };
 
   const handleCreateVariant = async () => {
-    if (!formSize || !formColor) {
-      toast.error("Please select size and color");
+    if (!formSize || !formColor.trim()) {
+      toast.error("Please select size and enter color");
       return;
     }
 
@@ -97,7 +105,7 @@ export default function ProductDetailPage() {
       await api.variant.createVariant({
         productId,
         size: parseInt(formSize) as ProductSize,
-        color: parseInt(formColor) as ProductColor,
+        color: formColor.trim(),
       });
       toast.success("Variant created successfully");
       setCreateVariantOpen(false);
@@ -111,8 +119,8 @@ export default function ProductDetailPage() {
   };
 
   const handleEditVariant = async () => {
-    if (!selectedVariant || !formSize || !formColor) {
-      toast.error("Please select size and color");
+    if (!selectedVariant || !formSize || !formColor.trim()) {
+      toast.error("Please select size and enter color");
       return;
     }
 
@@ -120,7 +128,7 @@ export default function ProductDetailPage() {
     try {
       await api.variant.updateVariant(selectedVariant.id, {
         size: parseInt(formSize) as ProductSize,
-        color: parseInt(formColor) as ProductColor,
+        color: formColor.trim(),
       });
       toast.success("Variant updated successfully");
       setEditVariantOpen(false);
@@ -195,7 +203,7 @@ export default function ProductDetailPage() {
   const openEditVariant = (variant: ProductVariantResponse) => {
     setSelectedVariant(variant);
     setFormSize(variant.size.toString());
-    setFormColor(variant.color.toString());
+    setFormColor(variant.color);
     setEditVariantOpen(true);
   };
 
@@ -209,6 +217,69 @@ export default function ProductDetailPage() {
     setFormQuantity(variant.inventory?.quantity.toString() ?? "0");
     setFormReorderLevel(variant.inventory?.reorderLevel.toString() ?? "10");
     setEditInventoryOpen(true);
+  };
+
+  const openImageDialog = (variant: ProductVariantResponse) => {
+    setSelectedVariant(variant);
+    setSelectedImage(null);
+    setImagePreview(null);
+    setImageDialogOpen(true);
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error("Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.");
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("File size must be less than 10MB");
+        return;
+      }
+      setSelectedImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleImageUpload = async () => {
+    if (!selectedVariant || !selectedImage) {
+      toast.error("Please select an image to upload");
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      await api.variant.uploadVariantImage(selectedVariant.id, selectedImage);
+      toast.success("Image uploaded successfully");
+      setImageDialogOpen(false);
+      setSelectedVariant(null);
+      setSelectedImage(null);
+      setImagePreview(null);
+      loadProduct();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to upload image");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    if (!selectedVariant) return;
+
+    setUploadingImage(true);
+    try {
+      await api.variant.removeVariantImage(selectedVariant.id);
+      toast.success("Image removed successfully");
+      setImageDialogOpen(false);
+      setSelectedVariant(null);
+      loadProduct();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to remove image");
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   if (loading) {
@@ -306,18 +377,19 @@ export default function ProductDetailPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[80px]">Image</TableHead>
                 <TableHead>Size</TableHead>
                 <TableHead>Color</TableHead>
                 <TableHead>Stock</TableHead>
                 <TableHead>Reorder Level</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="w-[120px]">Actions</TableHead>
+                <TableHead className="w-[150px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {product.variants.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-muted-foreground h-24 text-center">
+                  <TableCell colSpan={7} className="text-muted-foreground h-24 text-center">
                     <Package className="mx-auto mb-2 size-8 opacity-50" />
                     No variants yet. Add one to get started.
                   </TableCell>
@@ -331,24 +403,25 @@ export default function ProductDetailPage() {
 
                   return (
                     <TableRow key={variant.id}>
+                      <TableCell>
+                        {variant.imageUrl ? (
+                          <div className="relative h-12 w-12 overflow-hidden rounded-md border">
+                            <Image
+                              src={variant.imageUrl}
+                              alt={`${product.name} - ${variant.color}`}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded-md border">
+                            <ImageIcon className="size-5" />
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell>{ProductSizeLabels[variant.size]}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="size-4 rounded-full border"
-                            style={{
-                              backgroundColor:
-                                variant.color === ProductColor.Red
-                                  ? "#ef4444"
-                                  : variant.color === ProductColor.Blue
-                                    ? "#3b82f6"
-                                    : variant.color === ProductColor.Green
-                                      ? "#22c55e"
-                                      : "#171717",
-                            }}
-                          />
-                          {ProductColorLabels[variant.color]}
-                        </div>
+                        <Badge variant="outline">{variant.color}</Badge>
                       </TableCell>
                       <TableCell>{stock}</TableCell>
                       <TableCell>{reorderLevel}</TableCell>
@@ -367,6 +440,14 @@ export default function ProductDetailPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openImageDialog(variant)}
+                            title="Manage Image"
+                          >
+                            <ImageIcon className="size-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -428,18 +509,25 @@ export default function ProductDetailPage() {
             </div>
             <div className="space-y-2">
               <Label>Color *</Label>
-              <Select value={formColor} onValueChange={setFormColor}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select color" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(ProductColorLabels).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                placeholder="Enter color (e.g., Red, Navy Blue, Forest Green)"
+                value={formColor}
+                onChange={(e) => setFormColor(e.target.value)}
+              />
+              <div className="flex flex-wrap gap-1 pt-1">
+                {CommonColors.slice(0, 8).map((color) => (
+                  <Button
+                    key={color}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={() => setFormColor(color)}
+                  >
+                    {color}
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
           <DialogFooter>
@@ -478,18 +566,25 @@ export default function ProductDetailPage() {
             </div>
             <div className="space-y-2">
               <Label>Color *</Label>
-              <Select value={formColor} onValueChange={setFormColor}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select color" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(ProductColorLabels).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                placeholder="Enter color (e.g., Red, Navy Blue, Forest Green)"
+                value={formColor}
+                onChange={(e) => setFormColor(e.target.value)}
+              />
+              <div className="flex flex-wrap gap-1 pt-1">
+                {CommonColors.slice(0, 8).map((color) => (
+                  <Button
+                    key={color}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={() => setFormColor(color)}
+                  >
+                    {color}
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
           <DialogFooter>
@@ -563,6 +658,94 @@ export default function ProductDetailPage() {
             </Button>
             <Button onClick={handleUpdateInventory} disabled={formSubmitting}>
               {formSubmitting ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Upload Dialog */}
+      <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Variant Image</DialogTitle>
+            <DialogDescription>
+              {selectedVariant
+                ? `Manage image for ${ProductSizeLabels[selectedVariant.size]} - ${selectedVariant.color}`
+                : "Manage variant image"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* Current Image */}
+            {selectedVariant?.imageUrl && (
+              <div className="space-y-2">
+                <Label>Current Image</Label>
+                <div className="relative aspect-square w-full overflow-hidden rounded-lg border">
+                  <Image
+                    src={selectedVariant.imageUrl}
+                    alt="Current variant image"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="w-full"
+                  onClick={handleRemoveImage}
+                  disabled={uploadingImage}
+                >
+                  {uploadingImage ? "Removing..." : "Remove Image"}
+                </Button>
+              </div>
+            )}
+
+            {/* Image Preview */}
+            {imagePreview && !selectedVariant?.imageUrl && (
+              <div className="space-y-2">
+                <Label>Preview</Label>
+                <div className="relative aspect-square w-full overflow-hidden rounded-lg border">
+                  <Image src={imagePreview} alt="Preview" fill className="object-cover" />
+                </div>
+              </div>
+            )}
+
+            {/* Upload Section */}
+            <div className="space-y-2">
+              <Label>{selectedVariant?.imageUrl ? "Replace Image" : "Upload Image"}</Label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleImageSelect}
+                className="hidden"
+              />
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingImage}
+                >
+                  <ImageIcon className="mr-2 size-4" />
+                  Choose File
+                </Button>
+                {selectedImage && (
+                  <Button onClick={handleImageUpload} disabled={uploadingImage}>
+                    {uploadingImage ? "Uploading..." : "Upload"}
+                  </Button>
+                )}
+              </div>
+              {selectedImage && (
+                <p className="text-muted-foreground text-xs">Selected: {selectedImage.name}</p>
+              )}
+              <p className="text-muted-foreground text-xs">
+                Supported formats: JPEG, PNG, WebP, GIF. Max size: 10MB.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImageDialogOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

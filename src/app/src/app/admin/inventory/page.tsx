@@ -28,7 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useServer } from "@/lib/providers/server";
 import type { InventoryWithVariantResponse, LowStockAlertResponse, TotalStockResponse } from "@/lib/server/inventory";
-import { ProductColorLabels, ProductSizeLabels, ProductColor } from "@/lib/server/product";
+import { ProductSizeLabels } from "@/lib/server/product";
 import {
   AlertTriangle,
   ArrowUpDown,
@@ -365,20 +365,8 @@ export default function InventoryPage() {
                         <TableCell className="font-medium">{item.productName}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <div
-                              className="size-4 rounded-full border"
-                              style={{
-                                backgroundColor:
-                                  item.color === ProductColor.Red
-                                    ? "#ef4444"
-                                    : item.color === ProductColor.Blue
-                                      ? "#3b82f6"
-                                      : item.color === ProductColor.Green
-                                        ? "#22c55e"
-                                        : "#171717",
-                              }}
-                            />
-                            {ProductSizeLabels[item.size]} / {ProductColorLabels[item.color]}
+                            <Badge variant="outline">{item.color}</Badge>
+                            {ProductSizeLabels[item.size]}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -438,7 +426,7 @@ export default function InventoryPage() {
               {selectedInventory && (
                 <>
                   Adjust stock for {selectedInventory.productName} ({ProductSizeLabels[selectedInventory.size]} /{" "}
-                  {ProductColorLabels[selectedInventory.color]})
+                  {selectedInventory.color})
                 </>
               )}
             </DialogDescription>
@@ -485,7 +473,7 @@ export default function InventoryPage() {
               {selectedInventory && (
                 <>
                   Update inventory for {selectedInventory.productName} ({ProductSizeLabels[selectedInventory.size]} /{" "}
-                  {ProductColorLabels[selectedInventory.color]})
+                  {selectedInventory.color})
                 </>
               )}
             </DialogDescription>

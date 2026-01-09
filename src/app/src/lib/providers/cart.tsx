@@ -1,6 +1,6 @@
 "use client";
 
-import { ProductColorLabels, ProductResponse, ProductSizeLabels, ProductVariantResponse } from "@/lib/server/product";
+import { ProductResponse, ProductSizeLabels, ProductVariantResponse } from "@/lib/server/product";
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -74,7 +74,7 @@ export default function CartProvider({ children }: { children: ReactNode }) {
 
     if (stock <= 0) {
       toast.error("Out of stock", {
-        description: `${product.name} (${ProductSizeLabels[variant.size]}, ${ProductColorLabels[variant.color]}) is currently out of stock.`,
+        description: `${product.name} (${ProductSizeLabels[variant.size]}, ${variant.color}) is currently out of stock.`,
       });
       return;
     }
@@ -122,7 +122,7 @@ export default function CartProvider({ children }: { children: ReactNode }) {
       };
 
       toast.success("Added to cart", {
-        description: `${product.name} (${ProductSizeLabels[variant.size]}, ${ProductColorLabels[variant.color]}) added to your cart.`,
+        description: `${product.name} (${ProductSizeLabels[variant.size]}, ${variant.color}) added to your cart.`,
       });
 
       return [...currentItems, newItem];

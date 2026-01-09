@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth, LoggedIn, LoggedOut } from "@/lib/providers/auth";
 import { CartItem, useCart } from "@/lib/providers/cart";
 import { useServer } from "@/lib/providers/server";
-import { ProductColorLabels, ProductSizeLabels } from "@/lib/server/product";
+import { ProductSizeLabels } from "@/lib/server/product";
 import { ArrowLeft, Minus, Package, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -33,7 +33,7 @@ function CartItemRow({
         <h3 className="font-medium">{item.productName}</h3>
         <p className="text-muted-foreground text-sm">
           {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]} •{" "}
-          {ProductColorLabels[item.color as keyof typeof ProductColorLabels]}
+          {item.color}
         </p>
         <p className="font-medium">${item.unitPrice.toFixed(2)}</p>
       </div>

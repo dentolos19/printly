@@ -17,7 +17,7 @@ import {
   OrderStatusLabels,
   UserOrderStatsResponse,
 } from "@/lib/server/order";
-import { ProductColorLabels, ProductSizeLabels } from "@/lib/server/product";
+import { ProductSizeLabels } from "@/lib/server/product";
 import {
   CheckCircle2,
   Clock,
@@ -146,7 +146,7 @@ function OrderDetailsDialog({
                       <div>
                         <p className="font-medium">
                           {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]},{" "}
-                          {ProductColorLabels[item.color as keyof typeof ProductColorLabels]}
+                          {item.color}
                         </p>
                         <p className="text-muted-foreground text-sm">
                           Qty: {item.quantity} × ${item.unitPrice.toFixed(2)}

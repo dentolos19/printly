@@ -7,25 +7,27 @@ export enum ProductSize {
   L = 2,
 }
 
-export enum ProductColor {
-  Red = 0,
-  Blue = 1,
-  Green = 2,
-  Black = 3,
-}
-
 export const ProductSizeLabels: Record<ProductSize, string> = {
   [ProductSize.S]: "Small",
   [ProductSize.M]: "Medium",
   [ProductSize.L]: "Large",
 };
 
-export const ProductColorLabels: Record<ProductColor, string> = {
-  [ProductColor.Red]: "Red",
-  [ProductColor.Blue]: "Blue",
-  [ProductColor.Green]: "Green",
-  [ProductColor.Black]: "Black",
-};
+// Common color suggestions for the UI
+export const CommonColors = [
+  "Black",
+  "White",
+  "Red",
+  "Blue",
+  "Green",
+  "Navy",
+  "Gray",
+  "Pink",
+  "Purple",
+  "Orange",
+  "Yellow",
+  "Brown",
+];
 
 // Types
 export type InventoryResponse = {
@@ -41,7 +43,9 @@ export type ProductVariantResponse = {
   id: string;
   productId: string;
   size: ProductSize;
-  color: ProductColor;
+  color: string;
+  imageId: string | null;
+  imageUrl: string | null;
   createdAt: string;
   updatedAt: string;
   inventory: InventoryResponse | null;
@@ -82,7 +86,7 @@ export type UpdateProductDto = {
 
 export type CreateVariantForProductDto = {
   size: ProductSize;
-  color: ProductColor;
+  color: string;
   initialQuantity?: number;
   reorderLevel?: number;
 };

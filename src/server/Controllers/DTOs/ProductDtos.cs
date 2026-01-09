@@ -40,7 +40,9 @@ public record ProductVariantResponse(
     Guid Id,
     Guid ProductId,
     ProductSize Size,
-    ProductColor Color,
+    string Color,
+    Guid? ImageId,
+    string? ImageUrl,
     DateTime CreatedAt,
     DateTime UpdatedAt,
     InventoryResponse? Inventory
@@ -51,7 +53,9 @@ public record ProductVariantWithProductResponse(
     Guid ProductId,
     string ProductName,
     ProductSize Size,
-    ProductColor Color,
+    string Color,
+    Guid? ImageId,
+    string? ImageUrl,
     DateTime CreatedAt,
     DateTime UpdatedAt,
     InventoryResponse? Inventory
@@ -60,10 +64,13 @@ public record ProductVariantWithProductResponse(
 public record CreateProductVariantDto(
     [Required] Guid ProductId,
     [Required] ProductSize Size,
-    [Required] ProductColor Color
+    [Required] [StringLength(50, MinimumLength = 1)] string Color
 );
 
-public record UpdateProductVariantDto(ProductSize? Size, ProductColor? Color);
+public record UpdateProductVariantDto(
+    ProductSize? Size,
+    [StringLength(50, MinimumLength = 1)] string? Color
+);
 
 public record InventoryResponse(
     Guid Id,
@@ -80,7 +87,7 @@ public record InventoryWithVariantResponse(
     Guid ProductId,
     string ProductName,
     ProductSize Size,
-    ProductColor Color,
+    string Color,
     int Quantity,
     int ReorderLevel,
     DateTime CreatedAt,
@@ -107,7 +114,7 @@ public record CreateProductWithVariantsDto(
 
 public record CreateVariantForProductDto(
     [Required] ProductSize Size,
-    [Required] ProductColor Color,
+    [Required] [StringLength(50, MinimumLength = 1)] string Color,
     int InitialQuantity = 0,
     int ReorderLevel = 10
 );
@@ -121,7 +128,7 @@ public record LowStockAlertResponse(
     Guid ProductId,
     string ProductName,
     ProductSize Size,
-    ProductColor Color,
+    string Color,
     int Quantity,
     int ReorderLevel
 );

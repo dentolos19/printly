@@ -22,7 +22,7 @@ import {
   OrderStatusColors,
   OrderStatusLabels,
 } from "@/lib/server/order";
-import { ProductColorLabels, ProductSizeLabels } from "@/lib/server/product";
+import { ProductSizeLabels } from "@/lib/server/product";
 import { CheckCircle2, Clock, CreditCard, Eye, Loader2, Package, ShoppingBag, Truck, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -202,7 +202,7 @@ function OrderDetailsDialog({
                         <p className="font-medium">{item.productName}</p>
                         <p className="text-muted-foreground text-sm">
                           {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]} •{" "}
-                          {ProductColorLabels[item.color as keyof typeof ProductColorLabels]}
+                          {item.color}
                         </p>
                         <p className="text-muted-foreground text-xs">
                           Qty: {item.quantity} × ${item.unitPrice.toFixed(2)}

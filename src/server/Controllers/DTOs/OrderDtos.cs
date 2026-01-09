@@ -32,7 +32,7 @@ public record OrderItemResponse(
     Guid? RequestId,
     string ProductName,
     ProductSize Size,
-    ProductColor Color,
+    string Color,
     int Quantity,
     decimal UnitPrice,
     decimal Subtotal,

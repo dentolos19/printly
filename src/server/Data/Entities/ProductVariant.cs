@@ -9,14 +9,6 @@ public enum ProductSize
     L,
 }
 
-public enum ProductColor
-{
-    Red,
-    Blue,
-    Green,
-    Black,
-}
-
 public class ProductVariant : BaseEntity
 {
     // Foreign Key
@@ -27,9 +19,14 @@ public class ProductVariant : BaseEntity
     public ProductSize Size { get; set; }
 
     [Required]
-    public ProductColor Color { get; set; }
+    [StringLength(50)]
+    public string Color { get; set; } = "Black";
+
+    // Optional image for the variant
+    public Guid? ImageId { get; set; }
 
     // Navigation properties
     public Product Product { get; set; } = null!;
     public Inventory Inventory { get; set; } = null!;
+    public Asset? Image { get; set; }
 }

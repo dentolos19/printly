@@ -33,7 +33,7 @@ import {
   OrderStatusColors,
   OrderStatusLabels,
 } from "@/lib/server/order";
-import { ProductColorLabels, ProductSizeLabels } from "@/lib/server/product";
+import { ProductSizeLabels } from "@/lib/server/product";
 import { CheckCircle2, Eye, MoreHorizontal, Package, RefreshCw, Search, Trash2, Truck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -208,7 +208,7 @@ function OrderDetailsDialog({
                         <div>
                           <p className="font-medium">
                             {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]},{" "}
-                            {ProductColorLabels[item.color as keyof typeof ProductColorLabels]}
+                            {item.color}
                           </p>
                           <p className="text-muted-foreground text-sm">Variant: {item.variantId.slice(0, 8)}...</p>
                         </div>
