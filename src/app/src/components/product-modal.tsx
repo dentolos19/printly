@@ -12,12 +12,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCart } from "@/lib/providers/cart";
-import {
-  ProductResponse,
-  ProductSize,
-  ProductSizeLabels,
-  ProductVariantResponse,
-} from "@/lib/server/product";
+import { ProductResponse, ProductSize, ProductSizeLabels, ProductVariantResponse } from "@/lib/server/product";
 import { Minus, Package, Palette, Plus, ShoppingCart } from "lucide-react";
 import Image from "next/image";
 import { useMemo, useState } from "react";
@@ -56,16 +51,16 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
   // Get the display image - show selected variant image or first variant with image for the selected color
   const displayImage = useMemo(() => {
     if (!product) return null;
-    
+
     // If we have a selected variant with an image, show it
     if (selectedVariant?.imageUrl) return selectedVariant.imageUrl;
-    
+
     // If we have a selected color, show the first variant image for that color
     if (selectedColor) {
       const colorVariant = product.variants.find((v) => v.color === selectedColor && v.imageUrl);
       if (colorVariant?.imageUrl) return colorVariant.imageUrl;
     }
-    
+
     // Fall back to first variant with an image
     const variantWithImage = product.variants.find((v) => v.imageUrl);
     return variantWithImage?.imageUrl ?? null;
@@ -117,7 +112,7 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
 
         <div className="space-y-4 py-4">
           {/* Product Image */}
-          <div className="relative mx-auto aspect-square w-full max-w-[280px] overflow-hidden rounded-lg border bg-muted">
+          <div className="bg-muted relative mx-auto aspect-square w-full max-w-[280px] overflow-hidden rounded-lg border">
             {displayImage ? (
               <Image
                 src={displayImage}
@@ -126,7 +121,7 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
                 className="object-cover transition-opacity duration-200"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+              <div className="text-muted-foreground flex h-full w-full items-center justify-center">
                 <Package className="h-16 w-16" />
               </div>
             )}
@@ -160,10 +155,7 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
           {/* Color Selection */}
           <div className="space-y-2">
             <Label>Color</Label>
-            <Select
-              value={selectedColor ?? undefined}
-              onValueChange={(value) => setSelectedColor(value)}
-            >
+            <Select value={selectedColor ?? undefined} onValueChange={(value) => setSelectedColor(value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select color" />
               </SelectTrigger>

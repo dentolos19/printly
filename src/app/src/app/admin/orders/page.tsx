@@ -207,8 +207,7 @@ function OrderDetailsDialog({
                         </div>
                         <div>
                           <p className="font-medium">
-                            {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]},{" "}
-                            {item.color}
+                            {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]}, {item.color}
                           </p>
                           <p className="text-muted-foreground text-sm">Variant: {item.variantId.slice(0, 8)}...</p>
                         </div>

@@ -680,12 +680,7 @@ export default function ProductDetailPage() {
               <div className="space-y-2">
                 <Label>Current Image</Label>
                 <div className="relative aspect-square w-full overflow-hidden rounded-lg border">
-                  <Image
-                    src={selectedVariant.imageUrl}
-                    alt="Current variant image"
-                    fill
-                    className="object-cover"
-                  />
+                  <Image src={selectedVariant.imageUrl} alt="Current variant image" fill className="object-cover" />
                 </div>
                 <Button
                   variant="destructive"
@@ -735,12 +730,8 @@ export default function ProductDetailPage() {
                   </Button>
                 )}
               </div>
-              {selectedImage && (
-                <p className="text-muted-foreground text-xs">Selected: {selectedImage.name}</p>
-              )}
-              <p className="text-muted-foreground text-xs">
-                Supported formats: JPEG, PNG, WebP, GIF. Max size: 10MB.
-              </p>
+              {selectedImage && <p className="text-muted-foreground text-xs">Selected: {selectedImage.name}</p>}
+              <p className="text-muted-foreground text-xs">Supported formats: JPEG, PNG, WebP, GIF. Max size: 10MB.</p>
             </div>
           </div>
           <DialogFooter>

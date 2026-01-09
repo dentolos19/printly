@@ -32,8 +32,7 @@ function CartItemRow({
       <div className="flex-1 space-y-1">
         <h3 className="font-medium">{item.productName}</h3>
         <p className="text-muted-foreground text-sm">
-          {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]} •{" "}
-          {item.color}
+          {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]} • {item.color}
         </p>
         <p className="font-medium">${item.unitPrice.toFixed(2)}</p>
       </div>

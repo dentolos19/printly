@@ -145,8 +145,7 @@ function OrderDetailsDialog({
                       </div>
                       <div>
                         <p className="font-medium">
-                          {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]},{" "}
-                          {item.color}
+                          {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]}, {item.color}
                         </p>
                         <p className="text-muted-foreground text-sm">
                           Qty: {item.quantity} × ${item.unitPrice.toFixed(2)}

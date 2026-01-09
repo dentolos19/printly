@@ -30,7 +30,20 @@ import { useServer } from "@/lib/providers/server";
 import type { ProductResponse } from "@/lib/server/product";
 import type { ProductVariantWithProductResponse } from "@/lib/server/variant";
 import { ProductSize, ProductSizeLabels, CommonColors } from "@/lib/server/product";
-import { ArrowUpDown, ChevronDown, ChevronUp, Edit, ExternalLink, ImageIcon, Package, Plus, Search, Trash2, Upload, X } from "lucide-react";
+import {
+  ArrowUpDown,
+  ChevronDown,
+  ChevronUp,
+  Edit,
+  ExternalLink,
+  ImageIcon,
+  Package,
+  Plus,
+  Search,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -693,8 +706,7 @@ export default function VariantsPage() {
               Are you sure you want to delete this variant (
               {selectedVariant && (
                 <>
-                  {selectedVariant.productName} - {ProductSizeLabels[selectedVariant.size]} /{" "}
-                  {selectedVariant.color}
+                  {selectedVariant.productName} - {ProductSizeLabels[selectedVariant.size]} / {selectedVariant.color}
                 </>
               )}
               )? This will also delete the associated inventory and image. This action cannot be undone.
@@ -719,7 +731,10 @@ export default function VariantsPage() {
             <DialogTitle>Manage Variant Image</DialogTitle>
             <DialogDescription>
               {selectedVariant && (
-                <>Upload or remove image for {selectedVariant.productName} - {ProductSizeLabels[selectedVariant.size]} / {selectedVariant.color}</>
+                <>
+                  Upload or remove image for {selectedVariant.productName} - {ProductSizeLabels[selectedVariant.size]} /{" "}
+                  {selectedVariant.color}
+                </>
               )}
             </DialogDescription>
           </DialogHeader>
@@ -729,12 +744,7 @@ export default function VariantsPage() {
               <div className="space-y-2">
                 <Label>Current Image</Label>
                 <div className="relative mx-auto h-48 w-48 overflow-hidden rounded-lg border">
-                  <Image
-                    src={selectedVariant.imageUrl}
-                    alt="Current variant image"
-                    fill
-                    className="object-cover"
-                  />
+                  <Image src={selectedVariant.imageUrl} alt="Current variant image" fill className="object-cover" />
                 </div>
               </div>
             )}
@@ -744,12 +754,7 @@ export default function VariantsPage() {
               <div className="space-y-2">
                 <Label>New Image Preview</Label>
                 <div className="relative mx-auto h-48 w-48 overflow-hidden rounded-lg border">
-                  <Image
-                    src={imagePreview}
-                    alt="New image preview"
-                    fill
-                    className="object-cover"
-                  />
+                  <Image src={imagePreview} alt="New image preview" fill className="object-cover" />
                   <Button
                     variant="destructive"
                     size="icon"
@@ -775,17 +780,11 @@ export default function VariantsPage() {
                 onChange={handleImageSelect}
                 className="hidden"
               />
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => fileInputRef.current?.click()}
-              >
+              <Button variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()}>
                 <Upload className="mr-2 h-4 w-4" />
                 Select Image
               </Button>
-              <p className="text-muted-foreground text-xs">
-                Supported formats: JPEG, PNG, GIF, WebP. Max size: 10MB
-              </p>
+              <p className="text-muted-foreground text-xs">Supported formats: JPEG, PNG, GIF, WebP. Max size: 10MB</p>
             </div>
           </div>
           <DialogFooter className="flex-col gap-2 sm:flex-row">
@@ -799,7 +798,7 @@ export default function VariantsPage() {
                 {uploadingImage ? "Removing..." : "Remove Image"}
               </Button>
             )}
-            <div className="flex gap-2 w-full sm:w-auto">
+            <div className="flex w-full gap-2 sm:w-auto">
               <Button variant="outline" onClick={() => setImageDialogOpen(false)} className="flex-1">
                 Cancel
               </Button>
