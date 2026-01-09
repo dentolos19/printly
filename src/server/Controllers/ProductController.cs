@@ -43,37 +43,33 @@ public class ProductController(DatabaseContext context, StorageService storageSe
                 {
                     imageUrl = await storageService.DownloadFileAsync(v.Image);
                 }
-                variantResponses.Add(new ProductVariantResponse(
-                    v.Id,
-                    v.ProductId,
-                    v.Size,
-                    v.Color,
-                    v.ImageId,
-                    imageUrl,
-                    v.CreatedAt,
-                    v.UpdatedAt,
-                    v.Inventory == null
-                        ? null
-                        : new InventoryResponse(
-                            v.Inventory.Id,
-                            v.Inventory.VariantId,
-                            v.Inventory.Quantity,
-                            v.Inventory.ReorderLevel,
-                            v.Inventory.CreatedAt,
-                            v.Inventory.UpdatedAt
-                        )
-                ));
+                variantResponses.Add(
+                    new ProductVariantResponse(
+                        v.Id,
+                        v.ProductId,
+                        v.Size,
+                        v.Color,
+                        v.ImageId,
+                        imageUrl,
+                        v.CreatedAt,
+                        v.UpdatedAt,
+                        v.Inventory == null
+                            ? null
+                            : new InventoryResponse(
+                                v.Inventory.Id,
+                                v.Inventory.VariantId,
+                                v.Inventory.Quantity,
+                                v.Inventory.ReorderLevel,
+                                v.Inventory.CreatedAt,
+                                v.Inventory.UpdatedAt
+                            )
+                    )
+                );
             }
 
-            responses.Add(new ProductResponse(
-                p.Id,
-                p.Name,
-                p.BasePrice,
-                p.IsActive,
-                p.CreatedAt,
-                p.UpdatedAt,
-                variantResponses
-            ));
+            responses.Add(
+                new ProductResponse(p.Id, p.Name, p.BasePrice, p.IsActive, p.CreatedAt, p.UpdatedAt, variantResponses)
+            );
         }
 
         return Ok(responses);
@@ -120,8 +116,7 @@ public class ProductController(DatabaseContext context, StorageService storageSe
     public async Task<ActionResult<ProductResponse>> GetProduct(Guid id)
     {
         var product = await Context
-            .Products
-            .Include(p => p.Variants)
+            .Products.Include(p => p.Variants)
                 .ThenInclude(v => v.Inventory)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.Image)
@@ -139,26 +134,28 @@ public class ProductController(DatabaseContext context, StorageService storageSe
             {
                 imageUrl = await storageService.DownloadFileAsync(v.Image);
             }
-            variantResponses.Add(new ProductVariantResponse(
-                v.Id,
-                v.ProductId,
-                v.Size,
-                v.Color,
-                v.ImageId,
-                imageUrl,
-                v.CreatedAt,
-                v.UpdatedAt,
-                v.Inventory == null
-                    ? null
-                    : new InventoryResponse(
-                        v.Inventory.Id,
-                        v.Inventory.VariantId,
-                        v.Inventory.Quantity,
-                        v.Inventory.ReorderLevel,
-                        v.Inventory.CreatedAt,
-                        v.Inventory.UpdatedAt
-                    )
-            ));
+            variantResponses.Add(
+                new ProductVariantResponse(
+                    v.Id,
+                    v.ProductId,
+                    v.Size,
+                    v.Color,
+                    v.ImageId,
+                    imageUrl,
+                    v.CreatedAt,
+                    v.UpdatedAt,
+                    v.Inventory == null
+                        ? null
+                        : new InventoryResponse(
+                            v.Inventory.Id,
+                            v.Inventory.VariantId,
+                            v.Inventory.Quantity,
+                            v.Inventory.ReorderLevel,
+                            v.Inventory.CreatedAt,
+                            v.Inventory.UpdatedAt
+                        )
+                )
+            );
         }
 
         var response = new ProductResponse(
@@ -357,8 +354,7 @@ public class ProductController(DatabaseContext context, StorageService storageSe
             return NotFound(new { message = "Product not found" });
 
         var variants = await Context
-            .ProductVariants
-            .Include(v => v.Inventory)
+            .ProductVariants.Include(v => v.Inventory)
             .Include(v => v.Image)
             .Where(v => v.ProductId == id)
             .ToListAsync();
@@ -371,26 +367,28 @@ public class ProductController(DatabaseContext context, StorageService storageSe
             {
                 imageUrl = await storageService.DownloadFileAsync(v.Image);
             }
-            responses.Add(new ProductVariantResponse(
-                v.Id,
-                v.ProductId,
-                v.Size,
-                v.Color,
-                v.ImageId,
-                imageUrl,
-                v.CreatedAt,
-                v.UpdatedAt,
-                v.Inventory == null
-                    ? null
-                    : new InventoryResponse(
-                        v.Inventory.Id,
-                        v.Inventory.VariantId,
-                        v.Inventory.Quantity,
-                        v.Inventory.ReorderLevel,
-                        v.Inventory.CreatedAt,
-                        v.Inventory.UpdatedAt
-                    )
-            ));
+            responses.Add(
+                new ProductVariantResponse(
+                    v.Id,
+                    v.ProductId,
+                    v.Size,
+                    v.Color,
+                    v.ImageId,
+                    imageUrl,
+                    v.CreatedAt,
+                    v.UpdatedAt,
+                    v.Inventory == null
+                        ? null
+                        : new InventoryResponse(
+                            v.Inventory.Id,
+                            v.Inventory.VariantId,
+                            v.Inventory.Quantity,
+                            v.Inventory.ReorderLevel,
+                            v.Inventory.CreatedAt,
+                            v.Inventory.UpdatedAt
+                        )
+                )
+            );
         }
 
         return Ok(responses);

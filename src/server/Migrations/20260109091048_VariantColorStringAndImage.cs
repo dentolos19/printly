@@ -13,7 +13,8 @@ namespace PrintlyServer.Migrations
         {
             // Convert existing integer Color values to string names before changing column type
             // 0 = Black, 1 = White, 2 = Red, 3 = Blue, 4 = Green, 5 = Yellow, 6 = Purple, 7 = Orange, 8 = Pink, 9 = Gray, 10 = Navy
-            migrationBuilder.Sql(@"
+            migrationBuilder.Sql(
+                @"
                 UPDATE ProductVariants SET Color = 
                     CASE Color
                         WHEN '0' THEN 'Black'
@@ -29,7 +30,8 @@ namespace PrintlyServer.Migrations
                         WHEN '10' THEN 'Navy'
                         ELSE 'Black'
                     END
-            ");
+            "
+            );
 
             migrationBuilder.AlterColumn<string>(
                 name: "Color",
@@ -38,41 +40,34 @@ namespace PrintlyServer.Migrations
                 maxLength: 50,
                 nullable: false,
                 oldClrType: typeof(int),
-                oldType: "INTEGER");
+                oldType: "INTEGER"
+            );
 
-            migrationBuilder.AddColumn<Guid>(
-                name: "ImageId",
-                table: "ProductVariants",
-                type: "TEXT",
-                nullable: true);
+            migrationBuilder.AddColumn<Guid>(name: "ImageId", table: "ProductVariants", type: "TEXT", nullable: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_ProductVariants_ImageId",
                 table: "ProductVariants",
-                column: "ImageId");
+                column: "ImageId"
+            );
 
             migrationBuilder.AddForeignKey(
                 name: "FK_ProductVariants_Assets_ImageId",
                 table: "ProductVariants",
                 column: "ImageId",
                 principalTable: "Assets",
-                principalColumn: "Id");
+                principalColumn: "Id"
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_ProductVariants_Assets_ImageId",
-                table: "ProductVariants");
+            migrationBuilder.DropForeignKey(name: "FK_ProductVariants_Assets_ImageId", table: "ProductVariants");
 
-            migrationBuilder.DropIndex(
-                name: "IX_ProductVariants_ImageId",
-                table: "ProductVariants");
+            migrationBuilder.DropIndex(name: "IX_ProductVariants_ImageId", table: "ProductVariants");
 
-            migrationBuilder.DropColumn(
-                name: "ImageId",
-                table: "ProductVariants");
+            migrationBuilder.DropColumn(name: "ImageId", table: "ProductVariants");
 
             migrationBuilder.AlterColumn<int>(
                 name: "Color",
@@ -81,7 +76,8 @@ namespace PrintlyServer.Migrations
                 nullable: false,
                 oldClrType: typeof(string),
                 oldType: "TEXT",
-                oldMaxLength: 50);
+                oldMaxLength: 50
+            );
         }
     }
 }

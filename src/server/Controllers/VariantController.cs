@@ -23,8 +23,8 @@ public class VariantController(DatabaseContext context, StorageService storageSe
         [FromQuery] string? color = null
     )
     {
-        var query = Context.ProductVariants
-            .Include(v => v.Product)
+        var query = Context
+            .ProductVariants.Include(v => v.Product)
             .Include(v => v.Inventory)
             .Include(v => v.Image)
             .AsQueryable();
@@ -38,11 +38,7 @@ public class VariantController(DatabaseContext context, StorageService storageSe
         if (!string.IsNullOrWhiteSpace(color))
             query = query.Where(v => v.Color.ToLower() == color.ToLower());
 
-        var variants = await query
-            .OrderBy(v => v.Product.Name)
-            .ThenBy(v => v.Size)
-            .ThenBy(v => v.Color)
-            .ToListAsync();
+        var variants = await query.OrderBy(v => v.Product.Name).ThenBy(v => v.Size).ThenBy(v => v.Color).ToListAsync();
 
         var responses = new List<ProductVariantWithProductResponse>();
         foreach (var v in variants)
@@ -53,27 +49,29 @@ public class VariantController(DatabaseContext context, StorageService storageSe
                 imageUrl = await storageService.DownloadFileAsync(v.Image);
             }
 
-            responses.Add(new ProductVariantWithProductResponse(
-                v.Id,
-                v.ProductId,
-                v.Product.Name,
-                v.Size,
-                v.Color,
-                v.ImageId,
-                imageUrl,
-                v.CreatedAt,
-                v.UpdatedAt,
-                v.Inventory == null
-                    ? null
-                    : new InventoryResponse(
-                        v.Inventory.Id,
-                        v.Inventory.VariantId,
-                        v.Inventory.Quantity,
-                        v.Inventory.ReorderLevel,
-                        v.Inventory.CreatedAt,
-                        v.Inventory.UpdatedAt
-                    )
-            ));
+            responses.Add(
+                new ProductVariantWithProductResponse(
+                    v.Id,
+                    v.ProductId,
+                    v.Product.Name,
+                    v.Size,
+                    v.Color,
+                    v.ImageId,
+                    imageUrl,
+                    v.CreatedAt,
+                    v.UpdatedAt,
+                    v.Inventory == null
+                        ? null
+                        : new InventoryResponse(
+                            v.Inventory.Id,
+                            v.Inventory.VariantId,
+                            v.Inventory.Quantity,
+                            v.Inventory.ReorderLevel,
+                            v.Inventory.CreatedAt,
+                            v.Inventory.UpdatedAt
+                        )
+                )
+            );
         }
 
         return Ok(responses);
@@ -87,8 +85,7 @@ public class VariantController(DatabaseContext context, StorageService storageSe
     public async Task<ActionResult<ProductVariantWithProductResponse>> GetVariant(Guid id)
     {
         var variant = await Context
-            .ProductVariants
-            .Include(v => v.Product)
+            .ProductVariants.Include(v => v.Product)
             .Include(v => v.Inventory)
             .Include(v => v.Image)
             .Where(v => v.Id == id)
@@ -177,14 +174,9 @@ public class VariantController(DatabaseContext context, StorageService storageSe
     [HttpPost("{id:guid}/image")]
     [Authorize(Roles = "Admin")]
     [RequestSizeLimit(10_000_000)] // 10 MB
-    public async Task<ActionResult<ProductVariantWithProductResponse>> UploadVariantImage(
-        Guid id,
-        IFormFile file
-    )
+    public async Task<ActionResult<ProductVariantWithProductResponse>> UploadVariantImage(Guid id, IFormFile file)
     {
-        var variant = await Context.ProductVariants
-            .Include(v => v.Image)
-            .FirstOrDefaultAsync(v => v.Id == id);
+        var variant = await Context.ProductVariants.Include(v => v.Image).FirstOrDefaultAsync(v => v.Id == id);
 
         if (variant is null)
             return NotFound(new { message = "Variant not found" });
@@ -224,9 +216,7 @@ public class VariantController(DatabaseContext context, StorageService storageSe
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ProductVariantWithProductResponse>> RemoveVariantImage(Guid id)
     {
-        var variant = await Context.ProductVariants
-            .Include(v => v.Image)
-            .FirstOrDefaultAsync(v => v.Id == id);
+        var variant = await Context.ProductVariants.Include(v => v.Image).FirstOrDefaultAsync(v => v.Id == id);
 
         if (variant is null)
             return NotFound(new { message = "Variant not found" });
@@ -264,7 +254,10 @@ public class VariantController(DatabaseContext context, StorageService storageSe
         if (dto.Size.HasValue || !string.IsNullOrWhiteSpace(dto.Color))
         {
             var existingVariant = await Context.ProductVariants.FirstOrDefaultAsync(v =>
-                v.Id != id && v.ProductId == variant.ProductId && v.Size == newSize && v.Color.ToLower() == newColor.ToLower()
+                v.Id != id
+                && v.ProductId == variant.ProductId
+                && v.Size == newSize
+                && v.Color.ToLower() == newColor.ToLower()
             );
 
             if (existingVariant is not null)
@@ -297,9 +290,7 @@ public class VariantController(DatabaseContext context, StorageService storageSe
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult> DeleteVariant(Guid id)
     {
-        var variant = await Context.ProductVariants
-            .Include(v => v.Image)
-            .FirstOrDefaultAsync(v => v.Id == id);
+        var variant = await Context.ProductVariants.Include(v => v.Image).FirstOrDefaultAsync(v => v.Id == id);
 
         if (variant is null)
             return NotFound(new { message = "Variant not found" });
