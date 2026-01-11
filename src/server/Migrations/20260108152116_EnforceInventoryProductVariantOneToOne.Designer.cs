@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PrintlyServer.Data;
 
@@ -10,9 +11,11 @@ using PrintlyServer.Data;
 namespace PrintlyServer.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20260108152116_EnforceInventoryProductVariantOneToOne")]
+    partial class EnforceInventoryProductVariantOneToOne
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
@@ -518,15 +521,10 @@ namespace PrintlyServer.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Color")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT");
+                    b.Property<int>("Color")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("ImageId")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("ProductId")
@@ -539,8 +537,6 @@ namespace PrintlyServer.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ImageId");
 
                     b.HasIndex("ProductId", "Size", "Color")
                         .IsUnique();
@@ -908,17 +904,11 @@ namespace PrintlyServer.Migrations
 
             modelBuilder.Entity("PrintlyServer.Data.Entities.ProductVariant", b =>
                 {
-                    b.HasOne("PrintlyServer.Data.Entities.Asset", "Image")
-                        .WithMany()
-                        .HasForeignKey("ImageId");
-
                     b.HasOne("PrintlyServer.Data.Entities.Product", "Product")
                         .WithMany("Variants")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Image");
 
                     b.Navigation("Product");
                 });

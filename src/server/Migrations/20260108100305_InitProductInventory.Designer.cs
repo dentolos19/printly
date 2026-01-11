@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PrintlyServer.Data;
 
@@ -10,9 +11,11 @@ using PrintlyServer.Data;
 namespace PrintlyServer.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20260108100305_InitProductInventory")]
+    partial class InitProductInventory
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
@@ -410,78 +413,6 @@ namespace PrintlyServer.Migrations
                     b.ToTable("Notifications");
                 });
 
-            modelBuilder.Entity("PrintlyServer.Data.Entities.Order", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<decimal>("TotalAmount")
-                        .HasColumnType("decimal(10,2)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("Status");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Orders");
-                });
-
-            modelBuilder.Entity("PrintlyServer.Data.Entities.OrderItem", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("OrderId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<Guid?>("RequestId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal>("Subtotal")
-                        .HasColumnType("decimal(10,2)");
-
-                    b.Property<decimal>("UnitPrice")
-                        .HasColumnType("decimal(10,2)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("VariantId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OrderId");
-
-                    b.HasIndex("VariantId");
-
-                    b.ToTable("OrderItems");
-                });
-
             modelBuilder.Entity("PrintlyServer.Data.Entities.Product", b =>
                 {
                     b.Property<Guid>("Id")
@@ -518,15 +449,10 @@ namespace PrintlyServer.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Color")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT");
+                    b.Property<int>("Color")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("ImageId")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("ProductId")
@@ -539,8 +465,6 @@ namespace PrintlyServer.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ImageId");
 
                     b.HasIndex("ProductId", "Size", "Color")
                         .IsUnique();
@@ -876,49 +800,13 @@ namespace PrintlyServer.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PrintlyServer.Data.Entities.Order", b =>
-                {
-                    b.HasOne("PrintlyServer.Data.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("PrintlyServer.Data.Entities.OrderItem", b =>
-                {
-                    b.HasOne("PrintlyServer.Data.Entities.Order", "Order")
-                        .WithMany("Items")
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PrintlyServer.Data.Entities.ProductVariant", "Variant")
-                        .WithMany()
-                        .HasForeignKey("VariantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Order");
-
-                    b.Navigation("Variant");
-                });
-
             modelBuilder.Entity("PrintlyServer.Data.Entities.ProductVariant", b =>
                 {
-                    b.HasOne("PrintlyServer.Data.Entities.Asset", "Image")
-                        .WithMany()
-                        .HasForeignKey("ImageId");
-
                     b.HasOne("PrintlyServer.Data.Entities.Product", "Product")
                         .WithMany("Variants")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Image");
 
                     b.Navigation("Product");
                 });
@@ -964,11 +852,6 @@ namespace PrintlyServer.Migrations
                     b.Navigation("Ticket");
                 });
 
-            modelBuilder.Entity("PrintlyServer.Data.Entities.Order", b =>
-                {
-                    b.Navigation("Items");
-                });
-
             modelBuilder.Entity("PrintlyServer.Data.Entities.Product", b =>
                 {
                     b.Navigation("Variants");
@@ -976,8 +859,7 @@ namespace PrintlyServer.Migrations
 
             modelBuilder.Entity("PrintlyServer.Data.Entities.ProductVariant", b =>
                 {
-                    b.Navigation("Inventory")
-                        .IsRequired();
+                    b.Navigation("Inventory");
                 });
 
             modelBuilder.Entity("PrintlyServer.Data.Entities.Ticket", b =>
