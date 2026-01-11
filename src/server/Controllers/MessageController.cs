@@ -28,7 +28,10 @@ public class MessageController(DatabaseContext context) : BaseController(context
         DateTime? EditedAt,
         bool IsDeleted,
         DateTime? DeletedAt,
-        DateTime CreatedAt
+        DateTime CreatedAt,
+        Guid? ReplyToMessageId,
+        string? ReplyToContent,
+        string? ReplyToSenderName
     );
 
     /// <summary>
@@ -73,8 +76,8 @@ public class MessageController(DatabaseContext context) : BaseController(context
             return Unauthorized();
         }
 
-        var messages = await Context
-            .Messages.Include(m => m.Sender)
+        var messages = await Context.Messages
+            .Include(m => m.Sender)
             .Where(m =>
                 (m.SenderId == currentUserId && m.ReceiverId == userId)
                 || (m.SenderId == userId && m.ReceiverId == currentUserId)
@@ -93,7 +96,10 @@ public class MessageController(DatabaseContext context) : BaseController(context
                 m.EditedAt,
                 m.IsDeleted,
                 m.DeletedAt,
-                m.CreatedAt
+                m.CreatedAt,
+                m.ReplyToMessageId,
+                m.ReplyToMessage != null ? m.ReplyToMessage.Content : null,
+                m.ReplyToMessage != null ? m.ReplyToMessage.Sender.UserName : null
             ))
             .ToListAsync();
 

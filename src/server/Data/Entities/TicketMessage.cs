@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace PrintlyServer.Data.Entities;
 
 /// <summary>
@@ -16,6 +18,11 @@ public class TicketMessage : BaseEntity
     // Track read status separately for customer and admins
     public bool IsReadByCustomer { get; set; } = false;
     public bool IsReadByAdmin { get; set; } = false;
+
+    // Reply/Quote functionality
+    public Guid? ReplyToMessageId { get; set; }
+    [ForeignKey(nameof(ReplyToMessageId))]
+    public TicketMessage? ReplyToMessage { get; set; }
 
     // LiveKit fields (for future implementation)
     public string? VoiceMessageUrl { get; set; }

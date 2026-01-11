@@ -45,4 +45,9 @@ public class Message : BaseEntity
     // Soft delete tracking
     public bool IsDeleted { get; set; } = false;
     public DateTime? DeletedAt { get; set; }
+
+    // Reply/Quote functionality
+    public Guid? ReplyToMessageId { get; set; }
+    [ForeignKey(nameof(ReplyToMessageId))]
+    public Message? ReplyToMessage { get; set; }
 }

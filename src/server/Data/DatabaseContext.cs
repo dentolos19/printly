@@ -15,6 +15,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
     public DbSet<TicketMessage> TicketMessages { get; set; }
     public DbSet<Broadcast> Broadcasts { get; set; }
     public DbSet<Notification> Notifications { get; set; }
+    public DbSet<ChatbotMessage> ChatbotMessages { get; set; }
     public DbSet<Product> Products { get; set; }
     public DbSet<ProductVariant> ProductVariants { get; set; }
     public DbSet<Inventory> Inventories { get; set; }
@@ -103,6 +104,8 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
                 n.IsDeleted,
             });
 
+        modelBuilder.Entity<Notification>()
+            .HasIndex(n => n.CreatedAt);
         modelBuilder.Entity<Notification>().HasIndex(n => n.CreatedAt);
 
         modelBuilder

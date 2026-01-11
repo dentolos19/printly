@@ -8,6 +8,10 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { ModelSelector } from "@/components/chatbot/model-selector";
+import type { AIModel } from "@/lib/server/chatbot";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -23,23 +27,116 @@ export function ChatbotWidget() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [models, setModels] = useState<AIModel[]>([]);
+  const [selectedModel, setSelectedModel] = useState<string>("google/gemini-2.5-flash");
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Welcome message
+  // Load chat history from database on mount
   useEffect(() => {
-    if (messages.length === 0) {
-      setMessages([
-        {
-          role: "assistant",
-          content:
-            "👋 Hi! I'm Printly Assistant. I can help you navigate the platform, explain features, or answer questions about designs, orders, and more. How can I help you today?",
-          timestamp: new Date(),
-        },
-      ]);
+    if (!tokens?.accessToken) return;
+
+    const loadHistory = async () => {
+      setIsLoadingHistory(true);
+      try {
+        const response = await fetch(`${API_URL}/chatbot/history?limit=50`, {
+          headers: {
+            Authorization: `Bearer ${tokens.accessToken}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = (await response.json()) as {
+            messages: Array<{ role: "user" | "assistant"; content: string; timestamp: string }>;
+          };
+
+          if (data.messages.length > 0) {
+            // Convert database messages to UI format
+            const loadedMessages: ChatMessage[] = data.messages.map((msg) => ({
+              role: msg.role,
+              content: msg.content,
+              timestamp: new Date(msg.timestamp),
+            }));
+            setMessages(loadedMessages);
+          } else {
+            // Show welcome message if no history
+            setMessages([
+              {
+                role: "assistant",
+                content:
+                  "Hi! I'm **Printly Assistant**. I can help you navigate the platform, explain features, or answer questions about designs, orders, and more. How can I help you today?",
+                timestamp: new Date(),
+              },
+            ]);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load chat history:", err);
+        // Show welcome message on error
+        setMessages([
+          {
+            role: "assistant",
+            content:
+              "Hi! I'm **Printly Assistant**. I can help you navigate the platform, explain features, or answer questions about designs, orders, and more. How can I help you today?",
+            timestamp: new Date(),
+          },
+        ]);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+
+    loadHistory();
+  }, [tokens?.accessToken]);
+
+  // Load available models on mount
+  useEffect(() => {
+    if (!tokens?.accessToken) return;
+
+    const loadModels = async () => {
+      setIsLoadingModels(true);
+      try {
+        const response = await fetch(`${API_URL}/chatbot/models`, {
+          headers: {
+            Authorization: `Bearer ${tokens.accessToken}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = (await response.json()) as { models: AIModel[] };
+          setModels(data.models);
+
+          // Load saved model preference from localStorage
+          const savedModel = localStorage.getItem("printly-chatbot-model");
+          if (savedModel && data.models.some((m) => m.id === savedModel)) {
+            setSelectedModel(savedModel);
+          } else {
+            // Use default model
+            const defaultModel = data.models.find((m) => m.isDefault);
+            if (defaultModel) {
+              setSelectedModel(defaultModel.id);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load models:", err);
+      } finally {
+        setIsLoadingModels(false);
+      }
+    };
+
+    loadModels();
+  }, [tokens?.accessToken]);
+
+  // Save model preference to localStorage when changed
+  useEffect(() => {
+    if (selectedModel) {
+      localStorage.setItem("printly-chatbot-model", selectedModel);
     }
-  }, [messages.length]);
+  }, [selectedModel]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -92,6 +189,7 @@ export function ChatbotWidget() {
         body: JSON.stringify({
           message: userMessage,
           history: history.slice(-10), // Keep last 10 messages for context
+          model: selectedModel,
         }),
       });
 
@@ -167,7 +265,7 @@ export function ChatbotWidget() {
         <div
           className={cn(
             "bg-background fixed right-6 bottom-6 z-50 flex flex-col rounded-lg border shadow-2xl transition-all duration-200",
-            isMinimized ? "h-12 w-72" : "h-[500px] max-h-[80vh] w-96",
+            isMinimized ? "h-14 w-80" : "h-[600px] max-h-[85vh] w-[420px]",
           )}
         >
           {/* Header */}
@@ -200,8 +298,8 @@ export function ChatbotWidget() {
           {!isMinimized && (
             <>
               {/* Messages */}
-              <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
-                <div className="space-y-4">
+              <ScrollArea ref={scrollAreaRef} className="flex-1 overflow-y-auto p-4">
+                <div className="space-y-4 pb-2">
                   {messages.map((message, index) => (
                     <div
                       key={index}
@@ -231,7 +329,56 @@ export function ChatbotWidget() {
                               : "bg-muted",
                         )}
                       >
-                        <p className="break-words whitespace-pre-wrap">{message.content}</p>
+                        {message.role === "user" ? (
+                          <p className="break-words whitespace-pre-wrap">{message.content}</p>
+                        ) : (
+                          <div className="prose prose-sm dark:prose-invert max-w-none">
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                // Style inline code
+                                code: ({ className, children, ...props }) => {
+                                  const isInline = !className;
+                                  return isInline ? (
+                                    <code className="bg-muted/50 rounded px-1 py-0.5 font-mono text-xs" {...props}>
+                                      {children}
+                                    </code>
+                                  ) : (
+                                    <code className={cn("text-xs", className)} {...props}>
+                                      {children}
+                                    </code>
+                                  );
+                                },
+                                // Style code blocks
+                                pre: ({ children }) => (
+                                  <pre className="bg-muted/50 my-2 overflow-x-auto rounded-md p-2 text-xs">
+                                    {children}
+                                  </pre>
+                                ),
+                                // Style lists
+                                ul: ({ children }) => <ul className="my-2 ml-4 list-disc space-y-1">{children}</ul>,
+                                ol: ({ children }) => <ol className="my-2 ml-4 list-decimal space-y-1">{children}</ol>,
+                                // Style paragraphs
+                                p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                                // Style links
+                                a: ({ href, children }) => (
+                                  <a
+                                    href={href}
+                                    className="text-primary underline hover:no-underline"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    {children}
+                                  </a>
+                                ),
+                                // Style strong/bold
+                                strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                              }}
+                            >
+                              {message.content}
+                            </ReactMarkdown>
+                          </div>
+                        )}
                         <p
                           className={cn(
                             "mt-1 text-xs opacity-70",
@@ -275,6 +422,18 @@ export function ChatbotWidget() {
 
               {/* Input */}
               <div className="border-t p-4">
+                {/* Model selector */}
+                {models.length > 0 && (
+                  <div className="mb-3">
+                    <ModelSelector
+                      selectedModel={selectedModel}
+                      onModelChange={setSelectedModel}
+                      models={models}
+                      isLoading={isLoadingModels}
+                    />
+                  </div>
+                )}
+
                 <div className="flex gap-2">
                   <Textarea
                     ref={textareaRef}
