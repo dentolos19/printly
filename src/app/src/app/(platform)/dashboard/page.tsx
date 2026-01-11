@@ -282,6 +282,52 @@ export default function Page() {
         />
       </div>
 
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>Get started with common tasks</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-3">
+          <Item variant="outline" asChild>
+            <Link href="/designer/new">
+              <ItemMedia>
+                <PlusIcon />
+              </ItemMedia>
+              <ItemContent>
+                <ItemTitle>Create New Design</ItemTitle>
+                <ItemDescription>Build a new design for anything!</ItemDescription>
+              </ItemContent>
+              <ItemActions />
+            </Link>
+          </Item>
+          <Item variant="outline" asChild>
+            <Link href="/assets">
+              <ItemMedia>
+                <ImageIcon />
+              </ItemMedia>
+              <ItemContent>
+                <ItemTitle>Manage My Assets</ItemTitle>
+                <ItemDescription>Manage your design assets and resources.</ItemDescription>
+              </ItemContent>
+              <ItemActions />
+            </Link>
+          </Item>
+          <Item variant="outline" asChild>
+            <Link href="/chat">
+              <ItemMedia>
+                <PhoneIcon />
+              </ItemMedia>
+              <ItemContent>
+                <ItemTitle>Contact Support</ItemTitle>
+                <ItemDescription>Get help and support for your account.</ItemDescription>
+              </ItemContent>
+              <ItemActions />
+            </Link>
+          </Item>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Recent Orders */}
         <Card className="lg:col-span-1">
@@ -364,52 +410,6 @@ export default function Page() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Get started with common tasks</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-3">
-          <Item variant="outline" asChild>
-            <Link href="/designer/new">
-              <ItemMedia>
-                <PlusIcon />
-              </ItemMedia>
-              <ItemContent>
-                <ItemTitle>Create New Design</ItemTitle>
-                <ItemDescription>Build a new design for anything!</ItemDescription>
-              </ItemContent>
-              <ItemActions />
-            </Link>
-          </Item>
-          <Item variant="outline" asChild>
-            <Link href="/assets">
-              <ItemMedia>
-                <ImageIcon />
-              </ItemMedia>
-              <ItemContent>
-                <ItemTitle>Manage My Assets</ItemTitle>
-                <ItemDescription>Manage your design assets and resources.</ItemDescription>
-              </ItemContent>
-              <ItemActions />
-            </Link>
-          </Item>
-          <Item variant="outline" asChild>
-            <Link href="/chat">
-              <ItemMedia>
-                <PhoneIcon />
-              </ItemMedia>
-              <ItemContent>
-                <ItemTitle>Contact Support</ItemTitle>
-                <ItemDescription>Get help and support for your account.</ItemDescription>
-              </ItemContent>
-              <ItemActions />
-            </Link>
-          </Item>
-        </CardContent>
-      </Card>
 
       {/* Order Details Dialog */}
       <OrderDetailsDialog
