@@ -15,6 +15,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
     public DbSet<TicketMessage> TicketMessages { get; set; }
     public DbSet<Broadcast> Broadcasts { get; set; }
     public DbSet<Notification> Notifications { get; set; }
+    public DbSet<ChatbotMessage> ChatbotMessages { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {

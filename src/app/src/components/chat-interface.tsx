@@ -633,7 +633,11 @@ export default function ChatInterface() {
   /** Format timestamp for display */
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleTimeString("en-SG", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Singapore",
+    });
   };
 
   /** Get initials from name or email */
@@ -989,9 +993,9 @@ function MessageBubble({
           {/* Reply context */}
           {message.replyToMessageId && message.replyToContent && (
             <div
-              className={`mb-2 border-l-2 pl-2 text-xs ${isOwnMessage ? "border-primary-foreground/50 opacity-80" : "border-primary"}`}
+              className={`mb-2 max-w-full overflow-hidden border-l-2 pl-2 text-xs ${isOwnMessage ? "border-primary-foreground/50 opacity-80" : "border-primary"}`}
             >
-              <p className={`font-medium ${isOwnMessage ? "" : "text-primary"}`}>
+              <p className={`truncate font-medium ${isOwnMessage ? "" : "text-primary"}`}>
                 {message.replyToSenderName || "Unknown"}
               </p>
               <p className="truncate opacity-80">{message.replyToContent}</p>

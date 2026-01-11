@@ -25,6 +25,17 @@ export interface ModelsResponse {
   models: AIModel[];
 }
 
+export interface ChatbotHistoryMessage {
+  role: "user" | "assistant";
+  content: string;
+  model: string | null;
+  timestamp: string;
+}
+
+export interface HistoryResponse {
+  messages: ChatbotHistoryMessage[];
+}
+
 export default function initChatbotController(fetch: ServerFetch) {
   return {
     /**
@@ -72,6 +83,21 @@ export default function initChatbotController(fetch: ServerFetch) {
 
       if (!response.ok) {
         throw new Error("Failed to get AI models");
+      }
+
+      return response.json();
+    },
+
+    /**
+     * Get chat history for current user
+     */
+    getHistory: async (limit: number = 50): Promise<HistoryResponse> => {
+      const response = await fetch(`/chatbot/history?limit=${limit}`, {
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get chat history");
       }
 
       return response.json();

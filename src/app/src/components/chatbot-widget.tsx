@@ -27,6 +27,7 @@ export function ChatbotWidget() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [models, setModels] = useState<AIModel[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>("google/gemini-2.5-flash");
@@ -34,19 +35,62 @@ export function ChatbotWidget() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Welcome message
+  // Load chat history from database on mount
   useEffect(() => {
-    if (messages.length === 0) {
-      setMessages([
-        {
-          role: "assistant",
-          content:
-            "Hi! I'm **Printly Assistant**. I can help you navigate the platform, explain features, or answer questions about designs, orders, and more. How can I help you today?",
-          timestamp: new Date(),
-        },
-      ]);
-    }
-  }, [messages.length]);
+    if (!tokens?.accessToken) return;
+
+    const loadHistory = async () => {
+      setIsLoadingHistory(true);
+      try {
+        const response = await fetch(`${API_URL}/chatbot/history?limit=50`, {
+          headers: {
+            Authorization: `Bearer ${tokens.accessToken}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = (await response.json()) as {
+            messages: Array<{ role: "user" | "assistant"; content: string; timestamp: string }>;
+          };
+
+          if (data.messages.length > 0) {
+            // Convert database messages to UI format
+            const loadedMessages: ChatMessage[] = data.messages.map((msg) => ({
+              role: msg.role,
+              content: msg.content,
+              timestamp: new Date(msg.timestamp),
+            }));
+            setMessages(loadedMessages);
+          } else {
+            // Show welcome message if no history
+            setMessages([
+              {
+                role: "assistant",
+                content:
+                  "Hi! I'm **Printly Assistant**. I can help you navigate the platform, explain features, or answer questions about designs, orders, and more. How can I help you today?",
+                timestamp: new Date(),
+              },
+            ]);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load chat history:", err);
+        // Show welcome message on error
+        setMessages([
+          {
+            role: "assistant",
+            content:
+              "Hi! I'm **Printly Assistant**. I can help you navigate the platform, explain features, or answer questions about designs, orders, and more. How can I help you today?",
+            timestamp: new Date(),
+          },
+        ]);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+
+    loadHistory();
+  }, [tokens?.accessToken]);
 
   // Load available models on mount
   useEffect(() => {
