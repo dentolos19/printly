@@ -18,6 +18,7 @@ import {
   UserOrderStatsResponse,
 } from "@/lib/server/order";
 import { ProductSizeLabels } from "@/lib/server/product";
+import { OrderProgressTracker } from "@/components/order-progress-tracker";
 import {
   CheckCircle2,
   Clock,
@@ -97,8 +98,6 @@ function OrderDetailsDialog({
   onOpenChange: (open: boolean) => void;
   isLoading?: boolean;
 }) {
-  const statusColor = order ? OrderStatusColors[order.status] : "";
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
@@ -128,10 +127,8 @@ function OrderDetailsDialog({
             </DialogHeader>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Status</span>
-                <Badge className={statusColor}>{OrderStatusLabels[order.status]}</Badge>
-              </div>
+              {/* Order Progress Tracker */}
+              <OrderProgressTracker status={order.status} />
 
               <Separator />
 

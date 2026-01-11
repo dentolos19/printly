@@ -23,6 +23,7 @@ import {
   OrderStatusLabels,
 } from "@/lib/server/order";
 import { ProductSizeLabels } from "@/lib/server/product";
+import { OrderProgressTracker } from "@/components/order-progress-tracker";
 import { CheckCircle2, Clock, CreditCard, Eye, Loader2, Package, ShoppingBag, Truck, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -143,7 +144,6 @@ function OrderDetailsDialog({
   onOpenChange: (open: boolean) => void;
   isLoading?: boolean;
 }) {
-  const statusColor = order ? OrderStatusColors[order.status] : "";
   const StatusIcon = order ? StatusIcons[order.status] : Package;
 
   return (
@@ -185,10 +185,8 @@ function OrderDetailsDialog({
             </DialogHeader>
 
             <div className="space-y-4">
-              <div className="bg-muted/50 flex items-center justify-between rounded-lg p-3">
-                <span className="text-muted-foreground">Status</span>
-                <Badge className={statusColor}>{OrderStatusLabels[order.status]}</Badge>
-              </div>
+              {/* Order Progress Tracker */}
+              <OrderProgressTracker status={order.status} />
 
               <div className="space-y-3">
                 <h4 className="font-medium">Order Items</h4>
