@@ -11,7 +11,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -309,38 +309,43 @@ export default function Page() {
       {!loading && filteredDesigns.length > 0 && (
         <div className={"grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"}>
           {filteredDesigns.map((design) => (
-            <Card key={design.id} className={"group cursor-pointer transition-shadow hover:shadow-lg"}>
-              <CardHeader className={"p-0"}>
-                <Link href={`/designer/${design.id}`}>
-                  <div className={"bg-muted relative aspect-4/3 overflow-hidden rounded-t-lg"}>
-                    {design.preview ? (
-                      <img src={design.preview} alt={design.name} className={"h-full w-full object-cover"} />
-                    ) : (
-                      <div className={"flex h-full w-full items-center justify-center"}>
-                        <FileText className={"text-muted-foreground/50 h-12 w-12"} />
-                      </div>
-                    )}
-                    {/* Hover overlay */}
-                    <div
-                      className={
-                        "absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100"
-                      }
-                    >
-                      <Button type={"button"} variant={"secondary"} size={"sm"}>
-                        <Edit3 className={"mr-2 h-4 w-4"} />
-                        Edit Design
-                      </Button>
+            <Card key={design.id} className={"group gap-0 overflow-hidden p-0 transition-all hover:shadow-lg"}>
+              <Link href={`/designer/${design.id}`}>
+                <div className={"bg-muted relative aspect-[4/3] w-full overflow-hidden"}>
+                  {design.preview ? (
+                    <img
+                      src={design.preview}
+                      alt={design.name}
+                      className={"h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"}
+                    />
+                  ) : (
+                    <div className={"flex h-full w-full items-center justify-center"}>
+                      <FileText className={"text-muted-foreground/30 h-12 w-12"} />
+                    </div>
+                  )}
+                  {/* Hover overlay */}
+                  <div
+                    className={
+                      "absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                    }
+                  >
+                    <div className={"rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-black shadow-sm"}>
+                      Open Design
                     </div>
                   </div>
-                </Link>
-              </CardHeader>
-              <CardContent className={"p-4"}>
-                <div className={"flex items-start justify-between"}>
-                  <div className={"min-w-0 flex-1"}>
-                    <h3 className={"truncate font-semibold"}>{design.name}</h3>
-                    {design.description && (
-                      <p className={"text-muted-foreground line-clamp-1 text-sm"}>{design.description}</p>
-                    )}
+                </div>
+              </Link>
+              <div className={"p-4"}>
+                <div className={"flex items-start justify-between gap-3"}>
+                  <div className={"min-w-0 flex-1 space-y-1"}>
+                    <Link href={`/designer/${design.id}`} className={"block"}>
+                      <h3 className={"group-hover:text-primary truncate font-medium transition-colors"}>
+                        {design.name}
+                      </h3>
+                    </Link>
+                    <p className={"text-muted-foreground line-clamp-1 text-xs"}>
+                      {design.description || "No description"}
+                    </p>
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -348,7 +353,7 @@ export default function Page() {
                         type={"button"}
                         variant={"ghost"}
                         size={"icon"}
-                        className={"h-8 w-8 shrink-0"}
+                        className={"text-muted-foreground hover:text-foreground -mt-2 -mr-2 h-8 w-8 shrink-0"}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <MoreVertical className={"h-4 w-4"} />
@@ -377,13 +382,11 @@ export default function Page() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-              </CardContent>
-              <CardFooter className={"border-t px-4 py-2"}>
-                <div className={"text-muted-foreground flex w-full items-center justify-between text-xs"}>
-                  <span>{getCanvasSize(design)}</span>
-                  <span>Edited {formatDate(design.updatedAt)}</span>
+                <div className={"text-muted-foreground mt-3 flex items-center justify-between text-xs"}>
+                  <span className={"bg-secondary rounded-sm px-1.5 py-0.5"}>{getCanvasSize(design)}</span>
+                  <span>{formatDate(design.updatedAt)}</span>
                 </div>
-              </CardFooter>
+              </div>
             </Card>
           ))}
         </div>
