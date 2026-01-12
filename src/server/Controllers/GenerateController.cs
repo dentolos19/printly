@@ -8,7 +8,7 @@ using PrintlyServer.Services;
 namespace PrintlyServer.Controllers;
 
 [Route("generate")]
-[Authorize(Roles = Roles.User)]
+[Authorize(Roles = $"{Roles.Admin},{Roles.User}")]
 public class GenerateController(
     DatabaseContext context,
     StorageService storageService,
@@ -25,10 +25,10 @@ public class GenerateController(
 
     [HttpGet]
     [Route("image")]
-    public async Task<IActionResult> GenerateImage([FromQuery] string prompt)
+    public async Task<IActionResult> GenerateImage([FromQuery] string prompt, [FromQuery] string? style = null)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var asset = await generativeService.GenerateImageAsync(prompt);
+        var asset = await generativeService.GenerateImageAsync(prompt, style);
 
         asset.IsGenerated = true;
         asset.UserId = userId;

@@ -15,8 +15,13 @@ export default function initGenerateController(fetch: ServerFetch) {
       return data;
     },
 
-    generateImage: async (prompt: string) => {
-      const response = await fetch(`/generate/image?${new URLSearchParams({ prompt })}`, {
+    generateImage: async (prompt: string, style?: string) => {
+      const params = new URLSearchParams({ prompt });
+      if (style) {
+        params.set("style", style);
+      }
+
+      const response = await fetch(`/generate/image?${params}`, {
         method: "GET",
       });
 

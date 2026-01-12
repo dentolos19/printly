@@ -1,7 +1,7 @@
 "use client";
 
 import { useDesigner } from "@/app/designer/components/hooks";
-import { ToolType } from "@/app/designer/types";
+import { ART_STYLES, ArtStyle, ToolType } from "@/app/designer/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,10 +73,11 @@ function PanelHeader({ tool, onClose }: PanelHeaderProps) {
 function AIGeneratorPanel() {
   const { generatedImages, isGenerating, generateImage, addImage } = useDesigner();
   const [prompt, setPrompt] = useState("");
+  const [selectedStyle, setSelectedStyle] = useState<ArtStyle | undefined>(undefined);
 
   function handleGenerate() {
     if (!prompt.trim() || isGenerating) return;
-    generateImage(prompt.trim());
+    generateImage(prompt.trim(), selectedStyle);
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -90,8 +91,40 @@ function AIGeneratorPanel() {
     addImage(url);
   }
 
+  function handleStyleClick(style: ArtStyle) {
+    setSelectedStyle(selectedStyle === style ? undefined : style);
+  }
+
   return (
     <div className={"flex flex-col gap-4 p-3"}>
+      {/* Art Style Selection */}
+      <div className={"flex flex-col gap-2"}>
+        <Label className={"text-muted-foreground text-xs font-medium tracking-wide uppercase"}>Art Style</Label>
+        <div className={"grid grid-cols-2 gap-1.5"}>
+          {ART_STYLES.map((style) => (
+            <Button
+              key={style.value}
+              type={"button"}
+              variant={selectedStyle === style.value ? "default" : "outline"}
+              size={"sm"}
+              className={cn(
+                "h-auto flex-col gap-0.5 py-2 text-xs",
+                selectedStyle === style.value && "ring-2 ring-offset-1",
+              )}
+              onClick={() => handleStyleClick(style.value)}
+              disabled={isGenerating}
+            >
+              <span className={"font-medium"}>{style.label}</span>
+            </Button>
+          ))}
+        </div>
+        {selectedStyle && (
+          <p className={"text-muted-foreground text-xs"}>
+            {ART_STYLES.find((s) => s.value === selectedStyle)?.description}
+          </p>
+        )}
+      </div>
+
       {/* Prompt input */}
       <div className={"flex flex-col gap-2"}>
         <Label className={"text-muted-foreground text-xs font-medium tracking-wide uppercase"}>Prompt</Label>
@@ -110,7 +143,7 @@ function AIGeneratorPanel() {
           disabled={!prompt.trim() || isGenerating}
         >
           {isGenerating ? <Loader2 className={"h-4 w-4 animate-spin"} /> : <Sparkles className={"h-4 w-4"} />}
-          Generate
+          Generate {selectedStyle ? `(${ART_STYLES.find((s) => s.value === selectedStyle)?.label})` : ""}
         </Button>
       </div>
 
@@ -148,7 +181,14 @@ function AIGeneratorPanel() {
                     "opacity-0 transition-opacity group-hover:opacity-100",
                   )}
                 >
-                  <p className={"line-clamp-2 p-2 text-xs text-white"}>{image.prompt}</p>
+                  <div className={"p-2"}>
+                    {image.style && (
+                      <span className={"mb-1 inline-block rounded bg-white/20 px-1.5 py-0.5 text-[10px] text-white"}>
+                        {ART_STYLES.find((s) => s.value === image.style)?.label}
+                      </span>
+                    )}
+                    <p className={"line-clamp-2 text-xs text-white"}>{image.prompt}</p>
+                  </div>
                 </div>
               </button>
             ))}
@@ -159,7 +199,7 @@ function AIGeneratorPanel() {
           <div className={"flex flex-col items-center justify-center py-8 text-center"}>
             <Sparkles className={"text-muted-foreground/50 h-10 w-10"} />
             <p className={"text-muted-foreground mt-2 text-sm"}>No images generated yet</p>
-            <p className={"text-muted-foreground text-xs"}>Enter a prompt above to get started</p>
+            <p className={"text-muted-foreground text-xs"}>Select a style and enter a prompt</p>
           </div>
         )}
       </div>
@@ -244,9 +284,8 @@ function ShapesPanel() {
 // ============================================================================
 
 function StickersPanel() {
-  const { addImage, setActiveTool } = useDesigner();
+  const { addText, setActiveTool } = useDesigner();
 
-  // Placeholder stickers - in production, these would come from an API
   const stickers = [
     { id: "star", emoji: "⭐" },
     { id: "heart", emoji: "❤️" },
@@ -258,6 +297,11 @@ function StickersPanel() {
     { id: "check", emoji: "✅" },
   ];
 
+  function handleStickerClick(emoji: string) {
+    addText(emoji);
+    setActiveTool("select");
+  }
+
   return (
     <div className={"flex flex-col gap-4 p-3"}>
       <Label className={"text-muted-foreground text-xs font-medium tracking-wide uppercase"}>Emoji Stickers</Label>
@@ -268,10 +312,7 @@ function StickersPanel() {
             type={"button"}
             variant={"outline"}
             className={"aspect-square h-12 w-12 text-2xl"}
-            onClick={() => {
-              // For now, just log - in production would add as text or image
-              console.log("Sticker clicked:", sticker.emoji);
-            }}
+            onClick={() => handleStickerClick(sticker.emoji)}
           >
             {sticker.emoji}
           </Button>

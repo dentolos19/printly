@@ -127,10 +127,10 @@ export default function Page() {
 
   // Generate image handler for AI Generator
   const handleGenerateImage = useCallback(
-    (prompt: string) => {
+    (prompt: string, style?: string) => {
       return new Promise<string>((resolve, reject) => {
         api.generate
-          .generateImage(prompt)
+          .generateImage(prompt, style)
           .then((blob) => {
             const url = URL.createObjectURL(blob);
             resolve(url);

@@ -75,6 +75,11 @@ export function DesignerCanvas({ className }: DesignerCanvasProps) {
       updateLayers();
     });
 
+    canvas.on("path:created", () => {
+      saveHistory();
+      updateLayers();
+    });
+
     // Initial history save
     saveHistory();
 

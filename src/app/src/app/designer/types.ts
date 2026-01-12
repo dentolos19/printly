@@ -113,10 +113,36 @@ export type SaveStatus = "idle" | "saving" | "saved" | "error";
 // AI Generator Types
 // ============================================================================
 
+export type ArtStyle =
+  | "realistic"
+  | "abstract"
+  | "cartoon"
+  | "anime"
+  | "watercolor"
+  | "oil-painting"
+  | "sketch"
+  | "pixel-art"
+  | "3d-render"
+  | "minimalist";
+
+export const ART_STYLES: { value: ArtStyle; label: string; description: string }[] = [
+  { value: "realistic", label: "Realistic", description: "Photorealistic imagery" },
+  { value: "abstract", label: "Abstract", description: "Non-representational art" },
+  { value: "cartoon", label: "Cartoon", description: "Fun cartoon style" },
+  { value: "anime", label: "Anime", description: "Japanese animation style" },
+  { value: "watercolor", label: "Watercolor", description: "Soft watercolor painting" },
+  { value: "oil-painting", label: "Oil Painting", description: "Classic oil painting" },
+  { value: "sketch", label: "Sketch", description: "Pencil drawing style" },
+  { value: "pixel-art", label: "Pixel Art", description: "Retro pixel graphics" },
+  { value: "3d-render", label: "3D Render", description: "3D rendered graphics" },
+  { value: "minimalist", label: "Minimalist", description: "Clean minimal design" },
+];
+
 export type GeneratedImage = {
   id: string;
   url: string;
   prompt: string;
+  style?: ArtStyle;
   createdAt: Date;
 };
 
@@ -169,6 +195,7 @@ export type DesignerContextValue = {
   addTriangle: () => void;
   addLine: () => void;
   addImage: (url: string) => void;
+  setDrawingMode: (enabled: boolean, color?: string, width?: number) => void;
   deleteSelected: () => void;
   duplicateSelected: () => void;
   groupSelected: () => void;
@@ -191,7 +218,7 @@ export type DesignerContextValue = {
   // AI Generator
   generatedImages: GeneratedImage[];
   isGenerating: boolean;
-  generateImage: (prompt: string) => Promise<void>;
+  generateImage: (prompt: string, style?: ArtStyle) => Promise<void>;
 };
 
 // ============================================================================

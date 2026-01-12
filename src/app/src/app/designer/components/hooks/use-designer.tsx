@@ -1,11 +1,23 @@
 "use client";
 
 import type { FabricObject } from "fabric";
-import { ActiveSelection, Canvas, Circle, FabricImage, Group, Line, Rect, Textbox, Triangle } from "fabric";
+import {
+  ActiveSelection,
+  Canvas,
+  Circle,
+  FabricImage,
+  Group,
+  Line,
+  PencilBrush,
+  Rect,
+  Textbox,
+  Triangle,
+} from "fabric";
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type {
   AlignmentType,
+  ArtStyle,
   CanvasSize,
   DesignerContextValue,
   DistributionType,
@@ -29,7 +41,7 @@ type DesignerProviderProps = {
   initialDesignName?: string;
   onSave?: (data: { name: string; data: string }) => Promise<{ id: string }>;
   onLoad?: (id: string) => Promise<{ name: string; data: string }>;
-  onGenerateImage?: (prompt: string) => Promise<string>;
+  onGenerateImage?: (prompt: string, style?: ArtStyle) => Promise<string>;
 };
 
 export function DesignerProvider({
@@ -405,6 +417,22 @@ export function DesignerProvider({
     [canvas, canvasSize, updateLayers, saveHistory],
   );
 
+  const setDrawingMode = useCallback(
+    (enabled: boolean, color = "#000000", width = 5) => {
+      if (!canvas) return;
+
+      canvas.isDrawingMode = enabled;
+      if (enabled) {
+        const brush = new PencilBrush(canvas);
+        brush.color = color;
+        brush.width = width;
+        canvas.freeDrawingBrush = brush;
+      }
+      canvas.renderAll();
+    },
+    [canvas],
+  );
+
   // ============================================================================
   // Object manipulation
   // ============================================================================
@@ -713,7 +741,7 @@ export function DesignerProvider({
   // ============================================================================
 
   const generateImage = useCallback(
-    (prompt: string) => {
+    (prompt: string, style?: ArtStyle) => {
       return new Promise<void>((resolve, reject) => {
         if (!onGenerateImage) {
           reject(new Error("Image generation not configured"));
@@ -722,12 +750,13 @@ export function DesignerProvider({
 
         setIsGenerating(true);
 
-        onGenerateImage(prompt)
+        onGenerateImage(prompt, style)
           .then((url) => {
             const newImage: GeneratedImage = {
               id: `gen-${Date.now()}`,
               url,
               prompt,
+              style,
               createdAt: new Date(),
             };
             setGeneratedImages((prev) => [newImage, ...prev]);
@@ -843,6 +872,7 @@ export function DesignerProvider({
       addTriangle,
       addLine,
       addImage,
+      setDrawingMode,
       deleteSelected,
       duplicateSelected,
       groupSelected,
@@ -888,6 +918,7 @@ export function DesignerProvider({
       addTriangle,
       addLine,
       addImage,
+      setDrawingMode,
       deleteSelected,
       duplicateSelected,
       groupSelected,

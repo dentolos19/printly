@@ -49,12 +49,22 @@ type IconToolbarProps = {
 };
 
 export function IconToolbar({ className }: IconToolbarProps) {
-  const { activeTool, setActiveTool, addRectangle, addCircle, addTriangle, addLine, addText } = useDesigner();
+  const { activeTool, setActiveTool, addRectangle, addCircle, addTriangle, addLine, addText, setDrawingMode } =
+    useDesigner();
 
   function handleToolClick(tool: ToolType) {
+    if (tool === "draw") {
+      setActiveTool(tool);
+      setDrawingMode(true);
+      return;
+    }
+
+    if (activeTool === "draw") {
+      setDrawingMode(false);
+    }
+
     setActiveTool(tool);
 
-    // Auto-add shape when tool is clicked
     switch (tool) {
       case "rectangle":
         addRectangle();
