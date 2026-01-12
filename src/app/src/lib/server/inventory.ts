@@ -55,7 +55,7 @@ export default function initInventoryController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch inventory" }));
-        throw new Error(error.message || "Failed to fetch inventory");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch inventory");
       }
 
       return response.json();
@@ -67,7 +67,7 @@ export default function initInventoryController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch inventory for variant" }));
-        throw new Error(error.message || "Failed to fetch inventory for variant");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch inventory for variant");
       }
 
       return response.json();
@@ -79,7 +79,7 @@ export default function initInventoryController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch inventory for product" }));
-        throw new Error(error.message || "Failed to fetch inventory for product");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch inventory for product");
       }
 
       return response.json();
@@ -91,7 +91,7 @@ export default function initInventoryController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch inventory" }));
-        throw new Error(error.message || "Failed to fetch inventory");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch inventory");
       }
 
       return response.json();
@@ -107,7 +107,7 @@ export default function initInventoryController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to create inventory" }));
-        throw new Error(error.message || "Failed to create inventory");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to create inventory");
       }
 
       return response.json();
@@ -126,7 +126,7 @@ export default function initInventoryController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to update inventory" }));
-        throw new Error(error.message || "Failed to update inventory");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to update inventory");
       }
 
       return response.json();
@@ -142,7 +142,7 @@ export default function initInventoryController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to update inventory" }));
-        throw new Error(error.message || "Failed to update inventory");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to update inventory");
       }
 
       return response.json();
@@ -154,7 +154,7 @@ export default function initInventoryController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to delete inventory" }));
-        throw new Error(error.message || "Failed to delete inventory");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to delete inventory");
       }
     },
 
@@ -168,7 +168,7 @@ export default function initInventoryController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to adjust inventory" }));
-        throw new Error(error.message || "Failed to adjust inventory");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to adjust inventory");
       }
 
       return response.json();
@@ -180,7 +180,7 @@ export default function initInventoryController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch low stock items" }));
-        throw new Error(error.message || "Failed to fetch low stock items");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch low stock items");
       }
 
       return response.json();
@@ -192,7 +192,7 @@ export default function initInventoryController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch out of stock items" }));
-        throw new Error(error.message || "Failed to fetch out of stock items");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch out of stock items");
       }
 
       return response.json();
@@ -204,7 +204,7 @@ export default function initInventoryController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch total stock" }));
-        throw new Error(error.message || "Failed to fetch total stock");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch total stock");
       }
 
       return response.json();

@@ -139,7 +139,7 @@ export default function initOrderController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch order stats" }));
-        throw new Error(error.message || "Failed to fetch order stats");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch order stats");
       }
 
       return response.json();
@@ -155,7 +155,7 @@ export default function initOrderController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch orders" }));
-        throw new Error(error.message || "Failed to fetch orders");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch orders");
       }
 
       return response.json();
@@ -167,7 +167,7 @@ export default function initOrderController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch order" }));
-        throw new Error(error.message || "Failed to fetch order");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch order");
       }
 
       return response.json();
@@ -183,7 +183,7 @@ export default function initOrderController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to create order" }));
-        throw new Error(error.message || "Failed to create order");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to create order");
       }
 
       return response.json();
@@ -197,7 +197,7 @@ export default function initOrderController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to cancel order" }));
-        throw new Error(error.message || "Failed to cancel order");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to cancel order");
       }
 
       return response.json();
@@ -211,7 +211,7 @@ export default function initOrderController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to process payment" }));
-        throw new Error(error.message || "Failed to process payment");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to process payment");
       }
 
       return response.json();
@@ -225,7 +225,7 @@ export default function initOrderController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch admin stats" }));
-        throw new Error(error.message || "Failed to fetch admin stats");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch admin stats");
       }
 
       return response.json();
@@ -242,7 +242,7 @@ export default function initOrderController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch orders" }));
-        throw new Error(error.message || "Failed to fetch orders");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch orders");
       }
 
       return response.json();
@@ -254,7 +254,7 @@ export default function initOrderController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch order" }));
-        throw new Error(error.message || "Failed to fetch order");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch order");
       }
 
       return response.json();
@@ -270,7 +270,7 @@ export default function initOrderController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to update order status" }));
-        throw new Error(error.message || "Failed to update order status");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to update order status");
       }
 
       return response.json();
@@ -286,7 +286,7 @@ export default function initOrderController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to update order" }));
-        throw new Error(error.message || "Failed to update order");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to update order");
       }
 
       return response.json();
@@ -298,7 +298,7 @@ export default function initOrderController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to delete order" }));
-        throw new Error(error.message || "Failed to delete order");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to delete order");
       }
     },
   };

@@ -13,7 +13,11 @@ export default function initAnalysisController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to generate AI analysis" }));
-        throw new Error(error.message || "Failed to generate AI analysis");
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to generate AI analysis",
+        );
       }
 
       return response.json();

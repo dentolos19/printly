@@ -110,7 +110,7 @@ export default function initProductController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch products" }));
-        throw new Error(error.message || "Failed to fetch products");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch products");
       }
 
       return response.json();
@@ -126,7 +126,7 @@ export default function initProductController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch product summaries" }));
-        throw new Error(error.message || "Failed to fetch product summaries");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch product summaries");
       }
 
       return response.json();
@@ -138,7 +138,7 @@ export default function initProductController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch product" }));
-        throw new Error(error.message || "Failed to fetch product");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch product");
       }
 
       return response.json();
@@ -154,7 +154,7 @@ export default function initProductController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to create product" }));
-        throw new Error(error.message || "Failed to create product");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to create product");
       }
 
       return response.json();
@@ -170,7 +170,7 @@ export default function initProductController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to create product with variants" }));
-        throw new Error(error.message || "Failed to create product with variants");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to create product with variants");
       }
 
       return response.json();
@@ -186,7 +186,7 @@ export default function initProductController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to update product" }));
-        throw new Error(error.message || "Failed to update product");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to update product");
       }
 
       return response.json();
@@ -198,7 +198,7 @@ export default function initProductController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to delete product" }));
-        throw new Error(error.message || "Failed to delete product");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to delete product");
       }
     },
 
@@ -208,7 +208,7 @@ export default function initProductController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to deactivate product" }));
-        throw new Error(error.message || "Failed to deactivate product");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to deactivate product");
       }
 
       return response.json();
@@ -220,7 +220,7 @@ export default function initProductController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to activate product" }));
-        throw new Error(error.message || "Failed to activate product");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to activate product");
       }
 
       return response.json();
@@ -232,7 +232,7 @@ export default function initProductController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch product variants" }));
-        throw new Error(error.message || "Failed to fetch product variants");
+        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch product variants");
       }
 
       return response.json();
