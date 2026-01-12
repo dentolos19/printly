@@ -39,6 +39,7 @@ import {
   MessageCircleIcon,
   MoreVerticalIcon,
   PackageIcon,
+  ShieldIcon,
   UserIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -175,10 +176,10 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                         <span>Notifications</span>
                       </Link>
                     </DropdownMenuItem>
-                    {claims?.role === "admin" && (
+                    {claims?.role.toLowerCase() === "admin" && (
                       <DropdownMenuItem asChild>
                         <Link href={"/admin"}>
-                          <BellIcon />
+                          <ShieldIcon />
                           <span>Administration</span>
                         </Link>
                       </DropdownMenuItem>
