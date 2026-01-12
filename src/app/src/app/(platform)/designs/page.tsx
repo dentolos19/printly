@@ -63,24 +63,35 @@ export default function Page() {
     setLoading(true);
     api.design
       .getDesigns()
-      .then((data) => {
-        // Parse design data to extract preview info
-        const designsWithPreviews = data.map((design) => {
-          let preview: string | undefined;
-          try {
-            const parsed = JSON.parse(design.data);
-            // Try to get the first image object for preview
-            if (parsed.objects && Array.isArray(parsed.objects)) {
-              const imageObj = parsed.objects.find((obj: { type?: string }) => obj.type === "image");
-              if (imageObj && imageObj.src) {
-                preview = imageObj.src;
+      .then(async (data) => {
+        // Load cover images for designs that have them
+        const designsWithPreviews = await Promise.all(
+          data.map(async (design) => {
+            let preview: string | undefined;
+            if (design.coverId) {
+              try {
+                const blob = await api.design.getDesignCover(design.id);
+                preview = URL.createObjectURL(blob);
+              } catch {
+                // Fallback to parsing canvas data if cover fetch fails
               }
             }
-          } catch {
-            // Ignore parse errors
-          }
-          return { ...design, preview };
-        });
+            if (!preview) {
+              try {
+                const parsed = JSON.parse(design.data);
+                if (parsed.objects && Array.isArray(parsed.objects)) {
+                  const imageObj = parsed.objects.find((obj: { type?: string }) => obj.type === "image");
+                  if (imageObj && imageObj.src) {
+                    preview = imageObj.src;
+                  }
+                }
+              } catch {
+                // Ignore parse errors
+              }
+            }
+            return { ...design, preview };
+          }),
+        );
         setDesigns(designsWithPreviews);
       })
       .catch((error) => {

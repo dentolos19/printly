@@ -14,4 +14,7 @@ public class Design : BaseEntity
 
     public required string UserId { get; set; }
     public User User { get; set; } = null!;
+
+    public Guid? CoverId { get; set; }
+    public Asset? Cover { get; set; }
 }

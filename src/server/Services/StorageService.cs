@@ -41,7 +41,7 @@ public class StorageService
         _bucketPrefix = bucketPrefix;
     }
 
-    public async Task<Asset> UploadFileAsync(Stream file, string name)
+    public async Task<Asset> UploadFileAsync(Stream file, string name, string? category = null)
     {
         var fileId = Guid.NewGuid();
         var fileType = Utilities.GetContentType(file);
@@ -70,6 +70,7 @@ public class StorageService
                 Type = fileType,
                 Hash = fileHash,
                 Size = fileSize,
+                Category = category ?? AssetCategory.User,
             }
         );
         await _context.SaveChangesAsync();

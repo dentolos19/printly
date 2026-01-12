@@ -88,7 +88,7 @@ public class GenerativeService
         var imageStream = new MemoryStream(imageBytes);
 
         // Upload image to storage and return asset
-        var imageAsset = await _storage.UploadFileAsync(imageStream, prompt);
+        var imageAsset = await _storage.UploadFileAsync(imageStream, prompt, AssetCategory.Generated);
         return imageAsset;
     }
 }

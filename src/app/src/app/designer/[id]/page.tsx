@@ -115,7 +115,7 @@ export default function Page() {
 
   // Save handler
   const handleSave = useCallback(
-    (data: { name: string; data: string }) => {
+    (data: { name: string; data: string; cover?: string }) => {
       return new Promise<{ id: string }>((resolve, reject) => {
         if (initialDesignId) {
           // Update existing design
@@ -123,6 +123,7 @@ export default function Page() {
             .updateDesign(initialDesignId, {
               name: data.name,
               data: data.data,
+              cover: data.cover,
             })
             .then((design) => {
               resolve({ id: design.id });
@@ -134,6 +135,7 @@ export default function Page() {
             .createDesign({
               name: data.name,
               data: data.data,
+              cover: data.cover,
             })
             .then((design) => {
               setInitialDesignId(design.id);

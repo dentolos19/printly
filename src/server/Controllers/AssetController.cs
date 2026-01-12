@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PrintlyServer.Data;
+using PrintlyServer.Data.Entities;
 using PrintlyServer.Services;
 
 namespace PrintlyServer.Controllers;
@@ -33,7 +34,7 @@ public class AssetController(DatabaseContext context, StorageService storageServ
             return Unauthorized();
 
         var assets = await Context
-            .Assets.Where(a => a.UserId == userId && !a.IsDeleted)
+            .Assets.Where(a => a.UserId == userId && !a.IsDeleted && a.Category != AssetCategory.Cover)
             .OrderByDescending(a => a.CreatedAt)
             .Select(a => new AssetResponse(
                 a.Id,

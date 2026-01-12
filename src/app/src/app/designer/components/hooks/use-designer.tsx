@@ -40,7 +40,7 @@ type DesignerProviderProps = {
   initialDesignId?: string | null;
   initialDesignName?: string;
   initialGeneratedImages?: GeneratedImage[];
-  onSave?: (data: { name: string; data: string }) => Promise<{ id: string }>;
+  onSave?: (data: { name: string; data: string; cover?: string }) => Promise<{ id: string }>;
   onLoad?: (id: string) => Promise<{ name: string; data: string }>;
   onGenerateImage?: (prompt: string, style?: ArtStyle) => Promise<{ url: string; assetId: string }>;
 };
@@ -104,8 +104,12 @@ export function DesignerProvider({
           backgroundColor: canvas.backgroundColor,
           objects: canvas.toJSON().objects,
         });
+        const cover = canvas.toDataURL({
+          format: "png",
+          multiplier: 0.25,
+        });
 
-        onSave({ name: designName, data: canvasData })
+        onSave({ name: designName, data: canvasData, cover })
           .then((result) => {
             if (result.id && !designId) {
               setDesignId(result.id);
@@ -193,8 +197,12 @@ export function DesignerProvider({
         backgroundColor: canvas.backgroundColor,
         objects: canvas.toJSON().objects,
       });
+      const cover = canvas.toDataURL({
+        format: "png",
+        multiplier: 0.25,
+      });
 
-      onSave({ name: designName, data: canvasData })
+      onSave({ name: designName, data: canvasData, cover })
         .then((result) => {
           if (result.id && !designId) {
             setDesignId(result.id);
