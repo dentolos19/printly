@@ -201,6 +201,15 @@ export type DesignerContextValue = {
   groupSelected: () => void;
   ungroupSelected: () => void;
 
+  // Clipboard operations
+  copySelected: () => void;
+  cutSelected: () => void;
+  paste: () => void;
+
+  // Selection helpers
+  selectAll: () => void;
+  deselectAll: () => void;
+
   // Alignment & distribution
   alignObjects: (alignment: AlignmentType) => void;
   distributeObjects: (distribution: DistributionType) => void;
@@ -214,6 +223,15 @@ export type DesignerContextValue = {
   // Export
   exportCanvas: (format: ExportFormat) => void;
   clearCanvas: () => void;
+
+  // Zoom controls
+  zoomIn: () => void;
+  zoomOut: () => void;
+  resetZoom: () => void;
+  fitToScreen: () => void;
+
+  // Resize design
+  resizeDesign: (size: CanvasSize, scaleContent?: boolean) => void;
 
   // AI Generator
   generatedImages: GeneratedImage[];

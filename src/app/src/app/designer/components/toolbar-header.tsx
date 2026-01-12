@@ -13,25 +13,48 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   AlertTriangle,
-  ArrowLeft,
+  AlignCenter,
+  AlignHorizontalDistributeCenter,
+  AlignLeft,
+  AlignRight,
+  AlignVerticalDistributeCenter,
+  ArrowDown,
+  ArrowDownToLine,
+  ArrowUp,
+  ArrowUpToLine,
+  Book,
   ChevronDown,
+  Clipboard,
   Cloud,
+  Copy,
   Eye,
   FileDown,
+  FilePlus,
+  Group,
+  Home,
+  Info,
+  Keyboard,
   Loader2,
+  Maximize,
+  Maximize2,
   Printer,
   Redo2,
   Save,
-  Share2,
+  Scissors,
+  Trash2,
   Undo2,
+  Ungroup,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useDesigner } from "./hooks";
+import { ResizeDesignDialog } from "./resize-design-dialog";
 
 type ToolbarHeaderProps = {
   className?: string;
@@ -41,6 +64,7 @@ type ToolbarHeaderProps = {
 
 export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }: ToolbarHeaderProps) {
   const router = useRouter();
+  const [resizeDialogOpen, setResizeDialogOpen] = useState(false);
   const {
     designName,
     setDesignName,
@@ -58,12 +82,21 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
     duplicateSelected,
     groupSelected,
     ungroupSelected,
+    copySelected,
+    cutSelected,
+    paste,
     bringForward,
     sendBackward,
     bringToFront,
     sendToBack,
     alignObjects,
     distributeObjects,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    fitToScreen,
+    resizeDesign,
+    canvasSize,
   } = useDesigner();
 
   function formatLastSaved() {
@@ -90,28 +123,14 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
             className={"mr-2 h-8 w-8"}
             onClick={() => router.push("/dashboard")}
           >
-            <ArrowLeft className={"h-4 w-4"} />
+            <Home className={"h-4 w-4"} />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>Back to Dashboard</TooltipContent>
+        <TooltipContent>Home</TooltipContent>
       </Tooltip>
 
-      {/* Logo/Brand */}
-      <div className={"flex items-center gap-2 pr-4"}>
-        <span className={"text-primary text-lg font-bold"}>{title}</span>
-      </div>
-
-      {/* Design name */}
-      <div className={"flex items-center gap-2 border-l pl-4"}>
-        <Input
-          value={designName}
-          onChange={(e) => setDesignName(e.target.value)}
-          className={"h-7 w-48 border-none bg-transparent px-1 text-sm font-medium shadow-none focus-visible:ring-1"}
-        />
-      </div>
-
       {/* Menu Bar */}
-      <nav className={"ml-4 flex items-center gap-1"}>
+      <nav className={"flex items-center gap-1"}>
         {/* File Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -121,8 +140,9 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align={"start"}>
-            <DropdownMenuItem onClick={() => (window.location.href = "/designer/new")}>
-              New Design
+            <DropdownMenuItem onClick={() => router.push("/designer")}>
+              <FilePlus className={"mr-2 h-4 w-4"} />
+              New
               <DropdownMenuShortcut>⌘N</DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -131,10 +151,14 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
               Save
               <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setResizeDialogOpen(true)}>
+              <Maximize className={"mr-2 h-4 w-4"} />
+              Resize
+            </DropdownMenuItem>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
                 <FileDown className={"mr-2 h-4 w-4"} />
-                Export as
+                Export
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
                 <DropdownMenuItem onClick={() => exportCanvas("png")}>PNG Image</DropdownMenuItem>
@@ -145,6 +169,7 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
             </DropdownMenuSub>
             <DropdownMenuSeparator />
             <DropdownMenuItem className={"text-destructive"} onClick={clearCanvas}>
+              <Trash2 className={"mr-2 h-4 w-4"} />
               Clear Canvas
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -170,20 +195,40 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
               <DropdownMenuShortcut>⌘⇧Z</DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={cutSelected}>
+              <Scissors className={"mr-2 h-4 w-4"} />
+              Cut
+              <DropdownMenuShortcut>⌘X</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={copySelected}>
+              <Copy className={"mr-2 h-4 w-4"} />
+              Copy
+              <DropdownMenuShortcut>⌘C</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={paste}>
+              <Clipboard className={"mr-2 h-4 w-4"} />
+              Paste
+              <DropdownMenuShortcut>⌘V</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={duplicateSelected}>
+              <Copy className={"mr-2 h-4 w-4"} />
               Duplicate
               <DropdownMenuShortcut>⌘D</DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={deleteSelected}>
+              <Trash2 className={"mr-2 h-4 w-4"} />
               Delete
               <DropdownMenuShortcut>⌫</DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={groupSelected}>
+              <Group className={"mr-2 h-4 w-4"} />
               Group
               <DropdownMenuShortcut>⌘G</DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={ungroupSelected}>
+              <Ungroup className={"mr-2 h-4 w-4"} />
               Ungroup
               <DropdownMenuShortcut>⌘⇧G</DropdownMenuShortcut>
             </DropdownMenuItem>
@@ -199,30 +244,70 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align={"start"}>
-            <DropdownMenuItem onClick={bringToFront}>Bring to Front</DropdownMenuItem>
-            <DropdownMenuItem onClick={bringForward}>Bring Forward</DropdownMenuItem>
-            <DropdownMenuItem onClick={sendBackward}>Send Backward</DropdownMenuItem>
-            <DropdownMenuItem onClick={sendToBack}>Send to Back</DropdownMenuItem>
+            <DropdownMenuItem onClick={bringToFront}>
+              <ArrowUpToLine className={"mr-2 h-4 w-4"} />
+              Bring to Front
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={bringForward}>
+              <ArrowUp className={"mr-2 h-4 w-4"} />
+              Bring Forward
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={sendBackward}>
+              <ArrowDown className={"mr-2 h-4 w-4"} />
+              Send Backward
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={sendToBack}>
+              <ArrowDownToLine className={"mr-2 h-4 w-4"} />
+              Send to Back
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuSub>
-              <DropdownMenuSubTrigger>Align</DropdownMenuSubTrigger>
+              <DropdownMenuSubTrigger>
+                <AlignLeft className={"mr-2 h-4 w-4"} />
+                Align
+              </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
-                <DropdownMenuItem onClick={() => alignObjects("left")}>Align Left</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => alignObjects("center")}>Align Center</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => alignObjects("right")}>Align Right</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => alignObjects("left")}>
+                  <AlignLeft className={"mr-2 h-4 w-4"} />
+                  Align Left
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => alignObjects("center")}>
+                  <AlignCenter className={"mr-2 h-4 w-4"} />
+                  Align Center
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => alignObjects("right")}>
+                  <AlignRight className={"mr-2 h-4 w-4"} />
+                  Align Right
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => alignObjects("top")}>Align Top</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => alignObjects("middle")}>Align Middle</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => alignObjects("bottom")}>Align Bottom</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => alignObjects("top")}>
+                  <ArrowUpToLine className={"mr-2 h-4 w-4"} />
+                  Align Top
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => alignObjects("middle")}>
+                  <AlignCenter className={"mr-2 h-4 w-4"} />
+                  Align Middle
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => alignObjects("bottom")}>
+                  <ArrowDownToLine className={"mr-2 h-4 w-4"} />
+                  Align Bottom
+                </DropdownMenuItem>
               </DropdownMenuSubContent>
             </DropdownMenuSub>
             <DropdownMenuSub>
-              <DropdownMenuSubTrigger>Distribute</DropdownMenuSubTrigger>
+              <DropdownMenuSubTrigger>
+                <AlignHorizontalDistributeCenter className={"mr-2 h-4 w-4"} />
+                Distribute
+              </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
                 <DropdownMenuItem onClick={() => distributeObjects("horizontal")}>
+                  <AlignHorizontalDistributeCenter className={"mr-2 h-4 w-4"} />
                   Distribute Horizontally
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => distributeObjects("vertical")}>Distribute Vertically</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => distributeObjects("vertical")}>
+                  <AlignVerticalDistributeCenter className={"mr-2 h-4 w-4"} />
+                  Distribute Vertically
+                </DropdownMenuItem>
               </DropdownMenuSubContent>
             </DropdownMenuSub>
           </DropdownMenuContent>
@@ -242,10 +327,26 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
               Preview
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Zoom In</DropdownMenuItem>
-            <DropdownMenuItem>Zoom Out</DropdownMenuItem>
-            <DropdownMenuItem>Fit to Screen</DropdownMenuItem>
-            <DropdownMenuItem>Actual Size</DropdownMenuItem>
+            <DropdownMenuItem onClick={zoomIn}>
+              <ZoomIn className={"mr-2 h-4 w-4"} />
+              Zoom In
+              <DropdownMenuShortcut>⌘+</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={zoomOut}>
+              <ZoomOut className={"mr-2 h-4 w-4"} />
+              Zoom Out
+              <DropdownMenuShortcut>⌘-</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={fitToScreen}>
+              <Maximize2 className={"mr-2 h-4 w-4"} />
+              Fit to Screen
+              <DropdownMenuShortcut>⌘1</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={resetZoom}>
+              <Maximize className={"mr-2 h-4 w-4"} />
+              Actual Size
+              <DropdownMenuShortcut>⌘0</DropdownMenuShortcut>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -258,10 +359,19 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align={"start"}>
-            <DropdownMenuItem>Keyboard Shortcuts</DropdownMenuItem>
-            <DropdownMenuItem>Documentation</DropdownMenuItem>
+            <DropdownMenuItem>
+              <Keyboard className={"mr-2 h-4 w-4"} />
+              Keyboard Shortcuts
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Book className={"mr-2 h-4 w-4"} />
+              Documentation
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>About</DropdownMenuItem>
+            <DropdownMenuItem>
+              <Info className={"mr-2 h-4 w-4"} />
+              About
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </nav>
@@ -292,7 +402,14 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
         {isDirty && saveStatus !== "saving" && <span className={"text-amber-600"}>Unsaved changes</span>}
       </div>
 
-      <Separator orientation={"vertical"} className={"mx-3 h-6"} />
+      {/* Design name */}
+      <div className={"flex items-center gap-2 pl-4"}>
+        <Input
+          value={designName}
+          onChange={(e) => setDesignName(e.target.value)}
+          className={"h-7 w-48 border-none bg-transparent px-1 text-sm font-medium shadow-none focus-visible:ring-1"}
+        />
+      </div>
 
       {/* Problem indicator */}
       {problemCount > 0 && (
@@ -308,15 +425,18 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
           <Eye className={"h-4 w-4"} />
           Preview
         </Button>
-        <Button type={"button"} variant={"outline"} size={"sm"} className={"h-8 gap-2"}>
-          <Share2 className={"h-4 w-4"} />
-          Share
-        </Button>
         <Button type={"button"} size={"sm"} className={"h-8 gap-2"}>
           <Printer className={"h-4 w-4"} />
           Print
         </Button>
       </div>
+
+      <ResizeDesignDialog
+        open={resizeDialogOpen}
+        onOpenChange={setResizeDialogOpen}
+        currentSize={canvasSize}
+        onResize={resizeDesign}
+      />
     </div>
   );
 }

@@ -81,6 +81,9 @@ export function DesignerProvider({
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>(initialGeneratedImages);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Clipboard state
+  const [clipboard, setClipboard] = useState<FabricObject[]>([]);
+
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
 
@@ -543,6 +546,99 @@ export function DesignerProvider({
   }, [canvas, updateLayers, saveHistory]);
 
   // ============================================================================
+  // Clipboard operations
+  // ============================================================================
+
+  const copySelected = useCallback(() => {
+    if (!canvas) return;
+
+    const activeObjects = canvas.getActiveObjects();
+    if (activeObjects.length === 0) return;
+
+    const clonePromises = activeObjects.map((obj) => obj.clone());
+    Promise.all(clonePromises).then((clones) => {
+      setClipboard(clones);
+    });
+  }, [canvas]);
+
+  const cutSelected = useCallback(() => {
+    if (!canvas) return;
+
+    const activeObjects = canvas.getActiveObjects();
+    if (activeObjects.length === 0) return;
+
+    const clonePromises = activeObjects.map((obj) => obj.clone());
+    Promise.all(clonePromises).then((clones) => {
+      setClipboard(clones);
+      canvas.discardActiveObject();
+      for (const obj of activeObjects) {
+        canvas.remove(obj);
+      }
+      canvas.renderAll();
+      updateLayers();
+      saveHistory();
+    });
+  }, [canvas, updateLayers, saveHistory]);
+
+  const paste = useCallback(() => {
+    if (!canvas || clipboard.length === 0) return;
+
+    canvas.discardActiveObject();
+
+    const clonePromises = clipboard.map((obj) => obj.clone());
+    Promise.all(clonePromises).then((clones) => {
+      for (const clone of clones) {
+        clone.set({
+          left: (clone.left || 0) + 20,
+          top: (clone.top || 0) + 20,
+        });
+        (clone as FabricObject & { id: string }).id = `paste-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+        canvas.add(clone);
+      }
+
+      if (clones.length === 1) {
+        canvas.setActiveObject(clones[0]);
+      } else {
+        const selection = new ActiveSelection(clones, { canvas });
+        canvas.setActiveObject(selection);
+      }
+
+      // Update clipboard with offset for next paste
+      const newClipboardPromises = clones.map((obj) => obj.clone());
+      Promise.all(newClipboardPromises).then((newClones) => {
+        setClipboard(newClones);
+      });
+
+      canvas.renderAll();
+      updateLayers();
+      saveHistory();
+    });
+  }, [canvas, clipboard, updateLayers, saveHistory]);
+
+  // ============================================================================
+  // Selection helpers
+  // ============================================================================
+
+  const selectAll = useCallback(() => {
+    if (!canvas) return;
+
+    const objects = canvas.getObjects();
+    if (objects.length === 0) return;
+
+    canvas.discardActiveObject();
+    const selection = new ActiveSelection(objects, { canvas });
+    canvas.setActiveObject(selection);
+    canvas.renderAll();
+  }, [canvas]);
+
+  const deselectAll = useCallback(() => {
+    if (!canvas) return;
+
+    canvas.discardActiveObject();
+    canvas.renderAll();
+  }, [canvas]);
+
+  // ============================================================================
   // Alignment & Distribution
   // ============================================================================
 
@@ -747,6 +843,73 @@ export function DesignerProvider({
   }, [canvas, updateLayers, saveHistory]);
 
   // ============================================================================
+  // Zoom controls
+  // ============================================================================
+
+  const zoomIn = useCallback(() => {
+    setZoom((prev) => Math.min(prev * 1.25, 5));
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    setZoom((prev) => Math.max(prev / 1.25, 0.1));
+  }, []);
+
+  const resetZoom = useCallback(() => {
+    setZoom(1);
+  }, []);
+
+  const fitToScreen = useCallback(() => {
+    const container = document.querySelector("[data-canvas-container]");
+    if (!container) {
+      setZoom(0.25);
+      return;
+    }
+
+    const containerRect = container.getBoundingClientRect();
+    const padding = 80;
+    const availableWidth = containerRect.width - padding * 2;
+    const availableHeight = containerRect.height - padding * 2;
+
+    const scaleX = availableWidth / canvasSize.width;
+    const scaleY = availableHeight / canvasSize.height;
+    const newZoom = Math.min(scaleX, scaleY, 1);
+
+    setZoom(Math.max(newZoom, 0.1));
+  }, [canvasSize]);
+
+  // ============================================================================
+  // Resize design
+  // ============================================================================
+
+  const resizeDesign = useCallback(
+    (newSize: CanvasSize, scaleContent = false) => {
+      if (!canvas) return;
+
+      if (scaleContent) {
+        const scaleX = newSize.width / canvasSize.width;
+        const scaleY = newSize.height / canvasSize.height;
+
+        const objects = canvas.getObjects();
+        for (const obj of objects) {
+          obj.set({
+            left: (obj.left || 0) * scaleX,
+            top: (obj.top || 0) * scaleY,
+            scaleX: (obj.scaleX || 1) * scaleX,
+            scaleY: (obj.scaleY || 1) * scaleY,
+          });
+          obj.setCoords();
+        }
+      }
+
+      setCanvasSize(newSize);
+      canvas.setDimensions(newSize);
+      canvas.renderAll();
+      saveHistory();
+    },
+    [canvas, canvasSize, saveHistory],
+  );
+
+  // ============================================================================
   // AI Generator
   // ============================================================================
 
@@ -887,6 +1050,11 @@ export function DesignerProvider({
       duplicateSelected,
       groupSelected,
       ungroupSelected,
+      copySelected,
+      cutSelected,
+      paste,
+      selectAll,
+      deselectAll,
       alignObjects,
       distributeObjects,
       bringForward,
@@ -895,6 +1063,11 @@ export function DesignerProvider({
       sendToBack,
       exportCanvas,
       clearCanvas,
+      zoomIn,
+      zoomOut,
+      resetZoom,
+      fitToScreen,
+      resizeDesign,
       generatedImages,
       isGenerating,
       generateImage,
@@ -933,6 +1106,11 @@ export function DesignerProvider({
       duplicateSelected,
       groupSelected,
       ungroupSelected,
+      copySelected,
+      cutSelected,
+      paste,
+      selectAll,
+      deselectAll,
       alignObjects,
       distributeObjects,
       bringForward,
@@ -941,6 +1119,11 @@ export function DesignerProvider({
       sendToBack,
       exportCanvas,
       clearCanvas,
+      zoomIn,
+      zoomOut,
+      resetZoom,
+      fitToScreen,
+      resizeDesign,
       generatedImages,
       isGenerating,
       generateImage,

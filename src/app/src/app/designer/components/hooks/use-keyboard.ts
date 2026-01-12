@@ -14,7 +14,16 @@ export function useKeyboardShortcuts() {
     duplicateSelected,
     groupSelected,
     ungroupSelected,
+    copySelected,
+    cutSelected,
+    paste,
+    selectAll,
+    deselectAll,
     saveDesign,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    fitToScreen,
   } = useDesigner();
 
   useEffect(() => {
@@ -49,6 +58,27 @@ export function useKeyboardShortcuts() {
         return;
       }
 
+      // Copy: Ctrl+C
+      if (isCtrlOrMeta && e.key === "c") {
+        e.preventDefault();
+        copySelected();
+        return;
+      }
+
+      // Cut: Ctrl+X
+      if (isCtrlOrMeta && e.key === "x") {
+        e.preventDefault();
+        cutSelected();
+        return;
+      }
+
+      // Paste: Ctrl+V
+      if (isCtrlOrMeta && e.key === "v") {
+        e.preventDefault();
+        paste();
+        return;
+      }
+
       // Delete: Delete or Backspace
       if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
@@ -77,28 +107,45 @@ export function useKeyboardShortcuts() {
         return;
       }
 
+      // Zoom In: Ctrl+=
+      if (isCtrlOrMeta && (e.key === "=" || e.key === "+")) {
+        e.preventDefault();
+        zoomIn();
+        return;
+      }
+
+      // Zoom Out: Ctrl+-
+      if (isCtrlOrMeta && e.key === "-") {
+        e.preventDefault();
+        zoomOut();
+        return;
+      }
+
+      // Reset Zoom: Ctrl+0
+      if (isCtrlOrMeta && e.key === "0") {
+        e.preventDefault();
+        resetZoom();
+        return;
+      }
+
+      // Fit to Screen: Ctrl+1
+      if (isCtrlOrMeta && e.key === "1") {
+        e.preventDefault();
+        fitToScreen();
+        return;
+      }
+
       // Select All: Ctrl+A
       if (isCtrlOrMeta && e.key === "a") {
         e.preventDefault();
-        if (canvas) {
-          const objects = canvas.getObjects();
-          if (objects.length > 0) {
-            canvas.discardActiveObject();
-            const selection = new (require("fabric").ActiveSelection)(objects, { canvas });
-            canvas.setActiveObject(selection);
-            canvas.renderAll();
-          }
-        }
+        selectAll();
         return;
       }
 
       // Deselect: Escape
       if (e.key === "Escape") {
         e.preventDefault();
-        if (canvas) {
-          canvas.discardActiveObject();
-          canvas.renderAll();
-        }
+        deselectAll();
         return;
       }
 
@@ -147,6 +194,15 @@ export function useKeyboardShortcuts() {
     duplicateSelected,
     groupSelected,
     ungroupSelected,
+    copySelected,
+    cutSelected,
+    paste,
+    selectAll,
+    deselectAll,
     saveDesign,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    fitToScreen,
   ]);
 }
