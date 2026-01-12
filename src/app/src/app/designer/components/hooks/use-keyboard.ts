@@ -24,6 +24,13 @@ export function useKeyboardShortcuts() {
     zoomOut,
     resetZoom,
     fitToScreen,
+    setActiveTool,
+    addRectangle,
+    addCircle,
+    addTriangle,
+    addLine,
+    addText,
+    setDrawingMode,
   } = useDesigner();
 
   useEffect(() => {
@@ -36,6 +43,91 @@ export function useKeyboardShortcuts() {
 
       const isCtrlOrMeta = e.ctrlKey || e.metaKey;
       const isShift = e.shiftKey;
+      const isAlt = e.altKey;
+
+      // Tool shortcuts with Alt modifier
+      // Select: Alt+V
+      if (isAlt && e.key === "v") {
+        e.preventDefault();
+        setActiveTool("select");
+        return;
+      }
+
+      // Rectangle: Alt+R
+      if (isAlt && e.key === "r") {
+        e.preventDefault();
+        addRectangle();
+        setActiveTool("select");
+        return;
+      }
+
+      // Circle: Alt+C
+      if (isAlt && e.key === "c") {
+        e.preventDefault();
+        addCircle();
+        setActiveTool("select");
+        return;
+      }
+
+      // Triangle: Alt+T
+      if (isAlt && e.key === "t") {
+        e.preventDefault();
+        addTriangle();
+        setActiveTool("select");
+        return;
+      }
+
+      // Line: Alt+L
+      if (isAlt && e.key === "l") {
+        e.preventDefault();
+        addLine();
+        setActiveTool("select");
+        return;
+      }
+
+      // Text: Alt+T (conflicts with triangle, so using Alt+X for text)
+      if (isAlt && e.key === "x") {
+        e.preventDefault();
+        addText();
+        setActiveTool("select");
+        return;
+      }
+
+      // Draw: Alt+P
+      if (isAlt && e.key === "p") {
+        e.preventDefault();
+        setActiveTool("draw");
+        setDrawingMode(true);
+        return;
+      }
+
+      // Shapes: Alt+S
+      if (isAlt && e.key === "s") {
+        e.preventDefault();
+        setActiveTool("shapes");
+        return;
+      }
+
+      // Stickers: Alt+K
+      if (isAlt && e.key === "k") {
+        e.preventDefault();
+        setActiveTool("stickers");
+        return;
+      }
+
+      // Image: Alt+I
+      if (isAlt && e.key === "i") {
+        e.preventDefault();
+        setActiveTool("image");
+        return;
+      }
+
+      // AI Generator: Alt+A
+      if (isAlt && e.key === "a") {
+        e.preventDefault();
+        setActiveTool("ai-generator");
+        return;
+      }
 
       // Undo: Ctrl+Z
       if (isCtrlOrMeta && !isShift && e.key === "z") {
@@ -204,5 +296,12 @@ export function useKeyboardShortcuts() {
     zoomOut,
     resetZoom,
     fitToScreen,
+    setActiveTool,
+    addRectangle,
+    addCircle,
+    addTriangle,
+    addLine,
+    addText,
+    setDrawingMode,
   ]);
 }

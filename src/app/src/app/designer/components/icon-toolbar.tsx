@@ -28,21 +28,21 @@ type ToolItem = {
 };
 
 const TOOLS: ToolItem[] = [
-  { id: "select", icon: MousePointer2, label: "Select", shortcut: "V" },
-  { id: "rectangle", icon: Square, label: "Rectangle", shortcut: "R" },
-  { id: "circle", icon: Circle, label: "Circle", shortcut: "C" },
-  { id: "triangle", icon: Triangle, label: "Triangle" },
-  { id: "line", icon: Minus, label: "Line", shortcut: "L" },
-  { id: "text", icon: Type, label: "Text", shortcut: "T" },
+  { id: "select", icon: MousePointer2, label: "Select", shortcut: "Alt+V" },
+  { id: "rectangle", icon: Square, label: "Rectangle", shortcut: "Alt+R" },
+  { id: "circle", icon: Circle, label: "Circle", shortcut: "Alt+C" },
+  { id: "triangle", icon: Triangle, label: "Triangle", shortcut: "Alt+T" },
+  { id: "line", icon: Minus, label: "Line", shortcut: "Alt+L" },
+  { id: "text", icon: Type, label: "Text", shortcut: "Alt+X" },
 ];
 
 const SECONDARY_TOOLS: ToolItem[] = [
-  { id: "shapes", icon: Shapes, label: "Shapes" },
-  { id: "stickers", icon: Smile, label: "Stickers" },
-  { id: "image", icon: Image, label: "Image" },
+  { id: "shapes", icon: Shapes, label: "Shapes", shortcut: "Alt+S" },
+  { id: "stickers", icon: Smile, label: "Stickers", shortcut: "Alt+K" },
+  { id: "image", icon: Image, label: "Image", shortcut: "Alt+I" },
 ];
 
-const UTILITY_TOOLS: ToolItem[] = [{ id: "draw", icon: PenTool, label: "Draw", shortcut: "P" }];
+const UTILITY_TOOLS: ToolItem[] = [{ id: "draw", icon: PenTool, label: "Draw", shortcut: "Alt+P" }];
 
 type IconToolbarProps = {
   className?: string;
@@ -149,7 +149,10 @@ export function IconToolbar({ className }: IconToolbarProps) {
             </Button>
           </TooltipTrigger>
           <TooltipContent side={"right"}>
-            <p>AI Generator</p>
+            <p>
+              AI Generator
+              <span className={"text-muted-foreground ml-2"}>(Alt+A)</span>
+            </p>
           </TooltipContent>
         </Tooltip>
       </div>
