@@ -1,4 +1,4 @@
-﻿import { ServerFetch } from "@/types";
+﻿﻿import { ServerFetch } from "@/types";
 
 // Enums matching backend
 export enum PostVisibility {
@@ -186,6 +186,16 @@ export type CreateBookmarkDto = {
   postId: string;
 };
 
+// AI Caption Types
+export type GenerateCaptionRequest = {
+  photoId: string;
+  prompt?: string;
+};
+
+export type GenerateCaptionResponse = {
+  caption: string;
+};
+
 export type PostFeedQuery = {
   page?: number;
   pageSize?: number;
@@ -340,6 +350,28 @@ export default function initCommunityController(fetch: ServerFetch) {
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
             : "Failed to fetch stats"
+        );
+      }
+
+      return response.json();
+    },
+
+    // ==================== AI Features ====================
+
+    // Generate an AI caption for a photo
+    generateCaption: async (request: GenerateCaptionRequest): Promise<GenerateCaptionResponse> => {
+      const response = await fetch("/community/posts/generate-caption", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(request),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: "Failed to generate caption" }));
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to generate caption"
         );
       }
 
