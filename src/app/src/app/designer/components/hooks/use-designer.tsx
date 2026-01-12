@@ -39,15 +39,17 @@ type DesignerProviderProps = {
   children: ReactNode;
   initialDesignId?: string | null;
   initialDesignName?: string;
+  initialGeneratedImages?: GeneratedImage[];
   onSave?: (data: { name: string; data: string }) => Promise<{ id: string }>;
   onLoad?: (id: string) => Promise<{ name: string; data: string }>;
-  onGenerateImage?: (prompt: string, style?: ArtStyle) => Promise<string>;
+  onGenerateImage?: (prompt: string, style?: ArtStyle) => Promise<{ url: string; assetId: string }>;
 };
 
 export function DesignerProvider({
   children,
   initialDesignId = null,
   initialDesignName = "Untitled Design",
+  initialGeneratedImages = [],
   onSave,
   onLoad,
   onGenerateImage,
@@ -76,7 +78,7 @@ export function DesignerProvider({
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // AI Generator state
-  const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
+  const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>(initialGeneratedImages);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const canUndo = historyIndex > 0;
@@ -751,9 +753,9 @@ export function DesignerProvider({
         setIsGenerating(true);
 
         onGenerateImage(prompt, style)
-          .then((url) => {
+          .then(({ url, assetId }) => {
             const newImage: GeneratedImage = {
-              id: `gen-${Date.now()}`,
+              id: assetId,
               url,
               prompt,
               style,
