@@ -1,5 +1,5 @@
 import { ServerFetch } from "@/types";
-import { ProductSize, ProductColor } from "./product";
+import { ProductSize } from "./product";
 
 export type InventoryWithVariantResponse = {
   id: string;
@@ -7,7 +7,7 @@ export type InventoryWithVariantResponse = {
   productId: string;
   productName: string;
   size: ProductSize;
-  color: ProductColor;
+  color: string;
   quantity: number;
   reorderLevel: number;
   createdAt: string;
@@ -20,7 +20,7 @@ export type LowStockAlertResponse = {
   productId: string;
   productName: string;
   size: ProductSize;
-  color: ProductColor;
+  color: string;
   quantity: number;
   reorderLevel: number;
 };

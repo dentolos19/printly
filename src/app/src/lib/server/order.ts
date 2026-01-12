@@ -1,5 +1,5 @@
 import { ServerFetch } from "@/types";
-import { ProductSize, ProductColor } from "./product";
+import { ProductSize } from "./product";
 
 // Enums matching backend
 export enum OrderStatus {
@@ -37,7 +37,7 @@ export type OrderItemResponse = {
   requestId: string | null;
   productName: string;
   size: ProductSize;
-  color: ProductColor;
+  color: string;
   quantity: number;
   unitPrice: number;
   subtotal: number;
