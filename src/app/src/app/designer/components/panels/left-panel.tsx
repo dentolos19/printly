@@ -74,9 +74,13 @@ export function LeftPanel({ className }: LeftPanelProps) {
   }
 
   return (
-    <div ref={panelRef} className={cn("bg-background relative flex flex-col border-r", className)} style={{ width }}>
+    <div
+      ref={panelRef}
+      className={cn("bg-background relative flex h-full flex-col border-r", className)}
+      style={{ width }}
+    >
       <PanelHeader tool={activeTool} onClose={() => setActiveTool("select")} />
-      <ScrollArea className={"flex-1"}>
+      <ScrollArea className={"h-0 flex-1"}>
         {activeTool === "ai-generator" && <AIGeneratorPanel />}
         {activeTool === "shapes" && <ShapesPanel />}
         {activeTool === "stickers" && <StickersPanel />}
@@ -112,7 +116,7 @@ function PanelHeader({ tool, onClose }: PanelHeaderProps) {
   };
 
   return (
-    <div className={"flex items-center justify-between border-b px-3 py-2"}>
+    <div className={"flex shrink-0 items-center justify-between border-b px-3 py-2"}>
       <span className={"text-sm font-medium"}>{titles[tool] || "Panel"}</span>
       <Button type={"button"} variant={"ghost"} size={"icon"} className={"h-7 w-7"} onClick={onClose}>
         <ChevronLeft className={"h-4 w-4"} />
