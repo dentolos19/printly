@@ -47,18 +47,11 @@ export default function Page() {
       const data = await api.asset.getAssets();
       setAssets(data);
 
-      // Pre-fetch download URLs for all assets
+      // Build view URLs using new public route
       const urls: Record<string, string> = {};
-      await Promise.all(
-        data.map(async (asset) => {
-          try {
-            const { url } = await api.asset.downloadAsset(asset.id);
-            urls[asset.id] = url;
-          } catch (error) {
-            console.error(`Failed to get URL for asset ${asset.id}`, error);
-          }
-        }),
-      );
+      data.forEach((asset) => {
+        urls[asset.id] = `/assets/${asset.id}/view`;
+      });
       setImageUrls(urls);
     } catch (error) {
       toast.error("Failed to load assets");
@@ -82,9 +75,8 @@ export default function Page() {
       setUploading(true);
       const asset = await api.asset.uploadAsset(uploadFile, uploadDescription);
       setAssets((prev) => [asset, ...prev]);
-      // Fetch download URL for the new asset
-      const { url } = await api.asset.downloadAsset(asset.id);
-      setImageUrls((prev) => ({ ...prev, [asset.id]: url }));
+      // Set view URL using new public route
+      setImageUrls((prev) => ({ ...prev, [asset.id]: `/assets/${asset.id}/view` }));
       toast.success("Asset uploaded successfully");
       setUploadDialogOpen(false);
       setUploadFile(null);
@@ -109,9 +101,8 @@ export default function Page() {
       const file = new File([blob], `generated-${Date.now()}.png`, { type: blob.type });
       const asset = await api.asset.uploadAsset(file, `Generated: ${generatePrompt}`);
       setAssets((prev) => [asset, ...prev]);
-      // Fetch download URL for the new asset
-      const { url } = await api.asset.downloadAsset(asset.id);
-      setImageUrls((prev) => ({ ...prev, [asset.id]: url }));
+      // Set view URL using new public route
+      setImageUrls((prev) => ({ ...prev, [asset.id]: `/assets/${asset.id}/view` }));
       toast.success("Image generated successfully");
       setGenerateDialogOpen(false);
       setGeneratePrompt("");
@@ -123,14 +114,8 @@ export default function Page() {
     }
   };
 
-  const handleDownload = async (asset: Asset) => {
-    try {
-      const { url } = await api.asset.downloadAsset(asset.id);
-      window.open(url, "_blank");
-    } catch (error) {
-      toast.error("Failed to get download URL");
-      console.error(error);
-    }
+  const handleDownload = (asset: Asset) => {
+    window.open(`/assets/${asset.id}/view`, "_blank");
   };
 
   const handleDelete = async (asset: Asset) => {

@@ -81,24 +81,15 @@ export default function Page() {
         api.generate
           .getGeneratedImages()
           .then((images) => {
-            // Fetch each image as a blob with authentication
-            const imagePromises = images.map((img) =>
-              api.generate
-                .getGeneratedImageBlob(img.id)
-                .then((blob) => ({
-                  id: img.id,
-                  url: URL.createObjectURL(blob),
-                  prompt: img.prompt,
-                  style: img.style as ArtStyle | undefined,
-                  createdAt: new Date(img.createdAt),
-                }))
-                .catch(() => null),
-            );
-
-            return Promise.all(imagePromises).then((results) => {
-              const formattedImages = results.filter((img): img is Exclude<typeof img, null> => img !== null);
-              setInitialGeneratedImages(formattedImages as GeneratedImage[]);
-            });
+            // Use new public view route for images
+            const formattedImages = images.map((img) => ({
+              id: img.id,
+              url: `/assets/${img.id}/view`,
+              prompt: img.prompt,
+              style: img.style as ArtStyle | undefined,
+              createdAt: new Date(img.createdAt),
+            }));
+            setInitialGeneratedImages(formattedImages as GeneratedImage[]);
           })
           .catch((error) => {
             console.error("Failed to load generated images:", error);
