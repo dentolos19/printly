@@ -15,6 +15,7 @@ import type { FabricObject } from "fabric";
 import {
   AlertTriangle,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   Circle,
   Eye,
@@ -25,13 +26,15 @@ import {
   Lock,
   Minus,
   Plus,
+  Settings,
+  Sliders,
   Square,
   Trash2,
   Triangle,
   Type,
   Unlock,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDesigner } from "../hooks";
 
 type RightPanelProps = {
@@ -39,12 +42,146 @@ type RightPanelProps = {
 };
 
 export function RightPanel({ className }: RightPanelProps) {
+  const [isExpanded, setIsExpanded] = useState(true);
   const [layersOpen, setLayersOpen] = useState(true);
   const [propertiesOpen, setPropertiesOpen] = useState(true);
   const [adjustmentsOpen, setAdjustmentsOpen] = useState(false);
+  const [width, setWidth] = useState(288); // 288px = w-72
+  const [isResizing, setIsResizing] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseDown = useCallback(() => {
+    setIsResizing(true);
+  }, []);
+
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isResizing || !panelRef.current) return;
+
+      const rect = panelRef.current.getBoundingClientRect();
+      const newWidth = rect.right - e.clientX;
+      if (newWidth >= 200 && newWidth <= 500) {
+        setWidth(newWidth);
+      }
+    },
+    [isResizing],
+  );
+
+  const handleMouseUp = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "ew-resize";
+      document.body.style.userSelect = "none";
+
+      return () => {
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      };
+    }
+  }, [isResizing, handleMouseMove, handleMouseUp]);
+
+  if (!isExpanded) {
+    return (
+      <div className={cn("bg-background flex w-12 flex-col border-l", className)}>
+        <div className={"flex flex-col items-center gap-2 py-2"}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type={"button"}
+                variant={"ghost"}
+                size={"icon"}
+                className={"h-10 w-10"}
+                onClick={() => setIsExpanded(true)}
+              >
+                <ChevronLeft className={"h-5 w-5"} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side={"left"}>Expand Properties</TooltipContent>
+          </Tooltip>
+
+          <Separator className={"my-1 w-8"} />
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type={"button"}
+                variant={"ghost"}
+                size={"icon"}
+                className={"h-10 w-10"}
+                onClick={() => {
+                  setIsExpanded(true);
+                  setLayersOpen(true);
+                }}
+              >
+                <Layers className={"h-5 w-5"} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side={"left"}>Layers</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type={"button"}
+                variant={"ghost"}
+                size={"icon"}
+                className={"h-10 w-10"}
+                onClick={() => {
+                  setIsExpanded(true);
+                  setPropertiesOpen(true);
+                }}
+              >
+                <Settings className={"h-5 w-5"} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side={"left"}>Properties</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type={"button"}
+                variant={"ghost"}
+                size={"icon"}
+                className={"h-10 w-10"}
+                onClick={() => {
+                  setIsExpanded(true);
+                  setAdjustmentsOpen(true);
+                }}
+              >
+                <Sliders className={"h-5 w-5"} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side={"left"}>Adjustments</TooltipContent>
+          </Tooltip>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className={cn("bg-background flex w-72 flex-col border-l", className)}>
+    <div ref={panelRef} className={cn("bg-background relative flex flex-col border-l", className)} style={{ width }}>
+      {/* Collapse button */}
+      <div className={"flex items-center justify-between border-b px-3 py-2"}>
+        <span className={"text-sm font-medium"}>Properties</span>
+        <Button
+          type={"button"}
+          variant={"ghost"}
+          size={"icon"}
+          className={"h-7 w-7"}
+          onClick={() => setIsExpanded(false)}
+        >
+          <ChevronRight className={"h-4 w-4"} />
+        </Button>
+      </div>
+
       <ScrollArea className={"flex-1"}>
         {/* Layers Section */}
         <Collapsible open={layersOpen} onOpenChange={setLayersOpen}>
@@ -86,6 +223,15 @@ export function RightPanel({ className }: RightPanelProps) {
           </CollapsibleContent>
         </Collapsible>
       </ScrollArea>
+
+      {/* Resize handle */}
+      <div
+        className={cn(
+          "hover:bg-primary absolute top-0 left-0 h-full w-1 cursor-ew-resize transition-colors",
+          isResizing && "bg-primary",
+        )}
+        onMouseDown={handleMouseDown}
+      />
     </div>
   );
 }

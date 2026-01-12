@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, Loader2, Sparkles, Upload } from "lucide-react";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type LeftPanelProps = {
   className?: string;
@@ -18,16 +18,63 @@ type LeftPanelProps = {
 
 export function LeftPanel({ className }: LeftPanelProps) {
   const { activeTool, setActiveTool } = useDesigner();
+  const [width, setWidth] = useState(256); // 256px = w-64
+  const [isResizing, setIsResizing] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const startXRef = useRef(0);
+  const startWidthRef = useRef(0);
 
   // Determine which panel to show based on active tool
   const showPanel = ["ai-generator", "shapes", "stickers", "image"].includes(activeTool);
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      setIsResizing(true);
+      startXRef.current = e.clientX;
+      startWidthRef.current = width;
+    },
+    [width],
+  );
+
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isResizing || !panelRef.current) return;
+
+      const deltaX = e.clientX - startXRef.current;
+      const newWidth = startWidthRef.current + deltaX;
+      if (newWidth >= 200 && newWidth <= 500) {
+        setWidth(newWidth);
+      }
+    },
+    [isResizing],
+  );
+
+  const handleMouseUp = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "ew-resize";
+      document.body.style.userSelect = "none";
+
+      return () => {
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      };
+    }
+  }, [isResizing, handleMouseMove, handleMouseUp]);
 
   if (!showPanel) {
     return null;
   }
 
   return (
-    <div className={cn("bg-background flex w-64 flex-col border-r", className)}>
+    <div ref={panelRef} className={cn("bg-background relative flex flex-col border-r", className)} style={{ width }}>
       <PanelHeader tool={activeTool} onClose={() => setActiveTool("select")} />
       <ScrollArea className={"flex-1"}>
         {activeTool === "ai-generator" && <AIGeneratorPanel />}
@@ -35,6 +82,14 @@ export function LeftPanel({ className }: LeftPanelProps) {
         {activeTool === "stickers" && <StickersPanel />}
         {activeTool === "image" && <ImagePanel />}
       </ScrollArea>
+      {/* Resize handle */}
+      <div
+        className={cn(
+          "hover:bg-primary absolute top-0 right-0 h-full w-1 cursor-ew-resize transition-colors",
+          isResizing && "bg-primary",
+        )}
+        onMouseDown={handleMouseDown}
+      />{" "}
     </div>
   );
 }
