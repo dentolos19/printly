@@ -10,6 +10,7 @@ public class PostComment : BaseEntity
 
     public Guid? ParentId { get; set; } // parent => only in play if the comment is a reply to another comment
     public PostComment? Parent { get; set; }
+
     public ICollection<PostComment> Replies { get; set; }
 
     public string Content { get; set; } = string.Empty;

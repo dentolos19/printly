@@ -13,7 +13,7 @@ public enum PostStatus
     Archived
 }
 
-public enum ReactionType
+public enum PostReactionType
 {
     Like,
     Love,
@@ -33,6 +33,6 @@ public class Post : BaseEntity
     public PostStatus PostStatus { get; set; } = PostStatus.Draft;
 
     public ICollection<PostComment> Comments { get; set; } = new List<PostComment>();
-    // public ICollection<PostReaction> Reactions { get; set; } = new List<PostReaction>();
-    // public ICollection<PostBookmark> Bookmarks { get; set; } = new List<PostBookmark>();
+    public ICollection<PostReaction> Reactions { get; set; } = new List<PostReaction>();
+    public ICollection<PostBookmark> Bookmarks { get; set; } = new List<PostBookmark>();
 }
