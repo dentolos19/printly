@@ -7,6 +7,7 @@
 "use client";
 
 import { IconToolbar } from "@/app/designer/components/icon-toolbar";
+import { ArtStyle } from "@/app/designer/types";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { DesignerCanvas } from "./canvas";
@@ -21,7 +22,7 @@ type DesignerProps = {
   designName?: string;
   onSave?: (data: { name: string; data: string }) => Promise<{ id: string }>;
   onLoad?: (id: string) => Promise<{ name: string; data: string }>;
-  onGenerateImage?: (prompt: string) => Promise<string>;
+  onGenerateImage?: (prompt: string, style?: ArtStyle) => Promise<{ url: string; assetId: string }>;
 };
 
 function DesignerContent({ className }: { className?: string }) {

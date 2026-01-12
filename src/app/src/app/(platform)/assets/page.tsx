@@ -105,7 +105,7 @@ export default function Page() {
 
     try {
       setGenerating(true);
-      const blob = await api.generate.generateImage(generatePrompt);
+      const { blob } = await api.generate.generateImage(generatePrompt);
       const file = new File([blob], `generated-${Date.now()}.png`, { type: blob.type });
       const asset = await api.asset.uploadAsset(file, `Generated: ${generatePrompt}`);
       setAssets((prev) => [asset, ...prev]);

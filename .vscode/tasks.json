@@ -22,6 +22,10 @@
       "problemMatcher": [],
       "options": {
         "cwd": "${workspaceFolder}/src/server"
+      },
+      "presentation": {
+        "reveal": "silent",
+        "clear": true
       }
     },
     {
@@ -31,6 +35,10 @@
       "problemMatcher": [],
       "options": {
         "cwd": "${workspaceFolder}/src/server"
+      },
+      "presentation": {
+        "reveal": "silent",
+        "clear": true
       }
     }
   ],

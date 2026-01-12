@@ -96,8 +96,8 @@ export default function Page() {
             );
 
             return Promise.all(imagePromises).then((results) => {
-              const formattedImages = results.filter((img): img is GeneratedImage => img !== null);
-              setInitialGeneratedImages(formattedImages);
+              const formattedImages = results.filter((img): img is Exclude<typeof img, null> => img !== null);
+              setInitialGeneratedImages(formattedImages as GeneratedImage[]);
             });
           })
           .catch((error) => {
