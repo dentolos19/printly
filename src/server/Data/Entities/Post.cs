@@ -22,8 +22,8 @@ public enum PostReactionType
 
 public class Post : BaseEntity
 {
-    public Guid AuthorId { get; set; }
-    public User Author { get; set; }
+    public string AuthorId { get; set; } = null!;
+    public User Author { get; set; } = null!;
 
     public string Caption { get; set; }
 
