@@ -40,6 +40,7 @@ const SECONDARY_TOOLS: ToolItem[] = [
   { id: "shapes", icon: Shapes, label: "Shapes", shortcut: "Alt+S" },
   { id: "stickers", icon: Smile, label: "Stickers", shortcut: "Alt+K" },
   { id: "image", icon: Image, label: "Image", shortcut: "Alt+I" },
+  { id: "ai-generator", icon: Sparkles, label: "AI Generator", shortcut: "Alt+A" },
 ];
 
 const UTILITY_TOOLS: ToolItem[] = [{ id: "draw", icon: PenTool, label: "Draw", shortcut: "Alt+P" }];
@@ -130,32 +131,6 @@ export function IconToolbar({ className }: IconToolbarProps) {
 
       {/* Utility tools */}
       <div className={"flex flex-col items-center gap-1"}>{UTILITY_TOOLS.map(renderToolButton)}</div>
-
-      {/* Spacer */}
-      <div className={"flex-1"} />
-
-      {/* Bottom tools */}
-      <div className={"flex flex-col items-center gap-1"}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type={"button"}
-              variant={activeTool === "ai-generator" ? "secondary" : "ghost"}
-              size={"icon"}
-              className={cn("h-10 w-10", activeTool === "ai-generator" && "bg-accent")}
-              onClick={() => setActiveTool("ai-generator")}
-            >
-              <Sparkles className={"h-5 w-5"} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side={"right"}>
-            <p>
-              AI Generator
-              <span className={"text-muted-foreground ml-2"}>(Alt+A)</span>
-            </p>
-          </TooltipContent>
-        </Tooltip>
-      </div>
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { Canvas } from "fabric";
 import { useCallback, useEffect, useRef } from "react";
+import { CanvasContextMenu } from "./canvas-context-menu";
 import { useDesigner } from "./hooks";
 
 type DesignerCanvasProps = {
@@ -152,60 +153,63 @@ export function DesignerCanvas({ className }: DesignerCanvasProps) {
     : {};
 
   return (
-    <div
-      ref={containerRef}
-      className={cn("bg-muted/50 flex flex-1 items-center justify-center overflow-auto", className)}
-    >
-      {/* Canvas container with drop shadow effect like in Mockly */}
-      <div className={"relative"}>
-        {/* Shadow/reflection effect */}
-        <div
-          className={"absolute -bottom-4 left-1/2 -translate-x-1/2 transform"}
-          style={{
-            width: canvasSize.width * zoom * 0.8,
-            height: 20,
-            background: "radial-gradient(ellipse at center, rgba(0,0,0,0.15) 0%, transparent 70%)",
-          }}
-        />
+    <CanvasContextMenu>
+      <div
+        ref={containerRef}
+        data-canvas-container
+        className={cn("bg-muted/50 flex flex-1 items-center justify-center overflow-auto", className)}
+      >
+        {/* Canvas container with drop shadow effect like in Mockly */}
+        <div className={"relative"}>
+          {/* Shadow/reflection effect */}
+          <div
+            className={"absolute -bottom-4 left-1/2 -translate-x-1/2 transform"}
+            style={{
+              width: canvasSize.width * zoom * 0.8,
+              height: 20,
+              background: "radial-gradient(ellipse at center, rgba(0,0,0,0.15) 0%, transparent 70%)",
+            }}
+          />
 
-        {/* Corner shadows for print-effect */}
-        <div
-          className={"absolute top-1/2 -left-4 -translate-y-1/2 transform"}
-          style={{
-            width: 20,
-            height: canvasSize.height * zoom * 0.6,
-            background: "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.08) 100%)",
-          }}
-        />
-        <div
-          className={"absolute top-1/2 -right-4 -translate-y-1/2 transform"}
-          style={{
-            width: 20,
-            height: canvasSize.height * zoom * 0.6,
-            background: "linear-gradient(to left, transparent 0%, rgba(0,0,0,0.08) 100%)",
-          }}
-        />
-        <div
-          className={"absolute -top-4 left-1/2 -translate-x-1/2 transform"}
-          style={{
-            width: canvasSize.width * zoom * 0.6,
-            height: 20,
-            background: "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.08) 100%)",
-          }}
-        />
+          {/* Corner shadows for print-effect */}
+          <div
+            className={"absolute top-1/2 -left-4 -translate-y-1/2 transform"}
+            style={{
+              width: 20,
+              height: canvasSize.height * zoom * 0.6,
+              background: "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.08) 100%)",
+            }}
+          />
+          <div
+            className={"absolute top-1/2 -right-4 -translate-y-1/2 transform"}
+            style={{
+              width: 20,
+              height: canvasSize.height * zoom * 0.6,
+              background: "linear-gradient(to left, transparent 0%, rgba(0,0,0,0.08) 100%)",
+            }}
+          />
+          <div
+            className={"absolute -top-4 left-1/2 -translate-x-1/2 transform"}
+            style={{
+              width: canvasSize.width * zoom * 0.6,
+              height: 20,
+              background: "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.08) 100%)",
+            }}
+          />
 
-        {/* Main canvas wrapper */}
-        <div
-          className={cn("relative bg-white shadow-xl ring-1 ring-black/5")}
-          style={{
-            width: canvasSize.width * zoom,
-            height: canvasSize.height * zoom,
-            ...gridBackground,
-          }}
-        >
-          <canvas ref={canvasRef} />
+          {/* Main canvas wrapper */}
+          <div
+            className={cn("relative bg-white shadow-xl ring-1 ring-black/5")}
+            style={{
+              width: canvasSize.width * zoom,
+              height: canvasSize.height * zoom,
+              ...gridBackground,
+            }}
+          >
+            <canvas ref={canvasRef} />
+          </div>
         </div>
       </div>
-    </div>
+    </CanvasContextMenu>
   );
 }
