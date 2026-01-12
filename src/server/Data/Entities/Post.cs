@@ -28,6 +28,7 @@ public class Post : BaseEntity
     public string Caption { get; set; }
 
     public Guid PhotoId { get; set; }
+    public Asset Photo { get; set; }
 
     public PostVisibility Visibility { get; set; } = PostVisibility.Visible;
     public PostStatus PostStatus { get; set; } = PostStatus.Draft;
