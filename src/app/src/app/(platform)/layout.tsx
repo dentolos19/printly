@@ -40,6 +40,7 @@ import {
   MoreVerticalIcon,
   PackageIcon,
   UserIcon,
+  UsersIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -104,6 +105,14 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                     <Link href={"/orders"}>
                       <PackageIcon />
                       <span>Orders</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href={"/community"}>
+                      <UsersIcon />
+                      <span>Community</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

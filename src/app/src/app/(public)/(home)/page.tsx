@@ -186,6 +186,9 @@ export default function Page() {
           <Link href="#bulk" className="hover:underline">
             Bulk Orders
           </Link>
+          <Link href="/community" className="hover:underline">
+            Community
+          </Link>
           <Link href="#contact" className="hover:underline">
             Contact
           </Link>
