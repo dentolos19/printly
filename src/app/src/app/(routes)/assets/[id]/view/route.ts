@@ -15,7 +15,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       throw new Error(`Failed to fetch asset download URL: ${response.statusText}`);
     }
 
-    const { url } = await response.json();
+    const { url } = (await response.json()) as { url: string };
 
     // Fetch the actual file from storage
     const fileResponse = await fetch(url);
