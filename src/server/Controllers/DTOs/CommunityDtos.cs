@@ -176,3 +176,15 @@ public record BookmarkToggleResponse(
     bool IsBookmarked,
     string Message
 );
+
+// ============ AI Caption DTOs ============
+
+public record GenerateCaptionRequest(
+    [Required] Guid PhotoId,
+    [StringLength(500)] string? Prompt = null
+);
+
+public record GenerateCaptionResponse(
+    string Caption
+);
+

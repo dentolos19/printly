@@ -16,7 +16,11 @@ namespace PrintlyServer.Controllers;
 /// </summary>
 [Route("community")]
 [Authorize]
-public class CommunityController(DatabaseContext context, StorageService storageService) : BaseController(context)
+public class CommunityController(
+    DatabaseContext context,
+    StorageService storageService,
+    GenerativeService generativeService
+) : BaseController(context)
 {
     // ============ Posts ============
 
@@ -551,6 +555,38 @@ public class CommunityController(DatabaseContext context, StorageService storage
         }
 
         return Ok(postSummaries);
+    }
+
+    // ============ AI Features ============
+
+    /// <summary>
+    /// Generates an AI-powered caption for a photo using vision analysis.
+    /// </summary>
+    [HttpPost("posts/generate-caption")]
+    public async Task<ActionResult<GenerateCaptionResponse>> GenerateCaption([FromBody] GenerateCaptionRequest request)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId is null)
+            return Unauthorized();
+
+        // Find the photo asset
+        var photo = await Context.Assets.FindAsync(request.PhotoId);
+        if (photo is null)
+            return NotFound(new { message = "Photo not found" });
+
+        // Get a downloadable URL for the photo
+        var photoUrl = await storageService.DownloadFileAsync(photo);
+
+        try
+        {
+            // Generate caption using AI vision
+            var caption = await generativeService.GenerateCaptionAsync(photoUrl, request.Prompt);
+            return Ok(new GenerateCaptionResponse(caption));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Failed to generate caption", error = ex.Message });
+        }
     }
 
     // ============ Comments ============
