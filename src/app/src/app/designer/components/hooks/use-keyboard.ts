@@ -115,10 +115,10 @@ export function useKeyboardShortcuts() {
         return;
       }
 
-      // Image: Alt+I
+      // Assets: Alt+I
       if (isAlt && e.key === "i") {
         e.preventDefault();
-        setActiveTool("image");
+        setActiveTool("assets");
         return;
       }
 

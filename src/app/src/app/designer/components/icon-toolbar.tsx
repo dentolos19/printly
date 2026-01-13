@@ -39,7 +39,7 @@ const TOOLS: ToolItem[] = [
 const SECONDARY_TOOLS: ToolItem[] = [
   { id: "shapes", icon: Shapes, label: "Shapes", shortcut: "Alt+S" },
   { id: "stickers", icon: Smile, label: "Stickers", shortcut: "Alt+K" },
-  { id: "image", icon: Image, label: "Image", shortcut: "Alt+I" },
+  { id: "assets", icon: Image, label: "Assets", shortcut: "Alt+I" },
   { id: "ai-generator", icon: Sparkles, label: "AI Generator", shortcut: "Alt+A" },
 ];
 

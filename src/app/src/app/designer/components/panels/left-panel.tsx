@@ -7,9 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { useServer } from "@/lib/providers/server";
+import { Asset } from "@/lib/server/asset";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, Loader2, Sparkles, Upload } from "lucide-react";
+import { ChevronLeft, Image as ImageIcon, Loader2, Sparkles, Upload } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type LeftPanelProps = {
@@ -25,7 +28,7 @@ export function LeftPanel({ className }: LeftPanelProps) {
   const startWidthRef = useRef(0);
 
   // Determine which panel to show based on active tool
-  const showPanel = ["ai-generator", "shapes", "stickers", "image"].includes(activeTool);
+  const showPanel = ["ai-generator", "shapes", "stickers", "assets"].includes(activeTool);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -84,7 +87,7 @@ export function LeftPanel({ className }: LeftPanelProps) {
         {activeTool === "ai-generator" && <AIGeneratorPanel />}
         {activeTool === "shapes" && <ShapesPanel />}
         {activeTool === "stickers" && <StickersPanel />}
-        {activeTool === "image" && <ImagePanel />}
+        {activeTool === "assets" && <AssetsPanel />}
       </ScrollArea>
       {/* Resize handle */}
       <div
@@ -112,7 +115,7 @@ function PanelHeader({ tool, onClose }: PanelHeaderProps) {
     "ai-generator": "AI Generator",
     shapes: "Shapes",
     stickers: "Stickers",
-    image: "Images",
+    assets: "Assets",
   };
 
   return (
@@ -382,73 +385,217 @@ function StickersPanel() {
 }
 
 // ============================================================================
-// Image Panel
+// Assets Panel
 // ============================================================================
 
-function ImagePanel() {
+function AssetsPanel() {
   const { addImage, setActiveTool } = useDesigner();
+  const { api } = useServer();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imageUrl, setImageUrl] = useState("");
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [isLoadingAssets, setIsLoadingAssets] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+
+  function loadAssets() {
+    setIsLoadingAssets(true);
+    api.asset
+      .getAssets()
+      .then((data) => {
+        const imageAssets = data.filter((asset) => asset.type.startsWith("image/"));
+        setAssets(imageAssets);
+      })
+      .catch((error) => {
+        console.error("Failed to load assets:", error);
+      })
+      .finally(() => {
+        setIsLoadingAssets(false);
+      });
+  }
+
+  useEffect(() => {
+    loadAssets();
+  }, [api.asset]);
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const url = event.target?.result as string;
-      if (url) {
-        addImage(url);
+    setIsUploading(true);
+    api.asset
+      .uploadAsset(file)
+      .then((asset) => {
+        const assetUrl = `/assets/${asset.id}/view`;
+        addImage(assetUrl);
         setActiveTool("select");
-      }
-    };
-    reader.readAsDataURL(file);
+        loadAssets();
+      })
+      .catch((error) => {
+        console.error("Failed to upload asset:", error);
+      })
+      .finally(() => {
+        setIsUploading(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      });
   }
 
   function handleUrlSubmit() {
     if (!imageUrl.trim()) return;
-    addImage(imageUrl.trim());
-    setImageUrl("");
+
+    setIsUploading(true);
+    globalThis
+      .fetch(imageUrl.trim())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch image from URL");
+        }
+        return response.blob();
+      })
+      .then((blob) => {
+        const fileName = imageUrl.split("/").pop() || "image.png";
+        const file = new File([blob], fileName, { type: blob.type });
+        return api.asset.uploadAsset(file);
+      })
+      .then((asset) => {
+        const assetUrl = `/assets/${asset.id}/view`;
+        addImage(assetUrl);
+        setImageUrl("");
+        setActiveTool("select");
+        loadAssets();
+      })
+      .catch((error) => {
+        console.error("Failed to upload image from URL:", error);
+      })
+      .finally(() => {
+        setIsUploading(false);
+      });
+  }
+
+  function handleAssetClick(assetId: string) {
+    const assetUrl = `/assets/${assetId}/view`;
+    addImage(assetUrl);
     setActiveTool("select");
   }
 
   return (
     <div className={"flex flex-col gap-4 p-3"}>
-      {/* Upload from file */}
-      <div className={"flex flex-col gap-2"}>
-        <Label className={"text-muted-foreground text-xs font-medium tracking-wide uppercase"}>Upload Image</Label>
-        <input ref={fileInputRef} type={"file"} accept={"image/*"} onChange={handleFileSelect} className={"hidden"} />
-        <Button
-          type={"button"}
-          variant={"outline"}
-          className={"w-full gap-2"}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <Upload className={"h-4 w-4"} />
-          Choose File
-        </Button>
-      </div>
+      <Tabs defaultValue={"library"} className={"w-full"}>
+        <TabsList className={"grid w-full grid-cols-2"}>
+          <TabsTrigger value={"library"}>Library</TabsTrigger>
+          <TabsTrigger value={"upload"}>Upload</TabsTrigger>
+        </TabsList>
 
-      {/* Add from URL */}
-      <div className={"flex flex-col gap-2"}>
-        <Label className={"text-muted-foreground text-xs font-medium tracking-wide uppercase"}>From URL</Label>
-        <div className={"flex gap-2"}>
-          <Input
-            type={"url"}
-            placeholder={"https://..."}
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleUrlSubmit();
-              }
-            }}
-          />
-          <Button type={"button"} size={"icon"} onClick={handleUrlSubmit} disabled={!imageUrl.trim()}>
-            <Upload className={"h-4 w-4"} />
-          </Button>
-        </div>
-      </div>
+        <TabsContent value={"library"} className={"mt-4"}>
+          <div className={"flex flex-col gap-2"}>
+            <Label className={"text-muted-foreground text-xs font-medium tracking-wide uppercase"}>Your Assets</Label>
+
+            {isLoadingAssets && (
+              <div className={"grid grid-cols-2 gap-2"}>
+                <Skeleton className={"aspect-square rounded-lg"} />
+                <Skeleton className={"aspect-square rounded-lg"} />
+                <Skeleton className={"aspect-square rounded-lg"} />
+                <Skeleton className={"aspect-square rounded-lg"} />
+              </div>
+            )}
+
+            {!isLoadingAssets && assets.length > 0 && (
+              <div className={"grid grid-cols-2 gap-2"}>
+                {assets.map((asset) => (
+                  <button
+                    key={asset.id}
+                    type={"button"}
+                    className={cn(
+                      "group bg-muted relative aspect-square overflow-hidden rounded-lg border",
+                      "hover:ring-primary focus:ring-primary hover:ring-2 focus:ring-2 focus:outline-none",
+                    )}
+                    onClick={() => handleAssetClick(asset.id)}
+                  >
+                    <img
+                      src={`/assets/${asset.id}/view`}
+                      alt={asset.name}
+                      className={"h-full w-full object-cover transition-transform group-hover:scale-105"}
+                    />
+                    <div
+                      className={cn(
+                        "absolute inset-0 flex items-end bg-linear-to-t from-black/60 to-transparent",
+                        "opacity-0 transition-opacity group-hover:opacity-100",
+                      )}
+                    >
+                      <p className={"line-clamp-2 p-2 text-xs text-white"}>{asset.name}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {!isLoadingAssets && assets.length === 0 && (
+              <div className={"flex flex-col items-center justify-center py-8 text-center"}>
+                <ImageIcon className={"text-muted-foreground/50 h-10 w-10"} />
+                <p className={"text-muted-foreground mt-2 text-sm"}>No images in library</p>
+                <p className={"text-muted-foreground text-xs"}>Upload images to see them here</p>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value={"upload"} className={"mt-4"}>
+          <div className={"flex flex-col gap-4"}>
+            {/* Upload from file */}
+            <div className={"flex flex-col gap-2"}>
+              <Label className={"text-muted-foreground text-xs font-medium tracking-wide uppercase"}>
+                Upload Image
+              </Label>
+              <input
+                ref={fileInputRef}
+                type={"file"}
+                accept={"image/*"}
+                onChange={handleFileSelect}
+                className={"hidden"}
+                disabled={isUploading}
+              />
+              <Button
+                type={"button"}
+                variant={"outline"}
+                className={"w-full gap-2"}
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+              >
+                {isUploading ? <Loader2 className={"h-4 w-4 animate-spin"} /> : <Upload className={"h-4 w-4"} />}
+                {isUploading ? "Uploading..." : "Choose File"}
+              </Button>
+            </div>
+
+            {/* Add from URL */}
+            <div className={"flex flex-col gap-2"}>
+              <Label className={"text-muted-foreground text-xs font-medium tracking-wide uppercase"}>From URL</Label>
+              <div className={"flex gap-2"}>
+                <Input
+                  type={"url"}
+                  placeholder={"https://..."}
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !isUploading) {
+                      handleUrlSubmit();
+                    }
+                  }}
+                  disabled={isUploading}
+                />
+                <Button
+                  type={"button"}
+                  size={"icon"}
+                  onClick={handleUrlSubmit}
+                  disabled={!imageUrl.trim() || isUploading}
+                >
+                  {isUploading ? <Loader2 className={"h-4 w-4 animate-spin"} /> : <Upload className={"h-4 w-4"} />}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

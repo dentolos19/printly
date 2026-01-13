@@ -51,7 +51,7 @@ export type ToolType =
   | "circle"
   | "triangle"
   | "line"
-  | "image"
+  | "assets"
   | "draw"
   | "shapes"
   | "stickers"
