@@ -111,8 +111,15 @@ export function ChatbotWidget() {
 
           // Load saved model preference from localStorage
           const savedModel = localStorage.getItem("printly-chatbot-model");
-          if (savedModel && data.models.some((m) => m.id === savedModel)) {
-            setSelectedModel(savedModel);
+          if (savedModel) {
+            if (data.models.some((m) => m.id === savedModel)) {
+              setSelectedModel(savedModel);
+            } else {
+              // Saved model is no longer available on the server; remove it and fall back to default
+              localStorage.removeItem("printly-chatbot-model");
+              const defaultModel = data.models.find((m) => m.isDefault);
+              if (defaultModel) setSelectedModel(defaultModel.id);
+            }
           } else {
             // Use default model
             const defaultModel = data.models.find((m) => m.isDefault);
