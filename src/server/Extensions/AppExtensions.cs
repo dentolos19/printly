@@ -18,6 +18,7 @@ public static class AppExtensions
     {
         app.MapHub<ChatHub>("/hubs/chat");
         app.MapHub<SupportHub>("/hubs/support");
+        app.MapHub<ConversationHub>("/hubs/conversation");
         return app;
     }
 

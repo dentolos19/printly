@@ -21,6 +21,9 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
     public DbSet<Inventory> Inventories { get; set; }
     public DbSet<Order> Orders { get; set; }
     public DbSet<OrderItem> OrderItems { get; set; }
+    public DbSet<Conversation> Conversations { get; set; }
+    public DbSet<ConversationParticipant> ConversationParticipants { get; set; }
+    public DbSet<ConversationMessage> ConversationMessages { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
@@ -104,8 +107,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
                 n.IsDeleted,
             });
 
-        modelBuilder.Entity<Notification>()
-            .HasIndex(n => n.CreatedAt);
+        modelBuilder.Entity<Notification>().HasIndex(n => n.CreatedAt);
         modelBuilder.Entity<Notification>().HasIndex(n => n.CreatedAt);
 
         modelBuilder
@@ -164,6 +166,46 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
         modelBuilder.Entity<Order>().HasIndex(o => o.UserId);
         modelBuilder.Entity<Order>().HasIndex(o => o.Status);
         modelBuilder.Entity<Order>().HasIndex(o => o.CreatedAt);
+
+        // Conversations
+        modelBuilder
+            .Entity<ConversationParticipant>()
+            .HasOne(cp => cp.Conversation)
+            .WithMany(c => c.Participants)
+            .HasForeignKey(cp => cp.ConversationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder
+            .Entity<ConversationParticipant>()
+            .HasOne(cp => cp.User)
+            .WithMany()
+            .HasForeignKey(cp => cp.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<ConversationParticipant>().HasIndex(cp => new { cp.ConversationId, cp.UserId }).IsUnique();
+
+        modelBuilder
+            .Entity<ConversationMessage>()
+            .HasOne(cm => cm.Conversation)
+            .WithMany(c => c.Messages)
+            .HasForeignKey(cm => cm.ConversationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder
+            .Entity<ConversationMessage>()
+            .HasOne(cm => cm.Participant)
+            .WithMany()
+            .HasForeignKey(cm => cm.ParticipantId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder
+            .Entity<ConversationMessage>()
+            .HasOne(cm => cm.ReplyToMessage)
+            .WithMany()
+            .HasForeignKey(cm => cm.ReplyToMessageId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<ConversationMessage>().HasIndex(cm => cm.CreatedAt);
     }
 
     public override int SaveChanges()
