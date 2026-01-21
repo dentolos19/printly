@@ -20,7 +20,7 @@ namespace PrintlyServer.Controllers;
 /// <example>
 /// <code>
 /// //How to inherit from BaseController:
-/// public class MyController(AppDbContext context) : BaseController(context)
+/// public class MyController(DatabaseContext context) : BaseController(context)
 /// {
 ///     //at this point, the db is already included
 /// }

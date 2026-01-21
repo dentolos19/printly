@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PrintlyServer.Data;
@@ -11,9 +12,11 @@ using PrintlyServer.Data;
 namespace PrintlyServer.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20260112140421_AddCommunityEntities")]
+    partial class AddCommunityEntities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -160,10 +163,6 @@ namespace PrintlyServer.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -281,9 +280,6 @@ namespace PrintlyServer.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("CoverId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -306,8 +302,6 @@ namespace PrintlyServer.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CoverId");
 
                     b.HasIndex("UserId");
 
@@ -1026,17 +1020,11 @@ namespace PrintlyServer.Migrations
 
             modelBuilder.Entity("PrintlyServer.Data.Entities.Design", b =>
                 {
-                    b.HasOne("PrintlyServer.Data.Entities.Asset", "Cover")
-                        .WithMany()
-                        .HasForeignKey("CoverId");
-
                     b.HasOne("PrintlyServer.Data.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Cover");
 
                     b.Navigation("User");
                 });

@@ -21,6 +21,10 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
     public DbSet<Inventory> Inventories { get; set; }
     public DbSet<Order> Orders { get; set; }
     public DbSet<OrderItem> OrderItems { get; set; }
+    public DbSet<Post> Posts { get; set; }
+    public DbSet<PostComment> PostComments { get; set; }
+    public DbSet<PostReaction> PostReactions { get; set; }
+    public DbSet<PostBookmark> PostBookmarks { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
@@ -164,6 +168,91 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
         modelBuilder.Entity<Order>().HasIndex(o => o.UserId);
         modelBuilder.Entity<Order>().HasIndex(o => o.Status);
         modelBuilder.Entity<Order>().HasIndex(o => o.CreatedAt);
+
+        modelBuilder
+            .Entity<Post>()
+            .HasOne(p => p.Author)
+            .WithMany()
+            .HasForeignKey(p => p.AuthorId)
+            .IsRequired();
+
+        modelBuilder
+            .Entity<Post>()
+            .HasOne(p => p.Photo)
+            .WithMany()
+            .HasForeignKey(p => p.PhotoId)
+            .IsRequired();
+
+        modelBuilder
+            .Entity<PostReaction>()
+            .HasOne(pr => pr.Post)
+            .WithMany(p => p.Reactions)
+            .HasForeignKey(pr => pr.PostId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder
+            .Entity<PostReaction>()
+            .HasOne(pr => pr.User)
+            .WithMany()
+            .HasForeignKey(pr => pr.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder
+            .Entity<PostReaction>()
+            .HasIndex(pr => new { pr.PostId, pr.UserId })
+            .IsUnique();
+
+        // PostComment relationships
+        modelBuilder
+            .Entity<PostComment>()
+            .HasOne(pc => pc.Post)
+            .WithMany(p => p.Comments)
+            .HasForeignKey(pc => pc.PostId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder
+            .Entity<PostComment>()
+            .HasOne(pc => pc.Author)
+            .WithMany()
+            .HasForeignKey(pc => pc.AuthorId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder
+            .Entity<PostComment>()
+            .HasOne(pc => pc.Parent)
+            .WithMany(pc => pc.Replies)
+            .HasForeignKey(pc => pc.ParentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // PostBookmark relationships
+        modelBuilder
+            .Entity<PostBookmark>()
+            .HasOne(pb => pb.Post)
+            .WithMany(p => p.Bookmarks)
+            .HasForeignKey(pb => pb.PostId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder
+            .Entity<PostBookmark>()
+            .HasOne(pb => pb.User)
+            .WithMany()
+            .HasForeignKey(pb => pb.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder
+            .Entity<PostBookmark>()
+            .HasIndex(pb => new { pb.PostId, pb.UserId })
+            .IsUnique();
+
+        // Indexes for Post queries
+        modelBuilder.Entity<Post>().HasIndex(p => p.AuthorId);
+        modelBuilder.Entity<Post>().HasIndex(p => p.PostStatus);
+        modelBuilder.Entity<Post>().HasIndex(p => p.Visibility);
+        modelBuilder.Entity<Post>().HasIndex(p => p.CreatedAt);
+
+        // Index for PostComment queries
+        modelBuilder.Entity<PostComment>().HasIndex(pc => pc.PostId);
+        modelBuilder.Entity<PostComment>().HasIndex(pc => pc.AuthorId);
     }
 
     public override int SaveChanges()
