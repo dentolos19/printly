@@ -5,13 +5,17 @@ using PrintlyServer.Data;
 using PrintlyServer.Data.Auth;
 using PrintlyServer.Data.Entities;
 using PrintlyServer.Extensions;
+using PrintlyServer.Services;
 
 namespace PrintlyServer.Controllers;
 
 [Route("conversation")]
 [Authorize(Roles = Roles.Admin + "," + Roles.User)]
-public class ConversationController(DatabaseContext context) : BaseController(context)
+public class ConversationController(DatabaseContext context, INotificationService notificationService)
+    : BaseController(context)
 {
+    private readonly INotificationService _notificationService = notificationService;
+
     public record ContactResponse(string Id, string Name, string Email, string Role);
 
     public record ParticipantResponse(
@@ -56,14 +60,28 @@ public class ConversationController(DatabaseContext context) : BaseController(co
     public record ConversationResponse(
         Guid Id,
         string? Subject,
+        string CustomerId,
+        string CustomerName,
+        ConversationStatus Status,
+        ConversationPriority Priority,
+        Guid? OrderId,
+        DateTime? LastMessageAt,
+        int UnreadCount,
         DateTime CreatedAt,
         DateTime UpdatedAt,
-        int UnreadCount,
         MessagePreview? LastMessage,
         IEnumerable<ParticipantResponse> Participants
     );
 
     public record CreateConversationRequest(List<string> ParticipantIds, string? Subject);
+
+    // New request for creating support conversations
+    public record CreateSupportConversationRequest(string Subject, Guid? OrderId, string? InitialMessage);
+
+    // Request for updating status/priority
+    public record UpdateConversationStatusRequest(ConversationStatus Status);
+
+    public record UpdateConversationPriorityRequest(ConversationPriority Priority);
 
     [HttpGet("contacts")]
     public async Task<ActionResult<IEnumerable<ContactResponse>>> GetContacts()
@@ -99,7 +117,8 @@ public class ConversationController(DatabaseContext context) : BaseController(co
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ConversationResponse>>> GetConversations(
-        [FromQuery] bool includeAllForStaff = false
+        [FromQuery] bool includeAllForStaff = false,
+        [FromQuery] ConversationStatus? status = null
     )
     {
         var currentUserId = User.GetUserId();
@@ -116,15 +135,32 @@ public class ConversationController(DatabaseContext context) : BaseController(co
 
         if (!includeAllForStaff)
         {
-            query = query.Where(c => c.Participants.Any(p => p.UserId == currentUserId));
+            // Users see only their own conversations (where they are the customer)
+            query = query.Where(c =>
+                c.CustomerId == currentUserId || c.Participants.Any(p => p.UserId == currentUserId)
+            );
         }
 
-        // Fetch conversations with minimal data
+        // Filter by status if provided
+        if (status.HasValue)
+        {
+            query = query.Where(c => c.Status == status.Value);
+        }
+
+        // Fetch conversations with all fields
         var conversationList = await query
+            .Include(c => c.Customer)
             .Select(c => new
             {
                 c.Id,
                 c.Subject,
+                c.CustomerId,
+                CustomerName = c.Customer.UserName ?? c.Customer.Email ?? "Unknown",
+                c.Status,
+                c.Priority,
+                c.OrderId,
+                c.LastMessageAt,
+                c.UnreadCount,
                 c.CreatedAt,
                 c.UpdatedAt,
             })
@@ -149,11 +185,15 @@ public class ConversationController(DatabaseContext context) : BaseController(co
             .Select(c => new ConversationResponse(
                 c.Id,
                 c.Subject,
+                c.CustomerId,
+                c.CustomerName,
+                c.Status,
+                c.Priority,
+                c.OrderId,
+                c.LastMessageAt,
+                c.UnreadCount,
                 c.CreatedAt,
                 c.UpdatedAt,
-                messages
-                    .Where(m => m.ConversationId == c.Id && m.Participant.UserId != currentUserId && !m.IsRead)
-                    .Count(),
                 messages
                     .Where(m => m.ConversationId == c.Id)
                     .OrderByDescending(m => m.CreatedAt)
@@ -179,12 +219,215 @@ public class ConversationController(DatabaseContext context) : BaseController(co
                         p.UserId == currentUserId
                     ))
             ))
-            .OrderByDescending(c => c.LastMessage != null ? c.LastMessage.CreatedAt : c.CreatedAt)
+            .OrderByDescending(c => c.LastMessageAt ?? c.CreatedAt)
             .ToList();
 
         return Ok(conversations);
     }
 
+    /// <summary>
+    /// Create a new support conversation. All admins are automatically added as participants.
+    /// Customers can use this to start a support ticket.
+    /// </summary>
+    [HttpPost("support")]
+    public async Task<ActionResult<ConversationResponse>> CreateSupportConversation(
+        [FromBody] CreateSupportConversationRequest request
+    )
+    {
+        var currentUserId = User.GetUserId();
+        if (currentUserId is null)
+            return Unauthorized();
+
+        if (string.IsNullOrWhiteSpace(request.Subject))
+            return BadRequest("Subject is required for support conversations.");
+
+        var currentUser = await Context.Users.FindAsync(currentUserId);
+        if (currentUser is null)
+            return Unauthorized();
+
+        // Create the conversation with the customer as the owner
+        var conversation = new Conversation
+        {
+            Subject = request.Subject.Trim(),
+            CustomerId = currentUserId,
+            OrderId = request.OrderId,
+            Status = ConversationStatus.Pending,
+            Priority = ConversationPriority.Normal,
+        };
+
+        Context.Conversations.Add(conversation);
+
+        // Add the customer as a participant
+        var customerParticipant = new ConversationParticipant
+        {
+            ConversationId = conversation.Id,
+            UserId = currentUserId,
+            Role = ConversationParticipantRole.Member,
+        };
+        Context.ConversationParticipants.Add(customerParticipant);
+
+        // Auto-add all admins as participants
+        var adminRoleId = await Context.Roles.Where(r => r.Name == Roles.Admin).Select(r => r.Id).FirstOrDefaultAsync();
+
+        if (adminRoleId != null)
+        {
+            var adminUserIds = await Context
+                .UserRoles.Where(ur => ur.RoleId == adminRoleId)
+                .Select(ur => ur.UserId)
+                .ToListAsync();
+
+            foreach (var adminId in adminUserIds)
+            {
+                Context.ConversationParticipants.Add(
+                    new ConversationParticipant
+                    {
+                        ConversationId = conversation.Id,
+                        UserId = adminId,
+                        Role = ConversationParticipantRole.Admin,
+                    }
+                );
+            }
+        }
+
+        await Context.SaveChangesAsync();
+
+        // If an initial message was provided, add it
+        if (!string.IsNullOrWhiteSpace(request.InitialMessage))
+        {
+            var message = new ConversationMessage
+            {
+                ConversationId = conversation.Id,
+                ParticipantId = customerParticipant.Id,
+                Content = request.InitialMessage.Trim(),
+                IsRead = false,
+            };
+
+            Context.ConversationMessages.Add(message);
+            conversation.LastMessageAt = DateTime.UtcNow;
+            conversation.UnreadCount = 1;
+
+            await Context.SaveChangesAsync();
+
+            // Notify admins about the new conversation
+            await _notificationService.NotifyAdminsAsync(
+                NotificationType.NewMessage,
+                "New Support Conversation",
+                $"{currentUser.UserName ?? currentUser.Email} started a conversation: {request.Subject}",
+                conversation.Id,
+                NotificationPriority.Normal
+            );
+        }
+
+        // Build and return the response
+        var participants = await Context
+            .ConversationParticipants.Where(p => p.ConversationId == conversation.Id)
+            .Include(p => p.User)
+            .ToListAsync();
+
+        var lastMessage = await Context
+            .ConversationMessages.Where(m => m.ConversationId == conversation.Id)
+            .OrderByDescending(m => m.CreatedAt)
+            .Include(m => m.Participant)
+                .ThenInclude(p => p.User)
+            .FirstOrDefaultAsync();
+
+        var response = new ConversationResponse(
+            conversation.Id,
+            conversation.Subject,
+            conversation.CustomerId,
+            currentUser.UserName ?? currentUser.Email ?? "Unknown",
+            conversation.Status,
+            conversation.Priority,
+            conversation.OrderId,
+            conversation.LastMessageAt,
+            conversation.UnreadCount,
+            conversation.CreatedAt,
+            conversation.UpdatedAt,
+            lastMessage != null
+                ? new MessagePreview(
+                    lastMessage.Id,
+                    lastMessage.Content,
+                    lastMessage.Participant.UserId,
+                    lastMessage.Participant.User.UserName ?? lastMessage.Participant.User.Email ?? "Unknown",
+                    lastMessage.IsRead,
+                    lastMessage.IsDeleted,
+                    lastMessage.IsEdited,
+                    lastMessage.CreatedAt
+                )
+                : null,
+            participants.Select(p => new ParticipantResponse(
+                p.Id,
+                p.UserId,
+                p.User.UserName ?? p.User.Email ?? "Unknown",
+                p.User.Email ?? string.Empty,
+                p.Role,
+                p.UserId == currentUserId
+            ))
+        );
+
+        return CreatedAtAction(nameof(GetConversations), new { id = response.Id }, response);
+    }
+
+    /// <summary>
+    /// Update conversation status. Admin only.
+    /// </summary>
+    [HttpPatch("{conversationId:guid}/status")]
+    [Authorize(Roles = Roles.Admin)]
+    public async Task<IActionResult> UpdateStatus(
+        Guid conversationId,
+        [FromBody] UpdateConversationStatusRequest request
+    )
+    {
+        var conversation = await Context.Conversations.FindAsync(conversationId);
+        if (conversation is null)
+            return NotFound();
+
+        conversation.Status = request.Status;
+        await Context.SaveChangesAsync();
+
+        // Notify the customer if resolved or closed
+        if (request.Status == ConversationStatus.Resolved || request.Status == ConversationStatus.Closed)
+        {
+            var statusText = request.Status == ConversationStatus.Resolved ? "resolved" : "closed";
+            await _notificationService.CreateNotificationAsync(
+                conversation.CustomerId,
+                NotificationType.TicketStatusChanged,
+                $"Conversation {statusText}",
+                $"Your support conversation has been marked as {statusText}",
+                conversationId,
+                null,
+                NotificationPriority.Normal,
+                $"/support?conversation={conversationId}"
+            );
+        }
+
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Update conversation priority. Admin only.
+    /// </summary>
+    [HttpPatch("{conversationId:guid}/priority")]
+    [Authorize(Roles = Roles.Admin)]
+    public async Task<IActionResult> UpdatePriority(
+        Guid conversationId,
+        [FromBody] UpdateConversationPriorityRequest request
+    )
+    {
+        var conversation = await Context.Conversations.FindAsync(conversationId);
+        if (conversation is null)
+            return NotFound();
+
+        conversation.Priority = request.Priority;
+        await Context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Legacy endpoint for creating peer-to-peer conversations.
+    /// For support conversations, use POST /conversation/support instead.
+    /// </summary>
     [HttpPost]
     public async Task<ActionResult<ConversationResponse>> CreateConversation(
         [FromBody] CreateConversationRequest request
@@ -192,6 +435,10 @@ public class ConversationController(DatabaseContext context) : BaseController(co
     {
         var currentUserId = User.GetUserId();
         if (currentUserId is null)
+            return Unauthorized();
+
+        var currentUser = await Context.Users.FindAsync(currentUserId);
+        if (currentUser is null)
             return Unauthorized();
 
         var participantIds =
@@ -218,46 +465,24 @@ public class ConversationController(DatabaseContext context) : BaseController(co
             return BadRequest("One or more participants do not exist.");
         }
 
+        // Check if a conversation with these exact participants already exists
         var existingConversation = await Context
             .Conversations.Where(c => c.Participants.Count == participantIds.Count)
             .Where(c => c.Participants.All(p => participantIds.Contains(p.UserId)))
-            .Select(c => new ConversationResponse(
-                c.Id,
-                c.Subject,
-                c.CreatedAt,
-                c.UpdatedAt,
-                c.Messages.Count(m => m.Participant.UserId != currentUserId && !m.IsRead),
-                c.Messages.OrderByDescending(m => m.CreatedAt)
-                    .Select(m => new MessagePreview(
-                        m.Id,
-                        m.Content,
-                        m.Participant.UserId,
-                        m.Participant.User.UserName ?? m.Participant.User.Email ?? "Unknown",
-                        m.IsRead,
-                        m.IsDeleted,
-                        m.IsEdited,
-                        m.CreatedAt
-                    ))
-                    .FirstOrDefault(),
-                c.Participants.Select(p => new ParticipantResponse(
-                    p.Id,
-                    p.UserId,
-                    p.User.UserName ?? p.User.Email ?? "Unknown",
-                    p.User.Email ?? string.Empty,
-                    p.Role,
-                    p.UserId == currentUserId
-                ))
-            ))
             .FirstOrDefaultAsync();
 
         if (existingConversation is not null)
         {
-            return Ok(existingConversation);
+            // Return the existing conversation
+            return await GetConversationById(existingConversation.Id, currentUserId);
         }
 
         var conversation = new Conversation
         {
             Subject = string.IsNullOrWhiteSpace(request.Subject) ? null : request.Subject.Trim(),
+            CustomerId = currentUserId, // Current user is the initiator
+            Status = ConversationStatus.Active, // Peer conversations start active
+            Priority = ConversationPriority.Normal,
         };
 
         Context.Conversations.Add(conversation);
@@ -280,27 +505,68 @@ public class ConversationController(DatabaseContext context) : BaseController(co
 
         await Context.SaveChangesAsync();
 
-        var created = await Context
-            .Conversations.Where(c => c.Id == conversation.Id)
-            .Select(c => new ConversationResponse(
-                c.Id,
-                c.Subject,
-                c.CreatedAt,
-                c.UpdatedAt,
-                0,
-                null,
-                c.Participants.Select(p => new ParticipantResponse(
-                    p.Id,
-                    p.UserId,
-                    p.User.UserName ?? p.User.Email ?? "Unknown",
-                    p.User.Email ?? string.Empty,
-                    p.Role,
-                    p.UserId == currentUserId
-                ))
-            ))
-            .FirstAsync();
+        return await GetConversationById(conversation.Id, currentUserId);
+    }
 
-        return CreatedAtAction(nameof(GetConversations), new { id = created.Id }, created);
+    private async Task<ActionResult<ConversationResponse>> GetConversationById(
+        Guid conversationId,
+        string currentUserId
+    )
+    {
+        var conversation = await Context
+            .Conversations.Include(c => c.Customer)
+            .FirstOrDefaultAsync(c => c.Id == conversationId);
+
+        if (conversation is null)
+            return NotFound();
+
+        var participants = await Context
+            .ConversationParticipants.Where(p => p.ConversationId == conversationId)
+            .Include(p => p.User)
+            .ToListAsync();
+
+        var lastMessage = await Context
+            .ConversationMessages.Where(m => m.ConversationId == conversationId)
+            .OrderByDescending(m => m.CreatedAt)
+            .Include(m => m.Participant)
+                .ThenInclude(p => p.User)
+            .FirstOrDefaultAsync();
+
+        var response = new ConversationResponse(
+            conversation.Id,
+            conversation.Subject,
+            conversation.CustomerId,
+            conversation.Customer.UserName ?? conversation.Customer.Email ?? "Unknown",
+            conversation.Status,
+            conversation.Priority,
+            conversation.OrderId,
+            conversation.LastMessageAt,
+            conversation.UnreadCount,
+            conversation.CreatedAt,
+            conversation.UpdatedAt,
+            lastMessage != null
+                ? new MessagePreview(
+                    lastMessage.Id,
+                    lastMessage.Content,
+                    lastMessage.Participant.UserId,
+                    lastMessage.Participant.User.UserName ?? lastMessage.Participant.User.Email ?? "Unknown",
+                    lastMessage.IsRead,
+                    lastMessage.IsDeleted,
+                    lastMessage.IsEdited,
+                    lastMessage.CreatedAt
+                )
+                : null,
+            participants.Select(p => new ParticipantResponse(
+                p.Id,
+                p.UserId,
+                p.User.UserName ?? p.User.Email ?? "Unknown",
+                p.User.Email ?? string.Empty,
+                p.Role,
+                p.UserId == currentUserId
+            ))
+        );
+
+        return Ok(response);
     }
 
     [HttpGet("{conversationId:guid}/messages")]

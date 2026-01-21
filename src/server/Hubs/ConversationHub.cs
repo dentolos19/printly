@@ -5,18 +5,30 @@ using Microsoft.EntityFrameworkCore;
 using PrintlyServer.Data;
 using PrintlyServer.Data.Auth;
 using PrintlyServer.Data.Entities;
+using PrintlyServer.Services;
 
 namespace PrintlyServer.Hubs;
 
+/// <summary>
+/// Real-time hub for support conversations between customers and admins.
+/// Handles messaging, typing indicators, read receipts, and status updates.
+/// </summary>
 [Authorize(Roles = Roles.Admin + "," + Roles.User)]
-public class ConversationHub(DatabaseContext context, ILogger<ConversationHub> logger) : Hub
+public class ConversationHub(
+    DatabaseContext context,
+    ILogger<ConversationHub> logger,
+    INotificationService notificationService
+) : Hub
 {
     private readonly DatabaseContext _context = context;
     private readonly ILogger<ConversationHub> _logger = logger;
+    private readonly INotificationService _notificationService = notificationService;
 
     private static string ConversationGroupName(Guid conversationId) => $"conversation-{conversationId}";
 
     private const string StaffGroupName = "staff";
+
+    #region Response DTOs
 
     public record ConversationMessageResponse(
         Guid Id,
@@ -37,6 +49,30 @@ public class ConversationHub(DatabaseContext context, ILogger<ConversationHub> l
         string? ReplyToSenderName
     );
 
+    public record ConversationStatusResponse(
+        Guid ConversationId,
+        ConversationStatus Status,
+        string UpdatedByUserId,
+        string UpdatedByUserName,
+        DateTime UpdatedAt
+    );
+
+    public record ConversationPriorityResponse(
+        Guid ConversationId,
+        ConversationPriority Priority,
+        string UpdatedByUserId,
+        string UpdatedByUserName,
+        DateTime UpdatedAt
+    );
+
+    public record TypingIndicator(Guid ConversationId, string UserId, string UserName, bool IsAdmin);
+
+    public record ReadReceiptResponse(Guid ConversationId, string ReaderId, List<Guid> MessageIds, DateTime ReadAt);
+
+    #endregion
+
+    #region Helpers
+
     private string? GetUserId()
     {
         return Context.UserIdentifier
@@ -54,7 +90,13 @@ public class ConversationHub(DatabaseContext context, ILogger<ConversationHub> l
 
     private async Task<bool> HasConversationAccessAsync(Guid conversationId, string userId, bool isAdmin)
     {
+        // Admins can access all conversations
         if (isAdmin)
+            return true;
+
+        // Check if user is a participant or the customer
+        var conversation = await _context.Conversations.FindAsync(conversationId);
+        if (conversation != null && conversation.CustomerId == userId)
             return true;
 
         return await _context.ConversationParticipants.AnyAsync(p =>
@@ -62,18 +104,99 @@ public class ConversationHub(DatabaseContext context, ILogger<ConversationHub> l
         );
     }
 
+    private async Task<string> GetUserDisplayNameAsync(string userId)
+    {
+        var user = await _context.Users.FindAsync(userId);
+        return user?.UserName ?? user?.Email ?? "Unknown";
+    }
+
+    /// <summary>
+    /// Ensures all admin users are participants in the conversation.
+    /// Called when a conversation is first accessed or a message is sent.
+    /// </summary>
+    private async Task EnsureAdminsAreParticipantsAsync(Guid conversationId)
+    {
+        // Get all admin user IDs
+        var adminRoleId = await _context
+            .Roles.Where(r => r.Name == Roles.Admin)
+            .Select(r => r.Id)
+            .FirstOrDefaultAsync();
+
+        if (adminRoleId == null)
+            return;
+
+        var adminUserIds = await _context
+            .UserRoles.Where(ur => ur.RoleId == adminRoleId)
+            .Select(ur => ur.UserId)
+            .ToListAsync();
+
+        // Get existing participants
+        var existingParticipantIds = await _context
+            .ConversationParticipants.Where(p => p.ConversationId == conversationId)
+            .Select(p => p.UserId)
+            .ToListAsync();
+
+        // Add missing admins as participants
+        var missingAdmins = adminUserIds.Except(existingParticipantIds).ToList();
+
+        foreach (var adminId in missingAdmins)
+        {
+            _context.ConversationParticipants.Add(
+                new ConversationParticipant
+                {
+                    ConversationId = conversationId,
+                    UserId = adminId,
+                    Role = ConversationParticipantRole.Admin,
+                }
+            );
+        }
+
+        if (missingAdmins.Count > 0)
+        {
+            await _context.SaveChangesAsync();
+            _logger.LogDebug(
+                "[ConversationHub] Added {Count} admins to conversation {ConversationId}",
+                missingAdmins.Count,
+                conversationId
+            );
+        }
+    }
+
+    #endregion
+
+    #region Connection Management
+
     public override async Task OnConnectedAsync()
     {
         var userId = GetUserId();
-        if (!string.IsNullOrEmpty(userId) && await IsAdminAsync(userId))
+        if (!string.IsNullOrEmpty(userId))
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, StaffGroupName);
-            _logger.LogDebug("[ConversationHub] Added {UserId} to staff group", userId);
+            var isAdmin = await IsAdminAsync(userId);
+            if (isAdmin)
+            {
+                await Groups.AddToGroupAsync(Context.ConnectionId, StaffGroupName);
+                _logger.LogDebug("[ConversationHub] Added admin {UserId} to staff group", userId);
+            }
         }
 
         await base.OnConnectedAsync();
     }
 
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        var userId = GetUserId();
+        _logger.LogDebug("[ConversationHub] User {UserId} disconnected", userId);
+        await base.OnDisconnectedAsync(exception);
+    }
+
+    #endregion
+
+    #region Conversation Access
+
+    /// <summary>
+    /// Join a conversation to receive real-time updates.
+    /// Admins are automatically added as participants when they join.
+    /// </summary>
     public async Task JoinConversation(Guid conversationId)
     {
         var userId = GetUserId();
@@ -84,15 +207,30 @@ public class ConversationHub(DatabaseContext context, ILogger<ConversationHub> l
         if (!await HasConversationAccessAsync(conversationId, userId, isAdmin))
             throw new HubException("Not authorized to join this conversation");
 
+        // Make sure all admins are participants
+        await EnsureAdminsAreParticipantsAsync(conversationId);
+
         await Groups.AddToGroupAsync(Context.ConnectionId, ConversationGroupName(conversationId));
         _logger.LogDebug("[ConversationHub] {UserId} joined conversation {ConversationId}", userId, conversationId);
     }
 
+    /// <summary>
+    /// Leave a conversation to stop receiving real-time updates.
+    /// </summary>
     public async Task LeaveConversation(Guid conversationId)
     {
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, ConversationGroupName(conversationId));
+        var userId = GetUserId();
+        _logger.LogDebug("[ConversationHub] {UserId} left conversation {ConversationId}", userId, conversationId);
     }
 
+    #endregion
+
+    #region Messaging
+
+    /// <summary>
+    /// Send a message in a conversation. Supports reply-to for quoting previous messages.
+    /// </summary>
     public async Task SendMessage(Guid conversationId, string content, Guid? replyToMessageId = null)
     {
         var userId = GetUserId();
@@ -109,9 +247,14 @@ public class ConversationHub(DatabaseContext context, ILogger<ConversationHub> l
         var conversation = await _context
             .Conversations.Include(c => c.Participants)
             .FirstOrDefaultAsync(c => c.Id == conversationId);
+
         if (conversation is null)
             throw new HubException("Conversation not found");
 
+        // Make sure all admins are in the conversation
+        await EnsureAdminsAreParticipantsAsync(conversationId);
+
+        // Get or create participant record for the sender
         var participant = conversation.Participants.FirstOrDefault(p => p.UserId == userId);
         if (participant is null)
         {
@@ -125,6 +268,7 @@ public class ConversationHub(DatabaseContext context, ILogger<ConversationHub> l
             await _context.SaveChangesAsync();
         }
 
+        // Handle reply-to message
         ConversationMessage? replyToMessage = null;
         if (replyToMessageId.HasValue)
         {
@@ -134,6 +278,7 @@ public class ConversationHub(DatabaseContext context, ILogger<ConversationHub> l
                 .FirstOrDefaultAsync(m => m.Id == replyToMessageId.Value && m.ConversationId == conversationId);
         }
 
+        // Create the message
         var message = new ConversationMessage
         {
             ConversationId = conversationId,
@@ -144,14 +289,24 @@ public class ConversationHub(DatabaseContext context, ILogger<ConversationHub> l
         };
 
         _context.ConversationMessages.Add(message);
+
+        // Update conversation metadata
+        conversation.LastMessageAt = DateTime.UtcNow;
+        if (!isAdmin)
+        {
+            conversation.UnreadCount++;
+        }
+
+        // Auto-activate pending conversations when admin replies
+        if (isAdmin && conversation.Status == ConversationStatus.Pending)
+        {
+            conversation.Status = ConversationStatus.Active;
+        }
+
         await _context.SaveChangesAsync();
 
-        var senderName =
-            await _context
-                .Users.Where(u => u.Id == userId)
-                .Select(u => u.UserName ?? u.Email ?? "Unknown")
-                .FirstOrDefaultAsync()
-            ?? "Unknown";
+        // Build response
+        var senderName = await GetUserDisplayNameAsync(userId);
 
         var response = new ConversationMessageResponse(
             message.Id,
@@ -174,81 +329,58 @@ public class ConversationHub(DatabaseContext context, ILogger<ConversationHub> l
                 : null
         );
 
+        // Broadcast to all participants in the conversation
         await Clients.Group(ConversationGroupName(conversationId)).SendAsync("ConversationMessageReceived", response);
 
-        // Notify staff inbox for new customer messages
+        // Notify staff inbox when customer sends a message
         if (!isAdmin)
         {
             await Clients
                 .Group(StaffGroupName)
-                .SendAsync("ConversationUpdated", new { conversationId, triggeredBy = userId });
-        }
-    }
+                .SendAsync(
+                    "ConversationUpdated",
+                    new
+                    {
+                        conversationId,
+                        triggeredBy = userId,
+                        lastMessageAt = conversation.LastMessageAt,
+                    }
+                );
 
-    public async Task MarkConversationRead(Guid conversationId)
-    {
-        var userId = GetUserId();
-        if (userId is null)
-            throw new HubException("User not authenticated");
-
-        var isAdmin = await IsAdminAsync(userId);
-        if (!await HasConversationAccessAsync(conversationId, userId, isAdmin))
-            throw new HubException("Not authorized to mark read");
-
-        var unreadMessages = await _context
-            .ConversationMessages.Where(m =>
-                m.ConversationId == conversationId && m.Participant.UserId != userId && !m.IsRead
-            )
-            .ToListAsync();
-
-        if (unreadMessages.Count == 0)
-            return;
-
-        var now = DateTime.UtcNow;
-        foreach (var message in unreadMessages)
-        {
-            message.IsRead = true;
-            message.ReadAt = now;
-        }
-
-        await _context.SaveChangesAsync();
-
-        await Clients
-            .Group(ConversationGroupName(conversationId))
-            .SendAsync(
-                "ConversationMessagesRead",
-                new
-                {
-                    conversationId,
-                    readerId = userId,
-                    messageIds = unreadMessages.Select(m => m.Id).ToList(),
-                    readAt = now,
-                }
+            // Send push notification to admins
+            await _notificationService.NotifyAdminsAsync(
+                NotificationType.NewMessage,
+                "New Customer Message",
+                $"{senderName} sent a message: {(content.Length > 50 ? content[..50] + "..." : content)}",
+                conversationId,
+                NotificationPriority.Normal
             );
+        }
+        else
+        {
+            // Admin replied, notify the customer
+            await _notificationService.CreateNotificationAsync(
+                conversation.CustomerId,
+                NotificationType.NewMessage,
+                "New Reply from Support",
+                $"{senderName} replied to your conversation",
+                conversationId,
+                message.Id,
+                NotificationPriority.Normal,
+                $"/support?conversation={conversationId}"
+            );
+        }
+
+        _logger.LogDebug(
+            "[ConversationHub] Message sent in conversation {ConversationId} by {UserId}",
+            conversationId,
+            userId
+        );
     }
 
-    public async Task StartTyping(Guid conversationId)
-    {
-        var userId = GetUserId();
-        if (userId is null)
-            throw new HubException("User not authenticated");
-
-        await Clients
-            .Group(ConversationGroupName(conversationId))
-            .SendAsync("UserStartedTyping", new { conversationId, userId });
-    }
-
-    public async Task StopTyping(Guid conversationId)
-    {
-        var userId = GetUserId();
-        if (userId is null)
-            throw new HubException("User not authenticated");
-
-        await Clients
-            .Group(ConversationGroupName(conversationId))
-            .SendAsync("UserStoppedTyping", new { conversationId, userId });
-    }
-
+    /// <summary>
+    /// Edit a message you previously sent. Only the sender can edit their own messages.
+    /// </summary>
     public async Task EditMessage(Guid messageId, string newContent)
     {
         var userId = GetUserId();
@@ -261,6 +393,7 @@ public class ConversationHub(DatabaseContext context, ILogger<ConversationHub> l
         var message = await _context
             .ConversationMessages.Include(m => m.Participant)
             .FirstOrDefaultAsync(m => m.Id == messageId);
+
         if (message is null)
             throw new HubException("Message not found");
 
@@ -283,13 +416,20 @@ public class ConversationHub(DatabaseContext context, ILogger<ConversationHub> l
                 new
                 {
                     id = message.Id,
+                    conversationId = message.ConversationId,
                     content = message.Content,
                     isEdited = message.IsEdited,
                     editedAt = message.EditedAt,
                 }
             );
+
+        _logger.LogDebug("[ConversationHub] Message {MessageId} edited by {UserId}", messageId, userId);
     }
 
+    /// <summary>
+    /// Delete a message you previously sent. This is a soft delete,
+    /// the message content is replaced with a placeholder.
+    /// </summary>
     public async Task DeleteMessage(Guid messageId)
     {
         var userId = GetUserId();
@@ -299,11 +439,15 @@ public class ConversationHub(DatabaseContext context, ILogger<ConversationHub> l
         var message = await _context
             .ConversationMessages.Include(m => m.Participant)
             .FirstOrDefaultAsync(m => m.Id == messageId);
+
         if (message is null)
             throw new HubException("Message not found");
 
         if (message.Participant.UserId != userId)
             throw new HubException("You can only delete your own messages");
+
+        if (message.IsDeleted)
+            throw new HubException("Message is already deleted");
 
         message.IsDeleted = true;
         message.DeletedAt = DateTime.UtcNow;
@@ -318,9 +462,232 @@ public class ConversationHub(DatabaseContext context, ILogger<ConversationHub> l
                 new
                 {
                     id = message.Id,
+                    conversationId = message.ConversationId,
                     isDeleted = true,
                     deletedAt = message.DeletedAt,
                 }
             );
+
+        _logger.LogDebug("[ConversationHub] Message {MessageId} deleted by {UserId}", messageId, userId);
     }
+
+    #endregion
+
+    #region Read Receipts
+
+    /// <summary>
+    /// Mark all unread messages in a conversation as read.
+    /// Broadcasts the read receipt to all participants so they see the double check marks.
+    /// </summary>
+    public async Task MarkConversationRead(Guid conversationId)
+    {
+        var userId = GetUserId();
+        if (userId is null)
+            throw new HubException("User not authenticated");
+
+        var isAdmin = await IsAdminAsync(userId);
+        if (!await HasConversationAccessAsync(conversationId, userId, isAdmin))
+            throw new HubException("Not authorized to mark read");
+
+        // Find messages sent by others that haven't been read yet
+        var unreadMessages = await _context
+            .ConversationMessages.Where(m =>
+                m.ConversationId == conversationId && m.Participant.UserId != userId && !m.IsRead
+            )
+            .ToListAsync();
+
+        if (unreadMessages.Count == 0)
+            return;
+
+        var now = DateTime.UtcNow;
+        foreach (var message in unreadMessages)
+        {
+            message.IsRead = true;
+            message.ReadAt = now;
+        }
+
+        // If admin is reading, reset the unread count
+        if (isAdmin)
+        {
+            var conversation = await _context.Conversations.FindAsync(conversationId);
+            if (conversation != null)
+            {
+                conversation.UnreadCount = 0;
+            }
+        }
+
+        await _context.SaveChangesAsync();
+
+        var response = new ReadReceiptResponse(conversationId, userId, unreadMessages.Select(m => m.Id).ToList(), now);
+
+        await Clients.Group(ConversationGroupName(conversationId)).SendAsync("ConversationMessagesRead", response);
+
+        _logger.LogDebug(
+            "[ConversationHub] {UserId} marked {Count} messages as read in {ConversationId}",
+            userId,
+            unreadMessages.Count,
+            conversationId
+        );
+    }
+
+    #endregion
+
+    #region Typing Indicators
+
+    /// <summary>
+    /// Broadcast that the user started typing. This is an ephemeral event,
+    /// not persisted to the database.
+    /// </summary>
+    public async Task StartTyping(Guid conversationId)
+    {
+        var userId = GetUserId();
+        if (userId is null)
+            throw new HubException("User not authenticated");
+
+        var isAdmin = await IsAdminAsync(userId);
+        var userName = await GetUserDisplayNameAsync(userId);
+
+        var indicator = new TypingIndicator(conversationId, userId, userName, isAdmin);
+
+        // Broadcast to everyone in the conversation except the sender
+        await Clients
+            .GroupExcept(ConversationGroupName(conversationId), Context.ConnectionId)
+            .SendAsync("UserStartedTyping", indicator);
+
+        // Also notify staff inbox if a customer is typing
+        if (!isAdmin)
+        {
+            await Clients.Group(StaffGroupName).SendAsync("UserStartedTyping", indicator);
+        }
+    }
+
+    /// <summary>
+    /// Broadcast that the user stopped typing. This is an ephemeral event,
+    /// not persisted to the database.
+    /// </summary>
+    public async Task StopTyping(Guid conversationId)
+    {
+        var userId = GetUserId();
+        if (userId is null)
+            throw new HubException("User not authenticated");
+
+        var isAdmin = await IsAdminAsync(userId);
+
+        var indicator = new TypingIndicator(conversationId, userId, "", isAdmin);
+
+        await Clients
+            .GroupExcept(ConversationGroupName(conversationId), Context.ConnectionId)
+            .SendAsync("UserStoppedTyping", indicator);
+
+        if (!isAdmin)
+        {
+            await Clients.Group(StaffGroupName).SendAsync("UserStoppedTyping", indicator);
+        }
+    }
+
+    #endregion
+
+    #region Status and Priority Management (Admin Only)
+
+    /// <summary>
+    /// Update the status of a conversation. Only admins can do this.
+    /// Status changes are broadcast in real-time to all participants.
+    /// </summary>
+    public async Task UpdateConversationStatus(Guid conversationId, ConversationStatus newStatus)
+    {
+        var userId = GetUserId();
+        if (userId is null)
+            throw new HubException("User not authenticated");
+
+        var isAdmin = await IsAdminAsync(userId);
+        if (!isAdmin)
+            throw new HubException("Only admins can update conversation status");
+
+        var conversation = await _context.Conversations.FindAsync(conversationId);
+        if (conversation is null)
+            throw new HubException("Conversation not found");
+
+        var oldStatus = conversation.Status;
+        conversation.Status = newStatus;
+
+        await _context.SaveChangesAsync();
+
+        var userName = await GetUserDisplayNameAsync(userId);
+
+        var response = new ConversationStatusResponse(conversationId, newStatus, userId, userName, DateTime.UtcNow);
+
+        // Broadcast to all participants
+        await Clients.Group(ConversationGroupName(conversationId)).SendAsync("ConversationStatusUpdated", response);
+
+        // Notify staff inbox
+        await Clients.Group(StaffGroupName).SendAsync("ConversationStatusUpdated", response);
+
+        // Notify customer if conversation is resolved or closed
+        if (newStatus == ConversationStatus.Resolved || newStatus == ConversationStatus.Closed)
+        {
+            var statusText = newStatus == ConversationStatus.Resolved ? "resolved" : "closed";
+            await _notificationService.CreateNotificationAsync(
+                conversation.CustomerId,
+                NotificationType.TicketStatusChanged,
+                $"Conversation {statusText}",
+                $"Your support conversation has been marked as {statusText}",
+                conversationId,
+                null,
+                NotificationPriority.Normal,
+                $"/support?conversation={conversationId}"
+            );
+        }
+
+        _logger.LogInformation(
+            "[ConversationHub] Conversation {ConversationId} status changed from {OldStatus} to {NewStatus} by {UserId}",
+            conversationId,
+            oldStatus,
+            newStatus,
+            userId
+        );
+    }
+
+    /// <summary>
+    /// Update the priority of a conversation. Only admins can do this.
+    /// Priority changes are broadcast in real-time to all participants.
+    /// </summary>
+    public async Task UpdateConversationPriority(Guid conversationId, ConversationPriority newPriority)
+    {
+        var userId = GetUserId();
+        if (userId is null)
+            throw new HubException("User not authenticated");
+
+        var isAdmin = await IsAdminAsync(userId);
+        if (!isAdmin)
+            throw new HubException("Only admins can update conversation priority");
+
+        var conversation = await _context.Conversations.FindAsync(conversationId);
+        if (conversation is null)
+            throw new HubException("Conversation not found");
+
+        var oldPriority = conversation.Priority;
+        conversation.Priority = newPriority;
+
+        await _context.SaveChangesAsync();
+
+        var userName = await GetUserDisplayNameAsync(userId);
+
+        var response = new ConversationPriorityResponse(conversationId, newPriority, userId, userName, DateTime.UtcNow);
+
+        // Broadcast to all participants
+        await Clients.Group(ConversationGroupName(conversationId)).SendAsync("ConversationPriorityUpdated", response);
+
+        // Notify staff inbox
+        await Clients.Group(StaffGroupName).SendAsync("ConversationPriorityUpdated", response);
+
+        _logger.LogInformation(
+            "[ConversationHub] Conversation {ConversationId} priority changed from {OldPriority} to {NewPriority} by {UserId}",
+            conversationId,
+            oldPriority,
+            newPriority,
+            userId
+        );
+    }
+
+    #endregion
 }

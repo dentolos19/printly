@@ -19,8 +19,17 @@ public class TicketMessage : BaseEntity
     public bool IsReadByCustomer { get; set; } = false;
     public bool IsReadByAdmin { get; set; } = false;
 
+    // Edit tracking - shows when a message has been modified
+    public bool IsEdited { get; set; } = false;
+    public DateTime? EditedAt { get; set; }
+
+    // Soft delete tracking - deleted messages show "This message was deleted"
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
+
     // Reply/Quote functionality
     public Guid? ReplyToMessageId { get; set; }
+
     [ForeignKey(nameof(ReplyToMessageId))]
     public TicketMessage? ReplyToMessage { get; set; }
 
