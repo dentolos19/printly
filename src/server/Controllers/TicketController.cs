@@ -72,8 +72,8 @@ public class TicketController(
             return false;
 
         // Check if user has Admin role by joining UserRoles with Roles
-        return await Context.UserRoles
-            .Where(ur => ur.UserId == userId)
+        return await Context
+            .UserRoles.Where(ur => ur.UserId == userId)
             .Join(Context.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => r)
             .AnyAsync(r => r.Name == "Admin");
     }
