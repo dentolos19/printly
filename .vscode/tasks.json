@@ -4,11 +4,15 @@
     {
       "label": "Build Server",
       "type": "shell",
-      "command": "dotnet build ${workspaceFolder}/src/server/PrintlyServer.csproj --configuration Debug",
+      "command": "dotnet build '${workspaceFolder}/src/server/PrintlyServer.csproj' --configuration Debug",
       "problemMatcher": "$msCompile",
       "group": {
         "kind": "build",
         "isDefault": true
+      },
+      "presentation": {
+        "reveal": "silent",
+        "clear": true
       }
     },
     {
@@ -18,6 +22,10 @@
       "problemMatcher": [],
       "options": {
         "cwd": "${workspaceFolder}/src/server"
+      },
+      "presentation": {
+        "reveal": "silent",
+        "clear": true
       }
     },
     {
@@ -27,6 +35,10 @@
       "problemMatcher": [],
       "options": {
         "cwd": "${workspaceFolder}/src/server"
+      },
+      "presentation": {
+        "reveal": "silent",
+        "clear": true
       }
     }
   ],

@@ -16,6 +16,11 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
     public DbSet<Broadcast> Broadcasts { get; set; }
     public DbSet<Notification> Notifications { get; set; }
     public DbSet<ChatbotMessage> ChatbotMessages { get; set; }
+    public DbSet<Product> Products { get; set; }
+    public DbSet<ProductVariant> ProductVariants { get; set; }
+    public DbSet<Inventory> Inventories { get; set; }
+    public DbSet<Order> Orders { get; set; }
+    public DbSet<OrderItem> OrderItems { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
@@ -101,6 +106,64 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
 
         modelBuilder.Entity<Notification>()
             .HasIndex(n => n.CreatedAt);
+        modelBuilder.Entity<Notification>().HasIndex(n => n.CreatedAt);
+
+        modelBuilder
+            .Entity<Product>()
+            .HasMany(p => p.Variants)
+            .WithOne(v => v.Product)
+            .HasForeignKey(v => v.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder
+            .Entity<ProductVariant>()
+            .HasOne(v => v.Inventory)
+            .WithOne(i => i.Variant)
+            .HasForeignKey<Inventory>(i => i.VariantId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Unique constraint to prevent duplicate variants (same product, size, color)
+        modelBuilder
+            .Entity<ProductVariant>()
+            .HasIndex(v => new
+            {
+                v.ProductId,
+                v.Size,
+                v.Color,
+            })
+            .IsUnique();
+
+        // Index for querying active products
+        modelBuilder.Entity<Product>().HasIndex(p => p.IsActive);
+
+        // Order relationships
+        modelBuilder
+            .Entity<Order>()
+            .HasOne(o => o.User)
+            .WithMany()
+            .HasForeignKey(o => o.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder
+            .Entity<Order>()
+            .HasMany(o => o.Items)
+            .WithOne(i => i.Order)
+            .HasForeignKey(i => i.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // OrderItem relationships
+        modelBuilder
+            .Entity<OrderItem>()
+            .HasOne(i => i.Variant)
+            .WithMany()
+            .HasForeignKey(i => i.VariantId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Index for querying orders by user and status
+        modelBuilder.Entity<Order>().HasIndex(o => o.UserId);
+        modelBuilder.Entity<Order>().HasIndex(o => o.Status);
+        modelBuilder.Entity<Order>().HasIndex(o => o.CreatedAt);
     }
 
     public override int SaveChanges()

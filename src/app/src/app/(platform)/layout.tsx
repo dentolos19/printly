@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sidebar,
   SidebarContent,
@@ -29,7 +30,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/providers/auth";
-import { cn } from "@/lib/utils";
 import {
   BellIcon,
   BookIcon,
@@ -39,6 +39,7 @@ import {
   MessageCircleIcon,
   MoreVerticalIcon,
   PackageIcon,
+  ShieldIcon,
   UserIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -58,16 +59,22 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Sidebar collapsible={"icon"}>
-        <SidebarHeader
-          className={cn(
-            "h-14 flex-row items-center justify-between border-b",
-            state === "collapsed" && "justify-center",
-            state === "expanded" && "px-4",
-          )}
-        >
-          <img src={"/icon.png"} className={"size-6"} />
-          <h1 className={cn("font-mono text-lg font-bold", state === "collapsed" && "hidden")}>Printly</h1>
-          <NotificationBell className={cn(state === "collapsed" && "hidden")} />
+        <SidebarHeader>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton size="lg" asChild>
+                <Link href="/">
+                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
+                    <img src="/icon.png" className="size-6" />
+                  </div>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-bold">Printly</span>
+                    <span className="truncate text-xs">Customer</span>
+                  </div>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
@@ -169,10 +176,10 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                         <span>Notifications</span>
                       </Link>
                     </DropdownMenuItem>
-                    {claims?.role === "admin" && (
+                    {claims?.role.toLowerCase() === "admin" && (
                       <DropdownMenuItem asChild>
                         <Link href={"/admin"}>
-                          <BellIcon />
+                          <ShieldIcon />
                           <span>Administration</span>
                         </Link>
                       </DropdownMenuItem>
@@ -189,11 +196,18 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
           </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>
-        <header className={"bg-sidebar flex h-14 shrink-0 items-center gap-2 border-b px-4"}>
+      <SidebarInset className="h-svh overflow-hidden">
+        <header className="bg-sidebar flex h-14 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger />
+          <div className="ml-auto flex items-center gap-2">
+            <NotificationBell />
+          </div>
         </header>
-        <main className={"bg-background flex-1 overflow-auto"}>{children}</main>
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <ScrollArea className="h-full">
+            <main className="bg-background flex-1 p-4">{children}</main>
+          </ScrollArea>
+        </div>
       </SidebarInset>
       <ChatbotWidget />
     </>

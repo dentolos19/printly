@@ -6,6 +6,7 @@ import { IconToolbar } from "@/app/designer/components/icon-toolbar";
 import { LeftPanel, RightPanel } from "@/app/designer/components/panels";
 import { StatusBar } from "@/app/designer/components/status-bar";
 import { ToolbarHeader } from "@/app/designer/components/toolbar-header";
+import { ArtStyle, GeneratedImage } from "@/app/designer/types";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useServer } from "@/lib/providers/server";
 import { cn } from "@/lib/utils";
@@ -52,29 +53,60 @@ export default function Page() {
 
   const [initialDesignId, setInitialDesignId] = useState<string | null>(isNew ? null : designId || null);
   const [initialDesignName, setInitialDesignName] = useState("Untitled Design");
-  const [isLoading, setIsLoading] = useState(!isNew && !!designId);
+  const [initialGeneratedImages, setInitialGeneratedImages] = useState<GeneratedImage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load design data if editing an existing design
+  // Load design data and generated images
   useEffect(() => {
-    if (!isNew && designId && designId !== "new") {
-      setIsLoading(true);
-      api.design
-        .getDesign(designId)
-        .then((design) => {
-          setInitialDesignName(design.name);
-          setIsLoading(false);
-        })
-        .catch((error) => {
-          console.error("Failed to load design:", error);
-          setIsLoading(false);
-          router.push("/designer/new");
-        });
-    }
-  }, [designId, isNew, api.design, router]);
+    const loadData = () => {
+      const promises: Promise<void>[] = [];
+
+      // Load design if editing an existing one
+      if (!isNew && designId && designId !== "new") {
+        promises.push(
+          api.design
+            .getDesign(designId)
+            .then((design) => {
+              setInitialDesignName(design.name);
+            })
+            .catch((error) => {
+              console.error("Failed to load design:", error);
+              router.push("/designer/new");
+            }),
+        );
+      }
+
+      // Load previously generated images
+      promises.push(
+        api.generate
+          .getGeneratedImages()
+          .then((images) => {
+            // Use new public view route for images
+            const formattedImages = images.map((img) => ({
+              id: img.id,
+              url: `/assets/${img.id}/view`,
+              prompt: img.prompt,
+              style: img.style as ArtStyle | undefined,
+              createdAt: new Date(img.createdAt),
+            }));
+            setInitialGeneratedImages(formattedImages as GeneratedImage[]);
+          })
+          .catch((error) => {
+            console.error("Failed to load generated images:", error);
+          }),
+      );
+
+      Promise.all(promises).finally(() => {
+        setIsLoading(false);
+      });
+    };
+
+    loadData();
+  }, [designId, isNew, api.design, api.generate, router]);
 
   // Save handler
   const handleSave = useCallback(
-    (data: { name: string; data: string }) => {
+    (data: { name: string; data: string; cover?: string }) => {
       return new Promise<{ id: string }>((resolve, reject) => {
         if (initialDesignId) {
           // Update existing design
@@ -82,6 +114,7 @@ export default function Page() {
             .updateDesign(initialDesignId, {
               name: data.name,
               data: data.data,
+              cover: data.cover,
             })
             .then((design) => {
               resolve({ id: design.id });
@@ -93,6 +126,7 @@ export default function Page() {
             .createDesign({
               name: data.name,
               data: data.data,
+              cover: data.cover,
             })
             .then((design) => {
               setInitialDesignId(design.id);
@@ -127,13 +161,13 @@ export default function Page() {
 
   // Generate image handler for AI Generator
   const handleGenerateImage = useCallback(
-    (prompt: string) => {
-      return new Promise<string>((resolve, reject) => {
+    (prompt: string, style?: string) => {
+      return new Promise<{ url: string; assetId: string }>((resolve, reject) => {
         api.generate
-          .generateImage(prompt)
-          .then((blob) => {
+          .generateImage(prompt, style)
+          .then(({ blob, assetId }) => {
             const url = URL.createObjectURL(blob);
-            resolve(url);
+            resolve({ url, assetId });
           })
           .catch(reject);
       });
@@ -158,6 +192,7 @@ export default function Page() {
         <DesignerProvider
           initialDesignId={initialDesignId}
           initialDesignName={initialDesignName}
+          initialGeneratedImages={initialGeneratedImages}
           onSave={handleSave}
           onLoad={handleLoad}
           onGenerateImage={handleGenerateImage}

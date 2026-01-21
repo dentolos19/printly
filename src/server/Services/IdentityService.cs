@@ -99,7 +99,7 @@ public class IdentityService
         if (!userResult.Succeeded)
             throw new Exception("Failed to create user.");
 
-        var roleResult = await _userManager.AddToRoleAsync(user, Roles.User);
+        var roleResult = await _userManager.AddToRoleAsync(user, Roles.Admin);
 
         if (!roleResult.Succeeded)
             throw new Exception("Failed to assign role to user.");

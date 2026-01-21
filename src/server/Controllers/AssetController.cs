@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PrintlyServer.Data;
+using PrintlyServer.Data.Entities;
 using PrintlyServer.Services;
 
 namespace PrintlyServer.Controllers;
@@ -33,7 +34,7 @@ public class AssetController(DatabaseContext context, StorageService storageServ
             return Unauthorized();
 
         var assets = await Context
-            .Assets.Where(a => a.UserId == userId && !a.IsDeleted)
+            .Assets.Where(a => a.UserId == userId && !a.IsDeleted && a.Category != AssetCategory.Cover)
             .OrderByDescending(a => a.CreatedAt)
             .Select(a => new AssetResponse(
                 a.Id,
@@ -52,14 +53,11 @@ public class AssetController(DatabaseContext context, StorageService storageServ
     }
 
     [HttpGet("{id}")]
+    [AllowAnonymous]
     public async Task<ActionResult<AssetResponse>> GetAsset(string id)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId is null)
-            return Unauthorized();
-
         var asset = await Context
-            .Assets.Where(a => a.Id == Guid.Parse(id) && a.UserId == userId && !a.IsDeleted)
+            .Assets.Where(a => a.Id == Guid.Parse(id) && !a.IsDeleted)
             .Select(a => new AssetResponse(
                 a.Id,
                 a.Name,
@@ -118,15 +116,10 @@ public class AssetController(DatabaseContext context, StorageService storageServ
     }
 
     [HttpGet("{id}/download")]
+    [AllowAnonymous]
     public async Task<ActionResult<string>> DownloadAsset(string id)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId is null)
-            return Unauthorized();
-
-        var asset = await Context.Assets.FirstOrDefaultAsync(a =>
-            a.Id == Guid.Parse(id) && a.UserId == userId && !a.IsDeleted
-        );
+        var asset = await Context.Assets.FirstOrDefaultAsync(a => a.Id == Guid.Parse(id) && !a.IsDeleted);
 
         if (asset is null)
             return NotFound();

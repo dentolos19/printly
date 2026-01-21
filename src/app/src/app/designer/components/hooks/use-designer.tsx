@@ -1,11 +1,23 @@
 "use client";
 
 import type { FabricObject } from "fabric";
-import { ActiveSelection, Canvas, Circle, FabricImage, Group, Line, Rect, Textbox, Triangle } from "fabric";
+import {
+  ActiveSelection,
+  Canvas,
+  Circle,
+  FabricImage,
+  Group,
+  Line,
+  PencilBrush,
+  Rect,
+  Textbox,
+  Triangle,
+} from "fabric";
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type {
   AlignmentType,
+  ArtStyle,
   CanvasSize,
   DesignerContextValue,
   DistributionType,
@@ -27,15 +39,17 @@ type DesignerProviderProps = {
   children: ReactNode;
   initialDesignId?: string | null;
   initialDesignName?: string;
-  onSave?: (data: { name: string; data: string }) => Promise<{ id: string }>;
+  initialGeneratedImages?: GeneratedImage[];
+  onSave?: (data: { name: string; data: string; cover?: string }) => Promise<{ id: string }>;
   onLoad?: (id: string) => Promise<{ name: string; data: string }>;
-  onGenerateImage?: (prompt: string) => Promise<string>;
+  onGenerateImage?: (prompt: string, style?: ArtStyle) => Promise<{ url: string; assetId: string }>;
 };
 
 export function DesignerProvider({
   children,
   initialDesignId = null,
   initialDesignName = "Untitled Design",
+  initialGeneratedImages = [],
   onSave,
   onLoad,
   onGenerateImage,
@@ -64,8 +78,11 @@ export function DesignerProvider({
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // AI Generator state
-  const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
+  const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>(initialGeneratedImages);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Clipboard state
+  const [clipboard, setClipboard] = useState<FabricObject[]>([]);
 
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
@@ -90,8 +107,12 @@ export function DesignerProvider({
           backgroundColor: canvas.backgroundColor,
           objects: canvas.toJSON().objects,
         });
+        const cover = canvas.toDataURL({
+          format: "png",
+          multiplier: 0.25,
+        });
 
-        onSave({ name: designName, data: canvasData })
+        onSave({ name: designName, data: canvasData, cover })
           .then((result) => {
             if (result.id && !designId) {
               setDesignId(result.id);
@@ -179,8 +200,12 @@ export function DesignerProvider({
         backgroundColor: canvas.backgroundColor,
         objects: canvas.toJSON().objects,
       });
+      const cover = canvas.toDataURL({
+        format: "png",
+        multiplier: 0.25,
+      });
 
-      onSave({ name: designName, data: canvasData })
+      onSave({ name: designName, data: canvasData, cover })
         .then((result) => {
           if (result.id && !designId) {
             setDesignId(result.id);
@@ -405,6 +430,22 @@ export function DesignerProvider({
     [canvas, canvasSize, updateLayers, saveHistory],
   );
 
+  const setDrawingMode = useCallback(
+    (enabled: boolean, color = "#000000", width = 5) => {
+      if (!canvas) return;
+
+      canvas.isDrawingMode = enabled;
+      if (enabled) {
+        const brush = new PencilBrush(canvas);
+        brush.color = color;
+        brush.width = width;
+        canvas.freeDrawingBrush = brush;
+      }
+      canvas.renderAll();
+    },
+    [canvas],
+  );
+
   // ============================================================================
   // Object manipulation
   // ============================================================================
@@ -503,6 +544,99 @@ export function DesignerProvider({
     updateLayers();
     saveHistory();
   }, [canvas, updateLayers, saveHistory]);
+
+  // ============================================================================
+  // Clipboard operations
+  // ============================================================================
+
+  const copySelected = useCallback(() => {
+    if (!canvas) return;
+
+    const activeObjects = canvas.getActiveObjects();
+    if (activeObjects.length === 0) return;
+
+    const clonePromises = activeObjects.map((obj) => obj.clone());
+    Promise.all(clonePromises).then((clones) => {
+      setClipboard(clones);
+    });
+  }, [canvas]);
+
+  const cutSelected = useCallback(() => {
+    if (!canvas) return;
+
+    const activeObjects = canvas.getActiveObjects();
+    if (activeObjects.length === 0) return;
+
+    const clonePromises = activeObjects.map((obj) => obj.clone());
+    Promise.all(clonePromises).then((clones) => {
+      setClipboard(clones);
+      canvas.discardActiveObject();
+      for (const obj of activeObjects) {
+        canvas.remove(obj);
+      }
+      canvas.renderAll();
+      updateLayers();
+      saveHistory();
+    });
+  }, [canvas, updateLayers, saveHistory]);
+
+  const paste = useCallback(() => {
+    if (!canvas || clipboard.length === 0) return;
+
+    canvas.discardActiveObject();
+
+    const clonePromises = clipboard.map((obj) => obj.clone());
+    Promise.all(clonePromises).then((clones) => {
+      for (const clone of clones) {
+        clone.set({
+          left: (clone.left || 0) + 20,
+          top: (clone.top || 0) + 20,
+        });
+        (clone as FabricObject & { id: string }).id = `paste-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+        canvas.add(clone);
+      }
+
+      if (clones.length === 1) {
+        canvas.setActiveObject(clones[0]);
+      } else {
+        const selection = new ActiveSelection(clones, { canvas });
+        canvas.setActiveObject(selection);
+      }
+
+      // Update clipboard with offset for next paste
+      const newClipboardPromises = clones.map((obj) => obj.clone());
+      Promise.all(newClipboardPromises).then((newClones) => {
+        setClipboard(newClones);
+      });
+
+      canvas.renderAll();
+      updateLayers();
+      saveHistory();
+    });
+  }, [canvas, clipboard, updateLayers, saveHistory]);
+
+  // ============================================================================
+  // Selection helpers
+  // ============================================================================
+
+  const selectAll = useCallback(() => {
+    if (!canvas) return;
+
+    const objects = canvas.getObjects();
+    if (objects.length === 0) return;
+
+    canvas.discardActiveObject();
+    const selection = new ActiveSelection(objects, { canvas });
+    canvas.setActiveObject(selection);
+    canvas.renderAll();
+  }, [canvas]);
+
+  const deselectAll = useCallback(() => {
+    if (!canvas) return;
+
+    canvas.discardActiveObject();
+    canvas.renderAll();
+  }, [canvas]);
 
   // ============================================================================
   // Alignment & Distribution
@@ -709,11 +843,78 @@ export function DesignerProvider({
   }, [canvas, updateLayers, saveHistory]);
 
   // ============================================================================
+  // Zoom controls
+  // ============================================================================
+
+  const zoomIn = useCallback(() => {
+    setZoom((prev) => Math.min(prev * 1.25, 5));
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    setZoom((prev) => Math.max(prev / 1.25, 0.1));
+  }, []);
+
+  const resetZoom = useCallback(() => {
+    setZoom(1);
+  }, []);
+
+  const fitToScreen = useCallback(() => {
+    const container = document.querySelector("[data-canvas-container]");
+    if (!container) {
+      setZoom(0.25);
+      return;
+    }
+
+    const containerRect = container.getBoundingClientRect();
+    const padding = 80;
+    const availableWidth = containerRect.width - padding * 2;
+    const availableHeight = containerRect.height - padding * 2;
+
+    const scaleX = availableWidth / canvasSize.width;
+    const scaleY = availableHeight / canvasSize.height;
+    const newZoom = Math.min(scaleX, scaleY, 1);
+
+    setZoom(Math.max(newZoom, 0.1));
+  }, [canvasSize]);
+
+  // ============================================================================
+  // Resize design
+  // ============================================================================
+
+  const resizeDesign = useCallback(
+    (newSize: CanvasSize, scaleContent = false) => {
+      if (!canvas) return;
+
+      if (scaleContent) {
+        const scaleX = newSize.width / canvasSize.width;
+        const scaleY = newSize.height / canvasSize.height;
+
+        const objects = canvas.getObjects();
+        for (const obj of objects) {
+          obj.set({
+            left: (obj.left || 0) * scaleX,
+            top: (obj.top || 0) * scaleY,
+            scaleX: (obj.scaleX || 1) * scaleX,
+            scaleY: (obj.scaleY || 1) * scaleY,
+          });
+          obj.setCoords();
+        }
+      }
+
+      setCanvasSize(newSize);
+      canvas.setDimensions(newSize);
+      canvas.renderAll();
+      saveHistory();
+    },
+    [canvas, canvasSize, saveHistory],
+  );
+
+  // ============================================================================
   // AI Generator
   // ============================================================================
 
   const generateImage = useCallback(
-    (prompt: string) => {
+    (prompt: string, style?: ArtStyle) => {
       return new Promise<void>((resolve, reject) => {
         if (!onGenerateImage) {
           reject(new Error("Image generation not configured"));
@@ -722,12 +923,13 @@ export function DesignerProvider({
 
         setIsGenerating(true);
 
-        onGenerateImage(prompt)
-          .then((url) => {
+        onGenerateImage(prompt, style)
+          .then(({ url, assetId }) => {
             const newImage: GeneratedImage = {
-              id: `gen-${Date.now()}`,
+              id: assetId,
               url,
               prompt,
+              style,
               createdAt: new Date(),
             };
             setGeneratedImages((prev) => [newImage, ...prev]);
@@ -843,10 +1045,16 @@ export function DesignerProvider({
       addTriangle,
       addLine,
       addImage,
+      setDrawingMode,
       deleteSelected,
       duplicateSelected,
       groupSelected,
       ungroupSelected,
+      copySelected,
+      cutSelected,
+      paste,
+      selectAll,
+      deselectAll,
       alignObjects,
       distributeObjects,
       bringForward,
@@ -855,6 +1063,11 @@ export function DesignerProvider({
       sendToBack,
       exportCanvas,
       clearCanvas,
+      zoomIn,
+      zoomOut,
+      resetZoom,
+      fitToScreen,
+      resizeDesign,
       generatedImages,
       isGenerating,
       generateImage,
@@ -888,10 +1101,16 @@ export function DesignerProvider({
       addTriangle,
       addLine,
       addImage,
+      setDrawingMode,
       deleteSelected,
       duplicateSelected,
       groupSelected,
       ungroupSelected,
+      copySelected,
+      cutSelected,
+      paste,
+      selectAll,
+      deselectAll,
       alignObjects,
       distributeObjects,
       bringForward,
@@ -900,6 +1119,11 @@ export function DesignerProvider({
       sendToBack,
       exportCanvas,
       clearCanvas,
+      zoomIn,
+      zoomOut,
+      resetZoom,
+      fitToScreen,
+      resizeDesign,
       generatedImages,
       isGenerating,
       generateImage,

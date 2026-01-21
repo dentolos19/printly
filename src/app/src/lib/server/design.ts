@@ -5,6 +5,7 @@ export type Design = {
   name: string;
   description?: string;
   data: string;
+  coverId?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -13,12 +14,14 @@ export type CreateDesignDto = {
   name: string;
   description?: string;
   data: string;
+  cover?: string;
 };
 
 export type UpdateDesignDto = {
   name?: string;
   description?: string;
   data?: string;
+  cover?: string;
 };
 
 export default function initDesignController(fetch: ServerFetch) {
@@ -87,6 +90,18 @@ export default function initDesignController(fetch: ServerFetch) {
       if (!response.ok) {
         throw new Error("Failed to delete design");
       }
+    },
+
+    getDesignCover: async (id: string): Promise<Blob> => {
+      const response = await fetch(`/design/${id}/cover`, {
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch design cover");
+      }
+
+      return response.blob();
     },
   };
 }

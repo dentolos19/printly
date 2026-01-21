@@ -48,12 +48,14 @@ public class GenerativeService
             ?? string.Empty;
     }
 
-    public async Task<Asset> GenerateImageAsync(string prompt)
+    public async Task<Asset> GenerateImageAsync(string prompt, string? style = null)
     {
+        var styledPrompt = string.IsNullOrEmpty(style) ? prompt : $"{prompt}, in {style.Replace("-", " ")} style";
+
         var requestBody = new
         {
             model = "google/gemini-2.5-flash-image",
-            messages = new[] { new { role = "user", content = prompt } },
+            messages = new[] { new { role = "user", content = styledPrompt } },
             modalities = new[] { "image", "text" },
             stream = false,
         };
@@ -86,7 +88,7 @@ public class GenerativeService
         var imageStream = new MemoryStream(imageBytes);
 
         // Upload image to storage and return asset
-        var imageAsset = await _storage.UploadFileAsync(imageStream, prompt);
+        var imageAsset = await _storage.UploadFileAsync(imageStream, prompt, AssetCategory.Generated);
         return imageAsset;
     }
 }

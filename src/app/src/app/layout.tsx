@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
 import AuthProvider from "@/lib/providers/auth";
+import CartProvider from "@/lib/providers/cart";
 import ServerProvider from "@/lib/providers/server";
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
@@ -28,8 +29,10 @@ export default function Layout({ children }: { children: ReactNode }) {
       <body className={cn(fontSans.variable, fontMono.variable, "antialiased")}>
         <AuthProvider>
           <ServerProvider>
-            {children}
-            <Toaster />
+            <CartProvider>
+              {children}
+              <Toaster />
+            </CartProvider>
           </ServerProvider>
         </AuthProvider>
       </body>

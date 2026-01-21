@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -47,18 +47,11 @@ export default function Page() {
       const data = await api.asset.getAssets();
       setAssets(data);
 
-      // Pre-fetch download URLs for all assets
+      // Build view URLs using new public route
       const urls: Record<string, string> = {};
-      await Promise.all(
-        data.map(async (asset) => {
-          try {
-            const { url } = await api.asset.downloadAsset(asset.id);
-            urls[asset.id] = url;
-          } catch (error) {
-            console.error(`Failed to get URL for asset ${asset.id}`, error);
-          }
-        }),
-      );
+      data.forEach((asset) => {
+        urls[asset.id] = `/assets/${asset.id}/view`;
+      });
       setImageUrls(urls);
     } catch (error) {
       toast.error("Failed to load assets");
@@ -82,9 +75,8 @@ export default function Page() {
       setUploading(true);
       const asset = await api.asset.uploadAsset(uploadFile, uploadDescription);
       setAssets((prev) => [asset, ...prev]);
-      // Fetch download URL for the new asset
-      const { url } = await api.asset.downloadAsset(asset.id);
-      setImageUrls((prev) => ({ ...prev, [asset.id]: url }));
+      // Set view URL using new public route
+      setImageUrls((prev) => ({ ...prev, [asset.id]: `/assets/${asset.id}/view` }));
       toast.success("Asset uploaded successfully");
       setUploadDialogOpen(false);
       setUploadFile(null);
@@ -105,13 +97,12 @@ export default function Page() {
 
     try {
       setGenerating(true);
-      const blob = await api.generate.generateImage(generatePrompt);
+      const { blob } = await api.generate.generateImage(generatePrompt);
       const file = new File([blob], `generated-${Date.now()}.png`, { type: blob.type });
       const asset = await api.asset.uploadAsset(file, `Generated: ${generatePrompt}`);
       setAssets((prev) => [asset, ...prev]);
-      // Fetch download URL for the new asset
-      const { url } = await api.asset.downloadAsset(asset.id);
-      setImageUrls((prev) => ({ ...prev, [asset.id]: url }));
+      // Set view URL using new public route
+      setImageUrls((prev) => ({ ...prev, [asset.id]: `/assets/${asset.id}/view` }));
       toast.success("Image generated successfully");
       setGenerateDialogOpen(false);
       setGeneratePrompt("");
@@ -123,14 +114,8 @@ export default function Page() {
     }
   };
 
-  const handleDownload = async (asset: Asset) => {
-    try {
-      const { url } = await api.asset.downloadAsset(asset.id);
-      window.open(url, "_blank");
-    } catch (error) {
-      toast.error("Failed to get download URL");
-      console.error(error);
-    }
+  const handleDownload = (asset: Asset) => {
+    window.open(`/assets/${asset.id}/view`, "_blank");
   };
 
   const handleDelete = async (asset: Asset) => {
@@ -163,30 +148,41 @@ export default function Page() {
   const renderAssetCard = (asset: Asset) => (
     <Card
       key={asset.id}
-      className={"cursor-pointer transition-shadow hover:shadow-lg"}
+      className={"group cursor-pointer gap-0 overflow-hidden p-0 transition-all hover:shadow-lg"}
       onClick={() => openAssetDetail(asset)}
     >
-      <CardHeader className={"p-0"}>
-        <div className={"bg-muted relative aspect-square overflow-hidden rounded-t-lg"}>
-          {imageUrls[asset.id] ? (
-            <img src={imageUrls[asset.id]} alt={asset.name} className={"size-full object-cover"} />
-          ) : (
-            <div className={"flex size-full items-center justify-center"}>
-              <Spinner />
-            </div>
-          )}
-          {asset.isGenerated && (
-            <div className={"bg-primary text-primary-foreground absolute top-2 right-2 rounded-full px-2 py-1 text-xs"}>
-              <SparklesIcon className={"inline size-3"} /> AI
-            </div>
-          )}
+      <div className={"bg-muted relative aspect-square w-full overflow-hidden"}>
+        {imageUrls[asset.id] ? (
+          <img
+            src={imageUrls[asset.id]}
+            alt={asset.name}
+            className={"size-full object-cover transition-transform duration-500 group-hover:scale-105"}
+          />
+        ) : (
+          <div className={"bg-muted flex size-full items-center justify-center"}>
+            <Spinner className={"text-muted-foreground"} />
+          </div>
+        )}
+        {asset.isGenerated && (
+          <div
+            className={
+              "absolute top-2 right-2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-medium text-white backdrop-blur-sm"
+            }
+          >
+            <SparklesIcon className={"mr-1 inline size-3"} /> AI
+          </div>
+        )}
+      </div>
+      <div className={"p-3"}>
+        <div className={"space-y-1"}>
+          <h3 className={"group-hover:text-primary truncate font-medium transition-colors"}>{asset.name}</h3>
+          {asset.description && <p className={"text-muted-foreground line-clamp-1 text-xs"}>{asset.description}</p>}
+          <div className={"text-muted-foreground flex items-center justify-between pt-1 text-xs"}>
+            <span>{formatFileSize(asset.size)}</span>
+            <span className={"font-mono uppercase opacity-75"}>{asset.type.split("/")[1] || "FILE"}</span>
+          </div>
         </div>
-      </CardHeader>
-      <CardContent className={"p-3"}>
-        <h3 className={"truncate font-semibold"}>{asset.name}</h3>
-        {asset.description && <p className={"text-muted-foreground line-clamp-2 text-xs"}>{asset.description}</p>}
-        <p className={"text-muted-foreground mt-1 text-xs"}>{formatFileSize(asset.size)}</p>
-      </CardContent>
+      </div>
     </Card>
   );
 

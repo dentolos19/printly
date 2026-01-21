@@ -28,33 +28,44 @@ type ToolItem = {
 };
 
 const TOOLS: ToolItem[] = [
-  { id: "select", icon: MousePointer2, label: "Select", shortcut: "V" },
-  { id: "rectangle", icon: Square, label: "Rectangle", shortcut: "R" },
-  { id: "circle", icon: Circle, label: "Circle", shortcut: "C" },
-  { id: "triangle", icon: Triangle, label: "Triangle" },
-  { id: "line", icon: Minus, label: "Line", shortcut: "L" },
-  { id: "text", icon: Type, label: "Text", shortcut: "T" },
+  { id: "select", icon: MousePointer2, label: "Select", shortcut: "Alt+V" },
+  { id: "rectangle", icon: Square, label: "Rectangle", shortcut: "Alt+R" },
+  { id: "circle", icon: Circle, label: "Circle", shortcut: "Alt+C" },
+  { id: "triangle", icon: Triangle, label: "Triangle", shortcut: "Alt+T" },
+  { id: "line", icon: Minus, label: "Line", shortcut: "Alt+L" },
+  { id: "text", icon: Type, label: "Text", shortcut: "Alt+X" },
 ];
 
 const SECONDARY_TOOLS: ToolItem[] = [
-  { id: "shapes", icon: Shapes, label: "Shapes" },
-  { id: "stickers", icon: Smile, label: "Stickers" },
-  { id: "image", icon: Image, label: "Image" },
+  { id: "shapes", icon: Shapes, label: "Shapes", shortcut: "Alt+S" },
+  { id: "stickers", icon: Smile, label: "Stickers", shortcut: "Alt+K" },
+  { id: "assets", icon: Image, label: "Assets", shortcut: "Alt+I" },
+  { id: "ai-generator", icon: Sparkles, label: "AI Generator", shortcut: "Alt+A" },
 ];
 
-const UTILITY_TOOLS: ToolItem[] = [{ id: "draw", icon: PenTool, label: "Draw", shortcut: "P" }];
+const UTILITY_TOOLS: ToolItem[] = [{ id: "draw", icon: PenTool, label: "Draw", shortcut: "Alt+P" }];
 
 type IconToolbarProps = {
   className?: string;
 };
 
 export function IconToolbar({ className }: IconToolbarProps) {
-  const { activeTool, setActiveTool, addRectangle, addCircle, addTriangle, addLine, addText } = useDesigner();
+  const { activeTool, setActiveTool, addRectangle, addCircle, addTriangle, addLine, addText, setDrawingMode } =
+    useDesigner();
 
   function handleToolClick(tool: ToolType) {
+    if (tool === "draw") {
+      setActiveTool(tool);
+      setDrawingMode(true);
+      return;
+    }
+
+    if (activeTool === "draw") {
+      setDrawingMode(false);
+    }
+
     setActiveTool(tool);
 
-    // Auto-add shape when tool is clicked
     switch (tool) {
       case "rectangle":
         addRectangle();
@@ -120,29 +131,6 @@ export function IconToolbar({ className }: IconToolbarProps) {
 
       {/* Utility tools */}
       <div className={"flex flex-col items-center gap-1"}>{UTILITY_TOOLS.map(renderToolButton)}</div>
-
-      {/* Spacer */}
-      <div className={"flex-1"} />
-
-      {/* Bottom tools */}
-      <div className={"flex flex-col items-center gap-1"}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type={"button"}
-              variant={activeTool === "ai-generator" ? "secondary" : "ghost"}
-              size={"icon"}
-              className={cn("h-10 w-10", activeTool === "ai-generator" && "bg-accent")}
-              onClick={() => setActiveTool("ai-generator")}
-            >
-              <Sparkles className={"h-5 w-5"} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side={"right"}>
-            <p>AI Generator</p>
-          </TooltipContent>
-        </Tooltip>
-      </div>
     </div>
   );
 }
