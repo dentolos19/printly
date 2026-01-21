@@ -105,14 +105,22 @@ public class TicketController(
         await Context.Tickets.AddAsync(ticket);
         await Context.SaveChangesAsync();
 
-        // Notify all admins about new ticket
-        await _notificationService.NotifyAdminsAsync(
-            NotificationType.TicketCreated,
-            "New Support Ticket",
-            $"{user.UserName ?? user.Email} created a new ticket: {ticket.Subject}",
-            ticket.Id,
-            NotificationPriority.Normal
-        );
+        // Notify all admins about new ticket (fire and forget, don't fail if notification fails)
+        try
+        {
+            await _notificationService.NotifyAdminsAsync(
+                NotificationType.TicketCreated,
+                "New Support Ticket",
+                $"{user.UserName ?? user.Email} created a new ticket: {ticket.Subject}",
+                ticket.Id,
+                NotificationPriority.Normal
+            );
+        }
+        catch (Exception ex)
+        {
+            // Log but don't fail the ticket creation
+            Console.WriteLine($"Failed to send notification: {ex.Message}");
+        }
 
         return Ok(
             new TicketResponse(

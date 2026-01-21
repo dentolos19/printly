@@ -245,19 +245,19 @@ public class SupportHub(
         await Clients.Group("Admins").SendAsync("ReceiveTicketMessage", response);
         await Clients.User(ticket.CustomerId).SendAsync("ReceiveTicketMessage", response);
 
-        // Send notification
+        // Send notification with dynamic sender name
+        var messagePreview = content.Length > 50 ? content.Substring(0, 50) + "..." : content;
+        var senderName = sender.UserName ?? sender.Email ?? "Unknown";
+
         if (isAdmin)
         {
-            // Admin replied, notify customer
-            await _notificationService.CreateNotificationAsync(
-                ticket.CustomerId,
-                NotificationType.NewMessage,
-                "New Reply from Support",
-                $"{sender.UserName ?? "Admin"} replied to your ticket",
+            // Admin replied, notify customer with admin's name
+            await _notificationService.NotifyNewMessageAsync(
                 ticketId,
-                message.Id,
-                NotificationPriority.Normal,
-                $"/support?ticket={ticketId}"
+                ticket.CustomerId,
+                senderName,
+                messagePreview,
+                message.Id
             );
         }
         else
@@ -266,7 +266,7 @@ public class SupportHub(
             await _notificationService.NotifyAdminsAsync(
                 NotificationType.NewMessage,
                 "New Customer Message",
-                $"{sender.UserName ?? sender.Email} sent a message in ticket: {ticket.Subject}",
+                $"{senderName}: {messagePreview}",
                 ticketId,
                 NotificationPriority.Normal
             );
@@ -836,21 +836,13 @@ public class SupportHub(
         await Clients.Group("Admins").SendAsync("TicketStatusUpdated", response);
         await Clients.User(ticket.CustomerId).SendAsync("TicketStatusUpdated", response);
 
-        // Notify customer if ticket is resolved or closed
-        if (newStatus == TicketStatus.Resolved || newStatus == TicketStatus.Closed)
-        {
-            var statusText = newStatus == TicketStatus.Resolved ? "resolved" : "closed";
-            await _notificationService.CreateNotificationAsync(
-                ticket.CustomerId,
-                NotificationType.TicketStatusChanged,
-                $"Ticket {statusText}",
-                $"Your support ticket has been marked as {statusText}",
-                ticketId,
-                null,
-                NotificationPriority.Normal,
-                $"/support?ticket={ticketId}"
-            );
-        }
+        // Notify customer about all status changes with admin name
+        await _notificationService.NotifyStatusChangeAsync(
+            ticketId,
+            ticket.CustomerId,
+            newStatus,
+            userName
+        );
 
         _logger.LogInformation(
             "[SupportHub] Ticket {TicketId} status changed from {OldStatus} to {NewStatus} by {UserId}",
@@ -891,6 +883,14 @@ public class SupportHub(
         // Broadcast to admins and the customer
         await Clients.Group("Admins").SendAsync("TicketPriorityUpdated", response);
         await Clients.User(ticket.CustomerId).SendAsync("TicketPriorityUpdated", response);
+
+        // Notify customer about priority change (escalation/de-escalation)
+        await _notificationService.NotifyPriorityChangeAsync(
+            ticketId,
+            ticket.CustomerId,
+            newPriority,
+            userName
+        );
 
         _logger.LogInformation(
             "[SupportHub] Ticket {TicketId} priority changed from {OldPriority} to {NewPriority} by {UserId}",

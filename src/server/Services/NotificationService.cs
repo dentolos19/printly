@@ -26,6 +26,37 @@ public interface INotificationService
         Guid? ticketId = null,
         NotificationPriority priority = NotificationPriority.Normal
     );
+
+    /// <summary>
+    /// Notify customer about status change with admin name
+    /// </summary>
+    Task NotifyStatusChangeAsync(
+        Guid ticketId,
+        string customerId,
+        TicketStatus newStatus,
+        string adminName
+    );
+
+    /// <summary>
+    /// Notify customer about priority change (escalation/de-escalation)
+    /// </summary>
+    Task NotifyPriorityChangeAsync(
+        Guid ticketId,
+        string customerId,
+        TicketPriority newPriority,
+        string adminName
+    );
+
+    /// <summary>
+    /// Notify about new message with dynamic sender name
+    /// </summary>
+    Task NotifyNewMessageAsync(
+        Guid ticketId,
+        string recipientId,
+        string senderName,
+        string messagePreview,
+        Guid messageId
+    );
 }
 
 public class NotificationService(
@@ -123,5 +154,94 @@ public class NotificationService(
                 ticketId.HasValue ? $"/support?ticket={ticketId}" : null
             );
         }
+    }
+
+    /// <summary>
+    /// Notify customer about status change with admin name
+    /// </summary>
+    public async Task NotifyStatusChangeAsync(
+        Guid ticketId,
+        string customerId,
+        TicketStatus newStatus,
+        string adminName
+    )
+    {
+        var title = newStatus switch
+        {
+            TicketStatus.Active => "Ticket Now Active",
+            TicketStatus.Resolved => "Ticket Resolved",
+            TicketStatus.Closed => "Ticket Closed",
+            _ => "Ticket Status Updated"
+        };
+
+        var message = $"{adminName} changed your ticket status to {newStatus}";
+
+        await CreateNotificationAsync(
+            customerId,
+            NotificationType.TicketStatusChanged,
+            title,
+            message,
+            ticketId,
+            null,
+            NotificationPriority.Normal,
+            $"/support?ticket={ticketId}"
+        );
+    }
+
+    /// <summary>
+    /// Notify customer about priority change (escalation/de-escalation)
+    /// </summary>
+    public async Task NotifyPriorityChangeAsync(
+        Guid ticketId,
+        string customerId,
+        TicketPriority newPriority,
+        string adminName
+    )
+    {
+        var isEscalation = newPriority >= TicketPriority.High;
+
+        var title = isEscalation ? "Ticket Escalated" : "Ticket Priority Changed";
+        var message = $"{adminName} set your ticket priority to {newPriority}";
+
+        var notificationPriority = newPriority == TicketPriority.Urgent
+            ? NotificationPriority.High
+            : NotificationPriority.Normal;
+
+        await CreateNotificationAsync(
+            customerId,
+            NotificationType.TicketPriorityChanged,
+            title,
+            message,
+            ticketId,
+            null,
+            notificationPriority,
+            $"/support?ticket={ticketId}"
+        );
+    }
+
+    /// <summary>
+    /// Notify about new message with dynamic sender name
+    /// </summary>
+    public async Task NotifyNewMessageAsync(
+        Guid ticketId,
+        string recipientId,
+        string senderName,
+        string messagePreview,
+        Guid messageId
+    )
+    {
+        var title = "New Message";
+        var message = $"{senderName}: {messagePreview}";
+
+        await CreateNotificationAsync(
+            recipientId,
+            NotificationType.NewMessage,
+            title,
+            message,
+            ticketId,
+            messageId,
+            NotificationPriority.Normal,
+            $"/support?ticket={ticketId}"
+        );
     }
 }
