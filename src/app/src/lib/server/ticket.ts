@@ -45,6 +45,14 @@ export type TicketMessage = {
   replyToMessageId?: string | null;
   replyToContent?: string | null;
   replyToSenderName?: string | null;
+  // File attachment fields
+  fileUrl?: string | null;
+  fileName?: string | null;
+  fileType?: string | null;
+  fileSize?: number | null;
+  // Voice message fields
+  voiceMessageUrl?: string | null;
+  voiceMessageDuration?: number | null;
 };
 
 export type CreateTicketPayload = {

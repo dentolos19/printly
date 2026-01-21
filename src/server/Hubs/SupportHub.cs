@@ -13,12 +13,17 @@ namespace PrintlyServer.Hubs;
 /// Handles messaging, typing indicators, read receipts, and ticket management.
 /// </summary>
 [Authorize(Roles = "User,Admin")]
-public class SupportHub(DatabaseContext context, ILogger<SupportHub> logger, INotificationService notificationService)
-    : Hub
+public class SupportHub(
+    DatabaseContext context,
+    ILogger<SupportHub> logger,
+    INotificationService notificationService,
+    StorageService storageService
+) : Hub
 {
     private readonly DatabaseContext _context = context;
     private readonly ILogger<SupportHub> _logger = logger;
     private readonly INotificationService _notificationService = notificationService;
+    private readonly StorageService _storageService = storageService;
 
     #region Response DTOs
 
@@ -37,7 +42,15 @@ public class SupportHub(DatabaseContext context, ILogger<SupportHub> logger, INo
         DateTime CreatedAt,
         Guid? ReplyToMessageId,
         string? ReplyToContent,
-        string? ReplyToSenderName
+        string? ReplyToSenderName,
+        // File attachment fields
+        string? FileUrl,
+        string? FileName,
+        string? FileType,
+        long? FileSize,
+        // Voice message fields
+        string? VoiceMessageUrl,
+        int? VoiceMessageDuration
     );
 
     public record MessageEditedResponse(
@@ -219,7 +232,13 @@ public class SupportHub(DatabaseContext context, ILogger<SupportHub> logger, INo
             message.CreatedAt,
             message.ReplyToMessageId,
             replyToMessage?.Content,
-            replyToMessage?.Sender?.UserName ?? replyToMessage?.Sender?.Email
+            replyToMessage?.Sender?.UserName ?? replyToMessage?.Sender?.Email,
+            null, // FileUrl
+            null, // FileName
+            null, // FileType
+            null, // FileSize
+            null, // VoiceMessageUrl
+            null // VoiceMessageDuration
         );
 
         // Send to all admins and the customer
@@ -358,6 +377,273 @@ public class SupportHub(DatabaseContext context, ILogger<SupportHub> logger, INo
         await Clients.User(message.Ticket.CustomerId).SendAsync("MessageDeleted", response);
 
         _logger.LogDebug("[SupportHub] User {UserId} deleted message {MessageId}", userId, messageId);
+    }
+
+    /// <summary>
+    /// Send a message with a file attachment.
+    /// The file should be uploaded first via the REST API, then this method is called with the asset ID.
+    /// </summary>
+    public async Task SendTicketMessageWithFile(
+        Guid ticketId,
+        string content,
+        Guid fileAssetId,
+        Guid? replyToMessageId = null
+    )
+    {
+        var senderId = GetUserId();
+        if (senderId == null)
+            throw new HubException("User not authenticated");
+
+        var sender = await _context.Users.FindAsync(senderId);
+        if (sender == null)
+            throw new HubException("Sender not found");
+
+        var ticket = await _context.Tickets.Include(t => t.Customer).FirstOrDefaultAsync(t => t.Id == ticketId);
+        if (ticket == null)
+            throw new HubException("Ticket not found");
+
+        // Check authorization
+        var isAdmin = await IsAdmin();
+        if (!isAdmin && ticket.CustomerId != senderId)
+            throw new HubException("Unauthorized to access this ticket");
+
+        // Get the file asset
+        var fileAsset = await _context.Assets.FindAsync(fileAssetId);
+        if (fileAsset == null)
+            throw new HubException("File not found");
+
+        // Validate reply-to message if provided
+        TicketMessage? replyToMessage = null;
+        if (replyToMessageId.HasValue)
+        {
+            replyToMessage = await _context
+                .TicketMessages.Include(m => m.Sender)
+                .FirstOrDefaultAsync(m => m.Id == replyToMessageId.Value && m.TicketId == ticketId);
+        }
+
+        // Create the message with file attachment
+        var message = new TicketMessage
+        {
+            TicketId = ticketId,
+            SenderId = senderId,
+            Content = string.IsNullOrWhiteSpace(content) ? "" : content.Trim(),
+            IsReadByCustomer = isAdmin,
+            IsReadByAdmin = !isAdmin,
+            ReplyToMessageId = replyToMessage?.Id,
+            FileUrl = fileAsset.Id.ToString(),
+            FileName = fileAsset.Name,
+            FileType = fileAsset.Type,
+            FileSize = fileAsset.Size,
+        };
+
+        await _context.TicketMessages.AddAsync(message);
+
+        // Update ticket metadata
+        ticket.LastMessageAt = DateTime.UtcNow;
+        if (!isAdmin)
+            ticket.UnreadCount++;
+
+        if (ticket.Status == TicketStatus.Pending && isAdmin)
+            ticket.Status = TicketStatus.Active;
+
+        await _context.SaveChangesAsync();
+
+        // Get the file download URL
+        var fileUrl = await _storageService.DownloadFileAsync(fileAsset);
+
+        // Build response
+        var response = new TicketMessageResponse(
+            message.Id,
+            message.TicketId,
+            message.SenderId,
+            sender.UserName ?? sender.Email ?? "Unknown",
+            message.Content,
+            message.IsEdited,
+            message.EditedAt,
+            message.IsDeleted,
+            message.DeletedAt,
+            message.IsReadByCustomer,
+            message.IsReadByAdmin,
+            message.CreatedAt,
+            message.ReplyToMessageId,
+            replyToMessage?.Content,
+            replyToMessage?.Sender?.UserName ?? replyToMessage?.Sender?.Email,
+            fileUrl,
+            message.FileName,
+            message.FileType,
+            message.FileSize,
+            null,
+            null
+        );
+
+        // Broadcast to admins and the customer
+        await Clients.Group("Admins").SendAsync("ReceiveTicketMessage", response);
+        await Clients.User(ticket.CustomerId).SendAsync("ReceiveTicketMessage", response);
+
+        // Send notification
+        var notificationContent = fileAsset.Type?.StartsWith("image/") == true ? "sent an image" : "sent a file";
+        if (isAdmin)
+        {
+            await _notificationService.CreateNotificationAsync(
+                ticket.CustomerId,
+                NotificationType.NewMessage,
+                "New Attachment from Support",
+                $"{sender.UserName ?? "Admin"} {notificationContent}",
+                ticketId,
+                message.Id,
+                NotificationPriority.Normal,
+                $"/support?ticket={ticketId}"
+            );
+        }
+        else
+        {
+            await _notificationService.NotifyAdminsAsync(
+                NotificationType.NewMessage,
+                "New Customer Attachment",
+                $"{sender.UserName ?? sender.Email} {notificationContent} in ticket: {ticket.Subject}",
+                ticketId,
+                NotificationPriority.Normal
+            );
+        }
+
+        _logger.LogInformation(
+            "[SupportHub] File message sent in ticket {TicketId} by {UserId}, file: {FileName}",
+            ticketId,
+            senderId,
+            fileAsset.Name
+        );
+    }
+
+    /// <summary>
+    /// Send a voice message.
+    /// The audio file should be uploaded first via the REST API, then this method is called with the asset ID.
+    /// </summary>
+    public async Task SendVoiceMessage(
+        Guid ticketId,
+        Guid voiceAssetId,
+        int durationSeconds,
+        Guid? replyToMessageId = null
+    )
+    {
+        var senderId = GetUserId();
+        if (senderId == null)
+            throw new HubException("User not authenticated");
+
+        var sender = await _context.Users.FindAsync(senderId);
+        if (sender == null)
+            throw new HubException("Sender not found");
+
+        var ticket = await _context.Tickets.Include(t => t.Customer).FirstOrDefaultAsync(t => t.Id == ticketId);
+        if (ticket == null)
+            throw new HubException("Ticket not found");
+
+        // Check authorization
+        var isAdmin = await IsAdmin();
+        if (!isAdmin && ticket.CustomerId != senderId)
+            throw new HubException("Unauthorized to access this ticket");
+
+        // Get the voice asset
+        var voiceAsset = await _context.Assets.FindAsync(voiceAssetId);
+        if (voiceAsset == null)
+            throw new HubException("Voice file not found");
+
+        // Validate reply-to message if provided
+        TicketMessage? replyToMessage = null;
+        if (replyToMessageId.HasValue)
+        {
+            replyToMessage = await _context
+                .TicketMessages.Include(m => m.Sender)
+                .FirstOrDefaultAsync(m => m.Id == replyToMessageId.Value && m.TicketId == ticketId);
+        }
+
+        // Create the voice message
+        var message = new TicketMessage
+        {
+            TicketId = ticketId,
+            SenderId = senderId,
+            Content = "🎤 Voice message",
+            IsReadByCustomer = isAdmin,
+            IsReadByAdmin = !isAdmin,
+            ReplyToMessageId = replyToMessage?.Id,
+            VoiceMessageUrl = voiceAsset.Id.ToString(),
+            VoiceMessageDuration = durationSeconds,
+        };
+
+        await _context.TicketMessages.AddAsync(message);
+
+        // Update ticket metadata
+        ticket.LastMessageAt = DateTime.UtcNow;
+        if (!isAdmin)
+            ticket.UnreadCount++;
+
+        if (ticket.Status == TicketStatus.Pending && isAdmin)
+            ticket.Status = TicketStatus.Active;
+
+        await _context.SaveChangesAsync();
+
+        // Get the voice file URL
+        var voiceUrl = await _storageService.DownloadFileAsync(voiceAsset);
+
+        // Build response
+        var response = new TicketMessageResponse(
+            message.Id,
+            message.TicketId,
+            message.SenderId,
+            sender.UserName ?? sender.Email ?? "Unknown",
+            message.Content,
+            message.IsEdited,
+            message.EditedAt,
+            message.IsDeleted,
+            message.DeletedAt,
+            message.IsReadByCustomer,
+            message.IsReadByAdmin,
+            message.CreatedAt,
+            message.ReplyToMessageId,
+            replyToMessage?.Content,
+            replyToMessage?.Sender?.UserName ?? replyToMessage?.Sender?.Email,
+            null,
+            null,
+            null,
+            null,
+            voiceUrl,
+            message.VoiceMessageDuration
+        );
+
+        // Broadcast to admins and the customer
+        await Clients.Group("Admins").SendAsync("ReceiveTicketMessage", response);
+        await Clients.User(ticket.CustomerId).SendAsync("ReceiveTicketMessage", response);
+
+        // Send notification
+        if (isAdmin)
+        {
+            await _notificationService.CreateNotificationAsync(
+                ticket.CustomerId,
+                NotificationType.NewMessage,
+                "New Voice Message from Support",
+                $"{sender.UserName ?? "Admin"} sent a voice message",
+                ticketId,
+                message.Id,
+                NotificationPriority.Normal,
+                $"/support?ticket={ticketId}"
+            );
+        }
+        else
+        {
+            await _notificationService.NotifyAdminsAsync(
+                NotificationType.NewMessage,
+                "New Customer Voice Message",
+                $"{sender.UserName ?? sender.Email} sent a voice message in ticket: {ticket.Subject}",
+                ticketId,
+                NotificationPriority.Normal
+            );
+        }
+
+        _logger.LogInformation(
+            "[SupportHub] Voice message sent in ticket {TicketId} by {UserId}, duration: {Duration}s",
+            ticketId,
+            senderId,
+            durationSeconds
+        );
     }
 
     #endregion

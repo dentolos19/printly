@@ -13,10 +13,14 @@ namespace PrintlyServer.Controllers;
 /// </summary>
 [Route("ticket")]
 [Authorize(Roles = "User,Admin")]
-public class TicketController(DatabaseContext context, INotificationService notificationService)
-    : BaseController(context)
+public class TicketController(
+    DatabaseContext context,
+    INotificationService notificationService,
+    StorageService storageService
+) : BaseController(context)
 {
     private readonly INotificationService _notificationService = notificationService;
+    private readonly StorageService _storageService = storageService;
 
     public record CreateTicketRequest(string Subject, Guid? OrderId);
 
@@ -35,12 +39,28 @@ public class TicketController(DatabaseContext context, INotificationService noti
 
     public record TicketMessageResponse(
         Guid Id,
+        Guid TicketId,
         string SenderId,
         string SenderName,
         string Content,
+        bool IsEdited,
+        DateTime? EditedAt,
+        bool IsDeleted,
+        DateTime? DeletedAt,
         bool IsReadByCustomer,
         bool IsReadByAdmin,
-        DateTime CreatedAt
+        DateTime CreatedAt,
+        Guid? ReplyToMessageId,
+        string? ReplyToContent,
+        string? ReplyToSenderName,
+        // File attachment fields
+        string? FileUrl,
+        string? FileName,
+        string? FileType,
+        long? FileSize,
+        // Voice message fields
+        string? VoiceMessageUrl,
+        int? VoiceMessageDuration
     );
 
     public record UpdateStatusRequest(TicketStatus Status);
@@ -51,9 +71,11 @@ public class TicketController(DatabaseContext context, INotificationService noti
         if (userId == null)
             return false;
 
-        var userRoles = await Context.UserRoles.Where(ur => ur.UserId == userId).Select(ur => ur.RoleId).ToListAsync();
-
-        return await Context.Roles.Where(r => userRoles.Contains(r.Id) && r.Name == "Admin").AnyAsync();
+        // Check if user has Admin role by joining UserRoles with Roles
+        return await Context.UserRoles
+            .Where(ur => ur.UserId == userId)
+            .Join(Context.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => r)
+            .AnyAsync(r => r.Name == "Admin");
     }
 
     /// <summary>
@@ -210,20 +232,63 @@ public class TicketController(DatabaseContext context, INotificationService noti
             return Forbid();
         }
 
-        var messages = await Context
+        var messagesData = await Context
             .TicketMessages.Include(m => m.Sender)
+            .Include(m => m.ReplyToMessage)
+                .ThenInclude(r => r!.Sender)
             .Where(m => m.TicketId == ticketId)
             .OrderBy(m => m.CreatedAt)
-            .Select(m => new TicketMessageResponse(
-                m.Id,
-                m.SenderId,
-                m.Sender.UserName ?? m.Sender.Email ?? "Unknown",
-                m.Content,
-                m.IsReadByCustomer,
-                m.IsReadByAdmin,
-                m.CreatedAt
-            ))
             .ToListAsync();
+
+        // Build responses with file URLs
+        var messages = new List<TicketMessageResponse>();
+        foreach (var m in messagesData)
+        {
+            string? fileUrl = null;
+            string? voiceUrl = null;
+
+            // Get file URL if present (FileUrl stores the asset ID as string)
+            if (!string.IsNullOrEmpty(m.FileUrl) && Guid.TryParse(m.FileUrl, out var fileAssetId))
+            {
+                var fileAsset = await Context.Assets.FindAsync(fileAssetId);
+                if (fileAsset != null)
+                    fileUrl = await _storageService.DownloadFileAsync(fileAsset);
+            }
+
+            // Get voice URL if present
+            if (!string.IsNullOrEmpty(m.VoiceMessageUrl) && Guid.TryParse(m.VoiceMessageUrl, out var voiceAssetId))
+            {
+                var voiceAsset = await Context.Assets.FindAsync(voiceAssetId);
+                if (voiceAsset != null)
+                    voiceUrl = await _storageService.DownloadFileAsync(voiceAsset);
+            }
+
+            messages.Add(
+                new TicketMessageResponse(
+                    m.Id,
+                    m.TicketId,
+                    m.SenderId,
+                    m.Sender.UserName ?? m.Sender.Email ?? "Unknown",
+                    m.Content,
+                    m.IsEdited,
+                    m.EditedAt,
+                    m.IsDeleted,
+                    m.DeletedAt,
+                    m.IsReadByCustomer,
+                    m.IsReadByAdmin,
+                    m.CreatedAt,
+                    m.ReplyToMessageId,
+                    m.ReplyToMessage?.Content,
+                    m.ReplyToMessage?.Sender?.UserName ?? m.ReplyToMessage?.Sender?.Email,
+                    fileUrl,
+                    m.FileName,
+                    m.FileType,
+                    m.FileSize,
+                    voiceUrl,
+                    m.VoiceMessageDuration
+                )
+            );
+        }
 
         return Ok(messages);
     }
@@ -330,4 +395,61 @@ public class TicketController(DatabaseContext context, INotificationService noti
 
         return Ok();
     }
+
+    /// <summary>
+    /// Upload a file for a ticket message.
+    /// Returns the asset ID which can be used with SendTicketMessageWithFile.
+    /// </summary>
+    [HttpPost("upload-file")]
+    public async Task<ActionResult<FileUploadResponse>> UploadFile([FromForm] IFormFile file)
+    {
+        var userId = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userId == null)
+            return Unauthorized();
+
+        // Validate file
+        if (file == null || file.Length == 0)
+            return BadRequest("No file uploaded");
+
+        // Check file size (max 50MB)
+        if (file.Length > 50 * 1024 * 1024)
+            return BadRequest("File too large. Maximum size is 50MB");
+
+        // Allowed file types
+        var allowedTypes = new[]
+        {
+            "image/jpeg",
+            "image/png",
+            "image/gif",
+            "image/webp",
+            "application/pdf",
+            "audio/mpeg",
+            "audio/wav",
+            "audio/ogg",
+            "audio/webm",
+            "video/mp4",
+            "video/webm",
+        };
+
+        if (!allowedTypes.Contains(file.ContentType))
+            return BadRequest($"File type not allowed: {file.ContentType}");
+
+        try
+        {
+            // Upload to storage
+            using var stream = file.OpenReadStream();
+            var asset = await _storageService.UploadFileAsync(stream, file.FileName, "ticket");
+
+            // Generate download URL
+            var fileUrl = await _storageService.DownloadFileAsync(asset);
+
+            return Ok(new FileUploadResponse(asset.Id, fileUrl, asset.Name, asset.Type, asset.Size));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Failed to upload file: {ex.Message}");
+        }
+    }
+
+    public record FileUploadResponse(Guid FileId, string FileUrl, string FileName, string FileType, long FileSize);
 }

@@ -28,6 +28,11 @@ import {
   Plus,
   MessageSquare,
   Clock,
+  Paperclip,
+  Mic,
+  FileText,
+  Image,
+  Download,
 } from "lucide-react";
 import {
   type Ticket,
@@ -39,6 +44,7 @@ import {
   getPriorityLabel,
   getPriorityColor,
 } from "@/lib/server/ticket";
+import { cn } from "@/lib/utils";
 
 /** SignalR Hub URL for support */
 const HUB_URL = `${API_URL}/hubs/support`;
@@ -60,6 +66,22 @@ interface TicketMessageResponse {
   replyToMessageId?: string;
   replyToContent?: string;
   replyToSenderName?: string;
+  // File attachment fields
+  fileUrl?: string;
+  fileName?: string;
+  fileType?: string;
+  fileSize?: number;
+  // Voice message fields
+  voiceMessageUrl?: string;
+  voiceMessageDuration?: number;
+}
+
+interface FileUploadResponse {
+  fileId: string;
+  fileUrl: string;
+  fileName: string;
+  fileType: string;
+  fileSize: number;
 }
 
 interface MessageEditedResponse {
@@ -131,6 +153,15 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
   const [showNewTicketForm, setShowNewTicketForm] = useState(false);
   const [newTicketSubject, setNewTicketSubject] = useState("");
   const [isCreatingTicket, setIsCreatingTicket] = useState(false);
+  // File upload state
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
+  // Voice recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isConnectingRef = useRef(false);
@@ -702,6 +733,181 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
     }
   };
 
+  /** Handle file selection and upload */
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedTicket || !connectionRef.current || connectionState !== "connected") return;
+
+    // Check file size (50MB max)
+    if (file.size > 50 * 1024 * 1024) {
+      setConnectionError("File too large. Maximum size is 50MB");
+      return;
+    }
+
+    setIsUploadingFile(true);
+
+    try {
+      // Upload file to backend
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch(`${API_URL}/ticket/upload-file`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${auth.tokens?.accessToken}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Upload failed");
+      }
+
+      const data: FileUploadResponse = await response.json();
+      console.log("[Support] File uploaded:", data);
+
+      // Send message with file via SignalR
+      await connectionRef.current.invoke(
+        "SendTicketMessageWithFile",
+        selectedTicket.id,
+        "", // Empty content for file-only messages
+        data.fileId,
+        replyToMessage?.id || null,
+      );
+
+      // Clear reply
+      setReplyToMessage(null);
+      console.log("[Support] File message sent successfully");
+    } catch (error) {
+      console.error("[Support] File upload failed:", error);
+      setConnectionError(error instanceof Error ? error.message : "Failed to upload file");
+    } finally {
+      setIsUploadingFile(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  /** Start voice recording */
+  const startVoiceRecording = async () => {
+    if (!selectedTicket || connectionState !== "connected") return;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        // Stop all tracks
+        stream.getTracks().forEach((track) => track.stop());
+
+        // Clear interval
+        if (recordingIntervalRef.current) {
+          clearInterval(recordingIntervalRef.current);
+          recordingIntervalRef.current = null;
+        }
+
+        // Create blob and upload
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        await uploadVoiceMessage(audioBlob);
+      };
+
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingDuration(0);
+
+      // Start duration counter
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingDuration((prev) => prev + 1);
+      }, 1000);
+
+      console.log("[Support] Voice recording started");
+    } catch (error) {
+      console.error("[Support] Failed to start recording:", error);
+      setConnectionError("Failed to access microphone");
+    }
+  };
+
+  /** Stop voice recording */
+  const stopVoiceRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      console.log("[Support] Voice recording stopped");
+    }
+  };
+
+  /** Upload voice message */
+  const uploadVoiceMessage = async (audioBlob: Blob) => {
+    if (!selectedTicket || !connectionRef.current || connectionState !== "connected") return;
+
+    setIsUploadingFile(true);
+
+    try {
+      const file = new File([audioBlob], `voice-${Date.now()}.webm`, { type: "audio/webm" });
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch(`${API_URL}/ticket/upload-file`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${auth.tokens?.accessToken}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Upload failed");
+      }
+
+      const data: FileUploadResponse = await response.json();
+      console.log("[Support] Voice file uploaded:", data);
+
+      // Send voice message via SignalR
+      await connectionRef.current.invoke(
+        "SendVoiceMessage",
+        selectedTicket.id,
+        data.fileId,
+        recordingDuration,
+        replyToMessage?.id || null,
+      );
+
+      // Clear reply
+      setReplyToMessage(null);
+      setRecordingDuration(0);
+      console.log("[Support] Voice message sent successfully");
+    } catch (error) {
+      console.error("[Support] Voice upload failed:", error);
+      setConnectionError(error instanceof Error ? error.message : "Failed to upload voice message");
+    } finally {
+      setIsUploadingFile(false);
+    }
+  };
+
+  /** Format recording duration */
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  /** Format file size */
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+  };
+
   /** Update ticket status (admin only) */
   const handleStatusChange = async (newStatus: string) => {
     if (!selectedTicket || !connectionRef.current || connectionState !== "connected") return;
@@ -1074,7 +1280,42 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
             </Button>
           </div>
         )}
+        {/* Recording indicator */}
+        {isRecording && (
+          <div className="bg-destructive/10 flex w-full items-center justify-center gap-2 border-b px-3 py-2">
+            <div className="bg-destructive h-2 w-2 animate-pulse rounded-full" />
+            <span className="text-destructive text-sm font-medium">
+              Recording... {formatDuration(recordingDuration)}
+            </span>
+          </div>
+        )}
         <div className="flex w-full gap-2 p-3">
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,application/pdf,.doc,.docx,.txt"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+
+          {/* File upload button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={
+              connectionState !== "connected" ||
+              isUploadingFile ||
+              isRecording ||
+              selectedTicket.status === TicketStatus.Closed
+            }
+            title="Attach file"
+            className="shrink-0"
+          >
+            {isUploadingFile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+          </Button>
+
           <Input
             placeholder={
               selectedTicket.status === TicketStatus.Closed
@@ -1091,6 +1332,25 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
             className="flex-1"
             autoComplete="off"
           />
+
+          {/* Voice recording button */}
+          <Button
+            variant={isRecording ? "destructive" : "ghost"}
+            size="icon"
+            onMouseDown={startVoiceRecording}
+            onMouseUp={stopVoiceRecording}
+            onMouseLeave={isRecording ? stopVoiceRecording : undefined}
+            onTouchStart={startVoiceRecording}
+            onTouchEnd={stopVoiceRecording}
+            disabled={
+              connectionState !== "connected" || isUploadingFile || selectedTicket.status === TicketStatus.Closed
+            }
+            title={isRecording ? "Release to send" : "Hold to record voice message"}
+            className="shrink-0"
+          >
+            <Mic className={cn("h-4 w-4", isRecording && "animate-pulse")} />
+          </Button>
+
           <Button
             onClick={handleSendMessage}
             disabled={
@@ -1228,7 +1488,71 @@ function TicketMessageBubble({
               </div>
             </div>
           ) : (
-            <p className="text-sm break-words">{message.content}</p>
+            <>
+              {/* Voice message */}
+              {message.voiceMessageUrl && (
+                <div className="mb-2 flex items-center gap-2">
+                  <audio src={message.voiceMessageUrl} controls className="h-8 max-w-[200px]" />
+                  {message.voiceMessageDuration && (
+                    <span className="text-xs opacity-70">
+                      {Math.floor(message.voiceMessageDuration / 60)}:
+                      {(message.voiceMessageDuration % 60).toString().padStart(2, "0")}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* File/Image attachment */}
+              {message.fileUrl && (
+                <div className="mb-2">
+                  {message.fileType?.startsWith("image/") ? (
+                    <a href={message.fileUrl} target="_blank" rel="noopener noreferrer" className="block">
+                      <img
+                        src={message.fileUrl}
+                        alt={message.fileName || "Image"}
+                        className="max-h-48 max-w-full rounded-md object-cover hover:opacity-90"
+                      />
+                    </a>
+                  ) : (
+                    <a
+                      href={message.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        "flex items-center gap-2 rounded-md border p-2 transition-colors",
+                        isOwnMessage
+                          ? "border-primary-foreground/30 hover:bg-primary-foreground/10"
+                          : "border-border hover:bg-muted/50",
+                      )}
+                    >
+                      {message.fileType?.includes("pdf") ? (
+                        <FileText className="h-5 w-5 shrink-0" />
+                      ) : message.fileType?.startsWith("image/") ? (
+                        <Image className="h-5 w-5 shrink-0" />
+                      ) : (
+                        <Paperclip className="h-5 w-5 shrink-0" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">{message.fileName || "File"}</p>
+                        {message.fileSize && (
+                          <p className="text-xs opacity-70">
+                            {message.fileSize < 1024
+                              ? `${message.fileSize} B`
+                              : message.fileSize < 1024 * 1024
+                                ? `${(message.fileSize / 1024).toFixed(1)} KB`
+                                : `${(message.fileSize / 1024 / 1024).toFixed(2)} MB`}
+                          </p>
+                        )}
+                      </div>
+                      <Download className="h-4 w-4 shrink-0 opacity-70" />
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {/* Text content */}
+              {message.content && <p className="text-sm break-words">{message.content}</p>}
+            </>
           )}
         </div>
 

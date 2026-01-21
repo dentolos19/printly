@@ -33,9 +33,17 @@ public class TicketMessage : BaseEntity
     [ForeignKey(nameof(ReplyToMessageId))]
     public TicketMessage? ReplyToMessage { get; set; }
 
-    // LiveKit fields (for future implementation)
+    // File attachment fields
+    public string? FileUrl { get; set; }
+    public string? FileName { get; set; }
+    public string? FileType { get; set; }
+    public long? FileSize { get; set; }
+
+    // Voice message fields
     public string? VoiceMessageUrl { get; set; }
     public int? VoiceMessageDuration { get; set; }
+
+    // Call fields (for future implementation)
     public string? CallId { get; set; }
     public string? CallParticipants { get; set; }
     public int? CallDuration { get; set; }
