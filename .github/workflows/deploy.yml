@@ -4,6 +4,11 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      allow_reset:
+        description: "Destroy and recreate the database if migrations fail"
+        type: boolean
+        default: false
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: true
@@ -48,12 +53,28 @@ jobs:
         run: dotnet build --configuration Release
 
       - name: Run Migrations
+        id: migrations
+        continue-on-error: ${{ github.event.inputs.allow_reset == 'true' }}
         working-directory: src/server
         run: |
           dotnet tool restore
           dotnet ef database update
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Reset Database (optional)
+        if: steps.migrations.outcome == 'failure' && github.event.inputs.allow_reset == 'true'
+        working-directory: src/server
+        run: |
+          echo "Migration failed. Force resetting database..."
+          dotnet ef database drop --force
+          dotnet ef database update
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Fail Migration (optional)
+        if: steps.migrations.outcome == 'failure' && github.event.inputs.allow_reset != 'true'
+        run: exit 1
 
       - name: Deploy Server to Cloudflare
         uses: cloudflare/wrangler-action@v3
