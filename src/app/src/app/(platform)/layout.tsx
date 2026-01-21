@@ -33,7 +33,6 @@ import { useAuth } from "@/lib/providers/auth";
 import {
   BellIcon,
   BookIcon,
-  ImageIcon,
   LayoutDashboardIcon,
   LogOutIcon,
   MessageCircleIcon,
@@ -91,17 +90,9 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <Link href={"/designs"}>
+                    <Link href={"/library"}>
                       <BookIcon />
-                      <span>Designs</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href={"/assets"}>
-                      <ImageIcon />
-                      <span>Assets</span>
+                      <span>Library</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

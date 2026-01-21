@@ -354,9 +354,7 @@ export default function Page() {
   const renderAssetCard = (asset: Asset) => (
     <Card
       key={asset.id}
-      className={
-        "group hover:border-primary/50 cursor-pointer gap-0 overflow-hidden border-2 p-0 transition-all hover:shadow-xl"
-      }
+      className={"group cursor-pointer gap-0 overflow-hidden border-2 p-0 transition-all hover:border-primary/50 hover:shadow-xl"}
       onClick={() => openAssetDetail(asset)}
     >
       <div className={"bg-muted relative aspect-square w-full overflow-hidden"}>
@@ -384,14 +382,10 @@ export default function Page() {
       <div className={"p-4"}>
         <div className={"space-y-1.5"}>
           <h3 className={"group-hover:text-primary truncate font-semibold transition-colors"}>{asset.name}</h3>
-          {asset.description && (
-            <p className={"text-muted-foreground line-clamp-2 text-sm leading-relaxed"}>{asset.description}</p>
-          )}
+          {asset.description && <p className={"text-muted-foreground line-clamp-2 text-sm leading-relaxed"}>{asset.description}</p>}
           <div className={"text-muted-foreground flex items-center justify-between border-t pt-2 text-xs"}>
             <span className={"font-medium"}>{formatFileSize(asset.size)}</span>
-            <span className={"bg-secondary rounded-md px-2 py-0.5 font-mono text-[10px] uppercase"}>
-              {asset.type.split("/")[1] || "FILE"}
-            </span>
+            <span className={"bg-secondary rounded-md px-2 py-0.5 font-mono text-[10px] uppercase"}>{asset.type.split("/")[1] || "FILE"}</span>
           </div>
         </div>
       </div>
@@ -509,12 +503,7 @@ export default function Page() {
           {!designsLoading && filteredDesigns.length > 0 && (
             <div className={"grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"}>
               {filteredDesigns.map((design) => (
-                <Card
-                  key={design.id}
-                  className={
-                    "group hover:border-primary/50 gap-0 overflow-hidden border-2 p-0 transition-all hover:shadow-xl"
-                  }
-                >
+                <Card key={design.id} className={"group gap-0 overflow-hidden border-2 p-0 transition-all hover:border-primary/50 hover:shadow-xl"}>
                   <Link href={`/designer/${design.id}`}>
                     <div className={"bg-muted relative aspect-4/3 w-full overflow-hidden"}>
                       {design.preview ? (
@@ -536,11 +525,7 @@ export default function Page() {
                           "absolute inset-0 flex items-center justify-center bg-linear-to-t from-black/60 via-black/30 to-transparent opacity-0 transition-all duration-300 group-hover:opacity-100"
                         }
                       >
-                        <div
-                          className={
-                            "rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black shadow-lg transition-transform group-hover:scale-105"
-                          }
-                        >
+                        <div className={"rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black shadow-lg transition-transform group-hover:scale-105"}>
                           <Pencil className={"mr-2 inline h-4 w-4"} />
                           Open Design
                         </div>
@@ -594,12 +579,8 @@ export default function Page() {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-                    <div
-                      className={"text-muted-foreground mt-4 flex items-center justify-between border-t pt-3 text-xs"}
-                    >
-                      <span className={"bg-primary/10 text-primary rounded-md px-2 py-1 font-medium"}>
-                        {getCanvasSize(design)}
-                      </span>
+                    <div className={"text-muted-foreground mt-4 flex items-center justify-between border-t pt-3 text-xs"}>
+                      <span className={"bg-primary/10 text-primary rounded-md px-2 py-1 font-medium"}>{getCanvasSize(design)}</span>
                       <span className={"font-medium"}>{formatDate(design.updatedAt)}</span>
                     </div>
                   </div>
@@ -726,10 +707,8 @@ export default function Page() {
             <Tabs defaultValue={"all"} className={"w-full"}>
               <TabsList className={"mb-2"}>
                 <TabsTrigger value={"all"}>All Assets ({assets.length})</TabsTrigger>
-                <TabsTrigger value={"uploaded"}>Uploaded ({assets.filter((a) => !a.isGenerated).length})</TabsTrigger>
-                <TabsTrigger value={"generated"}>
-                  AI Generated ({assets.filter((a) => a.isGenerated).length})
-                </TabsTrigger>
+                <TabsTrigger value={"uploaded"}>Uploaded ({assets.filter(a => !a.isGenerated).length})</TabsTrigger>
+                <TabsTrigger value={"generated"}>AI Generated ({assets.filter(a => a.isGenerated).length})</TabsTrigger>
               </TabsList>
 
               <TabsContent value={"all"} className={"mt-6"}>
