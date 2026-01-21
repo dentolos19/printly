@@ -227,16 +227,14 @@ public class NotificationController(DatabaseContext context) : BaseController(co
     /// Get archived notifications.
     /// </summary>
     [HttpGet("archived")]
-    public async Task<ActionResult<List<NotificationResponse>>> GetArchivedNotifications(
-        [FromQuery] int limit = 50
-    )
+    public async Task<ActionResult<List<NotificationResponse>>> GetArchivedNotifications([FromQuery] int limit = 50)
     {
         var userId = GetUserId();
         if (userId == null)
             return Unauthorized();
 
-        var notifications = await Context.Notifications
-            .Where(n => n.UserId == userId && n.IsArchived && !n.IsDeleted)
+        var notifications = await Context
+            .Notifications.Where(n => n.UserId == userId && n.IsArchived && !n.IsDeleted)
             .OrderByDescending(n => n.CreatedAt)
             .Take(limit)
             .Select(n => new NotificationResponse(

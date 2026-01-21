@@ -30,22 +30,12 @@ public interface INotificationService
     /// <summary>
     /// Notify customer about status change with admin name
     /// </summary>
-    Task NotifyStatusChangeAsync(
-        Guid ticketId,
-        string customerId,
-        TicketStatus newStatus,
-        string adminName
-    );
+    Task NotifyStatusChangeAsync(Guid ticketId, string customerId, TicketStatus newStatus, string adminName);
 
     /// <summary>
     /// Notify customer about priority change (escalation/de-escalation)
     /// </summary>
-    Task NotifyPriorityChangeAsync(
-        Guid ticketId,
-        string customerId,
-        TicketPriority newPriority,
-        string adminName
-    );
+    Task NotifyPriorityChangeAsync(Guid ticketId, string customerId, TicketPriority newPriority, string adminName);
 
     /// <summary>
     /// Notify about new message with dynamic sender name
@@ -171,7 +161,7 @@ public class NotificationService(
             TicketStatus.Active => "Ticket Now Active",
             TicketStatus.Resolved => "Ticket Resolved",
             TicketStatus.Closed => "Ticket Closed",
-            _ => "Ticket Status Updated"
+            _ => "Ticket Status Updated",
         };
 
         var message = $"{adminName} changed your ticket status to {newStatus}";
@@ -203,9 +193,8 @@ public class NotificationService(
         var title = isEscalation ? "Ticket Escalated" : "Ticket Priority Changed";
         var message = $"{adminName} set your ticket priority to {newPriority}";
 
-        var notificationPriority = newPriority == TicketPriority.Urgent
-            ? NotificationPriority.High
-            : NotificationPriority.Normal;
+        var notificationPriority =
+            newPriority == TicketPriority.Urgent ? NotificationPriority.High : NotificationPriority.Normal;
 
         await CreateNotificationAsync(
             customerId,

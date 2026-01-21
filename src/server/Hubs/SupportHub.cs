@@ -837,12 +837,7 @@ public class SupportHub(
         await Clients.User(ticket.CustomerId).SendAsync("TicketStatusUpdated", response);
 
         // Notify customer about all status changes with admin name
-        await _notificationService.NotifyStatusChangeAsync(
-            ticketId,
-            ticket.CustomerId,
-            newStatus,
-            userName
-        );
+        await _notificationService.NotifyStatusChangeAsync(ticketId, ticket.CustomerId, newStatus, userName);
 
         _logger.LogInformation(
             "[SupportHub] Ticket {TicketId} status changed from {OldStatus} to {NewStatus} by {UserId}",
@@ -885,12 +880,7 @@ public class SupportHub(
         await Clients.User(ticket.CustomerId).SendAsync("TicketPriorityUpdated", response);
 
         // Notify customer about priority change (escalation/de-escalation)
-        await _notificationService.NotifyPriorityChangeAsync(
-            ticketId,
-            ticket.CustomerId,
-            newPriority,
-            userName
-        );
+        await _notificationService.NotifyPriorityChangeAsync(ticketId, ticket.CustomerId, newPriority, userName);
 
         _logger.LogInformation(
             "[SupportHub] Ticket {TicketId} priority changed from {OldPriority} to {NewPriority} by {UserId}",
