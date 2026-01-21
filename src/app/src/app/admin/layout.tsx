@@ -34,6 +34,7 @@ import {
   Box,
   Home,
   Layers,
+  LayoutDashboardIcon,
   LogOutIcon,
   MoreVerticalIcon,
   Package,
@@ -152,14 +153,12 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                         <span>Notifications</span>
                       </Link>
                     </DropdownMenuItem>
-                    {claims?.role === "admin" && (
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin">
-                          <BellIcon />
-                          <span>Administration</span>
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard">
+                        <LayoutDashboardIcon />
+                        <span>Dashboard</span>
+                      </Link>
+                    </DropdownMenuItem>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
