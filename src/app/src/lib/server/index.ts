@@ -8,6 +8,7 @@ import initGenerateController from "@/lib/server/generate";
 import initInventoryController from "@/lib/server/inventory";
 import initOrderController from "@/lib/server/order";
 import initProductController from "@/lib/server/product";
+import initTicketController from "@/lib/server/ticket";
 import initVariantController from "@/lib/server/variant";
 import { ServerFetch } from "@/types";
 
@@ -24,5 +25,6 @@ export default function generateServerFunctions(fetch: ServerFetch) {
     inventory: initInventoryController(fetch),
     order: initOrderController(fetch),
     conversation: initConversationController(fetch),
+    ticket: initTicketController(fetch),
   };
 }
