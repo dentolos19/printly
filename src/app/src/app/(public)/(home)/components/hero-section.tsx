@@ -8,7 +8,7 @@ export function HeroSection() {
     <section className="relative flex min-h-[90dvh] items-center overflow-hidden">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
-        <Image src="/hero_apparel_vibe.png" alt="Apparel Studio" fill className="scale-105 object-cover" priority />
+        <Image src="/assets/hero.png" alt="Apparel Studio" fill className="scale-105 object-cover" priority />
         <div className="from-background via-background/90 absolute inset-0 bg-linear-to-r to-transparent" />
         <div className="from-background absolute inset-0 bg-linear-to-t via-transparent to-transparent" />
       </div>
@@ -32,7 +32,7 @@ export function HeroSection() {
 
           <div className="flex flex-wrap gap-4">
             <Button size="lg" className="h-14 rounded-full px-8 text-lg" asChild>
-              <Link href="/dashboard/new">
+              <Link href="/auth">
                 Start Designing
                 <ArrowRight className="ml-2 size-5" />
               </Link>

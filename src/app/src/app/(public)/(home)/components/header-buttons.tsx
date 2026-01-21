@@ -3,7 +3,7 @@
 import { CartButton } from "@/components/cart-button";
 import { Button } from "@/components/ui/button";
 import { LoggedIn, LoggedOut, useAuth } from "@/lib/providers/auth";
-import { LogIn, User } from "lucide-react";
+import { User } from "lucide-react";
 import Link from "next/link";
 
 export function HeaderButtons() {
@@ -25,13 +25,9 @@ export function HeaderButtons() {
       </LoggedIn>
 
       <LoggedOut>
-        <Button variant="ghost" className="hidden font-semibold sm:flex" asChild>
-          <Link href="/auth">Sign In</Link>
-        </Button>
         <Button variant="default" className="shadow-primary/20 rounded-full px-6 font-bold shadow-lg" asChild>
           <Link href="/auth" className="flex items-center gap-2">
-            <LogIn className="size-4" />
-            Join Printly
+            Join
           </Link>
         </Button>
       </LoggedOut>
