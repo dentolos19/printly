@@ -6,8 +6,8 @@
 
 "use client";
 
-import { IconToolbar } from "@/app/designer/components/icon-toolbar";
-import { ArtStyle } from "@/app/designer/types";
+import { IconToolbar } from "@/app/(tools)/designer/components/icon-toolbar";
+import { ArtStyle } from "@/app/(tools)/designer/types";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { DesignerCanvas } from "./canvas";

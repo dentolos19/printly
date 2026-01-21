@@ -1,7 +1,7 @@
 "use client";
 
-import { useDesigner } from "@/app/designer/components/hooks";
-import { ART_STYLES, ArtStyle, ToolType } from "@/app/designer/types";
+import { useDesigner } from "@/app/(tools)/designer/components/hooks";
+import { ART_STYLES, ArtStyle, ToolType } from "@/app/(tools)/designer/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

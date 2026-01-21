@@ -1,6 +1,6 @@
 "use client";
 
-import { BLEND_MODES, BlendMode, LayerItem } from "@/app/designer/types";
+import { BLEND_MODES, BlendMode, LayerItem } from "@/app/(tools)/designer/types";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";

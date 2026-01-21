@@ -1,12 +1,12 @@
 "use client";
 
-import { DesignerCanvas } from "@/app/designer/components/canvas";
-import { DesignerProvider, useKeyboardShortcuts } from "@/app/designer/components/hooks";
-import { IconToolbar } from "@/app/designer/components/icon-toolbar";
-import { LeftPanel, RightPanel } from "@/app/designer/components/panels";
-import { StatusBar } from "@/app/designer/components/status-bar";
-import { ToolbarHeader } from "@/app/designer/components/toolbar-header";
-import { ArtStyle, GeneratedImage } from "@/app/designer/types";
+import { DesignerCanvas } from "@/app/(tools)/designer/components/canvas";
+import { DesignerProvider, useKeyboardShortcuts } from "@/app/(tools)/designer/components/hooks";
+import { IconToolbar } from "@/app/(tools)/designer/components/icon-toolbar";
+import { LeftPanel, RightPanel } from "@/app/(tools)/designer/components/panels";
+import { StatusBar } from "@/app/(tools)/designer/components/status-bar";
+import { ToolbarHeader } from "@/app/(tools)/designer/components/toolbar-header";
+import { ArtStyle, GeneratedImage } from "@/app/(tools)/designer/types";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useServer } from "@/lib/providers/server";
 import { cn } from "@/lib/utils";

@@ -1,7 +1,7 @@
 "use client";
 
-import { useDesigner } from "@/app/designer/components/hooks";
-import { ToolType } from "@/app/designer/types";
+import { useDesigner } from "@/app/(tools)/designer/components/hooks";
+import { ToolType } from "@/app/(tools)/designer/types";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";

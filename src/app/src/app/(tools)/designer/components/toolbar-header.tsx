@@ -121,7 +121,7 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
             variant={"ghost"}
             size={"icon"}
             className={"mr-2 h-8 w-8"}
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push("/designs")}
           >
             <Home className={"h-4 w-4"} />
           </Button>
@@ -421,10 +421,10 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
 
       {/* Action buttons */}
       <div className={"flex items-center gap-2"}>
-        <Button type={"button"} variant={"outline"} size={"sm"} className={"h-8 gap-2"}>
+        {/* <Button type={"button"} variant={"outline"} size={"sm"} className={"h-8 gap-2"}>
           <Eye className={"h-4 w-4"} />
           Preview
-        </Button>
+        </Button> */}
         <Button type={"button"} size={"sm"} className={"h-8 gap-2"}>
           <Printer className={"h-4 w-4"} />
           Print
