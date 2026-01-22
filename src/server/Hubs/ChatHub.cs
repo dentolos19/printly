@@ -106,6 +106,16 @@ public class ChatHub(DatabaseContext context, ILogger<ChatHub> logger) : Hub
 
         _logger.LogInformation("Sender found: {Email}", sender.Email);
 
+        // Validate receiver exists in the database (CRITICAL for foreign key constraint)
+        var receiver = await _context.Users.FirstOrDefaultAsync(u => u.Id == receiverId);
+        if (receiver is null)
+        {
+            _logger.LogError("Receiver not found in database. ReceiverId: {ReceiverId}", receiverId);
+            throw new HubException("Receiver not found. The user may not exist.");
+        }
+
+        _logger.LogInformation("Receiver found: {Email}", receiver.Email);
+
         // Validate reply-to message if provided
         Message? replyToMessage = null;
         if (replyToMessageId.HasValue)
