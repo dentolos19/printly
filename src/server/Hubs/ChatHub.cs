@@ -120,8 +120,8 @@ public class ChatHub(DatabaseContext context, ILogger<ChatHub> logger) : Hub
         Message? replyToMessage = null;
         if (replyToMessageId.HasValue)
         {
-            replyToMessage = await _context.Messages
-                .Include(m => m.Sender)
+            replyToMessage = await _context
+                .Messages.Include(m => m.Sender)
                 .FirstOrDefaultAsync(m => m.Id == replyToMessageId.Value);
             if (replyToMessage == null)
             {
@@ -181,7 +181,8 @@ public class ChatHub(DatabaseContext context, ILogger<ChatHub> logger) : Hub
     public async Task StartTyping(string receiverId)
     {
         var senderId = GetUserId();
-        if (senderId == null) return;
+        if (senderId == null)
+            return;
 
         // Only notify if receiver is online
         if (OnlineUsers.TryGetValue(receiverId, out var receiverConnections))
@@ -201,7 +202,8 @@ public class ChatHub(DatabaseContext context, ILogger<ChatHub> logger) : Hub
     public async Task StopTyping(string receiverId)
     {
         var senderId = GetUserId();
-        if (senderId == null) return;
+        if (senderId == null)
+            return;
 
         // Only notify if receiver is online
         if (OnlineUsers.TryGetValue(receiverId, out var receiverConnections))
