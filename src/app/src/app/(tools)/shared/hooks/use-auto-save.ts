@@ -26,7 +26,7 @@ type AutoSaveOptions<T> = {
   /**
    * Save function that returns the document ID
    */
-  onSave?: (data: { name: string; data: string } & Partial<T>) => Promise<{ id: string }>;
+  onSave?: (data: { name: string; data: string; currentId: string | null } & Partial<T>) => Promise<{ id: string }>;
 
   /**
    * Debounce delay in milliseconds (default: 3000)
@@ -96,7 +96,7 @@ export function useAutoSave<T extends Record<string, unknown>>({
           return;
         }
 
-        const result = await onSave({ name, data: dataString, ...serializedData });
+        const result = await onSave({ name, data: dataString, currentId: id, ...serializedData });
 
         lastSavedDataRef.current = dataString;
 

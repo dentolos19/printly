@@ -133,12 +133,22 @@ export function ImprinterProvider({
 
   // Use shared auto-save hook
   const { saveStatus, lastSavedAt, isDirty, triggerAutoSave, saveNow } = useAutoSave({
-    id: initialImprintId,
+    id: imprintId,
     name: imprintName,
     serialize: serializeImprint,
     onSave,
-    onIdChange: (id) => setImprintId(id),
+    onIdChange: (id) => {
+      setImprintId(id);
+      hasLoadedInitialImprint.current = true;
+    },
   });
+
+  // Sync internal ID with prop if it changes externally (e.g. navigation)
+  useEffect(() => {
+    if (initialImprintId && initialImprintId !== imprintId) {
+      setImprintId(initialImprintId);
+    }
+  }, [initialImprintId, imprintId]);
 
   // ============================================================================
   // Product actions
