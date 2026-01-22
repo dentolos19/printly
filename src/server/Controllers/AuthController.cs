@@ -128,4 +128,29 @@ public class AuthController(DatabaseContext database, IdentityService identitySe
 
         return Ok();
     }
+
+    [HttpPost]
+    [Route("toggle-role")]
+    [Authorize]
+    public async Task<IActionResult> ToggleRole()
+    {
+        // Get user email from claims
+        var email = User.FindFirst("email")?.Value;
+        if (string.IsNullOrEmpty(email))
+            return Unauthorized();
+
+        // Get user from database
+        var user = await identityService.GetUser(email);
+        if (user == null)
+            return Unauthorized();
+
+        // Toggle role between Admin and User
+        user.Role = user.Role == "Admin" ? "User" : "Admin";
+        
+        // Save changes to database
+        Database.Users.Update(user);
+        await Database.SaveChangesAsync();
+
+        return Ok(new { role = user.Role });
+    }
 }

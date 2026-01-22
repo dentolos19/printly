@@ -1,4 +1,5 @@
 import { Toaster } from "@/components/ui/sonner";
+import DebugRoleToggle from "@/components/debug-role-toggle";
 import AuthProvider from "@/lib/providers/auth";
 import CartProvider from "@/lib/providers/cart";
 import ServerProvider from "@/lib/providers/server";
@@ -31,6 +32,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           <ServerProvider>
             <CartProvider>
               {children}
+              <DebugRoleToggle />
               <Toaster />
             </CartProvider>
           </ServerProvider>
