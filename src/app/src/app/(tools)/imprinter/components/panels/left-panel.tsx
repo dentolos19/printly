@@ -190,6 +190,7 @@ function DesignsPanel() {
 
 function AssetsPanel() {
   const { api } = useServer();
+  const { addDesignToProduct } = useImprinter();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -223,6 +224,20 @@ function AssetsPanel() {
     }
   }
 
+  function handleAssetClick(asset: Asset) {
+    // Convert asset to a mock design to apply it
+    const mockDesign: Design = {
+      id: asset.id,
+      name: asset.name,
+      description: asset.description,
+      data: JSON.stringify({ version: "1.0", objects: [] }),
+      coverId: asset.id,
+      createdAt: asset.createdAt,
+      updatedAt: asset.updatedAt,
+    };
+    addDesignToProduct(mockDesign, "front");
+  }
+
   return (
     <Tabs defaultValue="library" className="h-full">
       <TabsList className="w-full rounded-none">
@@ -252,8 +267,12 @@ function AssetsPanel() {
               <button
                 key={asset.id}
                 className="group bg-muted hover:border-primary relative aspect-square w-full overflow-hidden rounded-md border transition-colors"
+                onClick={() => handleAssetClick(asset)}
               >
                 <img src={`/assets/${asset.id}/view`} alt={asset.name} className="h-full w-full object-cover" />
+                <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/60 to-transparent p-2">
+                  <p className="truncate text-xs font-medium text-white">{asset.name}</p>
+                </div>
               </button>
             ))}
           </div>

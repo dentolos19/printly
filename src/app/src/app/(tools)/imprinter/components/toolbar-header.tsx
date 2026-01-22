@@ -36,7 +36,8 @@ type ToolbarHeaderProps = {
 
 export function ToolbarHeader({ className, title = "Printly Imprinter" }: ToolbarHeaderProps) {
   const router = useRouter();
-  const { imprintName, saveStatus, isDirty, lastSavedAt, saveImprint, exportRender, resetCamera } = useImprinter();
+  const { imprintName, setImprintName, saveStatus, isDirty, lastSavedAt, saveImprint, exportRender, resetCamera } =
+    useImprinter();
 
   const saveStatusIcon = {
     idle: null,
@@ -125,7 +126,7 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
       <div className="flex flex-1 items-center justify-center">
         <Input
           value={imprintName}
-          onChange={(e) => {}}
+          onChange={(e) => setImprintName(e.target.value)}
           className="h-8 w-64 text-center"
           placeholder="Untitled Imprint"
         />

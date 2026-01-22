@@ -36,6 +36,7 @@ type ImprinterContextValue = {
   // Design persistence
   imprintId: string | null;
   imprintName: string;
+  setImprintName: (name: string) => void;
   saveStatus: SaveStatus;
   lastSavedAt: Date | null;
   isDirty: boolean;
@@ -159,6 +160,14 @@ export function ImprinterProvider({
   const changeProductColor = useCallback(
     (color: string) => {
       setProductColor(color);
+      triggerAutoSave();
+    },
+    [triggerAutoSave],
+  );
+
+  const handleSetImprintName = useCallback(
+    (name: string) => {
+      setImprintName(name);
       triggerAutoSave();
     },
     [triggerAutoSave],
@@ -330,6 +339,7 @@ export function ImprinterProvider({
       // Design persistence
       imprintId,
       imprintName,
+      setImprintName: handleSetImprintName,
       saveStatus,
       lastSavedAt,
       isDirty,
@@ -381,6 +391,7 @@ export function ImprinterProvider({
       saveImprint,
       loadImprint,
       exportRender,
+      handleSetImprintName,
     ],
   );
 
