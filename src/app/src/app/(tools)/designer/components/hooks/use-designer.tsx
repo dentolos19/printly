@@ -927,9 +927,6 @@ export function DesignerProvider({
         })
         .then(() => {
           canvas.renderAll();
-          setIsDirty(false);
-          setSaveStatus("saved");
-          setLastSavedAt(new Date());
           // Save initial state to history
           saveHistory();
         })
