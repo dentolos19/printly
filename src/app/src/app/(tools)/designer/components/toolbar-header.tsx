@@ -41,7 +41,6 @@ import {
   Loader2,
   Maximize,
   Maximize2,
-  Printer,
   Redo2,
   Save,
   Scissors,
@@ -418,18 +417,6 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
           {problemCount} problem{problemCount > 1 ? "s" : ""} found
         </Button>
       )}
-
-      {/* Action buttons */}
-      <div className={"flex items-center gap-2"}>
-        {/* <Button type={"button"} variant={"outline"} size={"sm"} className={"h-8 gap-2"}>
-          <Eye className={"h-4 w-4"} />
-          Preview
-        </Button> */}
-        <Button type={"button"} size={"sm"} className={"h-8 gap-2"}>
-          <Printer className={"h-4 w-4"} />
-          Print
-        </Button>
-      </div>
 
       <ResizeDesignDialog
         open={resizeDialogOpen}

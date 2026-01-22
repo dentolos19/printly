@@ -1,9 +1,12 @@
 "use client";
 
-import { Decal, Environment, OrbitControls, PerspectiveCamera, useGLTF, useTexture } from "@react-three/drei";
+import { Decal, Environment, OrbitControls, PerspectiveCamera, useTexture } from "@react-three/drei";
 import { Canvas, createPortal, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
+import { Hoodie } from "../models/hoodie";
+import { Mug } from "../models/mug";
+import { TShirt } from "../models/tshirt";
 import type { AppliedDesign } from "../types";
 import { useImprinter } from "./hooks/use-imprinter";
 
@@ -156,16 +159,20 @@ function DecalMesh({ design, url, targetMesh }: { design: AppliedDesign; url: st
   );
 }
 
-function TShirtModel() {
-  const { productColor, appliedDesigns } = useImprinter();
-  // Using scene.gltf as requested for compatibility
-  const { scene } = useGLTF("/models/scene.gltf");
+type MeshMap = {
+  body: THREE.Mesh | null;
+  leftSleeve: THREE.Mesh | null;
+  rightSleeve: THREE.Mesh | null;
+};
+
+function CanvasModel() {
+  const { productModel, productColor, appliedDesigns } = useImprinter();
   const { gl } = useThree();
   const modelRef = useRef<THREE.Group>(null);
-  const [primaryMesh, setPrimaryMesh] = useState<THREE.Mesh | null>(null);
+  const [meshes, setMeshes] = useState<MeshMap>({ body: null, leftSleeve: null, rightSleeve: null });
   const maxAnisotropy = useMemo(() => gl.capabilities.getMaxAnisotropy(), [gl]);
 
-  // Find Primary Mesh (Shirt Surface)
+  // Find and categorize meshes by position and material
   useEffect(() => {
     if (!modelRef.current) return;
 
@@ -173,45 +180,69 @@ function TShirtModel() {
     const center = box.getCenter(new THREE.Vector3());
     modelRef.current.position.sub(center);
 
-    let largestMesh: THREE.Mesh | null = null;
-    let maxDimension = 0;
+    let bodyMesh: THREE.Mesh | null = null;
+    let leftSleeveMesh: THREE.Mesh | null = null;
+    let rightSleeveMesh: THREE.Mesh | null = null;
+    let maxBodyDimension = 0;
 
-    scene.traverse((child) => {
+    modelRef.current.traverse((child: THREE.Object3D) => {
       if (child instanceof THREE.Mesh) {
         if (child.material) {
           const material = child.material as THREE.MeshStandardMaterial;
           material.color = new THREE.Color(productColor);
-        }
 
-        // Logic to find the main shirt mesh
-        child.geometry.computeBoundingBox();
-        const bbox = child.geometry.boundingBox;
-        if (bbox) {
-          const size = new THREE.Vector3();
-          bbox.getSize(size);
-          const dimension = size.length();
+          // Categorize mesh by material name or position
+          const materialName = material.name?.toLowerCase() || "";
+          child.geometry.computeBoundingBox();
+          const bbox = child.geometry.boundingBox;
 
-          if (dimension > maxDimension) {
-            maxDimension = dimension;
-            largestMesh = child;
+          if (bbox) {
+            const meshCenter = bbox.getCenter(new THREE.Vector3());
+            child.localToWorld(meshCenter);
+            const size = new THREE.Vector3();
+            bbox.getSize(size);
+            const dimension = size.length();
+
+            // Check if it's a sleeve based on material name or position
+            if (materialName.includes("sleeve")) {
+              if (meshCenter.x < -0.1 && !leftSleeveMesh) {
+                leftSleeveMesh = child;
+              } else if (meshCenter.x > 0.1 && !rightSleeveMesh) {
+                rightSleeveMesh = child;
+              }
+            } else if (materialName.includes("body") || materialName.includes("main")) {
+              // Body mesh
+              if (dimension > maxBodyDimension) {
+                maxBodyDimension = dimension;
+                bodyMesh = child;
+              }
+            } else {
+              // Fallback: largest mesh as body
+              if (dimension > maxBodyDimension) {
+                maxBodyDimension = dimension;
+                bodyMesh = child;
+              }
+            }
           }
         }
       }
     });
 
-    if (!largestMesh) {
-      // Fallback
-      scene.traverse((child) => {
-        if (!largestMesh && child instanceof THREE.Mesh) {
-          largestMesh = child;
+    // Fallback: if no specific meshes found, use the largest as body
+    if (!bodyMesh) {
+      modelRef.current.traverse((child: THREE.Object3D) => {
+        if (!bodyMesh && child instanceof THREE.Mesh) {
+          bodyMesh = child;
         }
       });
     }
 
-    if (largestMesh) {
-      setPrimaryMesh(largestMesh);
-    }
-  }, [scene, productColor]);
+    setMeshes({
+      body: bodyMesh,
+      leftSleeve: leftSleeveMesh,
+      rightSleeve: rightSleeveMesh,
+    });
+  }, [productColor, productModel]);
 
   useFrame(() => {
     if (modelRef.current) {
@@ -219,20 +250,52 @@ function TShirtModel() {
     }
   });
 
+  const ModelComponent = productModel === "hoodie" ? Hoodie : productModel === "mug" ? Mug : TShirt;
+
+  // Helper function to get the appropriate mesh for a print area
+  const getMeshForPrintArea = (printArea: string): THREE.Mesh | null => {
+    switch (printArea) {
+      case "left-sleeve":
+        return meshes.leftSleeve || meshes.body;
+      case "right-sleeve":
+        return meshes.rightSleeve || meshes.body;
+      case "front":
+      case "back":
+      default:
+        return meshes.body;
+    }
+  };
+
+  // Group designs by their target mesh
+  const designsByMesh = useMemo(() => {
+    const grouped = new Map<THREE.Mesh, AppliedDesign[]>();
+
+    appliedDesigns.forEach((design) => {
+      const targetMesh = getMeshForPrintArea(design.printArea);
+      if (targetMesh) {
+        const existing = grouped.get(targetMesh) || [];
+        grouped.set(targetMesh, [...existing, design]);
+      }
+    });
+
+    return grouped;
+  }, [appliedDesigns, meshes]);
+
   return (
     <group ref={modelRef}>
-      <primitive object={scene} />
+      <ModelComponent />
 
-      {/* Use createPortal to render Decals INSIDE the primary mesh's coordinate system */}
-      {primaryMesh &&
+      {/* Render decals for each mesh */}
+      {Array.from(designsByMesh.entries()).map(([mesh, designs]) =>
         createPortal(
           <>
-            {appliedDesigns.map((design) => (
-              <DesignDecal key={design.id} design={design} targetMesh={primaryMesh} maxAnisotropy={maxAnisotropy} />
+            {designs.map((design) => (
+              <DesignDecal key={design.id} design={design} targetMesh={mesh} maxAnisotropy={maxAnisotropy} />
             ))}
           </>,
-          primaryMesh,
-        )}
+          mesh,
+        ),
+      )}
     </group>
   );
 }
@@ -247,7 +310,9 @@ export function ImprinterScene() {
         <spotLight position={[-5, 5, 5]} angle={0.3} penumbra={1} intensity={0.5} />
         <directionalLight position={[0, 5, 0]} intensity={0.3} />
         <Environment preset="studio" />
-        <TShirtModel />
+        <Suspense fallback={null}>
+          <CanvasModel />
+        </Suspense>
         <OrbitControls
           enablePan={true}
           enableZoom={true}
@@ -260,5 +325,3 @@ export function ImprinterScene() {
     </div>
   );
 }
-
-useGLTF.preload("/models/scene.gltf");

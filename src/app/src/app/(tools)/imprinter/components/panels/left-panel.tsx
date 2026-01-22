@@ -124,7 +124,7 @@ function PanelHeader({ view, onClose }: PanelHeaderProps) {
 
 function DesignsPanel() {
   const { api } = useServer();
-  const { addDesignToProduct } = useImprinter();
+  const { addDesignToProduct, activePrintArea } = useImprinter();
   const [designs, setDesigns] = useState<Design[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -137,7 +137,7 @@ function DesignsPanel() {
   }, [api.design]);
 
   function handleDesignClick(design: Design) {
-    addDesignToProduct(design, "front");
+    addDesignToProduct(design, activePrintArea);
   }
 
   if (loading) {
@@ -189,7 +189,7 @@ function DesignsPanel() {
 
 function AssetsPanel() {
   const { api } = useServer();
-  const { addDesignToProduct } = useImprinter();
+  const { addDesignToProduct, activePrintArea } = useImprinter();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -234,7 +234,7 @@ function AssetsPanel() {
       createdAt: asset.createdAt,
       updatedAt: asset.updatedAt,
     };
-    addDesignToProduct(mockDesign, "front");
+    addDesignToProduct(mockDesign, activePrintArea);
   }
 
   return (

@@ -27,6 +27,7 @@ type ImprinterContextValue = {
 
   // UI state
   activeTool: Tool;
+  activePrintArea: PrintArea;
   leftPanelView: LeftPanelView;
   rightPanelOpen: boolean;
 
@@ -54,6 +55,7 @@ type ImprinterContextValue = {
 
   // UI actions
   setActiveTool: (tool: Tool) => void;
+  setActivePrintArea: (area: PrintArea) => void;
   setLeftPanelView: (view: LeftPanelView) => void;
   setRightPanelOpen: (open: boolean) => void;
 
@@ -91,6 +93,7 @@ export function ImprinterProvider({
 
   // UI state
   const [activeTool, setActiveTool] = useState<Tool>("select");
+  const [activePrintArea, setActivePrintArea] = useState<PrintArea>("front");
   const [leftPanelView, setLeftPanelView] = useState<LeftPanelView>("designs");
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
 
@@ -350,6 +353,7 @@ export function ImprinterProvider({
 
       // UI state
       activeTool,
+      activePrintArea,
       leftPanelView,
       rightPanelOpen,
 
@@ -377,6 +381,7 @@ export function ImprinterProvider({
 
       // UI actions
       setActiveTool,
+      setActivePrintArea,
       setLeftPanelView,
       setRightPanelOpen,
 
@@ -394,6 +399,7 @@ export function ImprinterProvider({
       appliedDesigns,
       selectedDesignId,
       activeTool,
+      activePrintArea,
       leftPanelView,
       rightPanelOpen,
       cameraState,

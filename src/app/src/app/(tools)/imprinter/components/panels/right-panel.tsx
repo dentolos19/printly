@@ -8,9 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
-import { ChevronDown, ChevronRight, Eye, Layers, RotateCcw, Settings, Shirt, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Eye, Layers, MapPin, RotateCcw, Settings, Shirt, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ProductModel } from "../../types";
+import { PrintArea, ProductModel } from "../../types";
 import { useImprinter } from "../hooks/use-imprinter";
 
 type RightPanelProps = {
@@ -19,6 +19,7 @@ type RightPanelProps = {
 
 export function RightPanel({ className }: RightPanelProps) {
   const [productOpen, setProductOpen] = useState(true);
+  const [printAreaOpen, setPrintAreaOpen] = useState(true);
   const [designsOpen, setDesignsOpen] = useState(true);
   const [transformOpen, setTransformOpen] = useState(true);
   const [width, setWidth] = useState(288);
@@ -81,6 +82,8 @@ export function RightPanel({ className }: RightPanelProps) {
       <ScrollArea className="flex-1">
         <div className="space-y-1 p-2">
           <ProductSection open={productOpen} onOpenChange={setProductOpen} />
+          <Separator className="my-2" />
+          <PrintAreaSection open={printAreaOpen} onOpenChange={setPrintAreaOpen} />
           <Separator className="my-2" />
           <AppliedDesignsSection open={designsOpen} onOpenChange={setDesignsOpen} />
           <Separator className="my-2" />
@@ -153,6 +156,48 @@ function ProductSection({ open, onOpenChange }: ProductSectionProps) {
             />
           </div>
         </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+// ============================================================================
+// Print Area Section
+// ============================================================================
+
+type PrintAreaSectionProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+};
+
+function PrintAreaSection({ open, onOpenChange }: PrintAreaSectionProps) {
+  const { activePrintArea, setActivePrintArea } = useImprinter();
+
+  return (
+    <Collapsible open={open} onOpenChange={onOpenChange}>
+      <CollapsibleTrigger className="hover:bg-accent flex w-full items-center justify-between rounded-md p-2">
+        <div className="flex items-center gap-2">
+          <MapPin className="h-4 w-4" />
+          <span className="text-sm font-medium">Print Area</span>
+        </div>
+        {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+      </CollapsibleTrigger>
+      <CollapsibleContent className="space-y-3 px-2 pt-3 pb-2">
+        <div className="space-y-2">
+          <Label className="text-xs">Active Area</Label>
+          <Select value={activePrintArea} onValueChange={(v) => setActivePrintArea(v as PrintArea)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="front">Front</SelectItem>
+              <SelectItem value="back">Back</SelectItem>
+              <SelectItem value="left-sleeve">Left Sleeve</SelectItem>
+              <SelectItem value="right-sleeve">Right Sleeve</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <p className="text-muted-foreground text-xs">Designs added from the left panel will be placed on this area.</p>
       </CollapsibleContent>
     </Collapsible>
   );

@@ -17,7 +17,6 @@ import {
   Book,
   ChevronDown,
   Cloud,
-  Eye,
   FileDown,
   Home,
   Info,
@@ -59,8 +58,6 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
         <Button variant="ghost" size="icon" onClick={() => router.push("/library?tab=imprints")} className="h-8 w-8">
           <Home className="h-4 w-4" />
         </Button>
-
-        <Separator orientation="vertical" className="h-6" />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -123,16 +120,7 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
         </DropdownMenu>
       </div>
 
-      <div className="flex flex-1 items-center justify-center">
-        <Input
-          value={imprintName}
-          onChange={(e) => setImprintName(e.target.value)}
-          className="h-8 w-64 text-center"
-          placeholder="Untitled Imprint"
-        />
-      </div>
-
-      <div className="flex items-center gap-2">
+      <div className="flex flex-1 items-center justify-end gap-2">
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="text-muted-foreground flex items-center gap-1 text-xs">
@@ -142,11 +130,15 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
           </TooltipTrigger>
           <TooltipContent>{isDirty ? "Unsaved changes" : "All changes saved"}</TooltipContent>
         </Tooltip>
+      </div>
 
-        <Button variant="ghost" size="sm" className="h-8 gap-2" onClick={() => {}}>
-          <Eye className="h-4 w-4" />
-          Preview
-        </Button>
+      <div className="flex items-center justify-end pl-4">
+        <Input
+          value={imprintName}
+          onChange={(e) => setImprintName(e.target.value)}
+          className={"h-7 w-48 border-none bg-transparent px-1 text-sm font-medium shadow-none focus-visible:ring-1"}
+          placeholder="Untitled Imprint"
+        />
       </div>
     </header>
   );
