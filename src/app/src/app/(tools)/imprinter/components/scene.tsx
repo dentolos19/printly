@@ -142,12 +142,7 @@ function DecalMesh({ design, url, targetMesh }: { design: AppliedDesign; url: st
   }, [design.transform.scale]);
 
   return (
-    <Decal
-      position={position}
-      rotation={finalOrientation}
-      scale={scale}
-      mesh={targetMesh} // Optional: ensures coordinate system alignment if portal is funky
-    >
+    <Decal position={position} rotation={finalOrientation} scale={scale}>
       <meshStandardMaterial
         map={texture}
         transparent

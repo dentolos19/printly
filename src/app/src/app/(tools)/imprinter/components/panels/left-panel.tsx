@@ -105,6 +105,7 @@ function PanelHeader({ view, onClose }: PanelHeaderProps) {
   const titles = {
     designs: "Your Designs",
     assets: "Your Assets",
+    templates: "Templates",
   };
 
   return (
