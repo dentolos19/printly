@@ -3,8 +3,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace PrintlyServer.Data.Entities;
 
 /// <summary>
-/// Represents a support conversation between a customer and admins.
-/// When a customer creates a conversation, all admins are automatically added.
+/// Represents a conversation. When SupportMode is true, this is a support conversation
+/// between a customer and admins where any admin can participate. When SupportMode is false,
+/// this is a peer-to-peer conversation between specific participants.
 /// </summary>
 public class Conversation : BaseEntity
 {
@@ -18,6 +19,10 @@ public class Conversation : BaseEntity
 
     // Optional link to an order this conversation is about
     public Guid? OrderId { get; set; }
+
+    // When true, any admin can view and participate in this conversation
+    // When false, only explicit participants can access the conversation
+    public bool SupportMode { get; set; } = false;
 
     // Status tracking for support workflow
     public ConversationStatus Status { get; set; } = ConversationStatus.Pending;

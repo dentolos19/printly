@@ -62,6 +62,7 @@ public class ConversationController(DatabaseContext context, INotificationServic
         string? Subject,
         string CustomerId,
         string CustomerName,
+        bool SupportMode,
         ConversationStatus Status,
         ConversationPriority Priority,
         Guid? OrderId,
@@ -133,9 +134,14 @@ public class ConversationController(DatabaseContext context, INotificationServic
 
         var query = Context.Conversations.AsQueryable();
 
-        if (!includeAllForStaff)
+        if (includeAllForStaff)
         {
-            // Users see only their own conversations (where they are the customer)
+            // Staff sees only support mode conversations
+            query = query.Where(c => c.SupportMode);
+        }
+        else
+        {
+            // Users see only their own conversations (where they are the customer or participant)
             query = query.Where(c =>
                 c.CustomerId == currentUserId || c.Participants.Any(p => p.UserId == currentUserId)
             );
@@ -156,6 +162,7 @@ public class ConversationController(DatabaseContext context, INotificationServic
                 c.Subject,
                 c.CustomerId,
                 CustomerName = c.Customer.UserName ?? c.Customer.Email ?? "Unknown",
+                c.SupportMode,
                 c.Status,
                 c.Priority,
                 c.OrderId,
@@ -187,6 +194,7 @@ public class ConversationController(DatabaseContext context, INotificationServic
                 c.Subject,
                 c.CustomerId,
                 c.CustomerName,
+                c.SupportMode,
                 c.Status,
                 c.Priority,
                 c.OrderId,
@@ -245,19 +253,21 @@ public class ConversationController(DatabaseContext context, INotificationServic
         if (currentUser is null)
             return Unauthorized();
 
-        // Create the conversation with the customer as the owner
+        // Create the conversation with the customer as the owner and support mode enabled
         var conversation = new Conversation
         {
             Subject = request.Subject.Trim(),
             CustomerId = currentUserId,
             OrderId = request.OrderId,
+            SupportMode = true,
             Status = ConversationStatus.Pending,
             Priority = ConversationPriority.Normal,
         };
 
         Context.Conversations.Add(conversation);
 
-        // Add the customer as a participant
+        // Add the customer as the only initial participant
+        // Admins will be added lazily when they join the conversation
         var customerParticipant = new ConversationParticipant
         {
             ConversationId = conversation.Id,
@@ -265,29 +275,6 @@ public class ConversationController(DatabaseContext context, INotificationServic
             Role = ConversationParticipantRole.Member,
         };
         Context.ConversationParticipants.Add(customerParticipant);
-
-        // Auto-add all admins as participants
-        var adminRoleId = await Context.Roles.Where(r => r.Name == Roles.Admin).Select(r => r.Id).FirstOrDefaultAsync();
-
-        if (adminRoleId != null)
-        {
-            var adminUserIds = await Context
-                .UserRoles.Where(ur => ur.RoleId == adminRoleId)
-                .Select(ur => ur.UserId)
-                .ToListAsync();
-
-            foreach (var adminId in adminUserIds)
-            {
-                Context.ConversationParticipants.Add(
-                    new ConversationParticipant
-                    {
-                        ConversationId = conversation.Id,
-                        UserId = adminId,
-                        Role = ConversationParticipantRole.Admin,
-                    }
-                );
-            }
-        }
 
         await Context.SaveChangesAsync();
 
@@ -336,6 +323,7 @@ public class ConversationController(DatabaseContext context, INotificationServic
             conversation.Subject,
             conversation.CustomerId,
             currentUser.UserName ?? currentUser.Email ?? "Unknown",
+            conversation.SupportMode,
             conversation.Status,
             conversation.Priority,
             conversation.OrderId,
@@ -391,13 +379,13 @@ public class ConversationController(DatabaseContext context, INotificationServic
             var statusText = request.Status == ConversationStatus.Resolved ? "resolved" : "closed";
             await _notificationService.CreateNotificationAsync(
                 conversation.CustomerId,
-                NotificationType.TicketStatusChanged,
+                NotificationType.ConversationStatusChanged,
                 $"Conversation {statusText}",
                 $"Your support conversation has been marked as {statusText}",
                 conversationId,
                 null,
                 NotificationPriority.Normal,
-                $"/support?conversation={conversationId}"
+                $"/chat?conversation={conversationId}"
             );
         }
 
@@ -537,6 +525,7 @@ public class ConversationController(DatabaseContext context, INotificationServic
             conversation.Subject,
             conversation.CustomerId,
             conversation.Customer.UserName ?? conversation.Customer.Email ?? "Unknown",
+            conversation.SupportMode,
             conversation.Status,
             conversation.Priority,
             conversation.OrderId,

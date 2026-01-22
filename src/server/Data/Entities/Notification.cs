@@ -11,8 +11,8 @@ public class Notification : BaseEntity
     public required string Message { get; set; }
 
     // Related entities
-    public Guid? TicketId { get; set; }
-    public Ticket? Ticket { get; set; }
+    public Guid? ConversationId { get; set; }
+    public Conversation? Conversation { get; set; }
 
     public Guid? MessageId { get; set; }
 
@@ -35,15 +35,15 @@ public class Notification : BaseEntity
 
 public enum NotificationType
 {
-    TicketCreated = 0, // New ticket created
-    TicketAssigned = 1, // Ticket assigned to admin
-    TicketStatusChanged = 2, // Status updated
-    TicketPriorityChanged = 3, // Priority changed
-    NewMessage = 4, // New message in ticket
-    TicketClosed = 5, // Ticket closed
-    MentionedInMessage = 6, // @mentioned in message
-    AdminJoinedTicket = 7, // Another admin joined
-    BroadcastSent = 8, // System broadcast
+    ConversationCreated = 0,
+    ConversationAssigned = 1,
+    ConversationStatusChanged = 2,
+    ConversationPriorityChanged = 3,
+    NewMessage = 4,
+    ConversationClosed = 5,
+    MentionedInMessage = 6,
+    AdminJoinedConversation = 7,
+    BroadcastSent = 8,
 }
 
 public enum NotificationPriority

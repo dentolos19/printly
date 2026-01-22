@@ -80,25 +80,27 @@ public class ConversationHub(
             ?? Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     }
 
-    private Task<bool> IsAdminAsync(string userId)
+    private async Task<bool> IsAdminAsync(string userId)
     {
-        return _context
-            .UserRoles.Where(ur => ur.UserId == userId)
-            .Join(_context.Roles, ur => ur.RoleId, role => role.Id, (_, role) => role.Name)
-            .AnyAsync(name => name == Roles.Admin);
+        var user = await _context.Users.FindAsync(userId);
+        return user?.Role == Roles.Admin;
     }
 
     private async Task<bool> HasConversationAccessAsync(Guid conversationId, string userId, bool isAdmin)
     {
-        // Admins can access all conversations
-        if (isAdmin)
-            return true;
-
-        // Check if user is a participant or the customer
         var conversation = await _context.Conversations.FindAsync(conversationId);
-        if (conversation != null && conversation.CustomerId == userId)
+        if (conversation == null)
+            return false;
+
+        // Admins can access all support mode conversations
+        if (isAdmin && conversation.SupportMode)
             return true;
 
+        // Check if user is the customer
+        if (conversation.CustomerId == userId)
+            return true;
+
+        // Check if user is a participant
         return await _context.ConversationParticipants.AnyAsync(p =>
             p.ConversationId == conversationId && p.UserId == userId
         );
@@ -111,55 +113,33 @@ public class ConversationHub(
     }
 
     /// <summary>
-    /// Ensures all admin users are participants in the conversation.
-    /// Called when a conversation is first accessed or a message is sent.
+    /// Ensures the specified admin user is a participant in the conversation.
+    /// Called when an admin joins a support mode conversation.
     /// </summary>
-    private async Task EnsureAdminsAreParticipantsAsync(Guid conversationId)
+    private async Task EnsureAdminIsParticipantAsync(Guid conversationId, string adminUserId)
     {
-        // Get all admin user IDs
-        var adminRoleId = await _context
-            .Roles.Where(r => r.Name == Roles.Admin)
-            .Select(r => r.Id)
-            .FirstOrDefaultAsync();
+        var existingParticipant = await _context.ConversationParticipants.FirstOrDefaultAsync(p =>
+            p.ConversationId == conversationId && p.UserId == adminUserId
+        );
 
-        if (adminRoleId == null)
+        if (existingParticipant != null)
             return;
 
-        var adminUserIds = await _context
-            .UserRoles.Where(ur => ur.RoleId == adminRoleId)
-            .Select(ur => ur.UserId)
-            .ToListAsync();
+        _context.ConversationParticipants.Add(
+            new ConversationParticipant
+            {
+                ConversationId = conversationId,
+                UserId = adminUserId,
+                Role = ConversationParticipantRole.Admin,
+            }
+        );
 
-        // Get existing participants
-        var existingParticipantIds = await _context
-            .ConversationParticipants.Where(p => p.ConversationId == conversationId)
-            .Select(p => p.UserId)
-            .ToListAsync();
-
-        // Add missing admins as participants
-        var missingAdmins = adminUserIds.Except(existingParticipantIds).ToList();
-
-        foreach (var adminId in missingAdmins)
-        {
-            _context.ConversationParticipants.Add(
-                new ConversationParticipant
-                {
-                    ConversationId = conversationId,
-                    UserId = adminId,
-                    Role = ConversationParticipantRole.Admin,
-                }
-            );
-        }
-
-        if (missingAdmins.Count > 0)
-        {
-            await _context.SaveChangesAsync();
-            _logger.LogDebug(
-                "[ConversationHub] Added {Count} admins to conversation {ConversationId}",
-                missingAdmins.Count,
-                conversationId
-            );
-        }
+        await _context.SaveChangesAsync();
+        _logger.LogDebug(
+            "[ConversationHub] Added admin {AdminUserId} to conversation {ConversationId}",
+            adminUserId,
+            conversationId
+        );
     }
 
     #endregion
@@ -195,7 +175,7 @@ public class ConversationHub(
 
     /// <summary>
     /// Join a conversation to receive real-time updates.
-    /// Admins are automatically added as participants when they join.
+    /// Admins are automatically added as participants when they join a support mode conversation.
     /// </summary>
     public async Task JoinConversation(Guid conversationId)
     {
@@ -207,8 +187,15 @@ public class ConversationHub(
         if (!await HasConversationAccessAsync(conversationId, userId, isAdmin))
             throw new HubException("Not authorized to join this conversation");
 
-        // Make sure all admins are participants
-        await EnsureAdminsAreParticipantsAsync(conversationId);
+        // If admin joining a support conversation, add them as participant
+        if (isAdmin)
+        {
+            var conversation = await _context.Conversations.FindAsync(conversationId);
+            if (conversation?.SupportMode == true)
+            {
+                await EnsureAdminIsParticipantAsync(conversationId, userId);
+            }
+        }
 
         await Groups.AddToGroupAsync(Context.ConnectionId, ConversationGroupName(conversationId));
         _logger.LogDebug("[ConversationHub] {UserId} joined conversation {ConversationId}", userId, conversationId);
@@ -251,8 +238,13 @@ public class ConversationHub(
         if (conversation is null)
             throw new HubException("Conversation not found");
 
-        // Make sure all admins are in the conversation
-        await EnsureAdminsAreParticipantsAsync(conversationId);
+        // Ensure admin sender is a participant in support mode conversations
+        if (isAdmin && conversation.SupportMode)
+        {
+            await EnsureAdminIsParticipantAsync(conversationId, userId);
+            // Refresh participants after adding
+            await _context.Entry(conversation).Collection(c => c.Participants).LoadAsync();
+        }
 
         // Get or create participant record for the sender
         var participant = conversation.Participants.FirstOrDefault(p => p.UserId == userId);
@@ -628,13 +620,13 @@ public class ConversationHub(
             var statusText = newStatus == ConversationStatus.Resolved ? "resolved" : "closed";
             await _notificationService.CreateNotificationAsync(
                 conversation.CustomerId,
-                NotificationType.TicketStatusChanged,
+                NotificationType.ConversationStatusChanged,
                 $"Conversation {statusText}",
                 $"Your support conversation has been marked as {statusText}",
                 conversationId,
                 null,
                 NotificationPriority.Normal,
-                $"/support?conversation={conversationId}"
+                $"/chat?conversation={conversationId}"
             );
         }
 

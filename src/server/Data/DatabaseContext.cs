@@ -11,9 +11,6 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
     public DbSet<Design> Designs { get; set; }
     public DbSet<Imprint> Imprints { get; set; }
     public DbSet<Asset> Assets { get; set; }
-    public DbSet<Message> Messages { get; set; }
-    public DbSet<Ticket> Tickets { get; set; }
-    public DbSet<TicketMessage> TicketMessages { get; set; }
     public DbSet<Broadcast> Broadcasts { get; set; }
     public DbSet<Notification> Notifications { get; set; }
     public DbSet<ChatbotMessage> ChatbotMessages { get; set; }
@@ -40,45 +37,6 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
     {
         base.OnModelCreating(modelBuilder);
 
-        // Configure Message entity with two foreign keys to User
-        // This prevents cascade delete issues with multiple paths to the same table
-        modelBuilder
-            .Entity<Message>()
-            .HasOne(m => m.Sender)
-            .WithMany()
-            .HasForeignKey(m => m.SenderId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder
-            .Entity<Message>()
-            .HasOne(m => m.Receiver)
-            .WithMany()
-            .HasForeignKey(m => m.ReceiverId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        // Ticket relationships
-        modelBuilder
-            .Entity<Ticket>()
-            .HasOne(t => t.Customer)
-            .WithMany()
-            .HasForeignKey(t => t.CustomerId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder
-            .Entity<Ticket>()
-            .HasMany(t => t.Messages)
-            .WithOne(m => m.Ticket)
-            .HasForeignKey(m => m.TicketId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        // TicketMessage relationships
-        modelBuilder
-            .Entity<TicketMessage>()
-            .HasOne(m => m.Sender)
-            .WithMany()
-            .HasForeignKey(m => m.SenderId)
-            .OnDelete(DeleteBehavior.Restrict);
-
         // Broadcast relationships
         modelBuilder
             .Entity<Broadcast>()
@@ -97,9 +55,9 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
 
         modelBuilder
             .Entity<Notification>()
-            .HasOne(n => n.Ticket)
+            .HasOne(n => n.Conversation)
             .WithMany()
-            .HasForeignKey(n => n.TicketId)
+            .HasForeignKey(n => n.ConversationId)
             .OnDelete(DeleteBehavior.SetNull);
 
         // Index for faster queries

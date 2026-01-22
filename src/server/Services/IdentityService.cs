@@ -40,7 +40,7 @@ public class IdentityService
             new Claim(JwtRegisteredClaimNames.Email, user.Email!),
             new Claim(ClaimTypes.NameIdentifier, user.Id),
             new Claim(ClaimTypes.Email, user.Email!),
-            new Claim(ClaimTypes.Role, user.Role.ToLower()), // Use the user's Role property (Admin or User)
+            new Claim(ClaimTypes.Role, user.Role),
         };
 
         // Create token descriptor

@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/lib/providers/auth";
 import { useServer } from "@/lib/providers/server";
 import type { Design } from "@/lib/server/design";
 import {
@@ -178,6 +179,7 @@ function OrderDetailsDialog({
 }
 
 export default function Page() {
+  const { isInitialized } = useAuth();
   const { api } = useServer();
   const [designs, setDesigns] = useState<Design[]>([]);
   const [loadingDesigns, setLoadingDesigns] = useState(true);
@@ -190,6 +192,8 @@ export default function Page() {
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
   useEffect(() => {
+    if (!isInitialized) return;
+
     // Fetch designs
     api.design
       .getDesigns()
@@ -228,7 +232,7 @@ export default function Page() {
       .finally(() => {
         setLoadingOrders(false);
       });
-  }, [api]);
+  }, [api, isInitialized]);
 
   const handleViewOrderDetails = async (order: OrderSummaryResponse) => {
     setIsLoadingDetails(true);
