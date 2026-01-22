@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import {
   Bar,
   BarChart,
@@ -47,7 +48,6 @@ import {
   YAxis,
 } from "recharts";
 import { toast } from "sonner";
-import ReactMarkdown from "react-markdown";
 
 type DashboardStats = {
   totalProducts: number;
@@ -72,7 +72,7 @@ function StatCard({
   title: string;
   value: number | string;
   description: string;
-  icon: React.ElementType;
+  icon: React.ElementType<{ className?: string }>;
   href: string;
   color: string;
   loading: boolean;

@@ -20,12 +20,27 @@
       "cwd": "${workspaceFolder}/src/server",
       "program": "${workspaceFolder}/src/server/bin/Debug/net10.0/PrintlyServer.dll",
       "preLaunchTask": "Build Server"
+    },
+    {
+      "name": "Server (Hot Reload)",
+      "type": "coreclr",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/src/server",
+      "program": "dotnet",
+      "args": ["watch", "run"],
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
     }
   ],
   "compounds": [
     {
       "name": "App + Server",
       "configurations": ["Server", "App"]
+    },
+    {
+      "name": "App + Server (Hot Reload)",
+      "configurations": ["Server (Hot Reload)", "App"]
     }
   ]
 }

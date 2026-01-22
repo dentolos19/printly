@@ -4,6 +4,11 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      allow_reset:
+        description: Reset Database Where Necessary
+        type: boolean
+        default: false
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: true
@@ -19,7 +24,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       - name: Install Dependencies for App
         working-directory: src/app
@@ -48,12 +53,28 @@ jobs:
         run: dotnet build --configuration Release
 
       - name: Run Migrations
+        id: migrations
+        continue-on-error: ${{ github.event.inputs.allow_reset == 'true' }}
         working-directory: src/server
         run: |
           dotnet tool restore
           dotnet ef database update
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Reset Database (optional)
+        if: steps.migrations.outcome == 'failure' && github.event.inputs.allow_reset == 'true'
+        working-directory: src/server
+        run: |
+          echo "Migration failed. Force resetting database..."
+          dotnet ef database drop --force
+          dotnet ef database update
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Post-Run Migrations
+        if: steps.migrations.outcome == 'failure' && github.event.inputs.allow_reset != 'true'
+        run: exit 1
 
       - name: Deploy Server to Cloudflare
         uses: cloudflare/wrangler-action@v3

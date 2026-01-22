@@ -24,7 +24,6 @@
         "cwd": "${workspaceFolder}/src/server"
       },
       "presentation": {
-        "reveal": "silent",
         "clear": true
       }
     },
@@ -37,7 +36,6 @@
         "cwd": "${workspaceFolder}/src/server"
       },
       "presentation": {
-        "reveal": "silent",
         "clear": true
       }
     }

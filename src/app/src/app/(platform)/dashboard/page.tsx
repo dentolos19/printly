@@ -1,5 +1,6 @@
 "use client";
 
+import { OrderProgressTracker } from "@/components/order-progress-tracker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,17 +12,14 @@ import { useServer } from "@/lib/providers/server";
 import type { Design } from "@/lib/server/design";
 import {
   OrderResponse,
-  OrderSummaryResponse,
-  OrderStatus,
   OrderStatusColors,
   OrderStatusLabels,
+  OrderSummaryResponse,
   UserOrderStatsResponse,
 } from "@/lib/server/order";
 import { ProductSizeLabels } from "@/lib/server/product";
-import { OrderProgressTracker } from "@/components/order-progress-tracker";
 import {
   CheckCircle2,
-  Clock,
   CreditCard,
   DollarSign,
   FileTextIcon,
@@ -45,7 +43,7 @@ function StatCard({
 }: {
   title: string;
   value: string | number;
-  icon: React.ElementType;
+  icon: React.ElementType<{ className?: string }>;
   description?: string;
   loading?: boolean;
 }) {
@@ -302,7 +300,7 @@ export default function Page() {
             </Link>
           </Item>
           <Item variant="outline" asChild>
-            <Link href="/assets">
+            <Link href="/designs">
               <ItemMedia>
                 <ImageIcon />
               </ItemMedia>

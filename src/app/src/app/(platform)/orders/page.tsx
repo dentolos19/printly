@@ -1,5 +1,6 @@
 "use client";
 
+import { OrderProgressTracker } from "@/components/order-progress-tracker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,19 +18,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useServer } from "@/lib/providers/server";
 import {
   OrderResponse,
-  OrderSummaryResponse,
   OrderStatus,
   OrderStatusColors,
   OrderStatusLabels,
+  OrderSummaryResponse,
 } from "@/lib/server/order";
 import { ProductSizeLabels } from "@/lib/server/product";
-import { OrderProgressTracker } from "@/components/order-progress-tracker";
 import { CheckCircle2, Clock, CreditCard, Eye, Loader2, Package, ShoppingBag, Truck, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-const StatusIcons: Record<OrderStatus, React.ElementType> = {
+const StatusIcons: Record<OrderStatus, React.ElementType<{ className?: string }>> = {
   [OrderStatus.PendingPayment]: Clock,
   [OrderStatus.Paid]: CreditCard,
   [OrderStatus.Processing]: Package,
