@@ -15,6 +15,7 @@ import {
 } from "fabric";
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useAutoSave } from "../../../shared/hooks/use-auto-save";
 import type {
   AlignmentType,
   ArtStyle,
@@ -25,7 +26,6 @@ import type {
   GeneratedImage,
   HistoryState,
   LayerItem,
-  SaveStatus,
   ToolType,
 } from "../../types";
 import { DEFAULT_CANVAS_SIZE, DESIGN_DATA_VERSION } from "../../types";
@@ -33,7 +33,6 @@ import { DEFAULT_CANVAS_SIZE, DESIGN_DATA_VERSION } from "../../types";
 const DesignerContext = createContext<DesignerContextValue | null>(null);
 
 const MAX_HISTORY_SIZE = 50;
-const AUTO_SAVE_DELAY = 3000; // 3 seconds
 
 type DesignerProviderProps = {
   children: ReactNode;
@@ -60,7 +59,7 @@ export function DesignerProvider({
   const [layers, setLayers] = useState<LayerItem[]>([]);
   const [activeTool, setActiveTool] = useState<ToolType>("select");
   const [canvasSize, setCanvasSize] = useState<CanvasSize>(DEFAULT_CANVAS_SIZE);
-  const [zoom, setZoom] = useState(0.25); // Start at 25% zoom for large canvases
+  const [zoom, setZoom] = useState(0.25);
   const [gridEnabled, setGridEnabled] = useState(false);
   const [gridSize, setGridSize] = useState(20);
 
@@ -70,12 +69,7 @@ export function DesignerProvider({
   const isHistoryAction = useRef(false);
 
   // Design persistence state
-  const [designId, setDesignId] = useState<string | null>(initialDesignId);
   const [designName, setDesignName] = useState(initialDesignName);
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
-  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-  const [isDirty, setIsDirty] = useState(false);
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // AI Generator state
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>(initialGeneratedImages);
@@ -87,46 +81,42 @@ export function DesignerProvider({
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
 
-  // ============================================================================
-  // Auto-save functionality
-  // ============================================================================
+  // Serialize function for auto-save
+  const serializeDesign = useCallback(() => {
+    if (!canvas) return {};
 
-  const triggerAutoSave = useCallback(() => {
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-    }
+    const cover = canvas.toDataURL({
+      format: "png",
+      multiplier: 0.25,
+    });
 
-    setIsDirty(true);
+    return {
+      cover,
+      version: DESIGN_DATA_VERSION,
+      canvasSize,
+      backgroundColor: canvas.backgroundColor,
+      objects: canvas.toJSON().objects,
+    };
+  }, [canvas, canvasSize]);
 
-    autoSaveTimeoutRef.current = setTimeout(() => {
-      if (onSave && canvas) {
-        setSaveStatus("saving");
-        const canvasData = JSON.stringify({
-          version: DESIGN_DATA_VERSION,
-          canvasSize,
-          backgroundColor: canvas.backgroundColor,
-          objects: canvas.toJSON().objects,
-        });
-        const cover = canvas.toDataURL({
-          format: "png",
-          multiplier: 0.25,
-        });
+  // Use shared auto-save hook
+  const {
+    saveStatus,
+    lastSavedAt,
+    isDirty,
+    triggerAutoSave,
+    saveNow,
+    setId: setDesignIdInternal,
+  } = useAutoSave({
+    id: initialDesignId,
+    name: designName,
+    serialize: serializeDesign,
+    onSave,
+    onIdChange: (id) => setDesignId(id),
+  });
 
-        onSave({ name: designName, data: canvasData, cover })
-          .then((result) => {
-            if (result.id && !designId) {
-              setDesignId(result.id);
-            }
-            setSaveStatus("saved");
-            setLastSavedAt(new Date());
-            setIsDirty(false);
-          })
-          .catch(() => {
-            setSaveStatus("error");
-          });
-      }
-    }, AUTO_SAVE_DELAY);
-  }, [canvas, canvasSize, designId, designName, onSave]);
+  // Track designId from auto-save hook
+  const [designId, setDesignId] = useState<string | null>(initialDesignId);
 
   // ============================================================================
   // History management
@@ -144,15 +134,11 @@ export function DesignerProvider({
     setHistory((prev) => {
       const newHistory = prev.slice(0, historyIndex + 1);
       newHistory.push(newState);
-      if (newHistory.length > MAX_HISTORY_SIZE) {
-        newHistory.shift();
-        return newHistory;
-      }
-      return newHistory;
+      // Limit history size
+      return newHistory.length > MAX_HISTORY_SIZE ? newHistory.slice(1) : newHistory;
     });
-    setHistoryIndex((prev) => Math.min(prev + 1, MAX_HISTORY_SIZE - 1));
 
-    // Trigger auto-save after history change
+    setHistoryIndex((prev) => Math.min(prev + 1, MAX_HISTORY_SIZE - 1));
     triggerAutoSave();
   }, [canvas, historyIndex, triggerAutoSave]);
 
@@ -161,6 +147,7 @@ export function DesignerProvider({
 
     isHistoryAction.current = true;
     const prevState = history[historyIndex - 1];
+
     canvas.loadFromJSON(prevState.json).then(() => {
       canvas.renderAll();
       setHistoryIndex((prev) => prev - 1);
@@ -174,6 +161,7 @@ export function DesignerProvider({
 
     isHistoryAction.current = true;
     const nextState = history[historyIndex + 1];
+
     canvas.loadFromJSON(nextState.json).then(() => {
       canvas.renderAll();
       setHistoryIndex((prev) => prev + 1);
@@ -186,41 +174,7 @@ export function DesignerProvider({
   // Design persistence
   // ============================================================================
 
-  const saveDesign = useCallback(() => {
-    return new Promise<void>((resolve, reject) => {
-      if (!onSave || !canvas) {
-        resolve();
-        return;
-      }
-
-      setSaveStatus("saving");
-      const canvasData = JSON.stringify({
-        version: DESIGN_DATA_VERSION,
-        canvasSize,
-        backgroundColor: canvas.backgroundColor,
-        objects: canvas.toJSON().objects,
-      });
-      const cover = canvas.toDataURL({
-        format: "png",
-        multiplier: 0.25,
-      });
-
-      onSave({ name: designName, data: canvasData, cover })
-        .then((result) => {
-          if (result.id && !designId) {
-            setDesignId(result.id);
-          }
-          setSaveStatus("saved");
-          setLastSavedAt(new Date());
-          setIsDirty(false);
-          resolve();
-        })
-        .catch((error) => {
-          setSaveStatus("error");
-          reject(error);
-        });
-    });
-  }, [canvas, canvasSize, designId, designName, onSave]);
+  const saveDesign = saveNow;
 
   const loadDesign = useCallback(
     (id: string) => {
@@ -247,14 +201,9 @@ export function DesignerProvider({
           })
           .then(() => {
             canvas.renderAll();
-            setIsDirty(false);
-            setSaveStatus("saved");
-            setLastSavedAt(new Date());
             resolve();
           })
-          .catch((error) => {
-            reject(error);
-          });
+          .catch(reject);
       });
     },
     [canvas, onLoad],
@@ -989,18 +938,6 @@ export function DesignerProvider({
         });
     }
   }, [canvas, initialDesignId, onLoad, saveHistory]);
-
-  // ============================================================================
-  // Cleanup
-  // ============================================================================
-
-  useEffect(() => {
-    return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
-    };
-  }, []);
 
   // ============================================================================
   // Context value

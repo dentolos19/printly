@@ -2,7 +2,8 @@
 
 import type { Design } from "@/lib/server/design";
 import type { ReactNode } from "react";
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { useAutoSave } from "../../../shared/hooks/use-auto-save";
 import type {
   AppliedDesign,
   CameraState,
@@ -10,13 +11,11 @@ import type {
   LeftPanelView,
   PrintArea,
   ProductModel,
-  SaveStatus,
   Tool,
   Transform3D,
 } from "../../types";
 
 const IMPRINTER_DATA_VERSION = "1.0";
-const AUTO_SAVE_DELAY = 3000; // 3 seconds
 
 type ImprinterContextValue = {
   // Product state
@@ -38,7 +37,7 @@ type ImprinterContextValue = {
   imprintId: string | null;
   imprintName: string;
   setImprintName: (name: string) => void;
-  saveStatus: SaveStatus;
+  saveStatus: "idle" | "saving" | "saved" | "error";
   lastSavedAt: Date | null;
   isDirty: boolean;
 
@@ -104,61 +103,40 @@ export function ImprinterProvider({
   });
 
   // Design persistence state
+  const [imprintName, setImprintNameState] = useState(initialImprintName);
   const [imprintId, setImprintId] = useState<string | null>(initialImprintId);
-  const [imprintName, setImprintName] = useState(initialImprintName);
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
-  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-  const [isDirty, setIsDirty] = useState(false);
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // ============================================================================
-  // Auto-save functionality
-  // ============================================================================
+  // Serialize function for auto-save
+  const serializeImprint = useCallback(() => {
+    // Optimize: Strip heavy designData
+    const optimizedAppliedDesigns = appliedDesigns.map((design) => ({
+      ...design,
+      designData: {
+        id: design.designData.id,
+        name: design.designData.name,
+        coverId: design.designData.coverId,
+      },
+    }));
 
-  const triggerAutoSave = useCallback(() => {
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-    }
+    const imprintData: ImprinterData = {
+      version: IMPRINTER_DATA_VERSION,
+      productModel,
+      productColor,
+      appliedDesigns: optimizedAppliedDesigns as AppliedDesign[],
+      cameraState,
+    };
 
-    setIsDirty(true);
+    return imprintData;
+  }, [appliedDesigns, cameraState, productColor, productModel]);
 
-    autoSaveTimeoutRef.current = setTimeout(() => {
-      if (onSave) {
-        setSaveStatus("saving");
-
-        // Optimize: Strip heavy designData
-        const optimizedAppliedDesigns = appliedDesigns.map((design) => ({
-          ...design,
-          designData: {
-            id: design.designData.id,
-            name: design.designData.name,
-            coverId: design.designData.coverId,
-          },
-        }));
-
-        const imprintData: ImprinterData = {
-          version: IMPRINTER_DATA_VERSION,
-          productModel,
-          productColor,
-          appliedDesigns: optimizedAppliedDesigns as AppliedDesign[],
-          cameraState,
-        };
-
-        onSave({ name: imprintName, data: JSON.stringify(imprintData) })
-          .then((result) => {
-            if (result.id && !imprintId) {
-              setImprintId(result.id);
-            }
-            setSaveStatus("saved");
-            setLastSavedAt(new Date());
-            setIsDirty(false);
-          })
-          .catch(() => {
-            setSaveStatus("error");
-          });
-      }
-    }, AUTO_SAVE_DELAY);
-  }, [appliedDesigns, cameraState, imprintId, imprintName, onSave, productColor, productModel]);
+  // Use shared auto-save hook
+  const { saveStatus, lastSavedAt, isDirty, triggerAutoSave, saveNow } = useAutoSave({
+    id: initialImprintId,
+    name: imprintName,
+    serialize: serializeImprint,
+    onSave,
+    onIdChange: (id) => setImprintId(id),
+  });
 
   // ============================================================================
   // Product actions
@@ -182,7 +160,7 @@ export function ImprinterProvider({
 
   const handleSetImprintName = useCallback(
     (name: string) => {
-      setImprintName(name);
+      setImprintNameState(name);
       triggerAutoSave();
     },
     [triggerAutoSave],
@@ -273,38 +251,7 @@ export function ImprinterProvider({
   // Persistence
   // ============================================================================
 
-  const saveImprint = useCallback(() => {
-    return new Promise<void>((resolve, reject) => {
-      if (!onSave) {
-        resolve();
-        return;
-      }
-
-      setSaveStatus("saving");
-      const imprintData: ImprinterData = {
-        version: IMPRINTER_DATA_VERSION,
-        productModel,
-        productColor,
-        appliedDesigns,
-        cameraState,
-      };
-
-      onSave({ name: imprintName, data: JSON.stringify(imprintData) })
-        .then((result) => {
-          if (result.id && !imprintId) {
-            setImprintId(result.id);
-          }
-          setSaveStatus("saved");
-          setLastSavedAt(new Date());
-          setIsDirty(false);
-          resolve();
-        })
-        .catch((error) => {
-          setSaveStatus("error");
-          reject(error);
-        });
-    });
-  }, [appliedDesigns, cameraState, imprintId, imprintName, onSave, productColor, productModel]);
+  const saveImprint = saveNow;
 
   const loadImprint = useCallback(
     (id: string) => {
@@ -318,14 +265,11 @@ export function ImprinterProvider({
           .then((result) => {
             const data: ImprinterData = JSON.parse(result.data);
             setImprintId(id);
-            setImprintName(result.name);
+            setImprintNameState(result.name);
             setProductModel(data.productModel);
             setProductColor(data.productColor);
             setAppliedDesigns(data.appliedDesigns);
             setCameraState(data.cameraState);
-            setSaveStatus("saved");
-            setLastSavedAt(new Date());
-            setIsDirty(false);
             resolve();
           })
           .catch(reject);

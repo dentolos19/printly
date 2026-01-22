@@ -29,7 +29,6 @@ import {
   Book,
   ChevronDown,
   Clipboard,
-  Cloud,
   Copy,
   Eye,
   FileDown,
@@ -38,7 +37,6 @@ import {
   Home,
   Info,
   Keyboard,
-  Loader2,
   Maximize,
   Maximize2,
   Redo2,
@@ -52,6 +50,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { SaveIndicator } from "../../shared/components/save-indicator";
 import { useDesigner } from "./hooks";
 import { ResizeDesignDialog } from "./resize-design-dialog";
 
@@ -97,18 +96,6 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
     resizeDesign,
     canvasSize,
   } = useDesigner();
-
-  function formatLastSaved() {
-    if (!lastSavedAt) return null;
-    const now = new Date();
-    const diff = now.getTime() - lastSavedAt.getTime();
-    const seconds = Math.floor(diff / 1000);
-    const minutes = Math.floor(seconds / 60);
-
-    if (seconds < 60) return "Just now";
-    if (minutes < 60) return `${minutes}m ago`;
-    return lastSavedAt.toLocaleTimeString();
-  }
 
   return (
     <div className={cn("bg-background flex h-12 items-center border-b px-2", className)}>
@@ -379,27 +366,7 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
       <div className={"flex-1"} />
 
       {/* Save status */}
-      <div className={"text-muted-foreground flex items-center gap-2 text-xs"}>
-        {saveStatus === "saving" && (
-          <>
-            <Loader2 className={"h-3 w-3 animate-spin"} />
-            <span>Saving...</span>
-          </>
-        )}
-        {saveStatus === "saved" && (
-          <>
-            <Cloud className={"h-3 w-3 text-green-600"} />
-            <span>Saved {formatLastSaved()}</span>
-          </>
-        )}
-        {saveStatus === "error" && (
-          <>
-            <AlertTriangle className={"text-destructive h-3 w-3"} />
-            <span className={"text-destructive"}>Save failed</span>
-          </>
-        )}
-        {isDirty && saveStatus !== "saving" && <span className={"text-amber-600"}>Unsaved changes</span>}
-      </div>
+      <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} isDirty={isDirty} />
 
       {/* Design name */}
       <div className={"flex items-center gap-2 pl-4"}>

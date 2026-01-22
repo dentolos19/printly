@@ -10,22 +10,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import {
-  AlertTriangle,
-  Book,
-  ChevronDown,
-  Cloud,
-  FileDown,
-  Home,
-  Info,
-  Keyboard,
-  Loader2,
-  RotateCcw,
-  Save,
-} from "lucide-react";
+import { Book, ChevronDown, FileDown, Home, Info, Keyboard, RotateCcw, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { SaveIndicator } from "../../shared/components/save-indicator";
 import { useImprinter } from "./hooks/use-imprinter";
 
 type ToolbarHeaderProps = {
@@ -37,20 +25,6 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
   const router = useRouter();
   const { imprintName, setImprintName, saveStatus, isDirty, lastSavedAt, saveImprint, exportRender, resetCamera } =
     useImprinter();
-
-  const saveStatusIcon = {
-    idle: null,
-    saving: <Loader2 className="h-3 w-3 animate-spin" />,
-    saved: <Cloud className="h-3 w-3" />,
-    error: <AlertTriangle className="text-destructive h-3 w-3" />,
-  };
-
-  const saveStatusText = {
-    idle: "Not saved",
-    saving: "Saving...",
-    saved: lastSavedAt ? `Saved ${lastSavedAt.toLocaleTimeString()}` : "Saved",
-    error: "Error saving",
-  };
 
   return (
     <header className={cn("bg-background flex h-12 items-center justify-between border-b px-4", className)}>
@@ -121,15 +95,7 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
       </div>
 
       <div className="flex flex-1 items-center justify-end gap-2">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="text-muted-foreground flex items-center gap-1 text-xs">
-              {saveStatusIcon[saveStatus]}
-              <span>{saveStatusText[saveStatus]}</span>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent>{isDirty ? "Unsaved changes" : "All changes saved"}</TooltipContent>
-        </Tooltip>
+        <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} isDirty={isDirty} />
       </div>
 
       <div className="flex items-center justify-end pl-4">
@@ -142,8 +108,4 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
       </div>
     </header>
   );
-}
-
-function Separator({ orientation, className }: { orientation: "vertical" | "horizontal"; className?: string }) {
-  return <div className={cn("bg-border", orientation === "vertical" ? "w-px" : "h-px", className)} />;
 }
