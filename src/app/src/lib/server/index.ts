@@ -5,10 +5,11 @@ import initChatbotController from "@/lib/server/chatbot";
 import initCommunityController from "@/lib/server/community";
 import initDesignController from "@/lib/server/design";
 import initGenerateController from "@/lib/server/generate";
-import initProductController from "@/lib/server/product";
-import initVariantController from "@/lib/server/variant";
+import initImprintController from "@/lib/server/imprint";
 import initInventoryController from "@/lib/server/inventory";
 import initOrderController from "@/lib/server/order";
+import initProductController from "@/lib/server/product";
+import initVariantController from "@/lib/server/variant";
 import { ServerFetch } from "@/types";
 
 export default function generateServerFunctions(fetch: ServerFetch) {
@@ -20,6 +21,7 @@ export default function generateServerFunctions(fetch: ServerFetch) {
     community: initCommunityController(fetch),
     design: initDesignController(fetch),
     generate: initGenerateController(fetch),
+    imprint: initImprintController(fetch),
     product: initProductController(fetch),
     variant: initVariantController(fetch),
     inventory: initInventoryController(fetch),

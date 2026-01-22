@@ -9,6 +9,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
 {
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<Design> Designs { get; set; }
+    public DbSet<Imprint> Imprints { get; set; }
     public DbSet<Asset> Assets { get; set; }
     public DbSet<Message> Messages { get; set; }
     public DbSet<Ticket> Tickets { get; set; }
@@ -108,8 +109,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
                 n.IsDeleted,
             });
 
-        modelBuilder.Entity<Notification>()
-            .HasIndex(n => n.CreatedAt);
+        modelBuilder.Entity<Notification>().HasIndex(n => n.CreatedAt);
         modelBuilder.Entity<Notification>().HasIndex(n => n.CreatedAt);
 
         modelBuilder
@@ -169,19 +169,9 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
         modelBuilder.Entity<Order>().HasIndex(o => o.Status);
         modelBuilder.Entity<Order>().HasIndex(o => o.CreatedAt);
 
-        modelBuilder
-            .Entity<Post>()
-            .HasOne(p => p.Author)
-            .WithMany()
-            .HasForeignKey(p => p.AuthorId)
-            .IsRequired();
+        modelBuilder.Entity<Post>().HasOne(p => p.Author).WithMany().HasForeignKey(p => p.AuthorId).IsRequired();
 
-        modelBuilder
-            .Entity<Post>()
-            .HasOne(p => p.Photo)
-            .WithMany()
-            .HasForeignKey(p => p.PhotoId)
-            .IsRequired();
+        modelBuilder.Entity<Post>().HasOne(p => p.Photo).WithMany().HasForeignKey(p => p.PhotoId).IsRequired();
 
         modelBuilder
             .Entity<PostReaction>()
@@ -197,10 +187,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .HasForeignKey(pr => pr.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder
-            .Entity<PostReaction>()
-            .HasIndex(pr => new { pr.PostId, pr.UserId })
-            .IsUnique();
+        modelBuilder.Entity<PostReaction>().HasIndex(pr => new { pr.PostId, pr.UserId }).IsUnique();
 
         // PostComment relationships
         modelBuilder
@@ -239,10 +226,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .HasForeignKey(pb => pb.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder
-            .Entity<PostBookmark>()
-            .HasIndex(pb => new { pb.PostId, pb.UserId })
-            .IsUnique();
+        modelBuilder.Entity<PostBookmark>().HasIndex(pb => new { pb.PostId, pb.UserId }).IsUnique();
 
         // Indexes for Post queries
         modelBuilder.Entity<Post>().HasIndex(p => p.AuthorId);

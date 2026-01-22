@@ -314,6 +314,40 @@ namespace PrintlyServer.Migrations
                     b.ToTable("Designs");
                 });
 
+            modelBuilder.Entity("PrintlyServer.Data.Entities.Imprint", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Data")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Imprints");
+                });
+
             modelBuilder.Entity("PrintlyServer.Data.Entities.Inventory", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1037,6 +1071,17 @@ namespace PrintlyServer.Migrations
                         .IsRequired();
 
                     b.Navigation("Cover");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("PrintlyServer.Data.Entities.Imprint", b =>
+                {
+                    b.HasOne("PrintlyServer.Data.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });

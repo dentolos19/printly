@@ -38,7 +38,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useServer } from "@/lib/providers/server";
 import type { Asset } from "@/lib/server/asset";
 import type { Design } from "@/lib/server/design";
+import type { Imprint } from "@/lib/server/imprint";
 import {
+  Box,
   Copy,
   DownloadIcon,
   Edit3,
@@ -69,6 +71,10 @@ export default function Page() {
   const [designs, setDesigns] = useState<DesignWithPreview[]>([]);
   const [designsLoading, setDesignsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Imprint states
+  const [imprints, setImprints] = useState<Imprint[]>([]);
+  const [imprintsLoading, setImprintsLoading] = useState(true);
 
   // Asset states
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -163,10 +169,28 @@ export default function Page() {
     }
   }, [api.asset]);
 
+  // Load imprints
+  const loadImprints = useCallback(() => {
+    setImprintsLoading(true);
+    api.imprint
+      .getImprints()
+      .then((data) => {
+        setImprints(data);
+      })
+      .catch((error) => {
+        toast.error("Failed to load imprints");
+        console.error(error);
+      })
+      .finally(() => {
+        setImprintsLoading(false);
+      });
+  }, [api.imprint]);
+
   useEffect(() => {
     loadDesigns();
     loadAssets();
-  }, [loadDesigns, loadAssets]);
+    loadImprints();
+  }, [loadDesigns, loadAssets, loadImprints]);
 
   // Handle rename
   function handleOpenRename(design: DesignWithPreview) {
@@ -354,7 +378,9 @@ export default function Page() {
   const renderAssetCard = (asset: Asset) => (
     <Card
       key={asset.id}
-      className={"group cursor-pointer gap-0 overflow-hidden border-2 p-0 transition-all hover:border-primary/50 hover:shadow-xl"}
+      className={
+        "group hover:border-primary/50 cursor-pointer gap-0 overflow-hidden border-2 p-0 transition-all hover:shadow-xl"
+      }
       onClick={() => openAssetDetail(asset)}
     >
       <div className={"bg-muted relative aspect-square w-full overflow-hidden"}>
@@ -382,10 +408,14 @@ export default function Page() {
       <div className={"p-4"}>
         <div className={"space-y-1.5"}>
           <h3 className={"group-hover:text-primary truncate font-semibold transition-colors"}>{asset.name}</h3>
-          {asset.description && <p className={"text-muted-foreground line-clamp-2 text-sm leading-relaxed"}>{asset.description}</p>}
+          {asset.description && (
+            <p className={"text-muted-foreground line-clamp-2 text-sm leading-relaxed"}>{asset.description}</p>
+          )}
           <div className={"text-muted-foreground flex items-center justify-between border-t pt-2 text-xs"}>
             <span className={"font-medium"}>{formatFileSize(asset.size)}</span>
-            <span className={"bg-secondary rounded-md px-2 py-0.5 font-mono text-[10px] uppercase"}>{asset.type.split("/")[1] || "FILE"}</span>
+            <span className={"bg-secondary rounded-md px-2 py-0.5 font-mono text-[10px] uppercase"}>
+              {asset.type.split("/")[1] || "FILE"}
+            </span>
           </div>
         </div>
       </div>
@@ -411,10 +441,14 @@ export default function Page() {
       </div>
 
       <Tabs defaultValue={"designs"} className={"w-full"}>
-        <TabsList className={"grid w-full max-w-md grid-cols-2"}>
+        <TabsList className={"grid w-full max-w-2xl grid-cols-3"}>
           <TabsTrigger value={"designs"} className={"text-base"}>
             <FileText className={"mr-2 h-4 w-4"} />
             Designs
+          </TabsTrigger>
+          <TabsTrigger value={"imprints"} className={"text-base"}>
+            <Box className={"mr-2 h-4 w-4"} />
+            Imprints
           </TabsTrigger>
           <TabsTrigger value={"assets"} className={"text-base"}>
             <ImageIcon className={"mr-2 h-4 w-4"} />
@@ -503,7 +537,12 @@ export default function Page() {
           {!designsLoading && filteredDesigns.length > 0 && (
             <div className={"grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"}>
               {filteredDesigns.map((design) => (
-                <Card key={design.id} className={"group gap-0 overflow-hidden border-2 p-0 transition-all hover:border-primary/50 hover:shadow-xl"}>
+                <Card
+                  key={design.id}
+                  className={
+                    "group hover:border-primary/50 gap-0 overflow-hidden border-2 p-0 transition-all hover:shadow-xl"
+                  }
+                >
                   <Link href={`/designer/${design.id}`}>
                     <div className={"bg-muted relative aspect-4/3 w-full overflow-hidden"}>
                       {design.preview ? (
@@ -525,7 +564,11 @@ export default function Page() {
                           "absolute inset-0 flex items-center justify-center bg-linear-to-t from-black/60 via-black/30 to-transparent opacity-0 transition-all duration-300 group-hover:opacity-100"
                         }
                       >
-                        <div className={"rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black shadow-lg transition-transform group-hover:scale-105"}>
+                        <div
+                          className={
+                            "rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black shadow-lg transition-transform group-hover:scale-105"
+                          }
+                        >
                           <Pencil className={"mr-2 inline h-4 w-4"} />
                           Open Design
                         </div>
@@ -579,9 +622,160 @@ export default function Page() {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-                    <div className={"text-muted-foreground mt-4 flex items-center justify-between border-t pt-3 text-xs"}>
-                      <span className={"bg-primary/10 text-primary rounded-md px-2 py-1 font-medium"}>{getCanvasSize(design)}</span>
+                    <div
+                      className={"text-muted-foreground mt-4 flex items-center justify-between border-t pt-3 text-xs"}
+                    >
+                      <span className={"bg-primary/10 text-primary rounded-md px-2 py-1 font-medium"}>
+                        {getCanvasSize(design)}
+                      </span>
                       <span className={"font-medium"}>{formatDate(design.updatedAt)}</span>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Imprints Tab */}
+        <TabsContent value={"imprints"} className={"mt-6 space-y-6"}>
+          <div className={"flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"}>
+            <p className={"text-muted-foreground"}>3D product imprint configurations</p>
+            <Button type={"button"} asChild>
+              <Link href={"/imprinter/new"}>
+                <Plus className={"mr-2 h-4 w-4"} />
+                New Imprint
+              </Link>
+            </Button>
+          </div>
+
+          {/* Loading state */}
+          {imprintsLoading && (
+            <div className={"grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"}>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Card key={i}>
+                  <CardHeader className={"p-0"}>
+                    <Skeleton className={"aspect-4/3 w-full rounded-t-lg"} />
+                  </CardHeader>
+                  <CardContent className={"p-4"}>
+                    <Skeleton className={"mb-2 h-5 w-3/4"} />
+                    <Skeleton className={"h-4 w-1/2"} />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {/* Empty state */}
+          {!imprintsLoading && imprints.length === 0 && (
+            <Card className={"border-dashed"}>
+              <CardContent className={"flex flex-col items-center justify-center py-16"}>
+                <div className={"bg-primary/10 mb-4 rounded-full p-4"}>
+                  <Box className={"text-primary h-8 w-8"} />
+                </div>
+                <h3 className={"mb-2 text-xl font-semibold"}>No imprints yet</h3>
+                <p className={"text-muted-foreground mb-6 text-center text-sm"}>
+                  Create your first imprint to visualize designs on 3D products
+                </p>
+                <Button type={"button"} size={"lg"} asChild>
+                  <Link href={"/imprinter/new"}>
+                    <Plus className={"mr-2 h-5 w-5"} />
+                    Create Your First Imprint
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Imprints grid */}
+          {!imprintsLoading && imprints.length > 0 && (
+            <div className={"grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"}>
+              {imprints.map((imprint) => (
+                <Card
+                  key={imprint.id}
+                  className={
+                    "group hover:border-primary/50 gap-0 overflow-hidden border-2 p-0 transition-all hover:shadow-xl"
+                  }
+                >
+                  <Link href={`/imprinter/${imprint.id}`}>
+                    <div className={"bg-muted relative aspect-4/3 w-full overflow-hidden"}>
+                      <div className={"flex h-full w-full items-center justify-center"}>
+                        <Box className={"text-muted-foreground/30 h-12 w-12"} />
+                      </div>
+                      {/* Hover overlay */}
+                      <div
+                        className={
+                          "absolute inset-0 flex items-center justify-center bg-linear-to-t from-black/60 via-black/30 to-transparent opacity-0 transition-all duration-300 group-hover:opacity-100"
+                        }
+                      >
+                        <div
+                          className={
+                            "rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black shadow-lg transition-transform group-hover:scale-105"
+                          }
+                        >
+                          <Pencil className={"mr-2 inline h-4 w-4"} />
+                          Open Imprint
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                  <div className={"p-4"}>
+                    <div className={"flex items-start justify-between gap-3"}>
+                      <div className={"min-w-0 flex-1 space-y-1.5"}>
+                        <Link href={`/imprinter/${imprint.id}`} className={"block"}>
+                          <h3 className={"group-hover:text-primary truncate font-semibold transition-colors"}>
+                            {imprint.name}
+                          </h3>
+                        </Link>
+                        <p className={"text-muted-foreground line-clamp-2 text-sm leading-relaxed"}>
+                          {imprint.description || "No description"}
+                        </p>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            type={"button"}
+                            variant={"ghost"}
+                            size={"icon"}
+                            className={"text-muted-foreground hover:text-foreground -mt-2 -mr-2 h-8 w-8 shrink-0"}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreVertical className={"h-4 w-4"} />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align={"end"}>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/imprinter/${imprint.id}`}>
+                              <Pencil className={"mr-2 h-4 w-4"} />
+                              Edit
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className={"text-destructive"}
+                            onClick={async () => {
+                              if (!confirm(`Delete "${imprint.name}"?`)) return;
+                              try {
+                                await api.imprint.deleteImprint(imprint.id);
+                                setImprints((prev) => prev.filter((i) => i.id !== imprint.id));
+                                toast.success("Imprint deleted successfully");
+                              } catch (error) {
+                                toast.error("Failed to delete imprint");
+                                console.error(error);
+                              }
+                            }}
+                          >
+                            <Trash2 className={"mr-2 h-4 w-4"} />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    <div
+                      className={"text-muted-foreground mt-4 flex items-center justify-between border-t pt-3 text-xs"}
+                    >
+                      <span className={"bg-primary/10 text-primary rounded-md px-2 py-1 font-medium"}>3D Imprint</span>
+                      <span className={"font-medium"}>{formatDate(imprint.updatedAt)}</span>
                     </div>
                   </div>
                 </Card>
@@ -707,8 +901,10 @@ export default function Page() {
             <Tabs defaultValue={"all"} className={"w-full"}>
               <TabsList className={"mb-2"}>
                 <TabsTrigger value={"all"}>All Assets ({assets.length})</TabsTrigger>
-                <TabsTrigger value={"uploaded"}>Uploaded ({assets.filter(a => !a.isGenerated).length})</TabsTrigger>
-                <TabsTrigger value={"generated"}>AI Generated ({assets.filter(a => a.isGenerated).length})</TabsTrigger>
+                <TabsTrigger value={"uploaded"}>Uploaded ({assets.filter((a) => !a.isGenerated).length})</TabsTrigger>
+                <TabsTrigger value={"generated"}>
+                  AI Generated ({assets.filter((a) => a.isGenerated).length})
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value={"all"} className={"mt-6"}>

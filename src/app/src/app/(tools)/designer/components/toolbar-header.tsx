@@ -121,7 +121,7 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
             variant={"ghost"}
             size={"icon"}
             className={"mr-2 h-8 w-8"}
-            onClick={() => router.push("/designs")}
+            onClick={() => router.push("/library?tab=designs")}
           >
             <Home className={"h-4 w-4"} />
           </Button>
