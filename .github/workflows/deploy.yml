@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       allow_reset:
-        description: "Destroy and recreate the database if migrations fail"
+        description: Reset Database Where Necessary
         type: boolean
         default: false
 concurrency:
@@ -24,7 +24,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       - name: Install Dependencies for App
         working-directory: src/app
@@ -72,7 +72,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Fail Migration (optional)
+      - name: Post-Run Migrations
         if: steps.migrations.outcome == 'failure' && github.event.inputs.allow_reset != 'true'
         run: exit 1
 

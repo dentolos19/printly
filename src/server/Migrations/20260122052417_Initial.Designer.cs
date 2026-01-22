@@ -12,7 +12,7 @@ using PrintlyServer.Data;
 namespace PrintlyServer.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20260122030440_Initial")]
+    [Migration("20260122052417_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
