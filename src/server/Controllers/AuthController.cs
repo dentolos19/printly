@@ -146,10 +146,10 @@ public class AuthController(DatabaseContext database, IdentityService identitySe
 
         // Toggle role between Admin and User
         user.Role = user.Role == "Admin" ? "User" : "Admin";
-        
+
         // Save changes to database
-        Database.Users.Update(user);
-        await Database.SaveChangesAsync();
+        database.Users.Update(user);
+        await database.SaveChangesAsync();
 
         return Ok(new { role = user.Role });
     }

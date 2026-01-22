@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 export default function DebugRoleToggle() {
   const { claims } = useAuth();
-  const { server } = useServer();
+  const { api } = useServer();
   const [isLoading, setIsLoading] = useState(false);
 
   if (!claims) return null;
@@ -16,10 +16,10 @@ export default function DebugRoleToggle() {
   const handleToggleRole = async () => {
     try {
       setIsLoading(true);
-      const response = await server.auth.toggleRole();
-      
+      const response = await api.auth.toggleRole();
+
       toast.success(`Role toggled to: ${response.role}`);
-      
+
       // Reload the page to refresh the token and get the new role
       setTimeout(() => {
         window.location.reload();
@@ -33,16 +33,12 @@ export default function DebugRoleToggle() {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 p-4 bg-gray-900 text-white rounded-lg shadow-lg border border-gray-700 z-50">
-      <div className="text-sm font-semibold mb-2">🔧 Debug: Role Toggle</div>
-      <div className="text-xs mb-2">Current Role: <span className="font-bold uppercase">{claims.role}</span></div>
-      <Button
-        onClick={handleToggleRole}
-        disabled={isLoading}
-        size="sm"
-        variant="outline"
-        className="text-xs"
-      >
+    <div className="fixed right-4 bottom-4 z-50 rounded-lg border border-gray-700 bg-gray-900 p-4 text-white shadow-lg">
+      <div className="mb-2 text-sm font-semibold">🔧 Debug: Role Toggle</div>
+      <div className="mb-2 text-xs">
+        Current Role: <span className="font-bold uppercase">{claims.role}</span>
+      </div>
+      <Button onClick={handleToggleRole} disabled={isLoading} size="sm" variant="outline" className="text-xs">
         {isLoading ? "Toggling..." : "Toggle Role"}
       </Button>
     </div>
