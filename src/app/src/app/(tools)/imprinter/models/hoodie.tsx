@@ -5,11 +5,33 @@ export function Hoodie(props: ComponentProps<"group">) {
   const { nodes, materials }: { nodes: any; materials: any } = useGLTF("/models/hoodie.glb");
   return (
     <group {...props} dispose={null}>
-      <group rotation={[-Math.PI / 2, 0, 0]}>
-        <mesh castShadow receiveShadow geometry={nodes.Object_2.geometry} material={materials["Material238904.005"]} />
-        <mesh castShadow receiveShadow geometry={nodes.Object_3.geometry} material={materials["Material238904.005"]} />
-        <mesh castShadow receiveShadow geometry={nodes.Object_4.geometry} material={materials["Material238904.005"]} />
-        <mesh castShadow receiveShadow geometry={nodes.Object_5.geometry} material={materials["Material238904.005"]} />
+      <group scale={0.001}>
+        <group scale={10}>
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.Hoodie_FABRIC_3_FRONT_1850_0.geometry}
+            material={materials.FABRIC_3_FRONT_1850}
+          />
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.Hoodie_FABRIC_3_FRONT_1850_0_1.geometry}
+            material={materials.FABRIC_3_FRONT_1850}
+          />
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.Hoodie_FABRIC_3_FRONT_1850_0_2.geometry}
+            material={materials.FABRIC_3_FRONT_1850}
+          />
+          <mesh
+            castShadow
+            receiveShadow
+            geometry={nodes.Hoodie_FABRIC_3_FRONT_1850_0_3.geometry}
+            material={materials.FABRIC_3_FRONT_1850}
+          />
+        </group>
       </group>
     </group>
   );
