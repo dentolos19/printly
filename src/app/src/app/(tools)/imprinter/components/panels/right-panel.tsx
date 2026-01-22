@@ -222,7 +222,7 @@ type TransformSectionProps = {
 };
 
 function TransformSection({ open, onOpenChange }: TransformSectionProps) {
-  const { selectedDesignId, appliedDesigns, updateDesignTransform } = useImprinter();
+  const { selectedDesignId, appliedDesigns, updateDesignTransform, updateDesignOpacity } = useImprinter();
 
   const selectedDesign = appliedDesigns.find((d) => d.id === selectedDesignId);
 
@@ -318,8 +318,7 @@ function TransformSection({ open, onOpenChange }: TransformSectionProps) {
           <Slider
             value={[selectedDesign.opacity * 100]}
             onValueChange={([o]) => {
-              // TODO: Add opacity to updateDesignTransform or create separate function
-              console.log("Opacity:", o / 100);
+              updateDesignOpacity(selectedDesign.id, o / 100);
             }}
             min={0}
             max={100}

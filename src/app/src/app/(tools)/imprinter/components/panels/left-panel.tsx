@@ -80,7 +80,6 @@ export function LeftPanel({ className }: LeftPanelProps) {
       <ScrollArea className="h-0 flex-1">
         {leftPanelView === "designs" && <DesignsPanel />}
         {leftPanelView === "assets" && <AssetsPanel />}
-        {leftPanelView === "templates" && <TemplatesPanel />}
       </ScrollArea>
       <div
         className={cn(
@@ -106,7 +105,6 @@ function PanelHeader({ view, onClose }: PanelHeaderProps) {
   const titles = {
     designs: "Your Designs",
     assets: "Your Assets",
-    templates: "Templates",
   };
 
   return (
@@ -308,18 +306,5 @@ function AssetsPanel() {
         </div>
       </TabsContent>
     </Tabs>
-  );
-}
-
-// ============================================================================
-// Templates Panel
-// ============================================================================
-
-function TemplatesPanel() {
-  return (
-    <div className="flex flex-col items-center justify-center p-6 text-center">
-      <p className="text-muted-foreground text-sm">Coming soon</p>
-      <p className="text-muted-foreground mt-1 text-xs">Pre-made templates for quick imprinting</p>
-    </div>
   );
 }

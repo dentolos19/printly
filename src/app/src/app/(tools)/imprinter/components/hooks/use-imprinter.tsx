@@ -48,6 +48,7 @@ type ImprinterContextValue = {
   // Design actions
   addDesignToProduct: (design: Design, printArea: PrintArea) => void;
   updateDesignTransform: (id: string, transform: Partial<Transform3D>) => void;
+  updateDesignOpacity: (id: string, opacity: number) => void;
   removeDesign: (id: string) => void;
   selectDesign: (id: string | null) => void;
 
@@ -121,11 +122,22 @@ export function ImprinterProvider({
     autoSaveTimeoutRef.current = setTimeout(() => {
       if (onSave) {
         setSaveStatus("saving");
+
+        // Optimize: Strip heavy designData
+        const optimizedAppliedDesigns = appliedDesigns.map((design) => ({
+          ...design,
+          designData: {
+            id: design.designData.id,
+            name: design.designData.name,
+            coverId: design.designData.coverId,
+          },
+        }));
+
         const imprintData: ImprinterData = {
           version: IMPRINTER_DATA_VERSION,
           productModel,
           productColor,
-          appliedDesigns,
+          appliedDesigns: optimizedAppliedDesigns as AppliedDesign[],
           cameraState,
         };
 
@@ -215,6 +227,14 @@ export function ImprinterProvider({
             : design,
         ),
       );
+      triggerAutoSave();
+    },
+    [triggerAutoSave],
+  );
+
+  const updateDesignOpacity = useCallback(
+    (id: string, opacity: number) => {
+      setAppliedDesigns((prev) => prev.map((design) => (design.id === id ? { ...design, opacity } : design)));
       triggerAutoSave();
     },
     [triggerAutoSave],
@@ -351,6 +371,7 @@ export function ImprinterProvider({
       // Design actions
       addDesignToProduct,
       updateDesignTransform,
+      updateDesignOpacity,
       removeDesign,
       selectDesign,
 
@@ -385,6 +406,7 @@ export function ImprinterProvider({
       changeProductColor,
       addDesignToProduct,
       updateDesignTransform,
+      updateDesignOpacity,
       removeDesign,
       selectDesign,
       resetCamera,
