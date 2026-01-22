@@ -12,8 +12,8 @@ using PrintlyServer.Data;
 namespace PrintlyServer.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20260112140421_AddCommunityEntities")]
-    partial class AddCommunityEntities
+    [Migration("20260122030440_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -163,6 +163,10 @@ namespace PrintlyServer.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -280,6 +284,45 @@ namespace PrintlyServer.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("CoverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Data")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CoverId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Designs");
+                });
+
+            modelBuilder.Entity("PrintlyServer.Data.Entities.Imprint", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -305,7 +348,7 @@ namespace PrintlyServer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Designs");
+                    b.ToTable("Imprints");
                 });
 
             modelBuilder.Entity("PrintlyServer.Data.Entities.Inventory", b =>
@@ -1019,6 +1062,23 @@ namespace PrintlyServer.Migrations
                 });
 
             modelBuilder.Entity("PrintlyServer.Data.Entities.Design", b =>
+                {
+                    b.HasOne("PrintlyServer.Data.Entities.Asset", "Cover")
+                        .WithMany()
+                        .HasForeignKey("CoverId");
+
+                    b.HasOne("PrintlyServer.Data.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cover");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("PrintlyServer.Data.Entities.Imprint", b =>
                 {
                     b.HasOne("PrintlyServer.Data.Entities.User", "User")
                         .WithMany()
