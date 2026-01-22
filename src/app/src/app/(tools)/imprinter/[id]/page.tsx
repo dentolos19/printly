@@ -92,6 +92,14 @@ export default function Page() {
     [api.imprint],
   );
 
+  // Load design handler for restoring full design data
+  const handleLoadDesign = useCallback(
+    (designId: string) => {
+      return api.design.getDesign(designId);
+    },
+    [api.design],
+  );
+
   if (isLoading) {
     return (
       <div className="flex h-dvh w-dvw items-center justify-center">
@@ -111,6 +119,7 @@ export default function Page() {
           initialImprintName={initialImprintName}
           onSave={handleSave}
           onLoad={handleLoad}
+          onLoadDesign={handleLoadDesign}
         >
           <ImprinterContent />
         </ImprinterProvider>

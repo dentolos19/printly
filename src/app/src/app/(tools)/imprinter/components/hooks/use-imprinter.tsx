@@ -2,7 +2,7 @@
 
 import type { Design } from "@/lib/server/design";
 import type { ReactNode } from "react";
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useAutoSave } from "../../../shared/hooks/use-auto-save";
 import type {
   AppliedDesign,
@@ -75,6 +75,7 @@ type ImprinterProviderProps = {
   initialImprintName?: string;
   onSave?: (data: { name: string; data: string }) => Promise<{ id: string }>;
   onLoad?: (id: string) => Promise<{ name: string; data: string }>;
+  onLoadDesign?: (designId: string) => Promise<Design>;
 };
 
 export function ImprinterProvider({
@@ -83,6 +84,7 @@ export function ImprinterProvider({
   initialImprintName = "Untitled Imprint",
   onSave,
   onLoad,
+  onLoadDesign,
 }: ImprinterProviderProps) {
   // Product state
   const [productModel, setProductModel] = useState<ProductModel>("tshirt");
@@ -254,34 +256,71 @@ export function ImprinterProvider({
   const saveImprint = saveNow;
 
   const loadImprint = useCallback(
-    (id: string) => {
-      return new Promise<void>((resolve, reject) => {
-        if (!onLoad) {
-          resolve();
-          return;
-        }
+    async (id: string) => {
+      if (!onLoad) return;
 
-        onLoad(id)
-          .then((result) => {
-            const data: ImprinterData = JSON.parse(result.data);
-            setImprintId(id);
-            setImprintNameState(result.name);
-            setProductModel(data.productModel);
-            setProductColor(data.productColor);
-            setAppliedDesigns(data.appliedDesigns);
-            setCameraState(data.cameraState);
-            resolve();
-          })
-          .catch(reject);
-      });
+      try {
+        const result = await onLoad(id);
+        const data: ImprinterData = JSON.parse(result.data);
+
+        setImprintId(id);
+        setImprintNameState(result.name);
+        setProductModel(data.productModel);
+        setProductColor(data.productColor);
+        setCameraState(data.cameraState);
+
+        // Restore full design data for each applied design
+        if (onLoadDesign && data.appliedDesigns.length > 0) {
+          const designsWithFullData = await Promise.all(
+            data.appliedDesigns.map(async (appliedDesign) => {
+              try {
+                // Fetch full design data
+                const fullDesign = await onLoadDesign(appliedDesign.designData.id);
+                return {
+                  ...appliedDesign,
+                  designData: fullDesign,
+                };
+              } catch (error) {
+                console.error(`Failed to load design ${appliedDesign.designData.id}:`, error);
+                // Return with partial data if load fails
+                return appliedDesign;
+              }
+            }),
+          );
+          setAppliedDesigns(designsWithFullData);
+        } else {
+          // Fallback if no onLoadDesign provided
+          setAppliedDesigns(data.appliedDesigns);
+        }
+      } catch (error) {
+        console.error("Failed to load imprint:", error);
+        throw error;
+      }
     },
-    [onLoad],
+    [onLoad, onLoadDesign],
   );
 
   const exportRender = useCallback((resolution: number) => {
     // TODO: Implement 3D render export using Three.js render to canvas
     console.log("Export render at resolution:", resolution);
   }, []);
+
+  // ============================================================================
+  // Initial imprint loading
+  // ============================================================================
+
+  const hasLoadedInitialImprint = useRef(false);
+
+  useEffect(() => {
+    // Load the imprint data when we have an initial imprint ID
+    if (initialImprintId && onLoad && !hasLoadedInitialImprint.current) {
+      hasLoadedInitialImprint.current = true;
+
+      loadImprint(initialImprintId).catch((error) => {
+        console.error("Failed to load initial imprint:", error);
+      });
+    }
+  }, [initialImprintId, onLoad, loadImprint]);
 
   // ============================================================================
   // Context value

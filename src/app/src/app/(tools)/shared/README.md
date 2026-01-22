@@ -93,3 +93,4 @@ The shared components follow Vercel React Best Practices:
 - **Deduplication**: Skips saves when data hasn't changed
 - **Promise reuse**: Prevents concurrent duplicate saves
 - **Optimistic updates**: UI responds immediately while save is in progress
+- **Lazy loading**: Full design data loaded only when needed (imprinter)
