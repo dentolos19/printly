@@ -22,6 +22,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
     public DbSet<Inventory> Inventories { get; set; }
     public DbSet<Order> Orders { get; set; }
     public DbSet<OrderItem> OrderItems { get; set; }
+    public DbSet<Payment> Payments { get; set; }
     public DbSet<Post> Posts { get; set; }
     public DbSet<PostComment> PostComments { get; set; }
     public DbSet<PostReaction> PostReactions { get; set; }
@@ -168,6 +169,19 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
         modelBuilder.Entity<Order>().HasIndex(o => o.UserId);
         modelBuilder.Entity<Order>().HasIndex(o => o.Status);
         modelBuilder.Entity<Order>().HasIndex(o => o.CreatedAt);
+
+        // Payment relationships (1:1 with Order)
+        modelBuilder
+            .Entity<Payment>()
+            .HasOne(p => p.Order)
+            .WithOne()
+            .HasForeignKey<Payment>(p => p.OrderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Unique constraints for Payment
+        modelBuilder.Entity<Payment>().HasIndex(p => p.OrderId).IsUnique();
+        modelBuilder.Entity<Payment>().HasIndex(p => p.StripeCheckoutSessionId).IsUnique();
+        modelBuilder.Entity<Payment>().HasIndex(p => p.Status);
 
         modelBuilder.Entity<Post>().HasOne(p => p.Author).WithMany().HasForeignKey(p => p.AuthorId).IsRequired();
 

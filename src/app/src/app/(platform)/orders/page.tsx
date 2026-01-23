@@ -383,17 +383,15 @@ export default function OrdersPage() {
   const handlePayOrder = async (order: OrderSummaryResponse) => {
     setIsPaying(order.id);
     try {
-      await server.api.order.payMyOrder(order.id);
-      toast.success("Payment successful!", {
-        description: `Order #${order.id.slice(0, 8)} has been marked as paid.`,
-      });
-      fetchOrders();
+      // Create Stripe checkout session and redirect
+      const { checkoutUrl } = await server.api.payment.createCheckoutSession(order.id);
+      // Redirect to Stripe checkout
+      window.location.href = checkoutUrl;
     } catch (error) {
-      console.error("Failed to process payment:", error);
+      console.error("Failed to create checkout session:", error);
       toast.error("Payment failed", {
         description: error instanceof Error ? error.message : "Please try again.",
       });
-    } finally {
       setIsPaying(null);
     }
   };
