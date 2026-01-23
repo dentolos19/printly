@@ -87,6 +87,7 @@ export default function CartPage() {
   const { items, updateQuantity, removeItem, clearCart, getTotal } = useCart();
   const server = useServer();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const handleCheckout = async () => {
     if (!claims) {
@@ -112,14 +113,20 @@ export default function CartPage() {
         quantity: item.quantity,
       }));
 
-      await server.api.order.createOrder({ items: orderItems });
+      const order = await server.api.order.createOrder({ items: orderItems });
+
+      // Set redirecting flag to prevent showing empty cart
+      setIsRedirecting(true);
+
+      // Clear cart and redirect immediately to orders page
+      clearCart();
 
       toast.success("Order placed successfully!", {
         description: "Your order has been created and is pending payment.",
       });
 
-      clearCart();
-      router.push("/orders");
+      // Use replace to prevent going back to cart page
+      router.replace("/orders");
     } catch (error) {
       console.error("Checkout failed:", error);
       toast.error("Checkout failed", {
@@ -173,8 +180,13 @@ export default function CartPage() {
           </p>
         </div>
 
-        {items.length === 0 ? (
+        {items.length === 0 && !isRedirecting ? (
           <EmptyCart />
+        ) : isRedirecting ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="text-primary mb-4 h-16 w-16 animate-spin rounded-full border-4 border-current border-t-transparent" />
+            <h2 className="mb-2 text-xl font-bold">Redirecting to your orders...</h2>
+          </div>
         ) : (
           <div className="grid gap-8 lg:grid-cols-3">
             {/* Cart Items */}
