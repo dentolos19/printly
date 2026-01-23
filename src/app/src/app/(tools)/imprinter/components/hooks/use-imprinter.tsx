@@ -73,7 +73,9 @@ type ImprinterProviderProps = {
   children: ReactNode;
   initialImprintId?: string | null;
   initialImprintName?: string;
-  onSave?: (data: { name: string; data: string }) => Promise<{ id: string }>;
+  onSave?: (
+    data: { name: string; data: string; currentId: string | null } & Partial<ImprinterData>,
+  ) => Promise<{ id: string }>;
   onLoad?: (id: string) => Promise<{ name: string; data: string }>;
   onLoadDesign?: (designId: string) => Promise<Design>;
 };

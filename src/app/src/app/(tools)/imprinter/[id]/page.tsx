@@ -2,6 +2,7 @@
 
 import { ImprinterContent } from "@/app/(tools)/imprinter/components";
 import { ImprinterProvider } from "@/app/(tools)/imprinter/components/hooks/use-imprinter";
+import type { AppliedDesign, CameraState, ProductModel } from "@/app/(tools)/imprinter/types";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useServer } from "@/lib/providers/server";
 import { useParams, useRouter } from "next/navigation";
@@ -41,9 +42,16 @@ export default function Page() {
 
   // Save handler
   const handleSave = useCallback(
-    (data: { name: string; data: string; currentId: string | null }) => {
+    (
+      data: { name: string; data: string; currentId: string | null } & Partial<{
+        version: string;
+        productModel: ProductModel;
+        productColor: string;
+        appliedDesigns: AppliedDesign[];
+        cameraState: CameraState;
+      }>,
+    ) => {
       return new Promise<{ id: string }>((resolve, reject) => {
-        // Use the ID from auto-save hook if available, otherwise fall back to initial state
         const targetId = data.currentId || initialImprintId;
 
         if (targetId) {
@@ -66,9 +74,6 @@ export default function Page() {
               description: "Imprint configuration",
             })
             .then((imprint) => {
-              // We don't set initialImprintId here to avoid triggering a re-render
-              // that would cause ImprinterProvider to reload the data.
-              // The ImprinterProvider manages its own ID state via useAutoSave.
               window.history.replaceState(null, "", `/imprinter/${imprint.id}`);
               resolve({ id: imprint.id });
             })
