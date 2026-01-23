@@ -214,9 +214,7 @@ function CanvasModel() {
   const maxAnisotropy = useMemo(() => gl.capabilities.getMaxAnisotropy(), [gl]);
 
   // Get model URL from selected product - use proxied URL to avoid CORS issues
-  const modelUrl = selectedProduct?.product.modelId
-    ? `/assets/${selectedProduct.product.modelId}/view`
-    : null;
+  const modelUrl = selectedProduct?.product.modelId ? `/assets/${selectedProduct.product.modelId}/view` : null;
 
   // Find and categorize meshes by position and material
   useEffect(() => {
