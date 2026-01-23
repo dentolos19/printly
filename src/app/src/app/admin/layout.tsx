@@ -33,7 +33,6 @@ import {
   BellIcon,
   Box,
   Home,
-  Layers,
   LayoutDashboardIcon,
   LogOutIcon,
   MoreVerticalIcon,
@@ -48,7 +47,6 @@ import { ReactNode } from "react";
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: Home },
   { href: "/admin/products", label: "Products", icon: Package },
-  { href: "/admin/variants", label: "Variants", icon: Layers },
   { href: "/admin/inventory", label: "Inventory", icon: Box },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
 ];

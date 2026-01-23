@@ -16,6 +16,14 @@ public class Product : BaseEntity
 
     public bool IsActive { get; set; } = true;
 
+    // Product image (generic image for the product)
+    public Guid? ImageId { get; set; }
+    public Asset? Image { get; set; }
+
+    // 3D Model file (.glb)
+    public Guid? ModelId { get; set; }
+    public Asset? Model { get; set; }
+
     // Navigation property
     public ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
 }

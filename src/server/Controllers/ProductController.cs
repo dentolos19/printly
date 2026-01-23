@@ -25,6 +25,8 @@ public class ProductController(DatabaseContext context, StorageService storageSe
             query = query.Where(p => p.IsActive == isActive.Value);
 
         var products = await query
+            .Include(p => p.Image)
+            .Include(p => p.Model)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.Inventory)
             .Include(p => p.Variants)
@@ -35,6 +37,18 @@ public class ProductController(DatabaseContext context, StorageService storageSe
         var responses = new List<ProductResponse>();
         foreach (var p in products)
         {
+            string? productImageUrl = null;
+            if (p.Image != null)
+            {
+                productImageUrl = await storageService.DownloadFileAsync(p.Image);
+            }
+
+            string? productModelUrl = null;
+            if (p.Model != null)
+            {
+                productModelUrl = await storageService.DownloadFileAsync(p.Model);
+            }
+
             var variantResponses = new List<ProductVariantResponse>();
             foreach (var v in p.Variants)
             {
@@ -68,7 +82,19 @@ public class ProductController(DatabaseContext context, StorageService storageSe
             }
 
             responses.Add(
-                new ProductResponse(p.Id, p.Name, p.BasePrice, p.IsActive, p.CreatedAt, p.UpdatedAt, variantResponses)
+                new ProductResponse(
+                    p.Id,
+                    p.Name,
+                    p.BasePrice,
+                    p.IsActive,
+                    p.ImageId,
+                    productImageUrl,
+                    p.ModelId,
+                    productModelUrl,
+                    p.CreatedAt,
+                    p.UpdatedAt,
+                    variantResponses
+                )
             );
         }
 
@@ -90,22 +116,47 @@ public class ProductController(DatabaseContext context, StorageService storageSe
             query = query.Where(p => p.IsActive == isActive.Value);
 
         var products = await query
+            .Include(p => p.Image)
+            .Include(p => p.Model)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.Inventory)
             .OrderBy(p => p.Name)
-            .Select(p => new ProductSummaryResponse(
-                p.Id,
-                p.Name,
-                p.BasePrice,
-                p.IsActive,
-                p.CreatedAt,
-                p.UpdatedAt,
-                p.Variants.Count,
-                p.Variants.Sum(v => v.Inventory != null ? v.Inventory.Quantity : 0)
-            ))
             .ToListAsync();
 
-        return Ok(products);
+        var responses = new List<ProductSummaryResponse>();
+        foreach (var p in products)
+        {
+            string? imageUrl = null;
+            if (p.Image != null)
+            {
+                imageUrl = await storageService.DownloadFileAsync(p.Image);
+            }
+
+            string? modelUrl = null;
+            if (p.Model != null)
+            {
+                modelUrl = await storageService.DownloadFileAsync(p.Model);
+            }
+
+            responses.Add(
+                new ProductSummaryResponse(
+                    p.Id,
+                    p.Name,
+                    p.BasePrice,
+                    p.IsActive,
+                    p.ImageId,
+                    imageUrl,
+                    p.ModelId,
+                    modelUrl,
+                    p.CreatedAt,
+                    p.UpdatedAt,
+                    p.Variants.Count,
+                    p.Variants.Sum(v => v.Inventory != null ? v.Inventory.Quantity : 0)
+                )
+            );
+        }
+
+        return Ok(responses);
     }
 
     /// <summary>
@@ -116,7 +167,9 @@ public class ProductController(DatabaseContext context, StorageService storageSe
     public async Task<ActionResult<ProductResponse>> GetProduct(Guid id)
     {
         var product = await Context
-            .Products.Include(p => p.Variants)
+            .Products.Include(p => p.Image)
+            .Include(p => p.Model)
+            .Include(p => p.Variants)
                 .ThenInclude(v => v.Inventory)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.Image)
@@ -125,6 +178,18 @@ public class ProductController(DatabaseContext context, StorageService storageSe
 
         if (product is null)
             return NotFound(new { message = "Product not found" });
+
+        string? productImageUrl = null;
+        if (product.Image != null)
+        {
+            productImageUrl = await storageService.DownloadFileAsync(product.Image);
+        }
+
+        string? productModelUrl = null;
+        if (product.Model != null)
+        {
+            productModelUrl = await storageService.DownloadFileAsync(product.Model);
+        }
 
         var variantResponses = new List<ProductVariantResponse>();
         foreach (var v in product.Variants)
@@ -163,6 +228,10 @@ public class ProductController(DatabaseContext context, StorageService storageSe
             product.Name,
             product.BasePrice,
             product.IsActive,
+            product.ImageId,
+            productImageUrl,
+            product.ModelId,
+            productModelUrl,
             product.CreatedAt,
             product.UpdatedAt,
             variantResponses
@@ -193,6 +262,10 @@ public class ProductController(DatabaseContext context, StorageService storageSe
             product.Name,
             product.BasePrice,
             product.IsActive,
+            null,
+            null,
+            null,
+            null,
             product.CreatedAt,
             product.UpdatedAt,
             new List<ProductVariantResponse>()
@@ -392,5 +465,125 @@ public class ProductController(DatabaseContext context, StorageService storageSe
         }
 
         return Ok(responses);
+    }
+
+    /// <summary>
+    /// Uploads or updates a product image.
+    /// </summary>
+    [HttpPost("{id:guid}/image")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<ProductResponse>> UploadProductImage(Guid id, [FromForm] IFormFile file)
+    {
+        var product = await Context.Products.Include(p => p.Image).FirstOrDefaultAsync(p => p.Id == id);
+
+        if (product is null)
+            return NotFound(new { message = "Product not found" });
+
+        // Validate file type (images only)
+        var allowedTypes = new[] { "image/jpeg", "image/png", "image/gif", "image/webp" };
+        if (!allowedTypes.Contains(file.ContentType.ToLower()))
+        {
+            return BadRequest(new { message = "Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed." });
+        }
+
+        // Delete old image if exists
+        if (product.Image != null)
+        {
+            await storageService.DeleteFileAsync(product.Image);
+            Context.Assets.Remove(product.Image);
+        }
+
+        // Upload new image (StorageService already saves the asset to database)
+        using var stream = file.OpenReadStream();
+        var asset = await storageService.UploadFileAsync(stream, file.FileName);
+        product.ImageId = asset.Id;
+
+        await Context.SaveChangesAsync();
+
+        return await GetProduct(id);
+    }
+
+    /// <summary>
+    /// Deletes a product image.
+    /// </summary>
+    [HttpDelete("{id:guid}/image")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<ProductResponse>> DeleteProductImage(Guid id)
+    {
+        var product = await Context.Products.Include(p => p.Image).FirstOrDefaultAsync(p => p.Id == id);
+
+        if (product is null)
+            return NotFound(new { message = "Product not found" });
+
+        if (product.Image == null)
+            return BadRequest(new { message = "Product has no image" });
+
+        await storageService.DeleteFileAsync(product.Image);
+        Context.Assets.Remove(product.Image);
+        product.ImageId = null;
+
+        await Context.SaveChangesAsync();
+
+        return await GetProduct(id);
+    }
+
+    /// <summary>
+    /// Uploads or updates a product 3D model (.glb file).
+    /// </summary>
+    [HttpPost("{id:guid}/model")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<ProductResponse>> UploadProductModel(Guid id, [FromForm] IFormFile file)
+    {
+        var product = await Context.Products.Include(p => p.Model).FirstOrDefaultAsync(p => p.Id == id);
+
+        if (product is null)
+            return NotFound(new { message = "Product not found" });
+
+        // Validate file type (.glb only)
+        var fileName = file.FileName.ToLower();
+        if (!fileName.EndsWith(".glb") && file.ContentType != "model/gltf-binary")
+        {
+            return BadRequest(new { message = "Invalid file type. Only .glb files are allowed." });
+        }
+
+        // Delete old model if exists
+        if (product.Model != null)
+        {
+            await storageService.DeleteFileAsync(product.Model);
+            Context.Assets.Remove(product.Model);
+        }
+
+        // Upload new model (StorageService already saves the asset to database)
+        using var stream = file.OpenReadStream();
+        var asset = await storageService.UploadFileAsync(stream, file.FileName);
+        product.ModelId = asset.Id;
+
+        await Context.SaveChangesAsync();
+
+        return await GetProduct(id);
+    }
+
+    /// <summary>
+    /// Deletes a product 3D model.
+    /// </summary>
+    [HttpDelete("{id:guid}/model")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<ProductResponse>> DeleteProductModel(Guid id)
+    {
+        var product = await Context.Products.Include(p => p.Model).FirstOrDefaultAsync(p => p.Id == id);
+
+        if (product is null)
+            return NotFound(new { message = "Product not found" });
+
+        if (product.Model == null)
+            return BadRequest(new { message = "Product has no 3D model" });
+
+        await storageService.DeleteFileAsync(product.Model);
+        Context.Assets.Remove(product.Model);
+        product.ModelId = null;
+
+        await Context.SaveChangesAsync();
+
+        return await GetProduct(id);
     }
 }

@@ -10,7 +10,7 @@ import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronRight, Eye, Layers, MapPin, RotateCcw, Settings, Shirt, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { PrintArea, ProductModel } from "../../types";
+import type { PrintArea } from "../../types";
 import { useImprinter } from "../hooks/use-imprinter";
 
 type RightPanelProps = {
@@ -119,7 +119,37 @@ type ProductSectionProps = {
 };
 
 function ProductSection({ open, onOpenChange }: ProductSectionProps) {
-  const { productModel, productColor, changeProductModel, changeProductColor } = useImprinter();
+  const { 
+    selectedProduct, 
+    availableProducts, 
+    productColor, 
+    selectProduct, 
+    changeProductColor 
+  } = useImprinter();
+
+  // Get available colors from the selected product's variants
+  const availableColors = selectedProduct?.product.variants
+    .map(v => v.color)
+    .filter((color, index, self) => self.indexOf(color) === index) || [];
+
+  const handleProductChange = (productId: string) => {
+    const product = availableProducts.find(p => p.id === productId);
+    if (product) {
+      // Auto-select first variant if available
+      const firstVariant = product.variants[0] || null;
+      selectProduct(product, firstVariant);
+    }
+  };
+
+  const handleColorChange = (color: string) => {
+    if (selectedProduct) {
+      // Find a variant with this color
+      const variant = selectedProduct.product.variants.find(v => v.color === color);
+      if (variant) {
+        selectProduct(selectedProduct.product, variant);
+      }
+    }
+  };
 
   return (
     <Collapsible open={open} onOpenChange={onOpenChange}>
@@ -133,20 +163,50 @@ function ProductSection({ open, onOpenChange }: ProductSectionProps) {
       <CollapsibleContent className="space-y-3 px-2 pt-3 pb-2">
         <div className="space-y-2">
           <Label className="text-xs">Model</Label>
-          <Select value={productModel} onValueChange={(v) => changeProductModel(v as ProductModel)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="tshirt">T-Shirt</SelectItem>
-              <SelectItem value="mug">Mug</SelectItem>
-              <SelectItem value="hoodie">Hoodie</SelectItem>
-            </SelectContent>
-          </Select>
+          {availableProducts.length === 0 ? (
+            <p className="text-muted-foreground text-xs">No products with 3D models available</p>
+          ) : (
+            <Select 
+              value={selectedProduct?.product.id || ""} 
+              onValueChange={handleProductChange}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a product" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableProducts.map((product) => (
+                  <SelectItem key={product.id} value={product.id}>
+                    {product.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
+        {selectedProduct && availableColors.length > 0 && (
+          <div className="space-y-2">
+            <Label className="text-xs">Variant Color</Label>
+            <Select 
+              value={selectedProduct.variant?.color || ""} 
+              onValueChange={handleColorChange}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select color" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableColors.map((color) => (
+                  <SelectItem key={color} value={color}>
+                    {color}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         <div className="space-y-2">
-          <Label className="text-xs">Color</Label>
+          <Label className="text-xs">Model Color</Label>
           <div className="flex gap-2">
             <input
               type="color"
@@ -171,7 +231,7 @@ type PrintAreaSectionProps = {
 };
 
 function PrintAreaSection({ open, onOpenChange }: PrintAreaSectionProps) {
-  const { activePrintArea, setActivePrintArea } = useImprinter();
+  const { activePrintArea, setActivePrintArea, availablePrintAreas, selectedProduct } = useImprinter();
 
   return (
     <Collapsible open={open} onOpenChange={onOpenChange}>
@@ -183,21 +243,31 @@ function PrintAreaSection({ open, onOpenChange }: PrintAreaSectionProps) {
         {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-3 px-2 pt-3 pb-2">
-        <div className="space-y-2">
-          <Label className="text-xs">Active Area</Label>
-          <Select value={activePrintArea} onValueChange={(v) => setActivePrintArea(v as PrintArea)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="front">Front</SelectItem>
-              <SelectItem value="back">Back</SelectItem>
-              <SelectItem value="left-sleeve">Left Sleeve</SelectItem>
-              <SelectItem value="right-sleeve">Right Sleeve</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <p className="text-muted-foreground text-xs">Designs added from the left panel will be placed on this area.</p>
+        {!selectedProduct ? (
+          <p className="text-muted-foreground text-xs">Select a product first</p>
+        ) : (
+          <>
+            <div className="space-y-2">
+              <Label className="text-xs">Active Area</Label>
+              <Select 
+                value={activePrintArea} 
+                onValueChange={(v) => setActivePrintArea(v as PrintArea)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {availablePrintAreas.map((area) => (
+                    <SelectItem key={area.id} value={area.id}>
+                      {area.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-muted-foreground text-xs">Designs added from the left panel will be placed on this area.</p>
+          </>
+        )}
       </CollapsibleContent>
     </Collapsible>
   );
