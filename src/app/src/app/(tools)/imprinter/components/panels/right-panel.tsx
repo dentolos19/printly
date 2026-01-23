@@ -119,21 +119,16 @@ type ProductSectionProps = {
 };
 
 function ProductSection({ open, onOpenChange }: ProductSectionProps) {
-  const { 
-    selectedProduct, 
-    availableProducts, 
-    productColor, 
-    selectProduct, 
-    changeProductColor 
-  } = useImprinter();
+  const { selectedProduct, availableProducts, productColor, selectProduct, changeProductColor } = useImprinter();
 
   // Get available colors from the selected product's variants
-  const availableColors = selectedProduct?.product.variants
-    .map(v => v.color)
-    .filter((color, index, self) => self.indexOf(color) === index) || [];
+  const availableColors =
+    selectedProduct?.product.variants
+      .map((v) => v.color)
+      .filter((color, index, self) => self.indexOf(color) === index) || [];
 
   const handleProductChange = (productId: string) => {
-    const product = availableProducts.find(p => p.id === productId);
+    const product = availableProducts.find((p) => p.id === productId);
     if (product) {
       // Auto-select first variant if available
       const firstVariant = product.variants[0] || null;
@@ -144,7 +139,7 @@ function ProductSection({ open, onOpenChange }: ProductSectionProps) {
   const handleColorChange = (color: string) => {
     if (selectedProduct) {
       // Find a variant with this color
-      const variant = selectedProduct.product.variants.find(v => v.color === color);
+      const variant = selectedProduct.product.variants.find((v) => v.color === color);
       if (variant) {
         selectProduct(selectedProduct.product, variant);
       }
@@ -166,10 +161,7 @@ function ProductSection({ open, onOpenChange }: ProductSectionProps) {
           {availableProducts.length === 0 ? (
             <p className="text-muted-foreground text-xs">No products with 3D models available</p>
           ) : (
-            <Select 
-              value={selectedProduct?.product.id || ""} 
-              onValueChange={handleProductChange}
-            >
+            <Select value={selectedProduct?.product.id || ""} onValueChange={handleProductChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a product" />
               </SelectTrigger>
@@ -187,10 +179,7 @@ function ProductSection({ open, onOpenChange }: ProductSectionProps) {
         {selectedProduct && availableColors.length > 0 && (
           <div className="space-y-2">
             <Label className="text-xs">Variant Color</Label>
-            <Select 
-              value={selectedProduct.variant?.color || ""} 
-              onValueChange={handleColorChange}
-            >
+            <Select value={selectedProduct.variant?.color || ""} onValueChange={handleColorChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Select color" />
               </SelectTrigger>
@@ -249,10 +238,7 @@ function PrintAreaSection({ open, onOpenChange }: PrintAreaSectionProps) {
           <>
             <div className="space-y-2">
               <Label className="text-xs">Active Area</Label>
-              <Select 
-                value={activePrintArea} 
-                onValueChange={(v) => setActivePrintArea(v as PrintArea)}
-              >
+              <Select value={activePrintArea} onValueChange={(v) => setActivePrintArea(v as PrintArea)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -265,7 +251,9 @@ function PrintAreaSection({ open, onOpenChange }: PrintAreaSectionProps) {
                 </SelectContent>
               </Select>
             </div>
-            <p className="text-muted-foreground text-xs">Designs added from the left panel will be placed on this area.</p>
+            <p className="text-muted-foreground text-xs">
+              Designs added from the left panel will be placed on this area.
+            </p>
           </>
         )}
       </CollapsibleContent>

@@ -169,10 +169,10 @@ function DynamicModel({ url, color }: { url: string; color: string }) {
 
   useEffect(() => {
     if (!scene) return;
-    
+
     // Clone the scene to avoid modifying the cached version
     const clonedScene = scene.clone();
-    
+
     // Apply color to all meshes
     clonedScene.traverse((child: THREE.Object3D) => {
       if (child instanceof THREE.Mesh && child.material) {
@@ -182,7 +182,7 @@ function DynamicModel({ url, color }: { url: string; color: string }) {
         (child.material as THREE.MeshStandardMaterial).color = new THREE.Color(color);
       }
     });
-    
+
     if (modelRef.current) {
       // Clear existing children
       while (modelRef.current.children.length > 0) {
@@ -213,8 +213,10 @@ function CanvasModel() {
   const [meshes, setMeshes] = useState<MeshMap>({ body: null, leftSleeve: null, rightSleeve: null });
   const maxAnisotropy = useMemo(() => gl.capabilities.getMaxAnisotropy(), [gl]);
 
-  // Get model URL from selected product
-  const modelUrl = selectedProduct?.product.modelUrl;
+  // Get model URL from selected product - use proxied URL to avoid CORS issues
+  const modelUrl = selectedProduct?.product.modelId
+    ? `/assets/${selectedProduct.product.modelId}/view`
+    : null;
 
   // Find and categorize meshes by position and material
   useEffect(() => {

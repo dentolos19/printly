@@ -16,7 +16,7 @@ export default function Page() {
 
   const imprintId = params?.id as string | undefined;
   const isNew = imprintId === "new";
-  
+
   // Get product/variant from URL params (from product modal)
   const initialProductId = searchParams.get("product");
   const initialVariantId = searchParams.get("variant");

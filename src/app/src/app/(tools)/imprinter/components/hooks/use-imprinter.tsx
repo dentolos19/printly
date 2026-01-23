@@ -178,11 +178,11 @@ export function ImprinterProvider({
 
   // Compute model config from selected product
   const modelConfig = useMemo<ModelConfig | null>(() => {
-    if (!selectedProduct?.product.modelUrl) return null;
+    if (!selectedProduct?.product.modelId) return null;
     return {
       id: selectedProduct.product.id,
       name: selectedProduct.product.name,
-      modelUrl: selectedProduct.product.modelUrl,
+      modelUrl: `/assets/${selectedProduct.product.modelId}/view`,
       printAreas: getPrintAreasForProduct(selectedProduct.product),
     };
   }, [selectedProduct]);
@@ -261,16 +261,16 @@ export function ImprinterProvider({
     (product: ProductResponse, variant?: ProductVariantResponse | null) => {
       setSelectedProduct({ product, variant: variant || null });
       setProductModel(product.id);
-      
+
       // Auto-select color from variant if available
       if (variant?.color) {
         const hexColor = colorNameToHex(variant.color);
         setProductColor(hexColor);
       }
-      
+
       // Reset print area to front when switching products
       setActivePrintArea("front");
-      
+
       triggerAutoSave();
     },
     [triggerAutoSave],
@@ -387,14 +387,12 @@ export function ImprinterProvider({
         setImprintNameState(result.name);
         setProductColor(data.productColor);
         setCameraState(data.cameraState);
-        
+
         // Handle legacy productModel or new productId format
         if (data.productId && availableProducts.length > 0) {
-          const product = availableProducts.find(p => p.id === data.productId);
+          const product = availableProducts.find((p) => p.id === data.productId);
           if (product) {
-            const variant = data.variantId 
-              ? product.variants.find(v => v.id === data.variantId) || null
-              : null;
+            const variant = data.variantId ? product.variants.find((v) => v.id === data.variantId) || null : null;
             setSelectedProduct({ product, variant });
             setProductModel(product.id);
           }
@@ -449,31 +447,31 @@ export function ImprinterProvider({
     // Load products and set initial product/variant if provided
     if (onLoadProducts && !hasLoadedInitialProduct.current) {
       hasLoadedInitialProduct.current = true;
-      
-      onLoadProducts().then((products) => {
-        // Filter to only products with models
-        const productsWithModels = products.filter(p => p.modelUrl);
-        setAvailableProducts(productsWithModels);
-        
-        // If initial product ID is provided, select it
-        if (initialProductId) {
-          const product = productsWithModels.find(p => p.id === initialProductId);
-          if (product) {
-            const variant = initialVariantId 
-              ? product.variants.find(v => v.id === initialVariantId) || null
-              : null;
-            setSelectedProduct({ product, variant });
-            setProductModel(product.id);
-            
-            // Auto-select color from variant
-            if (variant?.color) {
-              setProductColor(colorNameToHex(variant.color));
+
+      onLoadProducts()
+        .then((products) => {
+          // Filter to only products with models (using modelId, not modelUrl)
+          const productsWithModels = products.filter((p) => p.modelId);
+          setAvailableProducts(productsWithModels);
+
+          // If initial product ID is provided, select it
+          if (initialProductId) {
+            const product = productsWithModels.find((p) => p.id === initialProductId);
+            if (product) {
+              const variant = initialVariantId ? product.variants.find((v) => v.id === initialVariantId) || null : null;
+              setSelectedProduct({ product, variant });
+              setProductModel(product.id);
+
+              // Auto-select color from variant
+              if (variant?.color) {
+                setProductColor(colorNameToHex(variant.color));
+              }
             }
           }
-        }
-      }).catch((error) => {
-        console.error("Failed to load products:", error);
-      });
+        })
+        .catch((error) => {
+          console.error("Failed to load products:", error);
+        });
     }
   }, [onLoadProducts, initialProductId, initialVariantId]);
 
