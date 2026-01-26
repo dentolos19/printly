@@ -23,6 +23,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { Check, CheckCheck, CornerUpLeft, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { forwardRef, useState } from "react";
+import { FileAttachment } from "./file-attachment";
+import { VoiceMessagePlayer } from "./voice-message-player";
 
 export interface ChatMessageProps {
   id: string;
@@ -37,6 +39,14 @@ export interface ChatMessageProps {
   editedAt?: string | null;
   replyToContent?: string | null;
   replyToSenderName?: string | null;
+  // File attachment props
+  fileUrl?: string | null;
+  fileName?: string | null;
+  fileType?: string | null;
+  fileSize?: number | null;
+  // Voice message props
+  voiceMessageUrl?: string | null;
+  voiceMessageDuration?: number | null;
   onReply?: () => void;
   onEdit?: (newContent: string) => void;
   onDelete?: () => void;
@@ -82,6 +92,12 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
       editedAt,
       replyToContent,
       replyToSenderName,
+      fileUrl,
+      fileName,
+      fileType,
+      fileSize,
+      voiceMessageUrl,
+      voiceMessageDuration,
       onReply,
       onEdit,
       onDelete,
@@ -91,6 +107,9 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
     const [isEditing, setIsEditing] = useState(false);
     const [editContent, setEditContent] = useState(content);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+    const hasFile = fileUrl && fileName && fileType && fileSize;
+    const hasVoice = voiceMessageUrl && voiceMessageDuration;
 
     const handleEdit = () => {
       if (editContent.trim() && editContent !== content) {
@@ -161,17 +180,36 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                 </div>
               ) : (
                 <>
-                  <div
-                    className={cn(
-                      "rounded-2xl px-4 py-2",
-                      isDeleted
-                        ? "bg-muted text-muted-foreground italic"
-                        : isCurrentUser
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted",
+                  <div className="flex flex-col gap-2">
+                    {/* Voice message */}
+                    {hasVoice && !isDeleted && (
+                      <VoiceMessagePlayer
+                        url={voiceMessageUrl}
+                        duration={voiceMessageDuration}
+                        className={cn(isCurrentUser ? "bg-primary/10" : "bg-muted")}
+                      />
                     )}
-                  >
-                    <p className="text-sm break-words whitespace-pre-wrap">{content}</p>
+
+                    {/* File attachment */}
+                    {hasFile && !isDeleted && (
+                      <FileAttachment url={fileUrl} fileName={fileName} fileType={fileType} fileSize={fileSize} />
+                    )}
+
+                    {/* Text content (hide if only voice or file with emoji prefix) */}
+                    {(!hasVoice || !content.startsWith("🎤")) && (!hasFile || !content.startsWith("📎")) && (
+                      <div
+                        className={cn(
+                          "rounded-2xl px-4 py-2",
+                          isDeleted
+                            ? "bg-muted text-muted-foreground italic"
+                            : isCurrentUser
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted",
+                        )}
+                      >
+                        <p className="text-sm break-words whitespace-pre-wrap">{content}</p>
+                      </div>
+                    )}
                   </div>
 
                   {!isDeleted && isCurrentUser && (onEdit || onDelete || onReply) && (

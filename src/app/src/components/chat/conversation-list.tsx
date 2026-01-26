@@ -4,6 +4,14 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+  getPriorityBadgeClasses,
+  getPriorityCardBorder,
+  getPriorityLabel,
+  getStatusBadgeClasses,
+  getStatusLabel,
+  needsAttention,
+} from "@/lib/conversation-colors";
+import {
   ConversationPriority,
   ConversationPriorityLabels,
   ConversationStatus,
@@ -11,7 +19,7 @@ import {
   type ConversationSummary,
 } from "@/lib/server/conversation";
 import { cn } from "@/lib/utils";
-import { AlertCircle, CheckCircle, Clock, MessageSquare, XCircle } from "lucide-react";
+import { AlertCircle, CheckCircle, Clock, MessageSquare, User, XCircle } from "lucide-react";
 import { forwardRef } from "react";
 
 export interface ConversationListProps {
@@ -23,6 +31,7 @@ export interface ConversationListProps {
   showStatus?: boolean;
   showPriority?: boolean;
   showCustomerName?: boolean;
+  showAssignment?: boolean;
 }
 
 function getInitials(name: string): string {
@@ -106,6 +115,7 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
       showStatus = false,
       showPriority = false,
       showCustomerName = false,
+      showAssignment = false,
     },
     ref,
   ) => {
@@ -138,6 +148,7 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
             const lastMessageContent = conversation.lastMessage?.isDeleted
               ? "Message deleted"
               : conversation.lastMessage?.content || "No messages yet";
+            const requiresAttention = needsAttention(conversation.status, conversation.priority);
 
             return (
               <button
@@ -145,7 +156,10 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                 onClick={() => onSelect(conversation.id)}
                 className={cn(
                   "hover:bg-muted/50 flex w-full items-start gap-3 border-b px-4 py-3 text-left transition-colors",
+                  "border-l-4",
+                  showPriority ? getPriorityCardBorder(conversation.priority) : "border-l-transparent",
                   isSelected && "bg-muted",
+                  requiresAttention && "animate-pulse bg-red-50 dark:bg-red-950/20",
                 )}
               >
                 <Avatar className="h-10 w-10 shrink-0">
@@ -164,19 +178,33 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                     </span>
                   </div>
 
-                  {showStatus && (
-                    <div className="mt-1 flex items-center gap-1">
-                      <Badge variant={getStatusVariant(conversation.status)} className="gap-1 px-1.5 py-0 text-[10px]">
-                        {getStatusIcon(conversation.status)}
-                        {ConversationStatusLabels[conversation.status]}
-                      </Badge>
+                  {(showStatus || showAssignment) && (
+                    <div className="mt-1 flex flex-wrap items-center gap-1">
+                      {showStatus && (
+                        <Badge
+                          variant="outline"
+                          className={cn("gap-1 px-1.5 py-0 text-[10px]", getStatusBadgeClasses(conversation.status))}
+                        >
+                          {getStatusIcon(conversation.status)}
+                          {getStatusLabel(conversation.status)}
+                        </Badge>
+                      )}
                       {showPriority && conversation.priority >= 2 && (
                         <Badge
                           variant="outline"
-                          className={cn("px-1.5 py-0 text-[10px]", getPriorityColor(conversation.priority))}
+                          className={cn(
+                            "gap-1 px-1.5 py-0 text-[10px]",
+                            getPriorityBadgeClasses(conversation.priority),
+                          )}
                         >
-                          <AlertCircle className="mr-0.5 h-2.5 w-2.5" />
-                          {ConversationPriorityLabels[conversation.priority]}
+                          <AlertCircle className="h-2.5 w-2.5" />
+                          {getPriorityLabel(conversation.priority)}
+                        </Badge>
+                      )}
+                      {showAssignment && conversation.assignedToAdminName && (
+                        <Badge variant="outline" className="gap-1 px-1.5 py-0 text-[10px]">
+                          <User className="h-2.5 w-2.5" />
+                          {conversation.assignedToAdminName}
                         </Badge>
                       )}
                     </div>

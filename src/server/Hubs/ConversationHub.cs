@@ -46,7 +46,25 @@ public class ConversationHub(
         DateTime CreatedAt,
         Guid? ReplyToMessageId,
         string? ReplyToContent,
-        string? ReplyToSenderName
+        string? ReplyToSenderName,
+        // File attachment fields
+        Guid? AssetId = null,
+        string? FileUrl = null,
+        string? FileName = null,
+        string? FileType = null,
+        long? FileSize = null,
+        // Voice message fields
+        string? VoiceMessageUrl = null,
+        int? VoiceMessageDuration = null
+    );
+
+    public record ConversationAssignmentResponse(
+        Guid ConversationId,
+        string? AssignedToAdminId,
+        string? AssignedToAdminName,
+        string AssignedByUserId,
+        string AssignedByUserName,
+        DateTime AssignedAt
     );
 
     public record ConversationStatusResponse(
@@ -366,6 +384,400 @@ public class ConversationHub(
         _logger.LogDebug(
             "[ConversationHub] Message sent in conversation {ConversationId} by {UserId}",
             conversationId,
+            userId
+        );
+    }
+
+    /// <summary>
+    /// Send a message with a file attachment.
+    /// File must be uploaded first via the upload-file endpoint to get the assetId.
+    /// </summary>
+    public async Task SendMessageWithFile(
+        Guid conversationId,
+        string content,
+        Guid assetId,
+        string fileUrl,
+        string fileName,
+        string fileType,
+        long fileSize,
+        Guid? replyToMessageId = null
+    )
+    {
+        var userId = GetUserId();
+        if (userId is null)
+            throw new HubException("User not authenticated");
+
+        var isAdmin = await IsAdminAsync(userId);
+        if (!await HasConversationAccessAsync(conversationId, userId, isAdmin))
+            throw new HubException("Not authorized to send messages in this conversation");
+
+        var conversation = await _context
+            .Conversations.Include(c => c.Participants)
+            .FirstOrDefaultAsync(c => c.Id == conversationId);
+
+        if (conversation is null)
+            throw new HubException("Conversation not found");
+
+        // Ensure admin sender is a participant in support mode conversations
+        if (isAdmin && conversation.SupportMode)
+        {
+            await EnsureAdminIsParticipantAsync(conversationId, userId);
+            await _context.Entry(conversation).Collection(c => c.Participants).LoadAsync();
+        }
+
+        // Get or create participant record for the sender
+        var participant = conversation.Participants.FirstOrDefault(p => p.UserId == userId);
+        if (participant is null)
+        {
+            participant = new ConversationParticipant
+            {
+                ConversationId = conversationId,
+                UserId = userId,
+                Role = isAdmin ? ConversationParticipantRole.Admin : ConversationParticipantRole.Member,
+            };
+            _context.ConversationParticipants.Add(participant);
+            await _context.SaveChangesAsync();
+        }
+
+        // Handle reply-to message
+        ConversationMessage? replyToMessage = null;
+        if (replyToMessageId.HasValue)
+        {
+            replyToMessage = await _context
+                .ConversationMessages.Include(m => m.Participant)
+                    .ThenInclude(p => p.User)
+                .FirstOrDefaultAsync(m => m.Id == replyToMessageId.Value && m.ConversationId == conversationId);
+        }
+
+        // Create the message with file attachment
+        var message = new ConversationMessage
+        {
+            ConversationId = conversationId,
+            ParticipantId = participant.Id,
+            Content = string.IsNullOrWhiteSpace(content) ? $"📎 {fileName}" : content.Trim(),
+            IsRead = false,
+            ReplyToMessageId = replyToMessage?.Id,
+            AssetId = assetId,
+            FileUrl = fileUrl,
+            FileName = fileName,
+            FileType = fileType,
+            FileSize = fileSize,
+        };
+
+        _context.ConversationMessages.Add(message);
+        conversation.LastMessageAt = DateTime.UtcNow;
+        if (!isAdmin)
+        {
+            conversation.UnreadCount++;
+        }
+
+        if (isAdmin && conversation.Status == ConversationStatus.Pending)
+        {
+            conversation.Status = ConversationStatus.Active;
+        }
+
+        await _context.SaveChangesAsync();
+
+        var senderName = await GetUserDisplayNameAsync(userId);
+
+        var response = new ConversationMessageResponse(
+            message.Id,
+            message.ConversationId,
+            message.ParticipantId,
+            userId,
+            senderName,
+            message.Content,
+            message.IsRead,
+            message.ReadAt,
+            message.IsEdited,
+            message.EditedAt,
+            message.IsDeleted,
+            message.DeletedAt,
+            message.CreatedAt,
+            message.ReplyToMessageId,
+            replyToMessage?.Content,
+            replyToMessage != null
+                ? replyToMessage.Participant.User.UserName ?? replyToMessage.Participant.User.Email ?? "Unknown"
+                : null,
+            message.AssetId,
+            message.FileUrl,
+            message.FileName,
+            message.FileType,
+            message.FileSize
+        );
+
+        await Clients.Group(ConversationGroupName(conversationId)).SendAsync("ConversationMessageReceived", response);
+
+        if (!isAdmin)
+        {
+            await Clients
+                .Group(StaffGroupName)
+                .SendAsync(
+                    "ConversationUpdated",
+                    new
+                    {
+                        conversationId,
+                        triggeredBy = userId,
+                        lastMessageAt = conversation.LastMessageAt,
+                    }
+                );
+
+            await _notificationService.NotifyAdminsAsync(
+                NotificationType.NewMessage,
+                "New File Attachment",
+                $"{senderName} sent a file: {fileName}",
+                conversationId,
+                NotificationPriority.Normal
+            );
+        }
+        else
+        {
+            await _notificationService.CreateNotificationAsync(
+                conversation.CustomerId,
+                NotificationType.NewMessage,
+                "New File from Support",
+                $"{senderName} sent a file: {fileName}",
+                conversationId,
+                message.Id,
+                NotificationPriority.Normal,
+                $"/chat?conversation={conversationId}"
+            );
+        }
+
+        _logger.LogDebug(
+            "[ConversationHub] File message sent in conversation {ConversationId} by {UserId}",
+            conversationId,
+            userId
+        );
+    }
+
+    /// <summary>
+    /// Send a voice message. Voice file must be uploaded first via the upload-voice endpoint.
+    /// </summary>
+    public async Task SendVoiceMessage(
+        Guid conversationId,
+        Guid assetId,
+        string voiceUrl,
+        int duration,
+        Guid? replyToMessageId = null
+    )
+    {
+        var userId = GetUserId();
+        if (userId is null)
+            throw new HubException("User not authenticated");
+
+        var isAdmin = await IsAdminAsync(userId);
+        if (!await HasConversationAccessAsync(conversationId, userId, isAdmin))
+            throw new HubException("Not authorized to send messages in this conversation");
+
+        var conversation = await _context
+            .Conversations.Include(c => c.Participants)
+            .FirstOrDefaultAsync(c => c.Id == conversationId);
+
+        if (conversation is null)
+            throw new HubException("Conversation not found");
+
+        if (isAdmin && conversation.SupportMode)
+        {
+            await EnsureAdminIsParticipantAsync(conversationId, userId);
+            await _context.Entry(conversation).Collection(c => c.Participants).LoadAsync();
+        }
+
+        var participant = conversation.Participants.FirstOrDefault(p => p.UserId == userId);
+        if (participant is null)
+        {
+            participant = new ConversationParticipant
+            {
+                ConversationId = conversationId,
+                UserId = userId,
+                Role = isAdmin ? ConversationParticipantRole.Admin : ConversationParticipantRole.Member,
+            };
+            _context.ConversationParticipants.Add(participant);
+            await _context.SaveChangesAsync();
+        }
+
+        ConversationMessage? replyToMessage = null;
+        if (replyToMessageId.HasValue)
+        {
+            replyToMessage = await _context
+                .ConversationMessages.Include(m => m.Participant)
+                    .ThenInclude(p => p.User)
+                .FirstOrDefaultAsync(m => m.Id == replyToMessageId.Value && m.ConversationId == conversationId);
+        }
+
+        // Create voice message
+        var message = new ConversationMessage
+        {
+            ConversationId = conversationId,
+            ParticipantId = participant.Id,
+            Content = $"🎤 Voice message ({FormatDuration(duration)})",
+            IsRead = false,
+            ReplyToMessageId = replyToMessage?.Id,
+            AssetId = assetId,
+            VoiceMessageUrl = voiceUrl,
+            VoiceMessageDuration = duration,
+        };
+
+        _context.ConversationMessages.Add(message);
+        conversation.LastMessageAt = DateTime.UtcNow;
+        if (!isAdmin)
+        {
+            conversation.UnreadCount++;
+        }
+
+        if (isAdmin && conversation.Status == ConversationStatus.Pending)
+        {
+            conversation.Status = ConversationStatus.Active;
+        }
+
+        await _context.SaveChangesAsync();
+
+        var senderName = await GetUserDisplayNameAsync(userId);
+
+        var response = new ConversationMessageResponse(
+            message.Id,
+            message.ConversationId,
+            message.ParticipantId,
+            userId,
+            senderName,
+            message.Content,
+            message.IsRead,
+            message.ReadAt,
+            message.IsEdited,
+            message.EditedAt,
+            message.IsDeleted,
+            message.DeletedAt,
+            message.CreatedAt,
+            message.ReplyToMessageId,
+            replyToMessage?.Content,
+            replyToMessage != null
+                ? replyToMessage.Participant.User.UserName ?? replyToMessage.Participant.User.Email ?? "Unknown"
+                : null,
+            VoiceMessageUrl: message.VoiceMessageUrl,
+            VoiceMessageDuration: message.VoiceMessageDuration
+        );
+
+        await Clients.Group(ConversationGroupName(conversationId)).SendAsync("ConversationMessageReceived", response);
+
+        if (!isAdmin)
+        {
+            await Clients
+                .Group(StaffGroupName)
+                .SendAsync(
+                    "ConversationUpdated",
+                    new
+                    {
+                        conversationId,
+                        triggeredBy = userId,
+                        lastMessageAt = conversation.LastMessageAt,
+                    }
+                );
+
+            await _notificationService.NotifyAdminsAsync(
+                NotificationType.NewMessage,
+                "New Voice Message",
+                $"{senderName} sent a voice message ({FormatDuration(duration)})",
+                conversationId,
+                NotificationPriority.Normal
+            );
+        }
+        else
+        {
+            await _notificationService.CreateNotificationAsync(
+                conversation.CustomerId,
+                NotificationType.NewMessage,
+                "New Voice Message from Support",
+                $"{senderName} sent a voice message ({FormatDuration(duration)})",
+                conversationId,
+                message.Id,
+                NotificationPriority.Normal,
+                $"/chat?conversation={conversationId}"
+            );
+        }
+
+        _logger.LogDebug(
+            "[ConversationHub] Voice message sent in conversation {ConversationId} by {UserId}",
+            conversationId,
+            userId
+        );
+    }
+
+    private static string FormatDuration(int seconds)
+    {
+        var minutes = seconds / 60;
+        var secs = seconds % 60;
+        return $"{minutes}:{secs:D2}";
+    }
+
+    /// <summary>
+    /// Assign or unassign a conversation to an admin. Admin only.
+    /// </summary>
+    public async Task AssignConversation(Guid conversationId, string? adminId)
+    {
+        var userId = GetUserId();
+        if (userId is null)
+            throw new HubException("User not authenticated");
+
+        var isAdmin = await IsAdminAsync(userId);
+        if (!isAdmin)
+            throw new HubException("Only admins can assign conversations");
+
+        var conversation = await _context
+            .Conversations.Include(c => c.Customer)
+            .FirstOrDefaultAsync(c => c.Id == conversationId);
+
+        if (conversation is null)
+            throw new HubException("Conversation not found");
+
+        // Validate admin exists if assigning
+        string? assignedAdminName = null;
+        if (!string.IsNullOrEmpty(adminId))
+        {
+            var targetAdmin = await _context.Users.FindAsync(adminId);
+            if (targetAdmin is null || targetAdmin.Role != Roles.Admin)
+                throw new HubException("Invalid admin user");
+
+            assignedAdminName = targetAdmin.UserName ?? targetAdmin.Email ?? "Unknown";
+        }
+
+        conversation.AssignedToAdminId = adminId;
+        await _context.SaveChangesAsync();
+
+        var assignerName = await GetUserDisplayNameAsync(userId);
+
+        var response = new ConversationAssignmentResponse(
+            conversationId,
+            adminId,
+            assignedAdminName,
+            userId,
+            assignerName,
+            DateTime.UtcNow
+        );
+
+        // Broadcast to conversation participants and staff
+        await Clients.Group(ConversationGroupName(conversationId)).SendAsync("ConversationAssignmentUpdated", response);
+        await Clients.Group(StaffGroupName).SendAsync("ConversationAssignmentUpdated", response);
+
+        // Notify assigned admin if different from current user
+        if (!string.IsNullOrEmpty(adminId) && adminId != userId)
+        {
+            var customerName = conversation.Customer.UserName ?? conversation.Customer.Email ?? "Unknown";
+            await _notificationService.CreateNotificationAsync(
+                adminId,
+                NotificationType.ConversationAssigned,
+                "Conversation Assigned",
+                $"{assignerName} assigned you to {customerName}'s conversation",
+                conversationId,
+                null,
+                NotificationPriority.Normal,
+                $"/admin/chat?conversation={conversationId}"
+            );
+        }
+
+        _logger.LogInformation(
+            "[ConversationHub] Conversation {ConversationId} assigned to {AdminId} by {UserId}",
+            conversationId,
+            adminId ?? "unassigned",
             userId
         );
     }

@@ -56,6 +56,7 @@ export default function ChatPage() {
   const [newSubject, setNewSubject] = useState("");
   const [newMessage, setNewMessage] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const selectedConversationRef = useRef<string | null>(null);
@@ -321,6 +322,115 @@ export default function ChatPage() {
     [selectedConversationId],
   );
 
+  const uploadFile = useCallback(
+    async (
+      conversationId: string,
+      file: File,
+    ): Promise<{ assetId: string; fileUrl: string; fileName: string; fileType: string; fileSize: number } | null> => {
+      setIsUploading(true);
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        const response = await authorizedFetch(`${API_URL}/conversation/${conversationId}/upload-file`, {
+          method: "POST",
+          body: formData,
+        });
+        if (response.ok) {
+          return await response.json();
+        }
+        console.error("[Chat] File upload failed:", await response.text());
+        return null;
+      } catch (error) {
+        console.error("[Chat] Failed to upload file", error);
+        return null;
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [authorizedFetch],
+  );
+
+  const uploadVoice = useCallback(
+    async (
+      conversationId: string,
+      blob: Blob,
+      duration: number,
+    ): Promise<{ assetId: string; voiceUrl: string; duration: number } | null> => {
+      setIsUploading(true);
+      try {
+        const formData = new FormData();
+        formData.append("file", blob, "voice-message.webm");
+        formData.append("duration", duration.toString());
+        const response = await authorizedFetch(`${API_URL}/conversation/${conversationId}/upload-voice`, {
+          method: "POST",
+          body: formData,
+        });
+        if (response.ok) {
+          return await response.json();
+        }
+        console.error("[Chat] Voice upload failed:", await response.text());
+        return null;
+      } catch (error) {
+        console.error("[Chat] Failed to upload voice", error);
+        return null;
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [authorizedFetch],
+  );
+
+  const handleSendFile = useCallback(
+    async (file: File, content: string, replyToMessageId?: string) => {
+      if (!selectedConversationId || !connectionRef.current) return;
+      try {
+        const uploadResult = await uploadFile(selectedConversationId, file);
+        if (!uploadResult) {
+          console.error("[Chat] File upload failed");
+          return;
+        }
+        await connectionRef.current.invoke(
+          "SendMessageWithFile",
+          selectedConversationId,
+          content,
+          uploadResult.assetId,
+          uploadResult.fileUrl,
+          uploadResult.fileName,
+          uploadResult.fileType,
+          uploadResult.fileSize,
+          replyToMessageId || null,
+        );
+      } catch (error) {
+        console.error("[Chat] Failed to send file message", error);
+      }
+    },
+    [selectedConversationId, uploadFile],
+  );
+
+  const handleSendVoice = useCallback(
+    async (blob: Blob, duration: number, replyToMessageId?: string) => {
+      if (!selectedConversationId || !connectionRef.current) return;
+      try {
+        const uploadResult = await uploadVoice(selectedConversationId, blob, duration);
+        if (!uploadResult) {
+          console.error("[Chat] Voice upload failed");
+          return;
+        }
+        await connectionRef.current.invoke(
+          "SendVoiceMessage",
+          selectedConversationId,
+          uploadResult.assetId,
+          uploadResult.voiceUrl,
+          uploadResult.duration,
+          replyToMessageId || null,
+        );
+      } catch (error) {
+        console.error("[Chat] Failed to send voice message", error);
+      }
+    },
+    [selectedConversationId, uploadVoice],
+  );
+
   const handleEditMessage = useCallback(async (messageId: string, newContent: string) => {
     if (!connectionRef.current) return;
     try {
@@ -528,6 +638,12 @@ export default function ChatPage() {
                               editedAt={message.editedAt}
                               replyToContent={message.replyToContent}
                               replyToSenderName={message.replyToSenderName}
+                              fileUrl={message.fileUrl}
+                              fileName={message.fileName}
+                              fileType={message.fileType}
+                              fileSize={message.fileSize}
+                              voiceMessageUrl={message.voiceMessageUrl}
+                              voiceMessageDuration={message.voiceMessageDuration}
                               onReply={() =>
                                 setReplyTo({
                                   messageId: message.id,
@@ -558,11 +674,15 @@ export default function ChatPage() {
 
                 <MessageInput
                   onSend={handleSendMessage}
+                  onSendFile={handleSendFile}
+                  onSendVoice={handleSendVoice}
                   onTypingStart={handleTypingStart}
                   onTypingStop={handleTypingStop}
-                  disabled={connectionState !== "connected"}
+                  disabled={connectionState !== "connected" || isUploading}
                   replyTo={replyTo}
                   onCancelReply={() => setReplyTo(null)}
+                  allowFileUpload
+                  allowVoiceMessage
                 />
               </CardContent>
             </>

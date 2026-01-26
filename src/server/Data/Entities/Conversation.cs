@@ -36,6 +36,12 @@ public class Conversation : BaseEntity
     // Number of unread messages for quick badge display
     public int UnreadCount { get; set; } = 0;
 
+    // Assigned admin for this conversation (optional)
+    public string? AssignedToAdminId { get; set; }
+
+    [ForeignKey(nameof(AssignedToAdminId))]
+    public User? AssignedToAdmin { get; set; }
+
     public ICollection<ConversationParticipant> Participants { get; set; } = new List<ConversationParticipant>();
 
     public ICollection<ConversationMessage> Messages { get; set; } = new List<ConversationMessage>();

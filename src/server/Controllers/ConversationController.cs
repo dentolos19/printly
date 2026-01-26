@@ -11,10 +11,14 @@ namespace PrintlyServer.Controllers;
 
 [Route("conversation")]
 [Authorize(Roles = Roles.Admin + "," + Roles.User)]
-public class ConversationController(DatabaseContext context, INotificationService notificationService)
-    : BaseController(context)
+public class ConversationController(
+    DatabaseContext context,
+    INotificationService notificationService,
+    StorageService storageService
+) : BaseController(context)
 {
     private readonly INotificationService _notificationService = notificationService;
+    private readonly StorageService _storageService = storageService;
 
     public record ContactResponse(string Id, string Name, string Email, string Role);
 
@@ -83,6 +87,39 @@ public class ConversationController(DatabaseContext context, INotificationServic
     public record UpdateConversationStatusRequest(ConversationStatus Status);
 
     public record UpdateConversationPriorityRequest(ConversationPriority Priority);
+
+    // File upload response
+    public record FileUploadResponse(Guid AssetId, string FileUrl, string FileName, string FileType, long FileSize);
+
+    // Voice upload response
+    public record VoiceUploadResponse(Guid AssetId, string VoiceUrl, int Duration);
+
+    // Admin list response for assignment dropdown
+    public record AdminResponse(string Id, string Name, string Email);
+
+    // Allowed file types for attachments
+    private static readonly HashSet<string> AllowedImageTypes =
+    [
+        "image/png",
+        "image/jpeg",
+        "image/jpg",
+        "image/gif",
+        "image/webp",
+    ];
+    private static readonly HashSet<string> AllowedDocumentTypes = ["application/pdf"];
+    private static readonly HashSet<string> AllowedAudioTypes =
+    [
+        "audio/mpeg",
+        "audio/mp3",
+        "audio/wav",
+        "audio/m4a",
+        "audio/x-m4a",
+        "audio/webm",
+    ];
+    private static readonly HashSet<string> AllowedVideoTypes = ["video/mp4", "video/webm"];
+
+    private const long MaxFileSize = 50 * 1024 * 1024; // 50MB
+    private const long MaxVoiceSize = 10 * 1024 * 1024; // 10MB
 
     [HttpGet("contacts")]
     public async Task<ActionResult<IEnumerable<ContactResponse>>> GetContacts()
@@ -650,4 +687,241 @@ public class ConversationController(DatabaseContext context, INotificationServic
 
         return NoContent();
     }
+
+    /// <summary>
+    /// Upload a file attachment for a conversation message.
+    /// Accepts images (png, jpg, gif, webp), documents (pdf), audio, and video files.
+    /// Max file size: 50MB.
+    /// </summary>
+    [HttpPost("{conversationId:guid}/upload-file")]
+    public async Task<ActionResult<FileUploadResponse>> UploadFile(Guid conversationId, IFormFile file)
+    {
+        var currentUserId = User.GetUserId();
+        if (currentUserId is null)
+            return Unauthorized();
+
+        // Verify user has access to this conversation
+        var isAdmin = User.IsInRole(Roles.Admin);
+        var conversation = await Context.Conversations.FindAsync(conversationId);
+        if (conversation is null)
+            return NotFound("Conversation not found");
+
+        var hasAccess =
+            isAdmin
+            || conversation.CustomerId == currentUserId
+            || await Context.ConversationParticipants.AnyAsync(p =>
+                p.ConversationId == conversationId && p.UserId == currentUserId
+            );
+        if (!hasAccess)
+            return Forbid();
+
+        // Validate file
+        if (file is null || file.Length == 0)
+            return BadRequest("No file provided");
+
+        if (file.Length > MaxFileSize)
+            return BadRequest($"File too large. Maximum size is {MaxFileSize / (1024 * 1024)}MB");
+
+        var contentType = file.ContentType.ToLowerInvariant();
+        var isAllowed =
+            AllowedImageTypes.Contains(contentType)
+            || AllowedDocumentTypes.Contains(contentType)
+            || AllowedAudioTypes.Contains(contentType)
+            || AllowedVideoTypes.Contains(contentType);
+
+        if (!isAllowed)
+            return BadRequest(
+                "File type not allowed. Allowed types: images (png, jpg, gif, webp), documents (pdf), audio (mp3, wav, m4a), video (mp4, webm)"
+            );
+
+        try
+        {
+            // Upload to R2 storage
+            await using var stream = file.OpenReadStream();
+            var asset = await _storageService.UploadFileAsync(stream, file.FileName, $"conversation-{conversationId}");
+
+            // Get presigned URL for the uploaded file
+            var fileUrl = await _storageService.DownloadFileAsync(asset);
+
+            return Ok(new FileUploadResponse(asset.Id, fileUrl, file.FileName, contentType, file.Length));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Failed to upload file: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Upload a voice message recording for a conversation.
+    /// Accepts audio files (mp3, wav, m4a, webm). Max file size: 10MB.
+    /// </summary>
+    [HttpPost("{conversationId:guid}/upload-voice")]
+    public async Task<ActionResult<VoiceUploadResponse>> UploadVoice(
+        Guid conversationId,
+        IFormFile audioFile,
+        [FromForm] int duration
+    )
+    {
+        var currentUserId = User.GetUserId();
+        if (currentUserId is null)
+            return Unauthorized();
+
+        // Verify user has access to this conversation
+        var isAdmin = User.IsInRole(Roles.Admin);
+        var conversation = await Context.Conversations.FindAsync(conversationId);
+        if (conversation is null)
+            return NotFound("Conversation not found");
+
+        var hasAccess =
+            isAdmin
+            || conversation.CustomerId == currentUserId
+            || await Context.ConversationParticipants.AnyAsync(p =>
+                p.ConversationId == conversationId && p.UserId == currentUserId
+            );
+        if (!hasAccess)
+            return Forbid();
+
+        // Validate audio file
+        if (audioFile is null || audioFile.Length == 0)
+            return BadRequest("No audio file provided");
+
+        if (audioFile.Length > MaxVoiceSize)
+            return BadRequest($"Voice message too large. Maximum size is {MaxVoiceSize / (1024 * 1024)}MB");
+
+        var contentType = audioFile.ContentType.ToLowerInvariant();
+        if (!AllowedAudioTypes.Contains(contentType))
+            return BadRequest("Invalid audio format. Allowed formats: mp3, wav, m4a, webm");
+
+        if (duration <= 0)
+            return BadRequest("Invalid duration");
+
+        try
+        {
+            // Upload to R2 storage
+            await using var stream = audioFile.OpenReadStream();
+            var asset = await _storageService.UploadFileAsync(
+                stream,
+                $"voice-{DateTime.UtcNow:yyyyMMddHHmmss}.{GetExtensionFromMimeType(contentType)}",
+                $"conversation-{conversationId}-voice"
+            );
+
+            // Get presigned URL for the uploaded file
+            var voiceUrl = await _storageService.DownloadFileAsync(asset);
+
+            return Ok(new VoiceUploadResponse(asset.Id, voiceUrl, duration));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Failed to upload voice message: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Get list of all admin users for assignment dropdown.
+    /// </summary>
+    [HttpGet("admins")]
+    [Authorize(Roles = Roles.Admin)]
+    public async Task<ActionResult<IEnumerable<AdminResponse>>> GetAdmins()
+    {
+        var adminRoleId = await Context.Roles.Where(r => r.Name == Roles.Admin).Select(r => r.Id).FirstOrDefaultAsync();
+
+        if (adminRoleId is null)
+            return Ok(Array.Empty<AdminResponse>());
+
+        var adminUserIds = await Context
+            .UserRoles.Where(ur => ur.RoleId == adminRoleId)
+            .Select(ur => ur.UserId)
+            .ToListAsync();
+
+        var admins = await Context
+            .Users.Where(u => adminUserIds.Contains(u.Id))
+            .Select(u => new AdminResponse(u.Id, u.UserName ?? u.Email ?? "Unknown", u.Email ?? ""))
+            .ToListAsync();
+
+        return Ok(admins);
+    }
+
+    /// <summary>
+    /// Assign or unassign a conversation to an admin. Admin only.
+    /// Pass null adminId to unassign.
+    /// </summary>
+    [HttpPatch("{conversationId:guid}/assign")]
+    [Authorize(Roles = Roles.Admin)]
+    public async Task<IActionResult> AssignConversation(
+        Guid conversationId,
+        [FromBody] AssignConversationRequest request
+    )
+    {
+        var currentUserId = User.GetUserId();
+        if (currentUserId is null)
+            return Unauthorized();
+
+        var conversation = await Context
+            .Conversations.Include(c => c.Customer)
+            .FirstOrDefaultAsync(c => c.Id == conversationId);
+        if (conversation is null)
+            return NotFound("Conversation not found");
+
+        // Validate admin exists if assigning
+        string? assignedAdminName = null;
+        if (!string.IsNullOrEmpty(request.AdminId))
+        {
+            var adminRoleId = await Context
+                .Roles.Where(r => r.Name == Roles.Admin)
+                .Select(r => r.Id)
+                .FirstOrDefaultAsync();
+
+            var isValidAdmin =
+                adminRoleId != null
+                && await Context.UserRoles.AnyAsync(ur => ur.UserId == request.AdminId && ur.RoleId == adminRoleId);
+
+            if (!isValidAdmin)
+                return BadRequest("Invalid admin user");
+
+            var admin = await Context.Users.FindAsync(request.AdminId);
+            assignedAdminName = admin?.UserName ?? admin?.Email ?? "Unknown";
+        }
+
+        var previousAssignedId = conversation.AssignedToAdminId;
+        conversation.AssignedToAdminId = request.AdminId;
+        await Context.SaveChangesAsync();
+
+        // Send notification to assigned admin
+        if (!string.IsNullOrEmpty(request.AdminId) && request.AdminId != currentUserId)
+        {
+            var customerName = conversation.Customer.UserName ?? conversation.Customer.Email ?? "Unknown";
+            await _notificationService.CreateNotificationAsync(
+                request.AdminId,
+                NotificationType.ConversationAssigned,
+                "Conversation Assigned",
+                $"You were assigned to {customerName}'s conversation: {conversation.Subject ?? "Support Request"}",
+                conversationId,
+                null,
+                NotificationPriority.Normal,
+                $"/admin/chat?conversation={conversationId}"
+            );
+        }
+
+        return Ok(
+            new
+            {
+                conversationId,
+                assignedToAdminId = request.AdminId,
+                assignedToAdminName = assignedAdminName,
+                assignedAt = DateTime.UtcNow,
+            }
+        );
+    }
+
+    public record AssignConversationRequest(string? AdminId);
+
+    private static string GetExtensionFromMimeType(string mimeType) =>
+        mimeType switch
+        {
+            "audio/mpeg" or "audio/mp3" => "mp3",
+            "audio/wav" => "wav",
+            "audio/m4a" or "audio/x-m4a" => "m4a",
+            "audio/webm" => "webm",
+            _ => "audio",
+        };
 }

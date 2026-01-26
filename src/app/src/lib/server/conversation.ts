@@ -32,6 +32,15 @@ export type ConversationMessage = {
   replyToMessageId?: string | null;
   replyToContent?: string | null;
   replyToSenderName?: string | null;
+  // File attachment fields
+  assetId?: string | null;
+  fileUrl?: string | null;
+  fileName?: string | null;
+  fileType?: string | null;
+  fileSize?: number | null;
+  // Voice message fields
+  voiceMessageUrl?: string | null;
+  voiceMessageDuration?: number | null;
 };
 
 export type MessagePreview = {
@@ -60,6 +69,19 @@ export type ConversationSummary = {
   updatedAt: string;
   lastMessage?: MessagePreview | null;
   participants: ConversationParticipant[];
+  // Assignment fields
+  assignedToAdminId?: string | null;
+  assignedToAdminName?: string | null;
+};
+
+export type AdminInfo = {
+  id: string;
+  userName: string;
+  email: string;
+};
+
+export type AssignConversationPayload = {
+  adminId?: string | null;
 };
 
 export type Contact = {
@@ -189,6 +211,61 @@ export default function initConversationController(fetch: ServerFetch) {
       if (!response.ok && response.status !== 204) {
         throw new Error("Failed to update conversation priority");
       }
+    },
+
+    getAdmins: async (): Promise<AdminInfo[]> => {
+      const response = await fetch("/conversation/admins", { method: "GET" });
+      if (!response.ok) {
+        throw new Error("Failed to load admins");
+      }
+      return response.json();
+    },
+
+    assignConversation: async (conversationId: string, payload: AssignConversationPayload): Promise<void> => {
+      const response = await fetch(`/conversation/${conversationId}/assign`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok && response.status !== 204) {
+        throw new Error("Failed to assign conversation");
+      }
+    },
+
+    uploadFile: async (
+      conversationId: string,
+      file: File,
+    ): Promise<{ assetId: string; fileUrl: string; fileName: string; fileType: string; fileSize: number }> => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetch(`/conversation/${conversationId}/upload-file`, {
+        method: "POST",
+        body: formData,
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: "Failed to upload file" }));
+        throw new Error((error as { message?: string }).message ?? "Failed to upload file");
+      }
+      return response.json();
+    },
+
+    uploadVoice: async (
+      conversationId: string,
+      audioBlob: Blob,
+      duration: number,
+    ): Promise<{ assetId: string; voiceUrl: string; duration: number }> => {
+      const formData = new FormData();
+      formData.append("file", audioBlob, "voice-message.webm");
+      formData.append("duration", duration.toString());
+      const response = await fetch(`/conversation/${conversationId}/upload-voice`, {
+        method: "POST",
+        body: formData,
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: "Failed to upload voice message" }));
+        throw new Error((error as { message?: string }).message ?? "Failed to upload voice message");
+      }
+      return response.json();
     },
   };
 }

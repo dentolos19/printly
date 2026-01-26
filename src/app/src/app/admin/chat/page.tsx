@@ -23,8 +23,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { API_URL } from "@/environment";
+import {
+  getPriorityBadgeClasses,
+  getPriorityLabel,
+  getStatusBadgeClasses,
+  getStatusLabel,
+} from "@/lib/conversation-colors";
 import { useAuth } from "@/lib/providers/auth";
 import {
+  type AdminInfo,
   type ConversationMessage,
   type ConversationPriority,
   type ConversationStatus,
@@ -41,6 +48,7 @@ import {
   MessageSquare,
   MoreVertical,
   RefreshCw,
+  User,
   Wifi,
   WifiOff,
   XCircle,
@@ -82,6 +90,8 @@ export default function AdminChatPage() {
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [admins, setAdmins] = useState<AdminInfo[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const selectedConversationRef = useRef<string | null>(null);
@@ -204,6 +214,102 @@ export default function AdminChatPage() {
         }
       } catch (error) {
         console.error("[Admin Chat] Failed to update priority", error);
+      }
+    },
+    [authorizedFetch],
+  );
+
+  const fetchAdmins = useCallback(async () => {
+    if (!auth.tokens?.accessToken) return;
+    try {
+      const response = await authorizedFetch(`${API_URL}/conversation/admins`);
+      if (response.ok) {
+        const data = (await response.json()) as AdminInfo[];
+        setAdmins(data);
+      }
+    } catch (error) {
+      console.error("[Admin Chat] Failed to fetch admins", error);
+    }
+  }, [authorizedFetch, auth.tokens?.accessToken]);
+
+  const assignConversation = useCallback(
+    async (conversationId: string, adminId: string | null) => {
+      try {
+        const response = await authorizedFetch(`${API_URL}/conversation/${conversationId}/assign`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ adminId }),
+        });
+        if (response.ok) {
+          const assignedAdmin = adminId ? admins.find((a) => a.id === adminId) : null;
+          setConversations((prev) =>
+            prev.map((c) =>
+              c.id === conversationId
+                ? { ...c, assignedToAdminId: adminId, assignedToAdminName: assignedAdmin?.userName ?? null }
+                : c,
+            ),
+          );
+        }
+      } catch (error) {
+        console.error("[Admin Chat] Failed to assign conversation", error);
+      }
+    },
+    [authorizedFetch, admins],
+  );
+
+  const uploadFile = useCallback(
+    async (
+      conversationId: string,
+      file: File,
+    ): Promise<{ assetId: string; fileUrl: string; fileName: string; fileType: string; fileSize: number } | null> => {
+      setIsUploading(true);
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        const response = await authorizedFetch(`${API_URL}/conversation/${conversationId}/upload-file`, {
+          method: "POST",
+          body: formData,
+        });
+        if (response.ok) {
+          return await response.json();
+        }
+        console.error("[Admin Chat] File upload failed:", await response.text());
+        return null;
+      } catch (error) {
+        console.error("[Admin Chat] Failed to upload file", error);
+        return null;
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [authorizedFetch],
+  );
+
+  const uploadVoice = useCallback(
+    async (
+      conversationId: string,
+      blob: Blob,
+      duration: number,
+    ): Promise<{ assetId: string; voiceUrl: string; duration: number } | null> => {
+      setIsUploading(true);
+      try {
+        const formData = new FormData();
+        formData.append("file", blob, "voice-message.webm");
+        formData.append("duration", duration.toString());
+        const response = await authorizedFetch(`${API_URL}/conversation/${conversationId}/upload-voice`, {
+          method: "POST",
+          body: formData,
+        });
+        if (response.ok) {
+          return await response.json();
+        }
+        console.error("[Admin Chat] Voice upload failed:", await response.text());
+        return null;
+      } catch (error) {
+        console.error("[Admin Chat] Failed to upload voice", error);
+        return null;
+      } finally {
+        setIsUploading(false);
       }
     },
     [authorizedFetch],
@@ -344,6 +450,7 @@ export default function AdminChatPage() {
   useEffect(() => {
     if (auth.tokens?.accessToken) {
       fetchConversations();
+      fetchAdmins();
       startConnection();
     }
     return () => {
@@ -389,6 +496,57 @@ export default function AdminChatPage() {
       }
     },
     [selectedConversationId],
+  );
+
+  const handleSendFile = useCallback(
+    async (file: File, content: string, replyToMessageId?: string) => {
+      if (!selectedConversationId || !connectionRef.current) return;
+      try {
+        const uploadResult = await uploadFile(selectedConversationId, file);
+        if (!uploadResult) {
+          console.error("[Admin Chat] File upload failed");
+          return;
+        }
+        await connectionRef.current.invoke(
+          "SendMessageWithFile",
+          selectedConversationId,
+          content,
+          uploadResult.assetId,
+          uploadResult.fileUrl,
+          uploadResult.fileName,
+          uploadResult.fileType,
+          uploadResult.fileSize,
+          replyToMessageId || null,
+        );
+      } catch (error) {
+        console.error("[Admin Chat] Failed to send file message", error);
+      }
+    },
+    [selectedConversationId, uploadFile],
+  );
+
+  const handleSendVoice = useCallback(
+    async (blob: Blob, duration: number, replyToMessageId?: string) => {
+      if (!selectedConversationId || !connectionRef.current) return;
+      try {
+        const uploadResult = await uploadVoice(selectedConversationId, blob, duration);
+        if (!uploadResult) {
+          console.error("[Admin Chat] Voice upload failed");
+          return;
+        }
+        await connectionRef.current.invoke(
+          "SendVoiceMessage",
+          selectedConversationId,
+          uploadResult.assetId,
+          uploadResult.voiceUrl,
+          uploadResult.duration,
+          replyToMessageId || null,
+        );
+      } catch (error) {
+        console.error("[Admin Chat] Failed to send voice message", error);
+      }
+    },
+    [selectedConversationId, uploadVoice],
   );
 
   const handleEditMessage = useCallback(async (messageId: string, newContent: string) => {
@@ -503,6 +661,8 @@ export default function AdminChatPage() {
             isLoading={isLoadingConversations}
             showStatus
             showPriority
+            showAssignment
+            showCustomerName
             emptyMessage="No support conversations found"
           />
         </div>
@@ -539,6 +699,26 @@ export default function AdminChatPage() {
                         <SelectItem value="1">Active</SelectItem>
                         <SelectItem value="2">Resolved</SelectItem>
                         <SelectItem value="3">Closed</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select
+                      value={selectedConversation.assignedToAdminId ?? "unassigned"}
+                      onValueChange={(v) => assignConversation(selectedConversation.id, v === "unassigned" ? null : v)}
+                    >
+                      <SelectTrigger className="w-40">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          <span className="truncate">{selectedConversation.assignedToAdminName || "Unassigned"}</span>
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
+                        {admins.map((admin) => (
+                          <SelectItem key={admin.id} value={admin.id}>
+                            {admin.userName || admin.email}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
 
@@ -602,6 +782,12 @@ export default function AdminChatPage() {
                               editedAt={message.editedAt}
                               replyToContent={message.replyToContent}
                               replyToSenderName={message.replyToSenderName}
+                              fileUrl={message.fileUrl}
+                              fileName={message.fileName}
+                              fileType={message.fileType}
+                              fileSize={message.fileSize}
+                              voiceMessageUrl={message.voiceMessageUrl}
+                              voiceMessageDuration={message.voiceMessageDuration}
                               onReply={() =>
                                 setReplyTo({
                                   messageId: message.id,
@@ -632,11 +818,15 @@ export default function AdminChatPage() {
 
                 <MessageInput
                   onSend={handleSendMessage}
+                  onSendFile={handleSendFile}
+                  onSendVoice={handleSendVoice}
                   onTypingStart={handleTypingStart}
                   onTypingStop={handleTypingStop}
-                  disabled={connectionState !== "connected"}
+                  disabled={connectionState !== "connected" || isUploading}
                   replyTo={replyTo}
                   onCancelReply={() => setReplyTo(null)}
+                  allowFileUpload
+                  allowVoiceMessage
                 />
               </CardContent>
             </>

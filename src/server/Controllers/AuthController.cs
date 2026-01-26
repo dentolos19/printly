@@ -5,12 +5,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using PrintlyServer.Data;
+using PrintlyServer.Data.Auth;
 using PrintlyServer.Services;
 
 namespace PrintlyServer.Controllers;
 
 [Route("auth")]
-public class AuthController(DatabaseContext database, IdentityService identityService) : BaseController(database)
+public class AuthController(DatabaseContext database, IdentityService identityService, UserManager<User> userManager) : BaseController(database)
 {
     public record RegisterDto(string Name, string Email, string Password);
 
@@ -144,12 +145,24 @@ public class AuthController(DatabaseContext database, IdentityService identitySe
         if (user == null)
             return Unauthorized();
 
-        // Toggle role between Admin and User
-        user.Role = user.Role == "Admin" ? "User" : "Admin";
+        // Get current roles
+        var currentRoles = await userManager.GetRolesAsync(user);
+        
+        // Remove current role
+        if (currentRoles.Any())
+        {
+            await userManager.RemoveFromRolesAsync(user, currentRoles);
+        }
 
-        // Save changes to database
-        database.Users.Update(user);
-        await database.SaveChangesAsync();
+        // Toggle role between Admin and User
+        var newRole = user.Role == Roles.Admin ? Roles.User : Roles.Admin;
+        user.Role = newRole;
+
+        // Add new role using UserManager
+        await userManager.AddToRoleAsync(user, newRole);
+        
+        // Update user entity
+        await userManager.UpdateAsync(user);
 
         return Ok(new { role = user.Role });
     }

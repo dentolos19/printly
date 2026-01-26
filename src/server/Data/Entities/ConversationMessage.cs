@@ -26,4 +26,15 @@ public class ConversationMessage : BaseEntity
 
     [ForeignKey(nameof(ReplyToMessageId))]
     public ConversationMessage? ReplyToMessage { get; set; }
+
+    // File attachment fields
+    public Guid? AssetId { get; set; }
+    public string? FileUrl { get; set; }
+    public string? FileName { get; set; }
+    public string? FileType { get; set; }
+    public long? FileSize { get; set; }
+
+    // Voice message fields
+    public string? VoiceMessageUrl { get; set; }
+    public int? VoiceMessageDuration { get; set; } // in seconds
 }
