@@ -6,12 +6,14 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using PrintlyServer.Data;
 using PrintlyServer.Data.Auth;
+using PrintlyServer.Data.Entities;
 using PrintlyServer.Services;
 
 namespace PrintlyServer.Controllers;
 
 [Route("auth")]
-public class AuthController(DatabaseContext database, IdentityService identityService, UserManager<User> userManager) : BaseController(database)
+public class AuthController(DatabaseContext database, IdentityService identityService, UserManager<User> userManager)
+    : BaseController(database)
 {
     public record RegisterDto(string Name, string Email, string Password);
 
@@ -147,7 +149,7 @@ public class AuthController(DatabaseContext database, IdentityService identitySe
 
         // Get current roles
         var currentRoles = await userManager.GetRolesAsync(user);
-        
+
         // Remove current role
         if (currentRoles.Any())
         {
@@ -160,7 +162,7 @@ public class AuthController(DatabaseContext database, IdentityService identitySe
 
         // Add new role using UserManager
         await userManager.AddToRoleAsync(user, newRole);
-        
+
         // Update user entity
         await userManager.UpdateAsync(user);
 
