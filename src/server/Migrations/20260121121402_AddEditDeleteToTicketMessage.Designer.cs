@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PrintlyServer.Data;
 
@@ -10,9 +11,11 @@ using PrintlyServer.Data;
 namespace PrintlyServer.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20260121121402_AddEditDeleteToTicketMessage")]
+    partial class AddEditDeleteToTicketMessage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
@@ -272,9 +275,6 @@ namespace PrintlyServer.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("AssignedToAdminId")
-                        .HasColumnType("TEXT");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
@@ -297,9 +297,6 @@ namespace PrintlyServer.Migrations
                     b.Property<string>("Subject")
                         .HasColumnType("TEXT");
 
-                    b.Property<bool>("SupportMode")
-                        .HasColumnType("INTEGER");
-
                     b.Property<int>("UnreadCount")
                         .HasColumnType("INTEGER");
 
@@ -307,8 +304,6 @@ namespace PrintlyServer.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AssignedToAdminId");
 
                     b.HasIndex("CustomerId");
 
@@ -319,9 +314,6 @@ namespace PrintlyServer.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("AssetId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Content")
@@ -338,18 +330,6 @@ namespace PrintlyServer.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("EditedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("FileName")
-                        .HasColumnType("TEXT");
-
-                    b.Property<long?>("FileSize")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("FileType")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("FileUrl")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("IsDeleted")
@@ -371,12 +351,6 @@ namespace PrintlyServer.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("VoiceMessageDuration")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("VoiceMessageUrl")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -463,40 +437,6 @@ namespace PrintlyServer.Migrations
                     b.ToTable("Designs");
                 });
 
-            modelBuilder.Entity("PrintlyServer.Data.Entities.Imprint", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Data")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Imprints");
-                });
-
             modelBuilder.Entity("PrintlyServer.Data.Entities.Inventory", b =>
                 {
                     b.Property<Guid>("Id")
@@ -526,6 +466,62 @@ namespace PrintlyServer.Migrations
                     b.ToTable("Inventories");
                 });
 
+            modelBuilder.Entity("PrintlyServer.Data.Entities.Message", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("EditedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsEdited")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ReceiverId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ReplyToMessageId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SenderId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReceiverId");
+
+                    b.HasIndex("ReplyToMessageId");
+
+                    b.HasIndex("SenderId");
+
+                    b.ToTable("Messages");
+                });
+
             modelBuilder.Entity("PrintlyServer.Data.Entities.Notification", b =>
                 {
                     b.Property<Guid>("Id")
@@ -536,9 +532,6 @@ namespace PrintlyServer.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("ConversationId")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
@@ -569,6 +562,9 @@ namespace PrintlyServer.Migrations
                     b.Property<DateTime?>("ReadAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("TicketId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -585,9 +581,9 @@ namespace PrintlyServer.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ConversationId");
-
                     b.HasIndex("CreatedAt");
+
+                    b.HasIndex("TicketId");
 
                     b.HasIndex("UserId", "IsRead", "IsDeleted");
 
@@ -664,151 +660,6 @@ namespace PrintlyServer.Migrations
                     b.HasIndex("VariantId");
 
                     b.ToTable("OrderItems");
-                });
-
-            modelBuilder.Entity("PrintlyServer.Data.Entities.Post", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("AuthorId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Caption")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("PhotoId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("PostStatus")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Visibility")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AuthorId");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("PhotoId");
-
-                    b.HasIndex("PostStatus");
-
-                    b.HasIndex("Visibility");
-
-                    b.ToTable("Posts");
-                });
-
-            modelBuilder.Entity("PrintlyServer.Data.Entities.PostBookmark", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("PostId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("PostId", "UserId")
-                        .IsUnique();
-
-                    b.ToTable("PostBookmarks");
-                });
-
-            modelBuilder.Entity("PrintlyServer.Data.Entities.PostComment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("AuthorId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("ParentId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("PostId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("PostStatus")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AuthorId");
-
-                    b.HasIndex("ParentId");
-
-                    b.HasIndex("PostId");
-
-                    b.ToTable("PostComments");
-                });
-
-            modelBuilder.Entity("PrintlyServer.Data.Entities.PostReaction", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("PostId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("ReactionType")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("PostId", "UserId")
-                        .IsUnique();
-
-                    b.ToTable("PostReactions");
                 });
 
             modelBuilder.Entity("PrintlyServer.Data.Entities.Product", b =>
@@ -913,6 +764,121 @@ namespace PrintlyServer.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
+            modelBuilder.Entity("PrintlyServer.Data.Entities.Ticket", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastMessageAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UnreadCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.ToTable("Tickets");
+                });
+
+            modelBuilder.Entity("PrintlyServer.Data.Entities.TicketMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("CallDuration")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CallId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool?>("CallMissed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CallParticipants")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("EditedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsEdited")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsReadByAdmin")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsReadByCustomer")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("ReplyToMessageId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SenderId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("VoiceMessageDuration")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("VoiceMessageUrl")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReplyToMessageId");
+
+                    b.HasIndex("SenderId");
+
+                    b.HasIndex("TicketId");
+
+                    b.ToTable("TicketMessages");
+                });
+
             modelBuilder.Entity("PrintlyServer.Data.Entities.User", b =>
                 {
                     b.Property<string>("Id")
@@ -954,10 +920,6 @@ namespace PrintlyServer.Migrations
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("INTEGER");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("TEXT");
@@ -1054,17 +1016,11 @@ namespace PrintlyServer.Migrations
 
             modelBuilder.Entity("PrintlyServer.Data.Entities.Conversation", b =>
                 {
-                    b.HasOne("PrintlyServer.Data.Entities.User", "AssignedToAdmin")
-                        .WithMany()
-                        .HasForeignKey("AssignedToAdminId");
-
                     b.HasOne("PrintlyServer.Data.Entities.User", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("AssignedToAdmin");
 
                     b.Navigation("Customer");
                 });
@@ -1131,17 +1087,6 @@ namespace PrintlyServer.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PrintlyServer.Data.Entities.Imprint", b =>
-                {
-                    b.HasOne("PrintlyServer.Data.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("PrintlyServer.Data.Entities.Inventory", b =>
                 {
                     b.HasOne("PrintlyServer.Data.Entities.ProductVariant", "Variant")
@@ -1153,11 +1098,36 @@ namespace PrintlyServer.Migrations
                     b.Navigation("Variant");
                 });
 
+            modelBuilder.Entity("PrintlyServer.Data.Entities.Message", b =>
+                {
+                    b.HasOne("PrintlyServer.Data.Entities.User", "Receiver")
+                        .WithMany()
+                        .HasForeignKey("ReceiverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PrintlyServer.Data.Entities.Message", "ReplyToMessage")
+                        .WithMany()
+                        .HasForeignKey("ReplyToMessageId");
+
+                    b.HasOne("PrintlyServer.Data.Entities.User", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Receiver");
+
+                    b.Navigation("ReplyToMessage");
+
+                    b.Navigation("Sender");
+                });
+
             modelBuilder.Entity("PrintlyServer.Data.Entities.Notification", b =>
                 {
-                    b.HasOne("PrintlyServer.Data.Entities.Conversation", "Conversation")
+                    b.HasOne("PrintlyServer.Data.Entities.Ticket", "Ticket")
                         .WithMany()
-                        .HasForeignKey("ConversationId")
+                        .HasForeignKey("TicketId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("PrintlyServer.Data.Entities.User", "User")
@@ -1166,7 +1136,7 @@ namespace PrintlyServer.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Conversation");
+                    b.Navigation("Ticket");
 
                     b.Navigation("User");
                 });
@@ -1201,89 +1171,6 @@ namespace PrintlyServer.Migrations
                     b.Navigation("Variant");
                 });
 
-            modelBuilder.Entity("PrintlyServer.Data.Entities.Post", b =>
-                {
-                    b.HasOne("PrintlyServer.Data.Entities.User", "Author")
-                        .WithMany()
-                        .HasForeignKey("AuthorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PrintlyServer.Data.Entities.Asset", "Photo")
-                        .WithMany()
-                        .HasForeignKey("PhotoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Author");
-
-                    b.Navigation("Photo");
-                });
-
-            modelBuilder.Entity("PrintlyServer.Data.Entities.PostBookmark", b =>
-                {
-                    b.HasOne("PrintlyServer.Data.Entities.Post", "Post")
-                        .WithMany("Bookmarks")
-                        .HasForeignKey("PostId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PrintlyServer.Data.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Post");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("PrintlyServer.Data.Entities.PostComment", b =>
-                {
-                    b.HasOne("PrintlyServer.Data.Entities.User", "Author")
-                        .WithMany()
-                        .HasForeignKey("AuthorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("PrintlyServer.Data.Entities.PostComment", "Parent")
-                        .WithMany("Replies")
-                        .HasForeignKey("ParentId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("PrintlyServer.Data.Entities.Post", "Post")
-                        .WithMany("Comments")
-                        .HasForeignKey("PostId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Author");
-
-                    b.Navigation("Parent");
-
-                    b.Navigation("Post");
-                });
-
-            modelBuilder.Entity("PrintlyServer.Data.Entities.PostReaction", b =>
-                {
-                    b.HasOne("PrintlyServer.Data.Entities.Post", "Post")
-                        .WithMany("Reactions")
-                        .HasForeignKey("PostId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PrintlyServer.Data.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Post");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("PrintlyServer.Data.Entities.ProductVariant", b =>
                 {
                     b.HasOne("PrintlyServer.Data.Entities.Asset", "Image")
@@ -1312,6 +1199,42 @@ namespace PrintlyServer.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("PrintlyServer.Data.Entities.Ticket", b =>
+                {
+                    b.HasOne("PrintlyServer.Data.Entities.User", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("PrintlyServer.Data.Entities.TicketMessage", b =>
+                {
+                    b.HasOne("PrintlyServer.Data.Entities.TicketMessage", "ReplyToMessage")
+                        .WithMany()
+                        .HasForeignKey("ReplyToMessageId");
+
+                    b.HasOne("PrintlyServer.Data.Entities.User", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PrintlyServer.Data.Entities.Ticket", "Ticket")
+                        .WithMany("Messages")
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ReplyToMessage");
+
+                    b.Navigation("Sender");
+
+                    b.Navigation("Ticket");
+                });
+
             modelBuilder.Entity("PrintlyServer.Data.Entities.Conversation", b =>
                 {
                     b.Navigation("Messages");
@@ -1324,20 +1247,6 @@ namespace PrintlyServer.Migrations
                     b.Navigation("Items");
                 });
 
-            modelBuilder.Entity("PrintlyServer.Data.Entities.Post", b =>
-                {
-                    b.Navigation("Bookmarks");
-
-                    b.Navigation("Comments");
-
-                    b.Navigation("Reactions");
-                });
-
-            modelBuilder.Entity("PrintlyServer.Data.Entities.PostComment", b =>
-                {
-                    b.Navigation("Replies");
-                });
-
             modelBuilder.Entity("PrintlyServer.Data.Entities.Product", b =>
                 {
                     b.Navigation("Variants");
@@ -1347,6 +1256,11 @@ namespace PrintlyServer.Migrations
                 {
                     b.Navigation("Inventory")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("PrintlyServer.Data.Entities.Ticket", b =>
+                {
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("PrintlyServer.Data.Entities.User", b =>

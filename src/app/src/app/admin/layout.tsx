@@ -36,6 +36,7 @@ import {
   Layers,
   LayoutDashboardIcon,
   LogOutIcon,
+  MessageCircleIcon,
   MoreVerticalIcon,
   Package,
   ShoppingCart,
@@ -51,6 +52,7 @@ const navItems = [
   { href: "/admin/variants", label: "Variants", icon: Layers },
   { href: "/admin/inventory", label: "Inventory", icon: Box },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
+  { href: "/admin/chat", label: "Chat", icon: MessageCircleIcon },
 ];
 
 function NestedLayout({ children }: { children: React.ReactNode }) {

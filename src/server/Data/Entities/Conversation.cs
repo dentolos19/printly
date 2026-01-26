@@ -1,0 +1,64 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace PrintlyServer.Data.Entities;
+
+/// <summary>
+/// Represents a conversation. When SupportMode is true, this is a support conversation
+/// between a customer and admins where any admin can participate. When SupportMode is false,
+/// this is a peer-to-peer conversation between specific participants.
+/// </summary>
+public class Conversation : BaseEntity
+{
+    public string? Subject { get; set; }
+
+    // The customer who created this conversation
+    public required string CustomerId { get; set; }
+
+    [ForeignKey(nameof(CustomerId))]
+    public User Customer { get; set; } = null!;
+
+    // Optional link to an order this conversation is about
+    public Guid? OrderId { get; set; }
+
+    // When true, any admin can view and participate in this conversation
+    // When false, only explicit participants can access the conversation
+    public bool SupportMode { get; set; } = false;
+
+    // Status tracking for support workflow
+    public ConversationStatus Status { get; set; } = ConversationStatus.Pending;
+
+    // Priority for support triage
+    public ConversationPriority Priority { get; set; } = ConversationPriority.Normal;
+
+    // When the last message was sent, useful for sorting
+    public DateTime? LastMessageAt { get; set; }
+
+    // Number of unread messages for quick badge display
+    public int UnreadCount { get; set; } = 0;
+
+    // Assigned admin for this conversation (optional)
+    public string? AssignedToAdminId { get; set; }
+
+    [ForeignKey(nameof(AssignedToAdminId))]
+    public User? AssignedToAdmin { get; set; }
+
+    public ICollection<ConversationParticipant> Participants { get; set; } = new List<ConversationParticipant>();
+
+    public ICollection<ConversationMessage> Messages { get; set; } = new List<ConversationMessage>();
+}
+
+public enum ConversationStatus
+{
+    Pending = 0, // New conversation, waiting for admin response
+    Active = 1, // Admin is working on it
+    Resolved = 2, // Issue fixed, waiting for customer confirmation
+    Closed = 3, // Conversation closed and archived
+}
+
+public enum ConversationPriority
+{
+    Low = 0,
+    Normal = 1,
+    High = 2,
+    Urgent = 3,
+}

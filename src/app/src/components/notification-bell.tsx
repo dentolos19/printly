@@ -26,7 +26,7 @@ interface Notification {
 }
 
 export function NotificationBell(props: ComponentProps<typeof Button>) {
-  const { tokens } = useAuth();
+  const { tokens, isInitialized } = useAuth();
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -150,10 +150,10 @@ export function NotificationBell(props: ComponentProps<typeof Button>) {
 
   // Setup SignalR for real-time notifications
   useEffect(() => {
-    if (!tokens?.accessToken) return;
+    if (!isInitialized || !tokens?.accessToken) return;
 
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl(`${API_URL}/hubs/support`, {
+      .withUrl(`${API_URL}/hubs/conversation`, {
         accessTokenFactory: () => tokens.accessToken,
       })
       .withAutomaticReconnect()
@@ -190,7 +190,7 @@ export function NotificationBell(props: ComponentProps<typeof Button>) {
     return () => {
       connection.stop();
     };
-  }, [tokens?.accessToken]);
+  }, [isInitialized, tokens?.accessToken]);
 
   // Initial load
   useEffect(() => {

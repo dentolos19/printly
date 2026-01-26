@@ -20,6 +20,10 @@ export type AuthResponse = {
   refreshToken: string;
 };
 
+export type ToggleRoleResponse = {
+  role: string;
+};
+
 export default function initAuthController(fetch: ServerFetch) {
   return {
     register: async (body: RegisterDto): Promise<void> => {
@@ -90,6 +94,21 @@ export default function initAuthController(fetch: ServerFetch) {
       if (!response.ok) {
         throw new Error("Failed to revoke token");
       }
+    },
+
+    toggleRole: async (): Promise<ToggleRoleResponse> => {
+      const response = await fetch("/auth/toggle-role", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to toggle role");
+      }
+
+      return response.json();
     },
   };
 }

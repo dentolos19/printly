@@ -24,12 +24,11 @@ public class ChatService
 
     // supported ai models - users can choose from these options
     private static readonly HashSet<string> SupportedModels =
-        [
-            "google/gemini-2.5-flash", // Default - fast and efficient
-            "openai/gpt-4o", // Advanced reasoning
-            "anthropic/claude-sonnet-4", // Balanced performance
-            "meta-llama/llama-3.1-70b-instruct", // Open source option
-        ];
+    [
+        "google/gemini-2.5-flash", // Default - fast and efficient
+        "openai/gpt-4o", // Advanced reasoning
+        "meta-llama/llama-3.1-70b-instruct", // Open source option
+    ];
 
     private const string DefaultModel = "google/gemini-2.5-flash";
 
@@ -249,7 +248,11 @@ public class ChatService
                 temperature = 0.7,
             };
 
-            _logger.LogInformation("Sending chatbot request for user {UserId} with model {Model}", userId, selectedModel);
+            _logger.LogInformation(
+                "Sending chatbot request for user {UserId} with model {Model}",
+                userId,
+                selectedModel
+            );
 
             var response = await _http.PostAsync(
                 "https://openrouter.ai/api/v1/chat/completions",

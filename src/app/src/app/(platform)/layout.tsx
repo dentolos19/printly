@@ -2,6 +2,7 @@
 
 import AccessDenied from "@/components/access-denied";
 import { ChatbotWidget } from "@/components/chatbot-widget";
+import DebugDialog from "@/components/debug-dialog";
 import { NotificationBell } from "@/components/notification-bell";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -186,6 +187,12 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                     )}
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
+                  {process.env.NODE_ENV !== "production" && (
+                    <>
+                      <DebugDialog />
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOutIcon />
                     <span>Logout</span>
