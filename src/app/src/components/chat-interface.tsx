@@ -1,15 +1,15 @@
 "use client";
 
-import { useAuth } from "@/lib/providers/auth";
-import { API_URL } from "@/environment";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { API_URL } from "@/environment";
+import { useAuth } from "@/lib/providers/auth";
 import * as signalR from "@microsoft/signalr";
+import { ArrowLeft, Circle, Loader2, Send, Users, Wifi, WifiOff } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Send, Loader2, WifiOff, Wifi, ArrowLeft, Users, RefreshCw, Circle } from "lucide-react";
 
 interface Message {
   id: string;
@@ -54,7 +54,7 @@ export default function ChatInterface() {
 
       if (response.ok) {
         const data = await response.json();
-        setUsers(data);
+        setUsers(data as User[]);
       }
     } catch (error) {
       console.error("Failed to fetch users:", error);
@@ -74,7 +74,7 @@ export default function ChatInterface() {
 
       if (response.ok) {
         const data = await response.json();
-        setMessages(data);
+        setMessages(data as Message[]);
         setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
       }
     } catch (error) {
@@ -204,7 +204,7 @@ export default function ChatInterface() {
                             <AvatarFallback>{getInitials(user.name || user.email)}</AvatarFallback>
                           </Avatar>
                           <Circle
-                            className={`absolute bottom-0 right-0 h-3 w-3 ${
+                            className={`absolute right-0 bottom-0 h-3 w-3 ${
                               isOnline ? "fill-green-500 text-green-500" : "fill-gray-400 text-gray-400"
                             }`}
                           />
@@ -277,7 +277,9 @@ export default function ChatInterface() {
                 const isMe = message.senderId === auth.claims?.id;
                 return (
                   <div key={message.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[70%] rounded-lg px-4 py-2 ${isMe ? "bg-blue-500 text-white" : "bg-gray-200"}`}>
+                    <div
+                      className={`max-w-[70%] rounded-lg px-4 py-2 ${isMe ? "bg-blue-500 text-white" : "bg-gray-200"}`}
+                    >
                       <p className="text-sm">{message.content}</p>
                       <p className={`text-xs ${isMe ? "text-blue-100" : "text-gray-500"}`}>
                         {new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
