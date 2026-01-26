@@ -590,6 +590,8 @@ export default function ChatPage() {
             selectedId={selectedConversationId}
             onSelect={setSelectedConversationId}
             isLoading={isLoadingConversations}
+            showStatus
+            showPriority
             emptyMessage="No conversations yet. Contact support to start one!"
           />
         </div>

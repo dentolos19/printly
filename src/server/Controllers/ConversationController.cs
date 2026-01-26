@@ -58,7 +58,13 @@ public class ConversationController(
         DateTime CreatedAt,
         Guid? ReplyToMessageId,
         string? ReplyToContent,
-        string? ReplyToSenderName
+        string? ReplyToSenderName,
+        string? FileUrl,
+        string? FileName,
+        string? FileType,
+        long? FileSize,
+        string? VoiceMessageUrl,
+        int? VoiceMessageDuration
     );
 
     public record ConversationResponse(
@@ -640,7 +646,13 @@ public class ConversationController(
                 m.ReplyToMessage != null ? m.ReplyToMessage.Content : null,
                 m.ReplyToMessage != null
                     ? m.ReplyToMessage.Participant.User.UserName ?? m.ReplyToMessage.Participant.User.Email
-                    : null
+                    : null,
+                m.FileUrl,
+                m.FileName,
+                m.FileType,
+                m.FileSize,
+                m.VoiceMessageUrl,
+                m.VoiceMessageDuration
             ))
             .ToListAsync();
 

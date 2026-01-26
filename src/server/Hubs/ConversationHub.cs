@@ -336,7 +336,14 @@ public class ConversationHub(
             replyToMessage?.Content,
             replyToMessage != null
                 ? replyToMessage.Participant.User.UserName ?? replyToMessage.Participant.User.Email ?? "Unknown"
-                : null
+                : null,
+            null, // AssetId
+            null, // FileUrl
+            null, // FileName
+            null, // FileType
+            null, // FileSize
+            null, // VoiceMessageUrl
+            null // VoiceMessageDuration
         );
 
         // Broadcast to all participants in the conversation

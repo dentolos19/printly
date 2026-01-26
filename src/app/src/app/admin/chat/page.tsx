@@ -14,34 +14,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { API_URL } from "@/environment";
-import {
-  getPriorityBadgeClasses,
-  getPriorityLabel,
-  getStatusBadgeClasses,
-  getStatusLabel,
-} from "@/lib/conversation-colors";
 import { useAuth } from "@/lib/providers/auth";
 import {
   type AdminInfo,
   type ConversationMessage,
   type ConversationPriority,
   type ConversationStatus,
-  ConversationStatusLabels,
   type ConversationSummary,
 } from "@/lib/server/conversation";
 import { cn } from "@/lib/utils";
 import * as signalR from "@microsoft/signalr";
 import {
-  AlertTriangle,
   CheckCircle2,
   Clock,
   Loader2,
@@ -687,18 +677,37 @@ export default function AdminChatPage() {
                   <div className="flex items-center gap-2">
                     <Select
                       value={String(selectedConversation.status)}
-                      onValueChange={(v) =>
-                        updateConversationStatus(selectedConversation.id, Number(v) as ConversationStatus)
-                      }
+                      onValueChange={(v) => {
+                        const statusValue = parseInt(v, 10) as ConversationStatus;
+                        updateConversationStatus(selectedConversation.id, statusValue);
+                      }}
                     >
                       <SelectTrigger className="w-32">
-                        <SelectValue>{ConversationStatusLabels[selectedConversation.status]}</SelectValue>
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="0">Pending</SelectItem>
                         <SelectItem value="1">Active</SelectItem>
                         <SelectItem value="2">Resolved</SelectItem>
                         <SelectItem value="3">Closed</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select
+                      value={String(selectedConversation.priority)}
+                      onValueChange={(v) => {
+                        const priorityValue = parseInt(v, 10) as ConversationPriority;
+                        updateConversationPriority(selectedConversation.id, priorityValue);
+                      }}
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">Low</SelectItem>
+                        <SelectItem value="1">Normal</SelectItem>
+                        <SelectItem value="2">High</SelectItem>
+                        <SelectItem value="3">Urgent</SelectItem>
                       </SelectContent>
                     </Select>
 
@@ -729,22 +738,7 @@ export default function AdminChatPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Priority</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => updateConversationPriority(selectedConversation.id, 0)}>
-                          Low
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => updateConversationPriority(selectedConversation.id, 1)}>
-                          Normal
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => updateConversationPriority(selectedConversation.id, 2)}>
-                          <AlertTriangle className="mr-2 h-4 w-4 text-orange-500" />
-                          High
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => updateConversationPriority(selectedConversation.id, 3)}>
-                          <AlertTriangle className="text-destructive mr-2 h-4 w-4" />
-                          Urgent
-                        </DropdownMenuItem>
+                        <DropdownMenuLabel>More Actions</DropdownMenuLabel>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
