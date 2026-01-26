@@ -10,7 +10,6 @@ import {
 } from "@/components/chat";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +17,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -505,111 +503,61 @@ export default function ChatPage() {
 
   const selectedConversation = conversations.find((c) => c.id === selectedConversationId);
 
+  const handleCreateNew = useCallback(() => {
+    setNewConversationOpen(true);
+  }, []);
+
   return (
-    <main className="flex h-full w-full p-4">
-      <Card className="mx-auto flex h-full w-full max-w-6xl overflow-hidden">
-        {/* Sidebar */}
-        <div className="flex w-80 flex-col border-r">
-          <CardHeader className="flex-row items-center justify-between space-y-0 border-b px-4 py-3">
-            <CardTitle className="text-lg">Messages</CardTitle>
-            <div className="flex items-center gap-2">
-              <Badge
-                variant={
-                  connectionState === "connected"
-                    ? "default"
-                    : connectionState === "connecting"
-                      ? "secondary"
-                      : "destructive"
-                }
-                className="gap-1"
-              >
-                {connectionState === "connected" ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
-                {connectionState === "connected"
-                  ? "Online"
-                  : connectionState === "connecting"
-                    ? "Connecting"
-                    : "Offline"}
-              </Badge>
-              <Button variant="ghost" size="icon" onClick={fetchConversations}>
-                <RefreshCw className={cn("h-4 w-4", isLoadingConversations && "animate-spin")} />
-              </Button>
-            </div>
-          </CardHeader>
-
-          <div className="p-2">
-            <Dialog open={newConversationOpen} onOpenChange={setNewConversationOpen}>
-              <DialogTrigger asChild>
-                <Button className="w-full gap-2">
-                  <MessageSquarePlus className="h-4 w-4" />
-                  Contact Support
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>New Support Conversation</DialogTitle>
-                  <DialogDescription>
-                    Describe your inquiry and our team will get back to you shortly.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="subject">Subject</Label>
-                    <Input
-                      id="subject"
-                      placeholder="e.g., Order inquiry, Technical issue"
-                      value={newSubject}
-                      onChange={(e) => setNewSubject(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="message">Message (optional)</Label>
-                    <Textarea
-                      id="message"
-                      placeholder="Describe your issue or question..."
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      rows={4}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setNewConversationOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleCreateConversation} disabled={!newSubject.trim() || isCreating}>
-                    {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Start Conversation
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-
+    <main className="-m-4 flex h-[calc(100%+2rem)] w-auto">
+      <div className="flex h-full w-full overflow-hidden">
+        <div className="flex w-96 flex-col">
           <ConversationList
             conversations={conversations}
             selectedId={selectedConversationId}
             onSelect={setSelectedConversationId}
             isLoading={isLoadingConversations}
             showStatus
-            showPriority
+            showHeader
+            showSearch
+            showFilter
+            onCreateNew={handleCreateNew}
             emptyMessage="No conversations yet. Contact support to start one!"
           />
         </div>
 
-        {/* Chat Area */}
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col border-l">
           {selectedConversation ? (
             <>
-              <CardHeader className="border-b px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-base">{selectedConversation.subject || "Conversation"}</CardTitle>
-                    <p className="text-muted-foreground text-sm">Support Conversation</p>
-                  </div>
+              <div className="bg-background flex items-center justify-between border-b px-6 py-4">
+                <div className="flex flex-col">
+                  <h2 className="text-xl font-semibold">{selectedConversation.subject || "Conversation"}</h2>
+                  <p className="text-muted-foreground text-sm">Support Conversation</p>
                 </div>
-              </CardHeader>
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant={
+                      connectionState === "connected"
+                        ? "default"
+                        : connectionState === "connecting"
+                          ? "secondary"
+                          : "destructive"
+                    }
+                    className="gap-1"
+                  >
+                    {connectionState === "connected" ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+                    {connectionState === "connected"
+                      ? "Online"
+                      : connectionState === "connecting"
+                        ? "Connecting"
+                        : "Offline"}
+                  </Badge>
+                  <Button variant="ghost" size="icon" onClick={fetchConversations}>
+                    <RefreshCw className={cn("h-4 w-4", isLoadingConversations && "animate-spin")} />
+                  </Button>
+                </div>
+              </div>
 
-              <CardContent className="flex flex-1 flex-col overflow-hidden p-0">
+              <div className="flex flex-1 flex-col overflow-hidden">
                 <ScrollArea className="flex-1 p-4">
                   {isLoadingMessages ? (
                     <div className="flex h-full items-center justify-center">
@@ -617,7 +565,8 @@ export default function ChatPage() {
                     </div>
                   ) : messages.length === 0 ? (
                     <div className="text-muted-foreground flex h-full flex-col items-center justify-center">
-                      <p>No messages yet.</p>
+                      <MessageSquarePlus className="h-16 w-16" />
+                      <p className="mt-4">No messages yet.</p>
                       <p className="text-sm">Send a message to start the conversation!</p>
                     </div>
                   ) : (
@@ -686,7 +635,7 @@ export default function ChatPage() {
                   allowFileUpload
                   allowVoiceMessage
                 />
-              </CardContent>
+              </div>
             </>
           ) : (
             <div className="text-muted-foreground flex flex-1 flex-col items-center justify-center">
@@ -695,7 +644,46 @@ export default function ChatPage() {
             </div>
           )}
         </div>
-      </Card>
+      </div>
+
+      <Dialog open={newConversationOpen} onOpenChange={setNewConversationOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>New Support Conversation</DialogTitle>
+            <DialogDescription>Describe your inquiry and our team will get back to you shortly.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="subject">Subject</Label>
+              <Input
+                id="subject"
+                placeholder="e.g., Order inquiry, Technical issue"
+                value={newSubject}
+                onChange={(e) => setNewSubject(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="message">Message (optional)</Label>
+              <Textarea
+                id="message"
+                placeholder="Describe your issue or question..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewConversationOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateConversation} disabled={!newSubject.trim() || isCreating}>
+              {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Start Conversation
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }

@@ -131,24 +131,17 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
     return (
       <>
         <div ref={ref} className={cn("group flex gap-3 px-4 py-2", isCurrentUser ? "flex-row-reverse" : "flex-row")}>
-          <Avatar className="h-8 w-8 shrink-0">
-            <AvatarFallback
-              className={cn("text-xs", isCurrentUser ? "bg-primary text-primary-foreground" : "bg-muted")}
-            >
-              {getInitials(senderName)}
-            </AvatarFallback>
-          </Avatar>
+          {!isCurrentUser && (
+            <Avatar className="h-8 w-8 shrink-0">
+              <AvatarFallback className="bg-muted text-xs">{getInitials(senderName)}</AvatarFallback>
+            </Avatar>
+          )}
 
           <div className={cn("flex max-w-[70%] flex-col gap-1", isCurrentUser ? "items-end" : "items-start")}>
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground text-xs font-medium">{senderName}</span>
-              <span className="text-muted-foreground/60 text-xs">{formatTime(createdAt)}</span>
-            </div>
-
             {replyToContent && (
               <div
                 className={cn(
-                  "bg-muted/50 flex items-start gap-2 rounded-lg border-l-2 px-3 py-1.5 text-sm",
+                  "bg-muted/50 mb-1 flex items-start gap-2 rounded-lg border-l-2 px-3 py-1.5 text-sm",
                   isCurrentUser ? "border-l-primary" : "border-l-muted-foreground",
                 )}
               >
@@ -160,7 +153,7 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
               </div>
             )}
 
-            <div className="flex items-end gap-1">
+            <div className="flex items-start gap-2">
               {isEditing ? (
                 <div className="flex flex-col gap-2">
                   <Textarea
@@ -181,7 +174,6 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
               ) : (
                 <>
                   <div className="flex flex-col gap-2">
-                    {/* Voice message */}
                     {hasVoice && !isDeleted && (
                       <VoiceMessagePlayer
                         url={voiceMessageUrl}
@@ -190,29 +182,27 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                       />
                     )}
 
-                    {/* File attachment */}
                     {hasFile && !isDeleted && (
                       <FileAttachment url={fileUrl} fileName={fileName} fileType={fileType} fileSize={fileSize} />
                     )}
 
-                    {/* Text content (hide if only voice or file with emoji prefix) */}
                     {(!hasVoice || !content.startsWith("🎤")) && (!hasFile || !content.startsWith("📎")) && (
                       <div
                         className={cn(
-                          "rounded-2xl px-4 py-2",
+                          "rounded-2xl px-4 py-2.5 shadow-sm",
                           isDeleted
                             ? "bg-muted text-muted-foreground italic"
                             : isCurrentUser
-                              ? "bg-primary text-primary-foreground"
+                              ? "bg-blue-600 text-white"
                               : "bg-muted",
                         )}
                       >
-                        <p className="text-sm break-words whitespace-pre-wrap">{content}</p>
+                        <p className="text-sm wrap-break-word whitespace-pre-wrap">{content}</p>
                       </div>
                     )}
                   </div>
 
-                  {!isDeleted && isCurrentUser && (onEdit || onDelete || onReply) && (
+                  {!isDeleted && (onEdit || onDelete || onReply) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -230,13 +220,13 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                             Reply
                           </DropdownMenuItem>
                         )}
-                        {onEdit && (
+                        {onEdit && isCurrentUser && (
                           <DropdownMenuItem onClick={() => setIsEditing(true)}>
                             <Pencil className="mr-2 h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
                         )}
-                        {onDelete && (
+                        {onDelete && isCurrentUser && (
                           <DropdownMenuItem
                             onClick={() => setShowDeleteDialog(true)}
                             className="text-destructive focus:text-destructive"
@@ -248,25 +238,15 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}
-
-                  {!isDeleted && !isCurrentUser && onReply && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
-                      onClick={onReply}
-                    >
-                      <CornerUpLeft className="h-4 w-4" />
-                    </Button>
-                  )}
                 </>
               )}
             </div>
 
             <div className="flex items-center gap-1.5">
-              {isEdited && !isDeleted && <span className="text-muted-foreground/60 text-[10px]">edited</span>}
+              <span className="text-muted-foreground text-xs">{formatTime(createdAt)}</span>
+              {isEdited && !isDeleted && <span className="text-muted-foreground/60 text-xs">• edited</span>}
               {isCurrentUser && !isDeleted && (
-                <span className="text-muted-foreground/60">
+                <span className="text-muted-foreground">
                   {isRead ? <CheckCheck className="h-3 w-3" /> : <Check className="h-3 w-3" />}
                 </span>
               )}

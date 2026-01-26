@@ -3,8 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { CornerUpLeft, File, Mic, MicOff, Paperclip, Send, Square, X } from "lucide-react";
+import { CornerUpLeft, File, Mic, Paperclip, Send, Square, X } from "lucide-react";
 import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 
 export interface ReplyInfo {
@@ -278,9 +277,8 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
 
     return (
       <div className="bg-background border-t p-4">
-        {/* Reply preview */}
         {replyTo && (
-          <div className="border-l-primary bg-muted/50 mb-2 flex items-center gap-2 rounded-lg border-l-2 px-3 py-2">
+          <div className="border-l-primary bg-muted/50 mb-3 flex items-center gap-2 rounded-lg border-l-2 px-3 py-2">
             <CornerUpLeft className="text-muted-foreground h-4 w-4 shrink-0" />
             <div className="min-w-0 flex-1">
               <span className="text-primary text-xs font-medium">Replying to {replyTo.senderName}</span>
@@ -292,9 +290,8 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
           </div>
         )}
 
-        {/* Selected file preview */}
         {selectedFile && (
-          <div className="bg-muted/50 mb-2 flex items-center gap-2 rounded-lg px-3 py-2">
+          <div className="bg-muted/50 mb-3 flex items-center gap-2 rounded-lg px-3 py-2">
             {filePreview ? (
               <img src={filePreview} alt="Preview" className="h-12 w-12 rounded object-cover" />
             ) : (
@@ -312,10 +309,8 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
           </div>
         )}
 
-        {/* Recording error */}
-        {recordingError && <div className="text-destructive mb-2 text-sm">{recordingError}</div>}
+        {recordingError && <div className="text-destructive mb-3 text-sm">{recordingError}</div>}
 
-        {/* Recording UI */}
         {isRecording ? (
           <div className="flex items-center gap-3">
             <div className="flex flex-1 items-center gap-2">
@@ -324,16 +319,15 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                 Recording... {formatRecordingTime(recordingDuration)}
               </span>
             </div>
-            <Button variant="ghost" size="icon" onClick={cancelRecording} className="h-11 w-11">
+            <Button variant="ghost" size="icon" onClick={cancelRecording} className="h-10 w-10">
               <X className="h-5 w-5" />
             </Button>
-            <Button size="icon" onClick={stopRecording} className="h-11 w-11 bg-red-500 hover:bg-red-600">
+            <Button size="icon" onClick={stopRecording} className="h-10 w-10 bg-red-500 hover:bg-red-600">
               <Square className="h-5 w-5" />
             </Button>
           </div>
         ) : (
           <div className="flex items-end gap-2">
-            {/* File upload button */}
             {allowFileUpload && onSendFile && (
               <TooltipProvider>
                 <Tooltip>
@@ -341,7 +335,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-11 w-11 shrink-0"
+                      className="h-10 w-10 shrink-0"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={disabled}
                     >
@@ -368,11 +362,10 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
               disabled={disabled}
-              className="max-h-[120px] min-h-[44px] resize-none"
+              className="max-h-[120px] min-h-[44px] resize-none rounded-xl"
               rows={1}
             />
 
-            {/* Voice message button */}
             {allowVoiceMessage && onSendVoice && !canSend && (
               <TooltipProvider>
                 <Tooltip>
@@ -380,7 +373,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-11 w-11 shrink-0"
+                      className="h-10 w-10 shrink-0"
                       onClick={startRecording}
                       disabled={disabled}
                     >
@@ -392,9 +385,13 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
               </TooltipProvider>
             )}
 
-            {/* Send button */}
             {canSend && (
-              <Button size="icon" onClick={handleSend} disabled={disabled} className="h-11 w-11 shrink-0">
+              <Button
+                size="icon"
+                onClick={handleSend}
+                disabled={disabled}
+                className="h-10 w-10 shrink-0 rounded-full bg-blue-600 hover:bg-blue-700"
+              >
                 <Send className="h-5 w-5" />
               </Button>
             )}

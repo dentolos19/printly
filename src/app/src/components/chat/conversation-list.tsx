@@ -2,25 +2,14 @@
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  getPriorityBadgeClasses,
-  getPriorityCardBorder,
-  getPriorityLabel,
-  getStatusBadgeClasses,
-  getStatusLabel,
-  needsAttention,
-} from "@/lib/conversation-colors";
-import {
-  ConversationPriority,
-  ConversationPriorityLabels,
-  ConversationStatus,
-  ConversationStatusLabels,
-  type ConversationSummary,
-} from "@/lib/server/conversation";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ConversationPriority, ConversationStatus, type ConversationSummary } from "@/lib/server/conversation";
 import { cn } from "@/lib/utils";
-import { AlertCircle, CheckCircle, Clock, MessageSquare, User, XCircle } from "lucide-react";
-import { forwardRef } from "react";
+import { CheckCircle, Clock, MessageSquare, Plus, Search, XCircle } from "lucide-react";
+import { forwardRef, useState } from "react";
 
 export interface ConversationListProps {
   conversations: ConversationSummary[];
@@ -32,6 +21,10 @@ export interface ConversationListProps {
   showPriority?: boolean;
   showCustomerName?: boolean;
   showAssignment?: boolean;
+  onCreateNew?: () => void;
+  showHeader?: boolean;
+  showSearch?: boolean;
+  showFilter?: boolean;
 }
 
 function getInitials(name: string): string {
@@ -78,7 +71,7 @@ function getStatusVariant(status: ConversationStatus): "default" | "secondary" |
   switch (status) {
     case 0: // Pending
       return "secondary";
-    case 1: // Active
+    case 1: // Active/Open
       return "default";
     case 2: // Resolved
       return "outline";
@@ -86,6 +79,21 @@ function getStatusVariant(status: ConversationStatus): "default" | "secondary" |
       return "outline";
     default:
       return "secondary";
+  }
+}
+
+function getStatusText(status: ConversationStatus): string {
+  switch (status) {
+    case 0:
+      return "Pending";
+    case 1:
+      return "Open";
+    case 2:
+      return "Resolved";
+    case 3:
+      return "Closed";
+    default:
+      return "Unknown";
   }
 }
 
@@ -116,119 +124,147 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
       showPriority = false,
       showCustomerName = false,
       showAssignment = false,
+      onCreateNew,
+      showHeader = true,
+      showSearch = true,
+      showFilter = true,
     },
     ref,
   ) => {
-    if (isLoading) {
-      return (
-        <div className="flex h-full items-center justify-center p-8">
-          <div className="text-muted-foreground flex flex-col items-center gap-2">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            <span className="text-sm">Loading...</span>
-          </div>
-        </div>
-      );
-    }
+    const [searchQuery, setSearchQuery] = useState("");
+    const [statusFilter, setStatusFilter] = useState<string>("all");
 
-    if (conversations.length === 0) {
-      return (
-        <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-2 p-8">
-          <MessageSquare className="h-12 w-12" />
-          <p className="text-sm">{emptyMessage}</p>
-        </div>
-      );
-    }
+    const filteredConversations = conversations.filter((conv) => {
+      const matchesSearch =
+        !searchQuery ||
+        (showCustomerName ? conv.customerName : conv.subject || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        conv.lastMessage?.content?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "pending" && conv.status === 0) ||
+        (statusFilter === "open" && conv.status === 1) ||
+        (statusFilter === "resolved" && conv.status === 2) ||
+        (statusFilter === "closed" && conv.status === 3);
+
+      return matchesSearch && matchesStatus;
+    });
 
     return (
-      <ScrollArea ref={ref} className="h-full">
-        <div className="flex flex-col">
-          {conversations.map((conversation) => {
-            const isSelected = selectedId === conversation.id;
-            const displayName = showCustomerName ? conversation.customerName : conversation.subject || "Conversation";
-            const lastMessageContent = conversation.lastMessage?.isDeleted
-              ? "Message deleted"
-              : conversation.lastMessage?.content || "No messages yet";
-            const requiresAttention = needsAttention(conversation.status, conversation.priority);
+      <div className="bg-background flex h-full flex-col border-r">
+        {showHeader && (
+          <div className="border-b p-4">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Messages</h2>
+              {onCreateNew && (
+                <Button size="icon" variant="default" className="h-8 w-8 rounded-full" onClick={onCreateNew}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
 
-            return (
-              <button
-                key={conversation.id}
-                onClick={() => onSelect(conversation.id)}
-                className={cn(
-                  "hover:bg-muted/50 flex w-full items-start gap-3 border-b px-4 py-3 text-left transition-colors",
-                  "border-l-4",
-                  showPriority ? getPriorityCardBorder(conversation.priority) : "border-l-transparent",
-                  isSelected && "bg-muted",
-                  requiresAttention && "animate-pulse bg-red-50 dark:bg-red-950/20",
-                )}
-              >
-                <Avatar className="h-10 w-10 shrink-0">
-                  <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
-                </Avatar>
+            {showSearch && (
+              <div className="relative mb-3">
+                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                <Input
+                  placeholder="Search conversations..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            )}
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <span
-                      className={cn("truncate font-medium", showPriority && getPriorityColor(conversation.priority))}
-                    >
-                      {displayName}
-                    </span>
-                    <span className="text-muted-foreground shrink-0 text-xs">
-                      {formatRelativeTime(conversation.lastMessageAt || conversation.createdAt)}
-                    </span>
-                  </div>
+            {showFilter && (
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Conversations</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="open">Open</SelectItem>
+                  <SelectItem value="resolved">Resolved</SelectItem>
+                  <SelectItem value="closed">Closed</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+        )}
 
-                  {(showStatus || showAssignment) && (
-                    <div className="mt-1 flex flex-wrap items-center gap-1">
-                      {showStatus && (
-                        <Badge
-                          variant="outline"
-                          className={cn("gap-1 px-1.5 py-0 text-[10px]", getStatusBadgeClasses(conversation.status))}
-                        >
-                          {getStatusIcon(conversation.status)}
-                          {getStatusLabel(conversation.status)}
-                        </Badge>
-                      )}
-                      {showPriority && conversation.priority >= 2 && (
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "gap-1 px-1.5 py-0 text-[10px]",
-                            getPriorityBadgeClasses(conversation.priority),
-                          )}
-                        >
-                          <AlertCircle className="h-2.5 w-2.5" />
-                          {getPriorityLabel(conversation.priority)}
-                        </Badge>
-                      )}
-                      {showAssignment && conversation.assignedToAdminName && (
-                        <Badge variant="outline" className="gap-1 px-1.5 py-0 text-[10px]">
-                          <User className="h-2.5 w-2.5" />
-                          {conversation.assignedToAdminName}
-                        </Badge>
-                      )}
-                    </div>
-                  )}
+        {isLoading ? (
+          <div className="flex h-full items-center justify-center p-8">
+            <div className="text-muted-foreground flex flex-col items-center gap-2">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              <span className="text-sm">Loading...</span>
+            </div>
+          </div>
+        ) : filteredConversations.length === 0 ? (
+          <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-2 p-8">
+            <MessageSquare className="h-12 w-12" />
+            <p className="text-sm">{searchQuery ? "No conversations found" : emptyMessage}</p>
+          </div>
+        ) : (
+          <ScrollArea ref={ref} className="flex-1">
+            <div className="flex flex-col">
+              {filteredConversations.map((conversation) => {
+                const isSelected = selectedId === conversation.id;
+                const displayName = showCustomerName
+                  ? conversation.customerName
+                  : conversation.subject || "Conversation";
+                const lastMessageContent = conversation.lastMessage?.isDeleted
+                  ? "Message deleted"
+                  : conversation.lastMessage?.content || "No messages yet";
 
-                  <div className="mt-1 flex items-center justify-between gap-2">
-                    <p className="text-muted-foreground truncate text-sm">
-                      {conversation.lastMessage && (
-                        <span className="font-medium">{conversation.lastMessage.senderName}: </span>
-                      )}
-                      {lastMessageContent}
-                    </p>
-                    {conversation.unreadCount > 0 && (
-                      <Badge className="h-5 min-w-[20px] shrink-0 justify-center rounded-full px-1.5 text-xs">
-                        {conversation.unreadCount > 99 ? "99+" : conversation.unreadCount}
-                      </Badge>
+                return (
+                  <button
+                    key={conversation.id}
+                    onClick={() => onSelect(conversation.id)}
+                    className={cn(
+                      "hover:bg-accent flex w-full items-start gap-3 border-b p-4 text-left transition-colors",
+                      isSelected && "bg-accent",
                     )}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </ScrollArea>
+                  >
+                    <Avatar className="h-10 w-10 shrink-0">
+                      <AvatarFallback className="bg-muted">{getInitials(displayName)}</AvatarFallback>
+                    </Avatar>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex items-start justify-between gap-2">
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
+                          <span className="truncate font-medium">{displayName}</span>
+                          {showStatus && (
+                            <Badge variant={getStatusVariant(conversation.status)} className="shrink-0 text-xs">
+                              {getStatusText(conversation.status)}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      {showAssignment && conversation.assignedToAdminName && (
+                        <div className="text-muted-foreground mb-1 text-xs">{conversation.assignedToAdminName}</div>
+                      )}
+
+                      <p className="text-muted-foreground line-clamp-2 text-sm">{lastMessageContent}</p>
+
+                      <div className="mt-1 flex items-center justify-between gap-2">
+                        <span className="text-muted-foreground text-xs">
+                          {formatRelativeTime(conversation.lastMessageAt || conversation.createdAt)}
+                        </span>
+                        {conversation.unreadCount > 0 && (
+                          <Badge className="h-5 min-w-[20px] shrink-0 justify-center rounded-full px-1.5 text-xs">
+                            {conversation.unreadCount > 99 ? "99+" : conversation.unreadCount}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </ScrollArea>
+        )}
+      </div>
     );
   },
 );
