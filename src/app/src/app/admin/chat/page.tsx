@@ -462,14 +462,16 @@ export default function AdminChatPage() {
       // Handle conversation status updates from other admins
       connection.on(
         "ConversationStatusUpdated",
-        (data: { conversationId: string; status: number; updatedByUserId: string; updatedByUserName: string; updatedAt: string }) => {
+        (data: {
+          conversationId: string;
+          status: number;
+          updatedByUserId: string;
+          updatedByUserName: string;
+          updatedAt: string;
+        }) => {
           console.log("[Admin Chat] Conversation status updated:", data);
           setConversations((prev) =>
-            prev.map((c) =>
-              c.id === data.conversationId
-                ? { ...c, status: data.status as 0 | 1 | 2 | 3 }
-                : c,
-            ),
+            prev.map((c) => (c.id === data.conversationId ? { ...c, status: data.status as 0 | 1 | 2 | 3 } : c)),
           );
         },
       );
