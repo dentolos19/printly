@@ -341,6 +341,21 @@ export default function ChatPage() {
         }
       });
 
+      // Handle conversation status updates (e.g., when admin closes the conversation)
+      connection.on(
+        "ConversationStatusUpdated",
+        (data: { conversationId: string; status: number; updatedByUserId: string; updatedByUserName: string; updatedAt: string }) => {
+          console.log("[Chat] Conversation status updated:", data);
+          setConversations((prev) =>
+            prev.map((c) =>
+              c.id === data.conversationId
+                ? { ...c, status: data.status as 0 | 1 | 2 | 3 }
+                : c,
+            ),
+          );
+        },
+      );
+
       await connection.start();
       connectionRef.current = connection;
       setConnectionState("connected");
@@ -979,20 +994,32 @@ export default function ChatPage() {
 
                 <TypingIndicator users={typingUsers} />
 
-                <div className="flex-shrink-0 border-t p-4">
-                  <MessageInput
-                    onSend={handleSendMessage}
-                    onSendFile={handleSendFile}
-                    onSendVoice={handleSendVoice}
-                    onTypingStart={handleTypingStart}
-                    onTypingStop={handleTypingStop}
-                    disabled={connectionState !== "connected" || isUploading}
-                    replyTo={replyTo}
-                    onCancelReply={() => setReplyTo(null)}
-                    allowFileUpload
-                    allowVoiceMessage
-                  />
-                </div>
+                {/* Show closed banner when conversation is closed, otherwise show message input */}
+                {selectedConversation.status === 3 ? (
+                  <div className="flex-shrink-0 border-t bg-muted/50 p-4">
+                    <div className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/50">
+                      <XCircle className="h-5 w-5 text-gray-500" />
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                        This conversation has been closed by support.
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex-shrink-0 border-t p-4">
+                    <MessageInput
+                      onSend={handleSendMessage}
+                      onSendFile={handleSendFile}
+                      onSendVoice={handleSendVoice}
+                      onTypingStart={handleTypingStart}
+                      onTypingStop={handleTypingStop}
+                      disabled={connectionState !== "connected" || isUploading}
+                      replyTo={replyTo}
+                      onCancelReply={() => setReplyTo(null)}
+                      allowFileUpload
+                      allowVoiceMessage
+                    />
+                  </div>
+                )}
               </CardContent>
             </>
           ) : (
