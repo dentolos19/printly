@@ -37,18 +37,25 @@ export default function NotificationsPage() {
     async (includeArchived = false) => {
       if (!tokens?.accessToken) return;
 
+      console.log("[NOTIFICATION DEBUG] fetchNotifications called, includeArchived:", includeArchived);
+
       try {
         const response = await fetch(`${API_URL}/notification?includeArchived=${includeArchived}&limit=100`, {
           headers: { Authorization: `Bearer ${tokens.accessToken}` },
         });
 
+        console.log("[NOTIFICATION DEBUG] API response status:", response.status);
+
         if (response.ok) {
           const data: Notification[] = await response.json();
+          console.log("[NOTIFICATION DEBUG] Received notifications:", data.length, data);
           if (includeArchived) {
             setArchivedNotifications(data.filter((n: Notification) => n.isArchived));
           } else {
             setNotifications(data.filter((n: Notification) => !n.isArchived));
           }
+        } else {
+          console.error("[NOTIFICATION DEBUG] API error response:", await response.text());
         }
       } catch (error) {
         console.error("Failed to fetch notifications:", error);

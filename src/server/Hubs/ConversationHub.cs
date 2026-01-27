@@ -412,6 +412,12 @@ public class ConversationHub(
             // Admin replied, notify the customer (don't fail message send if notification fails)
             try
             {
+                _logger.LogWarning(
+                    "[NOTIFICATION DEBUG] Admin sending message. Creating notification for CustomerId: {CustomerId}, ConversationId: {ConversationId}, SenderName: {SenderName}",
+                    conversation.CustomerId,
+                    conversationId,
+                    senderName
+                );
                 await _notificationService.CreateNotificationAsync(
                     conversation.CustomerId,
                     NotificationType.NewMessage,
@@ -421,6 +427,10 @@ public class ConversationHub(
                     message.Id,
                     NotificationPriority.Normal,
                     $"/support?conversation={conversationId}"
+                );
+                _logger.LogWarning(
+                    "[NOTIFICATION DEBUG] Notification created successfully for CustomerId: {CustomerId}",
+                    conversation.CustomerId
                 );
             }
             catch (Exception ex)

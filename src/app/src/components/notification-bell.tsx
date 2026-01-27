@@ -54,6 +54,8 @@ export function NotificationBell(props: ComponentProps<typeof Button>) {
   const fetchUnreadCount = useCallback(async () => {
     if (!tokens?.accessToken) return;
 
+    console.log("[NOTIFICATION BELL DEBUG] fetchUnreadCount called");
+
     try {
       const response = await fetch(`${API_URL}/notification/unread-count`, {
         headers: { Authorization: `Bearer ${tokens.accessToken}` },
@@ -61,7 +63,10 @@ export function NotificationBell(props: ComponentProps<typeof Button>) {
 
       if (response.ok) {
         const count: number = await response.json();
+        console.log("[NOTIFICATION BELL DEBUG] Unread count:", count);
         setUnreadCount(count);
+      } else {
+        console.error("[NOTIFICATION BELL DEBUG] Error fetching unread count:", response.status);
       }
     } catch (error) {
       console.error("Failed to fetch unread count:", error);
