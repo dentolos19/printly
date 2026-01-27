@@ -24,14 +24,17 @@ export default function DebugDialog() {
   const [isTogglingRole, setIsTogglingRole] = useState(false);
   const [isRefreshingToken, setIsRefreshingToken] = useState(false);
 
-  if (process.env.NODE_ENV === "production") {
-    return null;
-  }
+  // if (process.env.NODE_ENV === "production") {
+  //   return null;
+  // }
 
   const handleToggleRole = async () => {
     try {
       setIsTogglingRole(true);
       const response = await api.auth.toggleRole();
+
+      // Refresh access token to get updated role permissions
+      await refreshAccess();
 
       toast.success(`Role toggled to: ${response.role}`);
 

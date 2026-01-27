@@ -39,36 +39,36 @@ public class ChatService
 
         **Platform Features:**
 
-        1. **Designs**: 
+        1. **Designs**:
            - Create and edit custom print designs using our drag-and-drop designer
            - Save drafts and revisions of your work
            - Apply templates for quick starts
            - Export designs in various formats
 
-        2. **Assets Manager**: 
+        2. **Assets Manager**:
            - Upload and organize your images, logos, and graphics
            - Manage files in folders
            - Reuse assets across multiple designs
            - Supported formats: PNG, JPG, SVG, PDF
 
-        3. **Templates**: 
+        3. **Templates**:
            - Browse pre-made professional design templates
            - Customize templates with your own text, colors, and images
            - Categories include business cards, posters, t-shirts, mugs, and more
 
-        4. **Orders**: 
+        4. **Orders**:
            - Place orders for physical printed products
            - Track order status and shipping
            - View order history and reorder previous designs
            - Download invoices and receipts
 
-        5. **Live Chat**: 
+        5. **Live Chat**:
            - Direct messaging with other users or support staff
            - Real-time notifications for new messages
            - Message editing and deletion
            - Reply to specific messages
 
-        6. **Notifications**: 
+        6. **Notifications**:
            - System announcements and updates
            - Order status changes
            - New message alerts
@@ -119,7 +119,7 @@ public class ChatService
         _http = new HttpClient { Timeout = TimeSpan.FromSeconds(RequestTimeoutSeconds) };
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
         _http.DefaultRequestHeaders.Add("HTTP-Referer", "https://printly.dennise.me");
-        _http.DefaultRequestHeaders.Add("X-Title", "Printly Chatbot");
+        _http.DefaultRequestHeaders.Add("X-Title", "Printly");
     }
 
     /// <summary>

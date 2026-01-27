@@ -187,12 +187,14 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                     )}
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
-                  {process.env.NODE_ENV !== "production" && (
+                  {/* {process.env.NODE_ENV !== "production" && (
                     <>
                       <DebugDialog />
                       <DropdownMenuSeparator />
                     </>
-                  )}
+                  )} */}
+                  <DebugDialog />
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOutIcon />
                     <span>Logout</span>
