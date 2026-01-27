@@ -37,6 +37,8 @@ import {
   Loader2,
   MessageSquare,
   MoreVertical,
+  PanelLeftClose,
+  PanelLeftOpen,
   RefreshCw,
   User,
   Wifi,
@@ -60,11 +62,18 @@ const STATUS_ICONS: Record<ConversationStatus, typeof Clock> = {
   3: XCircle, // Closed
 };
 
+const STATUS_COLORS: Record<ConversationStatus, string> = {
+  0: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400",
+  1: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400",
+  2: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-400",
+  3: "bg-gray-50 text-gray-500 border-gray-200 dark:bg-gray-900/50 dark:text-gray-400",
+};
+
 const PRIORITY_COLORS: Record<ConversationPriority, string> = {
-  0: "text-muted-foreground", // Low
-  1: "text-foreground", // Normal
+  0: "text-slate-500", // Low
+  1: "text-sky-600", // Normal
   2: "text-orange-500", // High
-  3: "text-destructive", // Urgent
+  3: "text-red-500", // Urgent
 };
 
 export default function AdminChatPage() {
@@ -82,6 +91,9 @@ export default function AdminChatPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [admins, setAdmins] = useState<AdminInfo[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
+  const [pendingOptimisticMessages, setPendingOptimisticMessages] = useState<Set<string>>(new Set());
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const selectedConversationRef = useRef<string | null>(null);
@@ -344,7 +356,26 @@ export default function AdminChatPage() {
 
       connection.on("ConversationMessageReceived", (message: ConversationMessage) => {
         if (message.conversationId === selectedConversationRef.current) {
-          setMessages((prev) => [...prev, message]);
+          setMessages((prev) => {
+            // Remove any optimistic messages and add the real one
+            const withoutOptimistic = prev.filter((m) => {
+              if (m.id.startsWith("optimistic-") && m.senderId === message.senderId && m.content === message.content) {
+                // Clean up pending optimistic message tracking
+                setPendingOptimisticMessages((pendingPrev) => {
+                  const next = new Set(pendingPrev);
+                  next.delete(m.id);
+                  return next;
+                });
+                return false;
+              }
+              return true;
+            });
+            // Check if message already exists (avoid duplicates)
+            if (withoutOptimistic.some((m) => m.id === message.id)) {
+              return withoutOptimistic;
+            }
+            return [...withoutOptimistic, message];
+          });
           if (message.senderId !== currentUserId) {
             markConversationRead(message.conversationId);
           }
@@ -478,23 +509,140 @@ export default function AdminChatPage() {
 
   const handleSendMessage = useCallback(
     async (content: string, replyToMessageId?: string) => {
-      if (!selectedConversationId || !connectionRef.current) return;
+      if (!selectedConversationId || !connectionRef.current || !currentUserId) return;
+      if (connectionState !== "connected") {
+        setLastError("Connection lost. Please wait for reconnection.");
+        setTimeout(() => setLastError(null), 5000);
+        return;
+      }
+
+      // Get reply info if replying
+      const replyToMessage = replyToMessageId ? messages.find((m) => m.id === replyToMessageId) : null;
+
+      // Optimistic update - show message immediately
+      const optimisticId = `optimistic-${Date.now()}`;
+      setPendingOptimisticMessages((prev) => new Set(prev).add(optimisticId));
+
+      const optimisticMessage: ConversationMessage = {
+        id: optimisticId,
+        conversationId: selectedConversationId,
+        participantId: "",
+        senderId: currentUserId,
+        senderName: auth.claims?.name || auth.claims?.email || "You",
+        content,
+        isRead: false,
+        readAt: null,
+        isEdited: false,
+        editedAt: null,
+        isDeleted: false,
+        deletedAt: null,
+        createdAt: new Date().toISOString(),
+        replyToMessageId: replyToMessageId || null,
+        replyToContent: replyToMessage?.content || null,
+        replyToSenderName: replyToMessage?.senderName || null,
+        fileUrl: null,
+        fileName: null,
+        fileType: null,
+        fileSize: null,
+        voiceMessageUrl: null,
+        voiceMessageDuration: null,
+      };
+
+      setMessages((prev) => [...prev, optimisticMessage]);
+
+      // Update conversation list optimistically
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === selectedConversationId
+            ? {
+                ...c,
+                lastMessage: {
+                  id: optimisticId,
+                  content,
+                  senderId: currentUserId,
+                  senderName: optimisticMessage.senderName,
+                  isRead: false,
+                  isDeleted: false,
+                  isEdited: false,
+                  createdAt: optimisticMessage.createdAt,
+                },
+                lastMessageAt: optimisticMessage.createdAt,
+              }
+            : c,
+        ),
+      );
+
       try {
         await connectionRef.current.invoke("SendMessage", selectedConversationId, content, replyToMessageId || null);
+        // Clear any previous errors
+        setLastError(null);
       } catch (error) {
         console.error("[Admin Chat] Failed to send message", error);
+        // Remove optimistic message on failure
+        setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+        setPendingOptimisticMessages((prev) => {
+          const next = new Set(prev);
+          next.delete(optimisticId);
+          return next;
+        });
+
+        const errorMessage = error instanceof Error ? error.message : "Failed to send message";
+        setLastError(`Message failed to send: ${errorMessage}`);
+        setTimeout(() => setLastError(null), 5000);
       }
     },
-    [selectedConversationId],
+    [selectedConversationId, currentUserId, auth.claims, messages, connectionState],
   );
 
   const handleSendFile = useCallback(
     async (file: File, content: string, replyToMessageId?: string) => {
-      if (!selectedConversationId || !connectionRef.current) return;
+      if (!selectedConversationId || !connectionRef.current || !currentUserId) return;
+
+      // Create optimistic file message
+      const optimisticId = `optimistic-file-${Date.now()}`;
+      const replyToMessage = replyToMessageId ? messages.find((m) => m.id === replyToMessageId) : null;
+
+      const optimisticMessage: ConversationMessage = {
+        id: optimisticId,
+        conversationId: selectedConversationId,
+        participantId: "",
+        senderId: currentUserId,
+        senderName: auth.claims?.email || "Admin",
+        content: content || file.name,
+        isRead: false,
+        readAt: null,
+        isEdited: false,
+        editedAt: null,
+        isDeleted: false,
+        deletedAt: null,
+        createdAt: new Date().toISOString(),
+        replyToMessageId: replyToMessageId || null,
+        replyToContent: replyToMessage?.content || null,
+        replyToSenderName: replyToMessage?.senderName || null,
+        fileUrl: URL.createObjectURL(file),
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+        voiceMessageUrl: null,
+        voiceMessageDuration: null,
+      };
+
+      // Show optimistic message immediately
+      setMessages((prev) => [...prev, optimisticMessage]);
+      setPendingOptimisticMessages((prev) => new Set(prev).add(optimisticId));
+
       try {
         const uploadResult = await uploadFile(selectedConversationId, file);
         if (!uploadResult) {
-          console.error("[Admin Chat] File upload failed");
+          // Remove optimistic message on failure
+          setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+          setPendingOptimisticMessages((prev) => {
+            const next = new Set(prev);
+            next.delete(optimisticId);
+            return next;
+          });
+          setLastError("Failed to upload file");
+          setTimeout(() => setLastError(null), 5000);
           return;
         }
         await connectionRef.current.invoke(
@@ -510,9 +658,18 @@ export default function AdminChatPage() {
         );
       } catch (error) {
         console.error("[Admin Chat] Failed to send file message", error);
+        // Remove optimistic message on failure
+        setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+        setPendingOptimisticMessages((prev) => {
+          const next = new Set(prev);
+          next.delete(optimisticId);
+          return next;
+        });
+        setLastError("Failed to send file");
+        setTimeout(() => setLastError(null), 5000);
       }
     },
-    [selectedConversationId, uploadFile],
+    [selectedConversationId, uploadFile, currentUserId, auth.claims, messages],
   );
 
   const handleSendVoice = useCallback(
@@ -539,23 +696,57 @@ export default function AdminChatPage() {
     [selectedConversationId, uploadVoice],
   );
 
-  const handleEditMessage = useCallback(async (messageId: string, newContent: string) => {
-    if (!connectionRef.current) return;
-    try {
-      await connectionRef.current.invoke("EditMessage", messageId, newContent);
-    } catch (error) {
-      console.error("[Admin Chat] Failed to edit message", error);
-    }
-  }, []);
+  const handleEditMessage = useCallback(
+    async (messageId: string, newContent: string) => {
+      if (!connectionRef.current) return;
 
-  const handleDeleteMessage = useCallback(async (messageId: string) => {
-    if (!connectionRef.current) return;
-    try {
-      await connectionRef.current.invoke("DeleteMessage", messageId);
-    } catch (error) {
-      console.error("[Admin Chat] Failed to delete message", error);
-    }
-  }, []);
+      // Optimistic update
+      const originalMessage = messages.find((m) => m.id === messageId);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId ? { ...m, content: newContent, isEdited: true, editedAt: new Date().toISOString() } : m,
+        ),
+      );
+
+      try {
+        await connectionRef.current.invoke("EditMessage", messageId, newContent);
+      } catch (error) {
+        console.error("[Admin Chat] Failed to edit message", error);
+        // Revert on failure
+        if (originalMessage) {
+          setMessages((prev) => prev.map((m) => (m.id === messageId ? originalMessage : m)));
+        }
+      }
+    },
+    [messages],
+  );
+
+  const handleDeleteMessage = useCallback(
+    async (messageId: string) => {
+      if (!connectionRef.current) return;
+
+      // Optimistic update
+      const originalMessage = messages.find((m) => m.id === messageId);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId
+            ? { ...m, content: "This message was deleted", isDeleted: true, deletedAt: new Date().toISOString() }
+            : m,
+        ),
+      );
+
+      try {
+        await connectionRef.current.invoke("DeleteMessage", messageId);
+      } catch (error) {
+        console.error("[Admin Chat] Failed to delete message", error);
+        // Revert on failure
+        if (originalMessage) {
+          setMessages((prev) => prev.map((m) => (m.id === messageId ? originalMessage : m)));
+        }
+      }
+    },
+    [messages],
+  );
 
   const handleTypingStart = useCallback(() => {
     if (!selectedConversationId || !connectionRef.current) return;
@@ -592,89 +783,112 @@ export default function AdminChatPage() {
   }, [conversations]);
 
   return (
-    <main className="flex h-full w-full p-4">
-      <Card className="flex h-full w-full overflow-hidden">
-        {/* Sidebar */}
-        <div className="flex w-96 flex-col border-r">
-          <CardHeader className="flex-row items-center justify-between space-y-0 border-b px-4 py-3">
-            <CardTitle className="text-lg">Support Inbox</CardTitle>
-            <div className="flex items-center gap-2">
-              <Badge
-                variant={
-                  connectionState === "connected"
-                    ? "default"
-                    : connectionState === "connecting"
-                      ? "secondary"
-                      : "destructive"
-                }
-                className="gap-1"
-              >
-                {connectionState === "connected" ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
-                {connectionState === "connected"
-                  ? "Online"
-                  : connectionState === "connecting"
-                    ? "Connecting"
-                    : "Offline"}
-              </Badge>
-              <Button variant="ghost" size="icon" onClick={fetchConversations}>
-                <RefreshCw className={cn("h-4 w-4", isLoadingConversations && "animate-spin")} />
-              </Button>
-            </div>
-          </CardHeader>
+    <main className="flex h-[calc(100vh-4rem)] w-full flex-col gap-3 p-3">
+      {/* Header Bar - Compact */}
+      <div className="flex flex-shrink-0 items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="sm" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="gap-2">
+            {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+            <span className="hidden sm:inline">{sidebarCollapsed ? "Show" : "Hide"}</span>
+          </Button>
+          <div>
+            <h1 className="text-xl font-bold">Support Inbox</h1>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge
+            variant={
+              connectionState === "connected"
+                ? "default"
+                : connectionState === "connecting"
+                  ? "secondary"
+                  : "destructive"
+            }
+            className="gap-1 px-2 py-0.5 text-xs"
+          >
+            {connectionState === "connected" ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+            <span className="hidden sm:inline">
+              {connectionState === "connected"
+                ? "Connected"
+                : connectionState === "connecting"
+                  ? "Connecting..."
+                  : "Disconnected"}
+            </span>
+          </Badge>
+          <Button variant="ghost" size="icon" onClick={fetchConversations} disabled={isLoadingConversations}>
+            <RefreshCw className={cn("h-4 w-4", isLoadingConversations && "animate-spin")} />
+          </Button>
+        </div>
+      </div>
 
-          <div className="border-b p-2">
+      {/* Main Content */}
+      <div className="flex min-h-0 flex-1 gap-3">
+        {/* Conversation List - Collapsible */}
+        <Card
+          className={cn(
+            "flex flex-shrink-0 flex-col transition-all duration-300 ease-in-out",
+            sidebarCollapsed ? "w-0 overflow-hidden border-0 opacity-0" : "w-72 lg:w-80",
+          )}
+        >
+          <CardHeader className="border-b px-3 py-2">
+            <CardTitle className="text-sm font-medium">Conversations</CardTitle>
+          </CardHeader>
+          <div className="border-b p-1.5">
             <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="all" className="text-xs">
+              <TabsList className="grid h-7 w-full grid-cols-5">
+                <TabsTrigger value="all" className="px-1 text-[10px]">
                   All
                 </TabsTrigger>
-                <TabsTrigger value="0" className="text-xs">
+                <TabsTrigger value="0" className="px-1 text-[10px]">
                   Pending
                 </TabsTrigger>
-                <TabsTrigger value="1" className="text-xs">
+                <TabsTrigger value="1" className="px-1 text-[10px]">
                   Active
                 </TabsTrigger>
-                <TabsTrigger value="2" className="text-xs">
+                <TabsTrigger value="2" className="px-1 text-[10px]">
                   Resolved
                 </TabsTrigger>
-                <TabsTrigger value="3" className="text-xs">
+                <TabsTrigger value="3" className="px-1 text-[10px]">
                   Closed
                 </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
+          <ScrollArea className="flex-1">
+            <ConversationList
+              conversations={filteredConversations}
+              selectedId={selectedConversationId}
+              onSelect={setSelectedConversationId}
+              isLoading={isLoadingConversations}
+              showStatus
+              showPriority
+              showAssignment
+              showCustomerName
+              emptyMessage="No support conversations found"
+            />
+          </ScrollArea>
+        </Card>
 
-          <ConversationList
-            conversations={filteredConversations}
-            selectedId={selectedConversationId}
-            onSelect={setSelectedConversationId}
-            isLoading={isLoadingConversations}
-            showStatus
-            showPriority
-            showAssignment
-            showCustomerName
-            emptyMessage="No support conversations found"
-          />
-        </div>
-
-        {/* Chat Area */}
-        <div className="flex flex-1 flex-col">
+        {/* Chat Area - Expands when sidebar collapses */}
+        <Card className="flex min-w-0 flex-1 flex-col">
           {selectedConversation ? (
             <>
-              <CardHeader className="border-b px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <StatusIcon className={cn("h-5 w-5", PRIORITY_COLORS[selectedConversation.priority])} />
-                    <div>
-                      <CardTitle className="text-base">
+              <CardHeader className="flex-shrink-0 border-b px-3 py-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <StatusIcon
+                      className={cn("h-4 w-4 flex-shrink-0", PRIORITY_COLORS[selectedConversation.priority])}
+                    />
+                    <div className="min-w-0">
+                      <CardTitle className="truncate text-sm">
                         {selectedConversation.subject || "Support Conversation"}
                       </CardTitle>
-                      <p className="text-muted-foreground text-sm">
-                        {selectedConversation.participants.map((p) => p.name).join(", ")}
+                      <p className="text-muted-foreground truncate text-xs">
+                        Customer: {selectedConversation.participants.find((p) => p.role === 0)?.name || "Unknown"}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-shrink-0 flex-wrap items-center justify-end gap-1.5">
                     <Select
                       value={String(selectedConversation.status)}
                       onValueChange={(v) => {
@@ -682,7 +896,7 @@ export default function AdminChatPage() {
                         updateConversationStatus(selectedConversation.id, statusValue);
                       }}
                     >
-                      <SelectTrigger className="w-32">
+                      <SelectTrigger className="h-7 w-24 text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -700,7 +914,7 @@ export default function AdminChatPage() {
                         updateConversationPriority(selectedConversation.id, priorityValue);
                       }}
                     >
-                      <SelectTrigger className="w-32">
+                      <SelectTrigger className="h-7 w-20 text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -715,9 +929,9 @@ export default function AdminChatPage() {
                       value={selectedConversation.assignedToAdminId ?? "unassigned"}
                       onValueChange={(v) => assignConversation(selectedConversation.id, v === "unassigned" ? null : v)}
                     >
-                      <SelectTrigger className="w-40">
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4" />
+                      <SelectTrigger className="h-7 w-28 text-xs">
+                        <div className="flex items-center gap-1">
+                          <User className="h-3 w-3 flex-shrink-0" />
                           <span className="truncate">{selectedConversation.assignedToAdminName || "Unassigned"}</span>
                         </div>
                       </SelectTrigger>
@@ -743,16 +957,30 @@ export default function AdminChatPage() {
                     </DropdownMenu>
                   </div>
                 </div>
+                {lastError && (
+                  <div className="bg-destructive/10 text-destructive border-destructive/20 mt-3 flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+                    <WifiOff className="h-4 w-4 flex-shrink-0" />
+                    <span className="flex-1">{lastError}</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setLastError(null)}
+                      className="text-destructive hover:text-destructive h-6 w-6 p-0"
+                    >
+                      ×
+                    </Button>
+                  </div>
+                )}
               </CardHeader>
 
-              <CardContent className="flex flex-1 flex-col overflow-hidden p-0">
-                <ScrollArea className="flex-1 p-4">
+              <CardContent className="flex min-h-0 flex-1 flex-col p-0">
+                <ScrollArea className="min-h-0 flex-1 p-4">
                   {isLoadingMessages ? (
-                    <div className="flex h-full items-center justify-center">
+                    <div className="flex h-40 items-center justify-center">
                       <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
                     </div>
                   ) : messages.length === 0 ? (
-                    <div className="text-muted-foreground flex h-full flex-col items-center justify-center">
+                    <div className="text-muted-foreground flex h-40 flex-col items-center justify-center">
                       <p>No messages in this conversation.</p>
                       <p className="text-sm">The customer hasn&apos;t sent any messages yet.</p>
                     </div>
@@ -810,29 +1038,31 @@ export default function AdminChatPage() {
 
                 <TypingIndicator users={typingUsers} />
 
-                <MessageInput
-                  onSend={handleSendMessage}
-                  onSendFile={handleSendFile}
-                  onSendVoice={handleSendVoice}
-                  onTypingStart={handleTypingStart}
-                  onTypingStop={handleTypingStop}
-                  disabled={connectionState !== "connected" || isUploading}
-                  replyTo={replyTo}
-                  onCancelReply={() => setReplyTo(null)}
-                  allowFileUpload
-                  allowVoiceMessage
-                />
+                <div className="flex-shrink-0 border-t p-4">
+                  <MessageInput
+                    onSend={handleSendMessage}
+                    onSendFile={handleSendFile}
+                    onSendVoice={handleSendVoice}
+                    onTypingStart={handleTypingStart}
+                    onTypingStop={handleTypingStop}
+                    disabled={connectionState !== "connected" || isUploading}
+                    replyTo={replyTo}
+                    onCancelReply={() => setReplyTo(null)}
+                    allowFileUpload
+                    allowVoiceMessage
+                  />
+                </div>
               </CardContent>
             </>
           ) : (
-            <div className="text-muted-foreground flex flex-1 flex-col items-center justify-center">
-              <MessageSquare className="h-16 w-16" />
-              <p className="mt-4 text-lg">Select a support conversation</p>
+            <div className="text-muted-foreground flex flex-1 flex-col items-center justify-center p-8">
+              <MessageSquare className="h-16 w-16 opacity-50" />
+              <p className="mt-4 text-lg font-medium">Select a support conversation</p>
               <p className="text-sm">Choose from the list to start helping a customer</p>
             </div>
           )}
-        </div>
-      </Card>
+        </Card>
+      </div>
     </main>
   );
 }

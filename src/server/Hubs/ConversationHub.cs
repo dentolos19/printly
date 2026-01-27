@@ -143,21 +143,36 @@ public class ConversationHub(
         if (existingParticipant != null)
             return;
 
-        _context.ConversationParticipants.Add(
-            new ConversationParticipant
-            {
-                ConversationId = conversationId,
-                UserId = adminUserId,
-                Role = ConversationParticipantRole.Admin,
-            }
-        );
+        try
+        {
+            _context.ConversationParticipants.Add(
+                new ConversationParticipant
+                {
+                    ConversationId = conversationId,
+                    UserId = adminUserId,
+                    Role = ConversationParticipantRole.Admin,
+                }
+            );
 
-        await _context.SaveChangesAsync();
-        _logger.LogDebug(
-            "[ConversationHub] Added admin {AdminUserId} to conversation {ConversationId}",
-            adminUserId,
-            conversationId
-        );
+            await _context.SaveChangesAsync();
+            _logger.LogDebug(
+                "[ConversationHub] Added admin {AdminUserId} to conversation {ConversationId}",
+                adminUserId,
+                conversationId
+            );
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+        {
+            // Clear the change tracker to remove the failed entity
+            _context.ChangeTracker.Clear();
+
+            // Participant was added by another request (race condition), ignore
+            _logger.LogDebug(
+                "[ConversationHub] Admin {AdminUserId} already a participant in conversation {ConversationId} (race condition)",
+                adminUserId,
+                conversationId
+            );
+        }
     }
 
     #endregion
@@ -256,26 +271,34 @@ public class ConversationHub(
         if (conversation is null)
             throw new HubException("Conversation not found");
 
-        // Ensure admin sender is a participant in support mode conversations
-        if (isAdmin && conversation.SupportMode)
-        {
-            await EnsureAdminIsParticipantAsync(conversationId, userId);
-            // Refresh participants after adding
-            await _context.Entry(conversation).Collection(c => c.Participants).LoadAsync();
-        }
-
         // Get or create participant record for the sender
-        var participant = conversation.Participants.FirstOrDefault(p => p.UserId == userId);
+        // First, check if participant already exists in the database
+        var participant = await _context.ConversationParticipants.FirstOrDefaultAsync(p =>
+            p.ConversationId == conversationId && p.UserId == userId
+        );
+
         if (participant is null)
         {
-            participant = new ConversationParticipant
+            try
             {
-                ConversationId = conversationId,
-                UserId = userId,
-                Role = isAdmin ? ConversationParticipantRole.Admin : ConversationParticipantRole.Member,
-            };
-            _context.ConversationParticipants.Add(participant);
-            await _context.SaveChangesAsync();
+                participant = new ConversationParticipant
+                {
+                    ConversationId = conversationId,
+                    UserId = userId,
+                    Role = isAdmin ? ConversationParticipantRole.Admin : ConversationParticipantRole.Member,
+                };
+                _context.ConversationParticipants.Add(participant);
+                await _context.SaveChangesAsync();
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+            {
+                // Participant was added by another request (race condition), fetch it
+                participant = await _context.ConversationParticipants.FirstOrDefaultAsync(p =>
+                    p.ConversationId == conversationId && p.UserId == userId
+                );
+                if (participant is null)
+                    throw new HubException("Failed to create participant record");
+            }
         }
 
         // Handle reply-to message
@@ -364,28 +387,50 @@ public class ConversationHub(
                     }
                 );
 
-            // Send push notification to admins
-            await _notificationService.NotifyAdminsAsync(
-                NotificationType.NewMessage,
-                "New Customer Message",
-                $"{senderName} sent a message: {(content.Length > 50 ? content[..50] + "..." : content)}",
-                conversationId,
-                NotificationPriority.Normal
-            );
+            // Send push notification to admins (don't fail message send if notification fails)
+            try
+            {
+                await _notificationService.NotifyAdminsAsync(
+                    NotificationType.NewMessage,
+                    "New Customer Message",
+                    $"{senderName} sent a message: {(content.Length > 50 ? content[..50] + "..." : content)}",
+                    conversationId,
+                    NotificationPriority.Normal
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "[ConversationHub] Failed to send admin notification for message in conversation {ConversationId}",
+                    conversationId
+                );
+            }
         }
         else
         {
-            // Admin replied, notify the customer
-            await _notificationService.CreateNotificationAsync(
-                conversation.CustomerId,
-                NotificationType.NewMessage,
-                "New Reply from Support",
-                $"{senderName} replied to your conversation",
-                conversationId,
-                message.Id,
-                NotificationPriority.Normal,
-                $"/support?conversation={conversationId}"
-            );
+            // Admin replied, notify the customer (don't fail message send if notification fails)
+            try
+            {
+                await _notificationService.CreateNotificationAsync(
+                    conversation.CustomerId,
+                    NotificationType.NewMessage,
+                    "New Reply from Support",
+                    $"{senderName} replied to your conversation",
+                    conversationId,
+                    message.Id,
+                    NotificationPriority.Normal,
+                    $"/support?conversation={conversationId}"
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "[ConversationHub] Failed to send customer notification for message in conversation {ConversationId}",
+                    conversationId
+                );
+            }
         }
 
         _logger.LogDebug(
@@ -425,25 +470,43 @@ public class ConversationHub(
         if (conversation is null)
             throw new HubException("Conversation not found");
 
-        // Ensure admin sender is a participant in support mode conversations
-        if (isAdmin && conversation.SupportMode)
-        {
-            await EnsureAdminIsParticipantAsync(conversationId, userId);
-            await _context.Entry(conversation).Collection(c => c.Participants).LoadAsync();
-        }
-
         // Get or create participant record for the sender
-        var participant = conversation.Participants.FirstOrDefault(p => p.UserId == userId);
+        var participant = await _context.ConversationParticipants.FirstOrDefaultAsync(p =>
+            p.ConversationId == conversationId && p.UserId == userId
+        );
+
         if (participant is null)
         {
-            participant = new ConversationParticipant
+            try
             {
-                ConversationId = conversationId,
-                UserId = userId,
-                Role = isAdmin ? ConversationParticipantRole.Admin : ConversationParticipantRole.Member,
-            };
-            _context.ConversationParticipants.Add(participant);
-            await _context.SaveChangesAsync();
+                participant = new ConversationParticipant
+                {
+                    ConversationId = conversationId,
+                    UserId = userId,
+                    Role = isAdmin ? ConversationParticipantRole.Admin : ConversationParticipantRole.Member,
+                };
+                _context.ConversationParticipants.Add(participant);
+                await _context.SaveChangesAsync();
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+            {
+                // Clear the change tracker to remove the failed entity
+                _context.ChangeTracker.Clear();
+
+                // Participant was added by another request (race condition), fetch it
+                participant = await _context.ConversationParticipants.FirstOrDefaultAsync(p =>
+                    p.ConversationId == conversationId && p.UserId == userId
+                );
+                if (participant is null)
+                    throw new HubException("Failed to create participant record");
+
+                // Re-fetch conversation since we cleared the tracker
+                conversation = await _context
+                    .Conversations.Include(c => c.Participants)
+                    .FirstOrDefaultAsync(c => c.Id == conversationId);
+                if (conversation is null)
+                    throw new HubException("Conversation not found");
+            }
         }
 
         // Handle reply-to message
@@ -529,26 +592,48 @@ public class ConversationHub(
                     }
                 );
 
-            await _notificationService.NotifyAdminsAsync(
-                NotificationType.NewMessage,
-                "New File Attachment",
-                $"{senderName} sent a file: {fileName}",
-                conversationId,
-                NotificationPriority.Normal
-            );
+            try
+            {
+                await _notificationService.NotifyAdminsAsync(
+                    NotificationType.NewMessage,
+                    "New File Attachment",
+                    $"{senderName} sent a file: {fileName}",
+                    conversationId,
+                    NotificationPriority.Normal
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "[ConversationHub] Failed to send admin notification for file message in conversation {ConversationId}",
+                    conversationId
+                );
+            }
         }
         else
         {
-            await _notificationService.CreateNotificationAsync(
-                conversation.CustomerId,
-                NotificationType.NewMessage,
-                "New File from Support",
-                $"{senderName} sent a file: {fileName}",
-                conversationId,
-                message.Id,
-                NotificationPriority.Normal,
-                $"/chat?conversation={conversationId}"
-            );
+            try
+            {
+                await _notificationService.CreateNotificationAsync(
+                    conversation.CustomerId,
+                    NotificationType.NewMessage,
+                    "New File from Support",
+                    $"{senderName} sent a file: {fileName}",
+                    conversationId,
+                    message.Id,
+                    NotificationPriority.Normal,
+                    $"/chat?conversation={conversationId}"
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "[ConversationHub] Failed to send customer notification for file message in conversation {ConversationId}",
+                    conversationId
+                );
+            }
         }
 
         _logger.LogDebug(
@@ -584,23 +669,43 @@ public class ConversationHub(
         if (conversation is null)
             throw new HubException("Conversation not found");
 
-        if (isAdmin && conversation.SupportMode)
-        {
-            await EnsureAdminIsParticipantAsync(conversationId, userId);
-            await _context.Entry(conversation).Collection(c => c.Participants).LoadAsync();
-        }
+        // Get or create participant record for the sender
+        var participant = await _context.ConversationParticipants.FirstOrDefaultAsync(p =>
+            p.ConversationId == conversationId && p.UserId == userId
+        );
 
-        var participant = conversation.Participants.FirstOrDefault(p => p.UserId == userId);
         if (participant is null)
         {
-            participant = new ConversationParticipant
+            try
             {
-                ConversationId = conversationId,
-                UserId = userId,
-                Role = isAdmin ? ConversationParticipantRole.Admin : ConversationParticipantRole.Member,
-            };
-            _context.ConversationParticipants.Add(participant);
-            await _context.SaveChangesAsync();
+                participant = new ConversationParticipant
+                {
+                    ConversationId = conversationId,
+                    UserId = userId,
+                    Role = isAdmin ? ConversationParticipantRole.Admin : ConversationParticipantRole.Member,
+                };
+                _context.ConversationParticipants.Add(participant);
+                await _context.SaveChangesAsync();
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+            {
+                // Clear the change tracker to remove the failed entity
+                _context.ChangeTracker.Clear();
+
+                // Participant was added by another request (race condition), fetch it
+                participant = await _context.ConversationParticipants.FirstOrDefaultAsync(p =>
+                    p.ConversationId == conversationId && p.UserId == userId
+                );
+                if (participant is null)
+                    throw new HubException("Failed to create participant record");
+
+                // Re-fetch conversation since we cleared the tracker
+                conversation = await _context
+                    .Conversations.Include(c => c.Participants)
+                    .FirstOrDefaultAsync(c => c.Id == conversationId);
+                if (conversation is null)
+                    throw new HubException("Conversation not found");
+            }
         }
 
         ConversationMessage? replyToMessage = null;
@@ -680,26 +785,48 @@ public class ConversationHub(
                     }
                 );
 
-            await _notificationService.NotifyAdminsAsync(
-                NotificationType.NewMessage,
-                "New Voice Message",
-                $"{senderName} sent a voice message ({FormatDuration(duration)})",
-                conversationId,
-                NotificationPriority.Normal
-            );
+            try
+            {
+                await _notificationService.NotifyAdminsAsync(
+                    NotificationType.NewMessage,
+                    "New Voice Message",
+                    $"{senderName} sent a voice message ({FormatDuration(duration)})",
+                    conversationId,
+                    NotificationPriority.Normal
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "[ConversationHub] Failed to send admin notification for voice message in conversation {ConversationId}",
+                    conversationId
+                );
+            }
         }
         else
         {
-            await _notificationService.CreateNotificationAsync(
-                conversation.CustomerId,
-                NotificationType.NewMessage,
-                "New Voice Message from Support",
-                $"{senderName} sent a voice message ({FormatDuration(duration)})",
-                conversationId,
-                message.Id,
-                NotificationPriority.Normal,
-                $"/chat?conversation={conversationId}"
-            );
+            try
+            {
+                await _notificationService.CreateNotificationAsync(
+                    conversation.CustomerId,
+                    NotificationType.NewMessage,
+                    "New Voice Message from Support",
+                    $"{senderName} sent a voice message ({FormatDuration(duration)})",
+                    conversationId,
+                    message.Id,
+                    NotificationPriority.Normal,
+                    $"/chat?conversation={conversationId}"
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "[ConversationHub] Failed to send customer notification for voice message in conversation {ConversationId}",
+                    conversationId
+                );
+            }
         }
 
         _logger.LogDebug(

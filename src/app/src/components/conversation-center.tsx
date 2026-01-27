@@ -86,6 +86,7 @@ export default function ConversationCenter() {
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
 
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const selectedConversationRef = useRef<string | null>(null);
@@ -264,7 +265,20 @@ export default function ConversationCenter() {
         });
 
         if (currentConversationId === message.conversationId) {
-          setMessages((prev) => [...prev, message]);
+          setMessages((prev) => {
+            // Remove any optimistic messages and add the real one
+            const withoutOptimistic = prev.filter((m) => {
+              if (m.id.startsWith("optimistic-") && m.senderId === message.senderId && m.content === message.content) {
+                return false;
+              }
+              return true;
+            });
+            // Check if message already exists (avoid duplicates)
+            if (withoutOptimistic.some((m) => m.id === message.id)) {
+              return withoutOptimistic;
+            }
+            return [...withoutOptimistic, message];
+          });
           if (currentUserId && message.senderId !== currentUserId) {
             markConversationRead(message.conversationId).catch((err) => console.error(err));
           }
@@ -334,23 +348,82 @@ export default function ConversationCenter() {
   );
 
   const handleSendMessage = useCallback(async () => {
-    if (!inputMessage.trim() || !selectedConversationId || !connectionRef.current) return;
-    if (connectionState !== "connected") return;
+    if (!inputMessage.trim() || !selectedConversationId || !connectionRef.current || !currentUserId) return;
+    if (connectionState !== "connected") {
+      setConnectionError("Connection lost. Please wait for reconnection.");
+      setTimeout(() => setConnectionError(null), 5000);
+      return;
+    }
 
     const content = inputMessage.trim();
     setInputMessage("");
     setIsSending(true);
 
+    // Optimistic update - show message immediately
+    const optimisticId = `optimistic-${Date.now()}`;
+    const optimisticMessage: ConversationMessage = {
+      id: optimisticId,
+      conversationId: selectedConversationId,
+      participantId: "",
+      senderId: currentUserId,
+      senderName: auth.claims?.name || auth.claims?.email || "You",
+      content,
+      isRead: false,
+      readAt: null,
+      isEdited: false,
+      editedAt: null,
+      isDeleted: false,
+      deletedAt: null,
+      createdAt: new Date().toISOString(),
+      replyToMessageId: null,
+      replyToContent: null,
+      replyToSenderName: null,
+    };
+
+    setMessages((prev) => [...prev, optimisticMessage]);
+
+    // Update conversation list optimistically
+    setConversations((prev) => {
+      const next = [...prev];
+      const idx = next.findIndex((c) => c.id === selectedConversationId);
+      if (idx !== -1) {
+        const conv = { ...next[idx] };
+        conv.lastMessage = {
+          id: optimisticId,
+          content,
+          senderId: currentUserId,
+          senderName: optimisticMessage.senderName,
+          isRead: false,
+          isDeleted: false,
+          isEdited: false,
+          createdAt: optimisticMessage.createdAt,
+        };
+        next.splice(idx, 1);
+        next.unshift(conv);
+      }
+      return next;
+    });
+
     try {
       await connectionRef.current.invoke("SendMessage", selectedConversationId, content, null);
+      setConnectionError(null); // Clear any previous errors
+      setLastError(null);
     } catch (error) {
       console.error("[Conversation] Failed to send message", error);
+      // Remove optimistic message on failure
+      setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
       setInputMessage(content);
-      setConnectionError(error instanceof Error ? error.message : "Failed to send message");
+      const errorMessage = error instanceof Error ? error.message : "Failed to send message";
+      setConnectionError(`Message failed to send: ${errorMessage}`);
+      setLastError(errorMessage);
+      setTimeout(() => {
+        setConnectionError(null);
+        setLastError(null);
+      }, 8000);
     } finally {
       setIsSending(false);
     }
-  }, [inputMessage, selectedConversationId, connectionState]);
+  }, [inputMessage, selectedConversationId, connectionState, currentUserId, auth.claims]);
 
   const handleCreateConversation = useCallback(async () => {
     if (!selectedContactId) return;
