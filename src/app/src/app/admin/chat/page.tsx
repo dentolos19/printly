@@ -699,6 +699,8 @@ export default function AdminChatPage() {
   const handleEditMessage = useCallback(
     async (messageId: string, newContent: string) => {
       if (!connectionRef.current) return;
+      // Skip optimistic messages (non-GUID IDs)
+      if (messageId.startsWith("optimistic-")) return;
 
       // Optimistic update
       const originalMessage = messages.find((m) => m.id === messageId);
@@ -724,6 +726,8 @@ export default function AdminChatPage() {
   const handleDeleteMessage = useCallback(
     async (messageId: string) => {
       if (!connectionRef.current) return;
+      // Skip optimistic messages (non-GUID IDs)
+      if (messageId.startsWith("optimistic-")) return;
 
       // Optimistic update
       const originalMessage = messages.find((m) => m.id === messageId);
@@ -873,26 +877,38 @@ export default function AdminChatPage() {
         <Card className="flex min-w-0 flex-1 flex-col">
           {selectedConversation ? (
             <>
-              <CardHeader className="flex-shrink-0 gap-0 space-y-0 border-b px-2 py-0.5">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-2">
+              <CardHeader className="flex-shrink-0 gap-0 space-y-0 border-b px-3 py-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-1 items-start gap-2">
                     <StatusIcon
-                      className={cn("h-4 w-4 flex-shrink-0", PRIORITY_COLORS[selectedConversation.priority])}
+                      className={cn("mt-0.5 h-4 w-4 flex-shrink-0", PRIORITY_COLORS[selectedConversation.priority])}
                     />
-                    <div className="min-w-0">
-                      <CardTitle className="truncate text-sm font-semibold">
+                    <div className="min-w-0 flex-1 overflow-hidden">
+                      <CardTitle
+                        className="truncate text-sm font-semibold"
+                        title={selectedConversation.subject || "Support Conversation"}
+                      >
                         {selectedConversation.subject || "Support Conversation"}
                       </CardTitle>
-                      <p className="text-muted-foreground truncate text-xs leading-tight">
+                      <p
+                        className="text-muted-foreground line-clamp-1 text-xs leading-tight"
+                        title={selectedConversation.description || "No description provided"}
+                      >
                         {selectedConversation.description || "No description provided"}
                       </p>
-                      <p className="text-muted-foreground truncate text-xs font-medium">
-                        Customer: {selectedConversation.participants.find((p) => p.role === 0)?.name || "Unknown"}
-                        (ID: {selectedConversation.participants.find((p) => p.role === 0)?.id || "N/A"})
+                      <p
+                        className="text-muted-foreground truncate text-xs font-medium"
+                        title={`Customer: ${selectedConversation.participants.find((p) => p.role === 0)?.name || "Unknown"} (ID: ${selectedConversation.participants.find((p) => p.role === 0)?.id || "N/A"})`}
+                      >
+                        Customer: {selectedConversation.participants.find((p) => p.role === 0)?.name || "Unknown"}{" "}
+                        <span className="opacity-70">
+                          (ID: {selectedConversation.participants.find((p) => p.role === 0)?.id?.slice(0, 8) || "N/A"}
+                          ...)
+                        </span>
                       </p>
                     </div>
                   </div>
-                  <div className="flex flex-shrink-0 flex-wrap items-center justify-end gap-1.5">
+                  <div className="flex flex-shrink-0 items-center gap-1.5">
                     <Select
                       value={String(selectedConversation.status)}
                       onValueChange={(v) => {
@@ -900,7 +916,7 @@ export default function AdminChatPage() {
                         updateConversationStatus(selectedConversation.id, statusValue);
                       }}
                     >
-                      <SelectTrigger className="h-7 w-24 text-xs">
+                      <SelectTrigger className="h-7 w-[90px] text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -918,7 +934,7 @@ export default function AdminChatPage() {
                         updateConversationPriority(selectedConversation.id, priorityValue);
                       }}
                     >
-                      <SelectTrigger className="h-7 w-20 text-xs">
+                      <SelectTrigger className="h-7 w-[80px] text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>

@@ -634,6 +634,8 @@ export default function ChatPage() {
   const handleEditMessage = useCallback(
     async (messageId: string, newContent: string) => {
       if (!connectionRef.current) return;
+      // Skip optimistic messages (non-GUID IDs)
+      if (messageId.startsWith("optimistic-")) return;
 
       // Optimistic update
       const originalMessage = messages.find((m) => m.id === messageId);
@@ -659,6 +661,8 @@ export default function ChatPage() {
   const handleDeleteMessage = useCallback(
     async (messageId: string) => {
       if (!connectionRef.current) return;
+      // Skip optimistic messages (non-GUID IDs)
+      if (messageId.startsWith("optimistic-")) return;
 
       // Optimistic update
       const originalMessage = messages.find((m) => m.id === messageId);

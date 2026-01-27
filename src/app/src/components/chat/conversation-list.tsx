@@ -155,35 +155,39 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                 key={conversation.id}
                 onClick={() => onSelect(conversation.id)}
                 className={cn(
-                  "hover:bg-muted/50 flex w-full items-start gap-3 border-b px-4 py-3 text-left transition-colors",
+                  "hover:bg-muted/50 flex w-full items-start gap-3 border-b px-3 py-2.5 text-left transition-colors",
                   "border-l-4",
                   showPriority ? getPriorityCardBorder(conversation.priority) : "border-l-transparent",
                   isSelected && "bg-muted",
                   requiresAttention && "animate-pulse bg-red-50 dark:bg-red-950/20",
                 )}
               >
-                <Avatar className="h-10 w-10 shrink-0">
-                  <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
+                <Avatar className="h-9 w-9 shrink-0">
+                  <AvatarFallback className="text-xs">{getInitials(displayName)}</AvatarFallback>
                 </Avatar>
 
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 overflow-hidden">
                   <div className="flex items-center justify-between gap-2">
                     <span
-                      className={cn("truncate font-medium", showPriority && getPriorityColor(conversation.priority))}
+                      className={cn(
+                        "truncate text-sm font-medium",
+                        showPriority && getPriorityColor(conversation.priority),
+                      )}
+                      title={displayName}
                     >
                       {displayName}
                     </span>
-                    <span className="text-muted-foreground shrink-0 text-xs">
+                    <span className="text-muted-foreground shrink-0 text-[10px]">
                       {formatRelativeTime(conversation.lastMessageAt || conversation.createdAt)}
                     </span>
                   </div>
 
                   {(showStatus || showAssignment) && (
-                    <div className="mt-1 flex flex-wrap items-center gap-1">
+                    <div className="mt-0.5 flex flex-wrap items-center gap-1">
                       {showStatus && (
                         <Badge
                           variant="outline"
-                          className={cn("gap-1 px-1.5 py-0 text-[10px]", getStatusBadgeClasses(conversation.status))}
+                          className={cn("gap-0.5 px-1 py-0 text-[9px]", getStatusBadgeClasses(conversation.status))}
                         >
                           {getStatusIcon(conversation.status)}
                           {getStatusLabel(conversation.status)}
@@ -192,33 +196,34 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                       {showPriority && conversation.priority >= 2 && (
                         <Badge
                           variant="outline"
-                          className={cn(
-                            "gap-1 px-1.5 py-0 text-[10px]",
-                            getPriorityBadgeClasses(conversation.priority),
-                          )}
+                          className={cn("gap-0.5 px-1 py-0 text-[9px]", getPriorityBadgeClasses(conversation.priority))}
                         >
-                          <AlertCircle className="h-2.5 w-2.5" />
+                          <AlertCircle className="h-2 w-2" />
                           {getPriorityLabel(conversation.priority)}
                         </Badge>
                       )}
                       {showAssignment && conversation.assignedToAdminName && (
-                        <Badge variant="outline" className="gap-1 px-1.5 py-0 text-[10px]">
-                          <User className="h-2.5 w-2.5" />
-                          {conversation.assignedToAdminName}
+                        <Badge
+                          variant="outline"
+                          className="gap-0.5 px-1 py-0 text-[9px]"
+                          title={conversation.assignedToAdminName}
+                        >
+                          <User className="h-2 w-2" />
+                          <span className="max-w-[60px] truncate">{conversation.assignedToAdminName}</span>
                         </Badge>
                       )}
                     </div>
                   )}
 
-                  <div className="mt-1 flex items-center justify-between gap-2">
-                    <p className="text-muted-foreground truncate text-sm">
+                  <div className="mt-0.5 flex items-center justify-between gap-2">
+                    <p className="text-muted-foreground truncate text-xs" title={lastMessageContent}>
                       {conversation.lastMessage && (
                         <span className="font-medium">{conversation.lastMessage.senderName}: </span>
                       )}
                       {lastMessageContent}
                     </p>
                     {conversation.unreadCount > 0 && (
-                      <Badge className="h-5 min-w-[20px] shrink-0 justify-center rounded-full px-1.5 text-xs">
+                      <Badge className="h-4 min-w-[16px] shrink-0 justify-center rounded-full px-1 text-[10px]">
                         {conversation.unreadCount > 99 ? "99+" : conversation.unreadCount}
                       </Badge>
                     )}

@@ -7,7 +7,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { API_URL } from "@/environment";
 import { useAuth } from "@/lib/providers/auth";
 import { getNotificationIcon, type RealTimeNotification, type NotificationResponse } from "@/lib/server/notification";
-import * as signalR from "@microsoft/signalr";
 import { Archive, Bell, CheckCheck, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ComponentProps, useCallback, useEffect, useState } from "react";
@@ -149,49 +148,20 @@ export function NotificationBell(props: ComponentProps<typeof Button>) {
     }
   };
 
-  // Setup SignalR for real-time notifications
+  // Poll for new notifications every 15 seconds
   useEffect(() => {
     if (!isInitialized || !tokens?.accessToken) return;
 
-    const connection = new signalR.HubConnectionBuilder()
-      .withUrl(`${API_URL}/hubs/conversation`, {
-        accessTokenFactory: () => tokens.accessToken,
-      })
-      .withAutomaticReconnect()
-      .build();
-
-    connection.on("ReceiveNotification", (notification: Notification) => {
-      console.log("New notification:", notification);
-
-      // Add to list
-      setNotifications((prev) => [notification, ...prev].slice(0, 10));
-      setUnreadCount((prev) => prev + 1);
-
-      // Play notification sound
-      try {
-        const audio = new Audio("/notification.mp3");
-        audio.play().catch(() => {
-          // Silently fail if autoplay is blocked
-        });
-      } catch (error) {
-        console.error("Failed to play sound:", error);
+    const pollInterval = setInterval(() => {
+      fetchUnreadCount();
+      // Only fetch notifications list if dropdown is open
+      if (isOpen) {
+        fetchNotifications();
       }
+    }, 15000);
 
-      // Show browser notification if document is hidden
-      if (document.hidden && Notification.permission === "granted") {
-        new Notification(notification.title, {
-          body: notification.message,
-          icon: "/logo.png",
-        });
-      }
-    });
-
-    connection.start().catch((err) => console.error("SignalR error:", err));
-
-    return () => {
-      connection.stop();
-    };
-  }, [isInitialized, tokens?.accessToken]);
+    return () => clearInterval(pollInterval);
+  }, [isInitialized, tokens?.accessToken, isOpen, fetchNotifications, fetchUnreadCount]);
 
   // Initial load
   useEffect(() => {

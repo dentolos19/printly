@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Archive, Trash2, CheckCheck, Bell, Inbox, ArchiveIcon } from "lucide-react";
+import { Archive, Trash2, CheckCheck, Bell, Inbox, ArchiveIcon, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getNotificationIcon } from "@/lib/server/notification";
 
@@ -146,9 +146,17 @@ export default function NotificationsPage() {
     }
   };
 
+  // Initial load and polling for new notifications (every 10 seconds)
   useEffect(() => {
     fetchNotifications(false);
     fetchNotifications(true);
+
+    // Poll for new notifications every 10 seconds
+    const pollInterval = setInterval(() => {
+      fetchNotifications(false);
+    }, 10000);
+
+    return () => clearInterval(pollInterval);
   }, [fetchNotifications]);
 
   const formatTime = (dateString: string) => {
@@ -157,6 +165,13 @@ export default function NotificationsPage() {
   };
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await Promise.all([fetchNotifications(false), fetchNotifications(true)]);
+    setIsRefreshing(false);
+  };
 
   const renderNotification = (notification: Notification, showArchive = true) => (
     <div
@@ -221,6 +236,10 @@ export default function NotificationsPage() {
               {unreadCount > 0 && <Badge variant="destructive">{unreadCount}</Badge>}
             </CardTitle>
             <div className="flex gap-2">
+              <Button onClick={handleRefresh} variant="outline" size="sm" disabled={isRefreshing}>
+                <RefreshCw className={`mr-2 size-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
               {unreadCount > 0 && (
                 <Button onClick={markAllAsRead} variant="outline" size="sm">
                   <CheckCheck className="mr-2 size-4" />
