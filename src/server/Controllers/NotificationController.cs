@@ -45,7 +45,7 @@ public class NotificationController(DatabaseContext context) : BaseController(co
     {
         var userId = GetUserId();
         Console.WriteLine($"[NOTIFICATION DEBUG] GetNotifications called. UserId from token: {userId}");
-        
+
         if (userId == null)
             return Unauthorized();
 
@@ -54,7 +54,9 @@ public class NotificationController(DatabaseContext context) : BaseController(co
         Console.WriteLine($"[NOTIFICATION DEBUG] Total notifications in DB (sample): {allNotifications.Count}");
         foreach (var n in allNotifications)
         {
-            Console.WriteLine($"[NOTIFICATION DEBUG] DB Notification - ID: {n.Id}, UserId: {n.UserId}, Title: {n.Title}, IsDeleted: {n.IsDeleted}");
+            Console.WriteLine(
+                $"[NOTIFICATION DEBUG] DB Notification - ID: {n.Id}, UserId: {n.UserId}, Title: {n.Title}, IsDeleted: {n.IsDeleted}"
+            );
         }
 
         var query = Context.Notifications.Where(n => n.UserId == userId && !n.IsDeleted);
