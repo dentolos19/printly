@@ -873,18 +873,22 @@ export default function AdminChatPage() {
         <Card className="flex min-w-0 flex-1 flex-col">
           {selectedConversation ? (
             <>
-              <CardHeader className="flex-shrink-0 border-b px-3 py-2">
+              <CardHeader className="flex-shrink-0 gap-0 space-y-0 border-b px-2 py-0.5">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2">
                     <StatusIcon
                       className={cn("h-4 w-4 flex-shrink-0", PRIORITY_COLORS[selectedConversation.priority])}
                     />
                     <div className="min-w-0">
-                      <CardTitle className="truncate text-sm">
+                      <CardTitle className="truncate text-sm font-semibold">
                         {selectedConversation.subject || "Support Conversation"}
                       </CardTitle>
-                      <p className="text-muted-foreground truncate text-xs">
+                      <p className="text-muted-foreground truncate text-xs leading-tight">
+                        {selectedConversation.description || "No description provided"}
+                      </p>
+                      <p className="text-muted-foreground truncate text-xs font-medium">
                         Customer: {selectedConversation.participants.find((p) => p.role === 0)?.name || "Unknown"}
+                        (ID: {selectedConversation.participants.find((p) => p.role === 0)?.id || "N/A"})
                       </p>
                     </div>
                   </div>
@@ -924,37 +928,6 @@ export default function AdminChatPage() {
                         <SelectItem value="3">Urgent</SelectItem>
                       </SelectContent>
                     </Select>
-
-                    <Select
-                      value={selectedConversation.assignedToAdminId ?? "unassigned"}
-                      onValueChange={(v) => assignConversation(selectedConversation.id, v === "unassigned" ? null : v)}
-                    >
-                      <SelectTrigger className="h-7 w-28 text-xs">
-                        <div className="flex items-center gap-1">
-                          <User className="h-3 w-3 flex-shrink-0" />
-                          <span className="truncate">{selectedConversation.assignedToAdminName || "Unassigned"}</span>
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="unassigned">Unassigned</SelectItem>
-                        {admins.map((admin) => (
-                          <SelectItem key={admin.id} value={admin.id}>
-                            {admin.userName || admin.email}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>More Actions</DropdownMenuLabel>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
                   </div>
                 </div>
                 {lastError && (

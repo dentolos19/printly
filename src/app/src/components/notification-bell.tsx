@@ -6,6 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/compon
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { API_URL } from "@/environment";
 import { useAuth } from "@/lib/providers/auth";
+import { getNotificationIcon, type RealTimeNotification, type NotificationResponse } from "@/lib/server/notification";
 import * as signalR from "@microsoft/signalr";
 import { Archive, Bell, CheckCheck, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -16,7 +17,7 @@ interface Notification {
   type: string;
   title: string;
   message: string;
-  ticketId?: string;
+  conversationId?: string;
   isRead: boolean;
   readAt?: string;
   isArchived: boolean;
@@ -218,23 +219,6 @@ export function NotificationBell(props: ComponentProps<typeof Button>) {
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
     return date.toLocaleDateString();
-  };
-
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case "TicketCreated":
-        return "🎫";
-      case "NewMessage":
-        return "💬";
-      case "TicketStatusChanged":
-        return "🔄";
-      case "TicketClosed":
-        return "✅";
-      case "BroadcastSent":
-        return "📢";
-      default:
-        return "🔔";
-    }
   };
 
   return (

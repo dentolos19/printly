@@ -337,16 +337,16 @@ public class ConversationController(
             conversation.UnreadCount = 1;
 
             await Context.SaveChangesAsync();
-
-            // Notify admins about the new conversation
-            await _notificationService.NotifyAdminsAsync(
-                NotificationType.NewMessage,
-                "New Support Conversation",
-                $"{currentUser.UserName ?? currentUser.Email} started a conversation: {request.Subject}",
-                conversation.Id,
-                NotificationPriority.Normal
-            );
         }
+
+        // Notify admins about the new conversation
+        await _notificationService.NotifyAdminsAsync(
+            NotificationType.ConversationCreated,
+            "New Support Conversation",
+            $"{currentUser.UserName ?? currentUser.Email} started a conversation: {request.Subject}",
+            conversation.Id,
+            NotificationPriority.Normal
+        );
 
         // Build and return the response
         var participants = await Context

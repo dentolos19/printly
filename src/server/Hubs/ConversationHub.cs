@@ -1160,21 +1160,33 @@ public class ConversationHub(
         // Notify staff inbox
         await Clients.Group(StaffGroupName).SendAsync("ConversationStatusUpdated", response);
 
-        // Notify customer if conversation is resolved or closed
-        if (newStatus == ConversationStatus.Resolved || newStatus == ConversationStatus.Closed)
+        // Notify customer of status change
+        var statusText = newStatus switch
         {
-            var statusText = newStatus == ConversationStatus.Resolved ? "resolved" : "closed";
-            await _notificationService.CreateNotificationAsync(
-                conversation.CustomerId,
-                NotificationType.ConversationStatusChanged,
-                $"Conversation {statusText}",
-                $"Your support conversation has been marked as {statusText}",
-                conversationId,
-                null,
-                NotificationPriority.Normal,
-                $"/chat?conversation={conversationId}"
-            );
-        }
+            ConversationStatus.Active => "active",
+            ConversationStatus.Resolved => "resolved",
+            ConversationStatus.Closed => "closed",
+            _ => "updated",
+        };
+
+        var notificationTitle = newStatus switch
+        {
+            ConversationStatus.Active => "Conversation In Progress",
+            ConversationStatus.Resolved => "Conversation Resolved",
+            ConversationStatus.Closed => "Conversation Closed",
+            _ => "Conversation Status Updated",
+        };
+
+        await _notificationService.CreateNotificationAsync(
+            conversation.CustomerId,
+            NotificationType.ConversationStatusChanged,
+            notificationTitle,
+            $"Your support conversation has been marked as {statusText}",
+            conversationId,
+            null,
+            NotificationPriority.Normal,
+            $"/chat?conversation={conversationId}"
+        );
 
         _logger.LogInformation(
             "[ConversationHub] Conversation {ConversationId} status changed from {OldStatus} to {NewStatus} by {UserId}",
@@ -1217,6 +1229,32 @@ public class ConversationHub(
 
         // Notify staff inbox
         await Clients.Group(StaffGroupName).SendAsync("ConversationPriorityUpdated", response);
+
+        // Notify customer of priority change (especially important for escalations)
+        var priorityText = newPriority switch
+        {
+            ConversationPriority.Low => "low",
+            ConversationPriority.Normal => "normal",
+            ConversationPriority.High => "high",
+            ConversationPriority.Urgent => "urgent",
+        };
+
+        var notificationPriority =
+            newPriority >= ConversationPriority.High ? NotificationPriority.High : NotificationPriority.Normal;
+
+        var notificationTitle =
+            newPriority >= ConversationPriority.High ? "Conversation Escalated" : "Priority Updated";
+
+        await _notificationService.CreateNotificationAsync(
+            conversation.CustomerId,
+            NotificationType.ConversationPriorityChanged,
+            notificationTitle,
+            $"Your support conversation priority has been set to {priorityText}",
+            conversationId,
+            null,
+            notificationPriority,
+            $"/chat?conversation={conversationId}"
+        );
 
         _logger.LogInformation(
             "[ConversationHub] Conversation {ConversationId} priority changed from {OldPriority} to {NewPriority} by {UserId}",

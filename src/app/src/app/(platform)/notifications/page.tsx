@@ -10,13 +10,14 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Archive, Trash2, CheckCheck, Bell, Inbox, ArchiveIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { getNotificationIcon } from "@/lib/server/notification";
 
 interface Notification {
   id: string;
   type: string;
   title: string;
   message: string;
-  ticketId?: string;
+  conversationId?: string;
   isRead: boolean;
   readAt?: string;
   isArchived: boolean;
@@ -153,23 +154,6 @@ export default function NotificationsPage() {
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleString();
-  };
-
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case "TicketCreated":
-        return "🎫";
-      case "NewMessage":
-        return "💬";
-      case "TicketStatusChanged":
-        return "🔄";
-      case "TicketClosed":
-        return "✅";
-      case "BroadcastSent":
-        return "📢";
-      default:
-        return "🔔";
-    }
   };
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;

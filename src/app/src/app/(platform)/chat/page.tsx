@@ -851,9 +851,9 @@ export default function ChatPage() {
         <Card className="flex min-w-0 flex-1 flex-col">
           {selectedConversation ? (
             <>
-              <CardHeader className="flex-shrink-0 border-b px-4 py-2">
+              <CardHeader className="flex-shrink-0 gap-0 space-y-0 border-b px-2 py-0.5">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     {(() => {
                       const StatusIcon = STATUS_ICONS[selectedConversation.status] || Circle;
                       return (
@@ -871,9 +871,11 @@ export default function ChatPage() {
                         />
                       );
                     })()}
-                    <div>
-                      <CardTitle className="text-base">{selectedConversation.subject || "Conversation"}</CardTitle>
-                      <p className="text-muted-foreground text-xs">Support Ticket</p>
+                    <div className="min-w-0">
+                      <CardTitle className="truncate text-base">
+                        {selectedConversation.subject || "Conversation"}
+                      </CardTitle>
+                      <p className="text-muted-foreground truncate text-sm">Printly Customer Support 😊</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5">
