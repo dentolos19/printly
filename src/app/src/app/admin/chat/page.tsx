@@ -189,12 +189,14 @@ export default function AdminChatPage() {
     async (conversationId: string, status: ConversationStatus) => {
       try {
         const response = await authorizedFetch(`${API_URL}/conversation/${conversationId}/status`, {
-          method: "PUT",
+          method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status }),
         });
         if (response.ok) {
           setConversations((prev) => prev.map((c) => (c.id === conversationId ? { ...c, status } : c)));
+        } else {
+          console.error("[Admin Chat] Failed to update status - response not ok", await response.text());
         }
       } catch (error) {
         console.error("[Admin Chat] Failed to update status", error);
@@ -207,12 +209,14 @@ export default function AdminChatPage() {
     async (conversationId: string, priority: ConversationPriority) => {
       try {
         const response = await authorizedFetch(`${API_URL}/conversation/${conversationId}/priority`, {
-          method: "PUT",
+          method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ priority }),
         });
         if (response.ok) {
           setConversations((prev) => prev.map((c) => (c.id === conversationId ? { ...c, priority } : c)));
+        } else {
+          console.error("[Admin Chat] Failed to update priority - response not ok", await response.text());
         }
       } catch (error) {
         console.error("[Admin Chat] Failed to update priority", error);
@@ -804,19 +808,24 @@ export default function AdminChatPage() {
   }, [conversations]);
 
   return (
-    <main className="flex h-[calc(100vh-4rem)] w-full flex-col gap-3 p-3">
-      {/* Header Bar - Compact */}
-      <div className="flex flex-shrink-0 items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="gap-2">
+    <main className="flex h-[calc(100vh-4rem)] w-full flex-col gap-4 p-4">
+      {/* Header Bar - Elegant */}
+      <div className="bg-card flex flex-shrink-0 items-center justify-between rounded-lg border px-4 py-3 shadow-sm">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="hover:bg-accent h-9 gap-2 px-3"
+          >
             {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-            <span className="hidden sm:inline">{sidebarCollapsed ? "Show" : "Hide"}</span>
+            <span className="hidden font-medium sm:inline">{sidebarCollapsed ? "Show" : "Hide"} Sidebar</span>
           </Button>
           <div>
-            <h1 className="text-xl font-bold">Support Inbox</h1>
+            <h1 className="text-xl font-bold tracking-tight">Support Inbox</h1>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Badge
             variant={
               connectionState === "connected"
@@ -825,9 +834,9 @@ export default function AdminChatPage() {
                   ? "secondary"
                   : "destructive"
             }
-            className="gap-1 px-2 py-0.5 text-xs"
+            className="gap-1.5 px-3 py-1 text-xs font-medium"
           >
-            {connectionState === "connected" ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+            {connectionState === "connected" ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
             <span className="hidden sm:inline">
               {connectionState === "connected"
                 ? "Connected"
@@ -836,40 +845,46 @@ export default function AdminChatPage() {
                   : "Disconnected"}
             </span>
           </Badge>
-          <Button variant="ghost" size="icon" onClick={fetchConversations} disabled={isLoadingConversations}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={fetchConversations}
+            disabled={isLoadingConversations}
+            className="hover:bg-accent h-9 w-9"
+          >
             <RefreshCw className={cn("h-4 w-4", isLoadingConversations && "animate-spin")} />
           </Button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex min-h-0 flex-1 gap-3">
+      <div className="flex min-h-0 flex-1 gap-4">
         {/* Conversation List - Collapsible */}
         <Card
           className={cn(
-            "flex flex-shrink-0 flex-col transition-all duration-300 ease-in-out",
-            sidebarCollapsed ? "w-0 overflow-hidden border-0 opacity-0" : "w-72 lg:w-80",
+            "flex flex-shrink-0 flex-col shadow-sm transition-all duration-300 ease-in-out",
+            sidebarCollapsed ? "w-0 overflow-hidden border-0 opacity-0" : "w-80 lg:w-96",
           )}
         >
-          <CardHeader className="border-b px-3 py-2">
-            <CardTitle className="text-sm font-medium">Conversations</CardTitle>
+          <CardHeader className="bg-muted/30 border-b px-4 py-3">
+            <CardTitle className="text-base font-semibold">Conversations</CardTitle>
           </CardHeader>
-          <div className="border-b p-1.5">
+          <div className="border-b p-2">
             <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-              <TabsList className="grid h-7 w-full grid-cols-5">
-                <TabsTrigger value="all" className="px-1 text-[10px]">
+              <TabsList className="grid h-8 w-full grid-cols-5">
+                <TabsTrigger value="all" className="px-1.5 text-[11px] font-medium">
                   All
                 </TabsTrigger>
-                <TabsTrigger value="0" className="px-1 text-[10px]">
+                <TabsTrigger value="0" className="px-1.5 text-[11px] font-medium">
                   Pending
                 </TabsTrigger>
-                <TabsTrigger value="1" className="px-1 text-[10px]">
+                <TabsTrigger value="1" className="px-1.5 text-[11px] font-medium">
                   Active
                 </TabsTrigger>
-                <TabsTrigger value="2" className="px-1 text-[10px]">
+                <TabsTrigger value="2" className="px-1.5 text-[11px] font-medium">
                   Resolved
                 </TabsTrigger>
-                <TabsTrigger value="3" className="px-1 text-[10px]">
+                <TabsTrigger value="3" className="px-1.5 text-[11px] font-medium">
                   Closed
                 </TabsTrigger>
               </TabsList>
@@ -891,41 +906,45 @@ export default function AdminChatPage() {
         </Card>
 
         {/* Chat Area - Expands when sidebar collapses */}
-        <Card className="flex min-w-0 flex-1 flex-col">
+        <Card className="flex min-w-0 flex-1 flex-col shadow-sm">
           {selectedConversation ? (
             <>
-              <CardHeader className="flex-shrink-0 gap-0 space-y-0 border-b px-3 py-2">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 flex-1 items-start gap-2">
+              <CardHeader className="bg-muted/30 flex-shrink-0 gap-0 space-y-0 border-b px-4 py-3">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
                     <StatusIcon
-                      className={cn("mt-0.5 h-4 w-4 flex-shrink-0", PRIORITY_COLORS[selectedConversation.priority])}
+                      className={cn("mt-1 h-5 w-5 flex-shrink-0", PRIORITY_COLORS[selectedConversation.priority])}
                     />
-                    <div className="min-w-0 flex-1 overflow-hidden">
+                    <div className="min-w-0 flex-1 space-y-1 overflow-hidden">
                       <CardTitle
-                        className="truncate text-sm font-semibold"
+                        className="truncate text-base leading-tight font-semibold"
                         title={selectedConversation.subject || "Support Conversation"}
                       >
                         {selectedConversation.subject || "Support Conversation"}
                       </CardTitle>
                       <p
-                        className="text-muted-foreground line-clamp-1 text-xs leading-tight"
+                        className="text-muted-foreground line-clamp-1 text-xs leading-relaxed"
                         title={selectedConversation.description || "No description provided"}
                       >
                         {selectedConversation.description || "No description provided"}
                       </p>
-                      <p
-                        className="text-muted-foreground truncate text-xs font-medium"
-                        title={`Customer: ${selectedConversation.participants.find((p) => p.role === 0)?.name || "Unknown"} (ID: ${selectedConversation.participants.find((p) => p.role === 0)?.id || "N/A"})`}
-                      >
-                        Customer: {selectedConversation.participants.find((p) => p.role === 0)?.name || "Unknown"}{" "}
-                        <span className="opacity-70">
-                          (ID: {selectedConversation.participants.find((p) => p.role === 0)?.id?.slice(0, 8) || "N/A"}
-                          ...)
+                      <div className="flex items-center gap-2 pt-0.5">
+                        <Badge variant="outline" className="gap-1.5 px-2 py-0.5 text-xs font-medium">
+                          <User className="h-3 w-3" />
+                          <span title={selectedConversation.participants.find((p) => p.role === 0)?.name || "Unknown"}>
+                            {selectedConversation.participants.find((p) => p.role === 0)?.name || "Unknown"}
+                          </span>
+                        </Badge>
+                        <span
+                          className="text-muted-foreground font-mono text-[10px]"
+                          title={`Customer ID: ${selectedConversation.participants.find((p) => p.role === 0)?.id || "N/A"}`}
+                        >
+                          ID: {selectedConversation.participants.find((p) => p.role === 0)?.id?.slice(0, 8) || "N/A"}
                         </span>
-                      </p>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex flex-shrink-0 items-center gap-1.5">
+                  <div className="flex flex-shrink-0 items-center gap-2">
                     <Select
                       value={String(selectedConversation.status)}
                       onValueChange={(v) => {
@@ -933,7 +952,7 @@ export default function AdminChatPage() {
                         updateConversationStatus(selectedConversation.id, statusValue);
                       }}
                     >
-                      <SelectTrigger className="h-7 w-[90px] text-xs">
+                      <SelectTrigger className="h-8 w-[100px] text-xs font-medium">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -951,7 +970,7 @@ export default function AdminChatPage() {
                         updateConversationPriority(selectedConversation.id, priorityValue);
                       }}
                     >
-                      <SelectTrigger className="h-7 w-[80px] text-xs">
+                      <SelectTrigger className="h-8 w-[90px] text-xs font-medium">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -964,14 +983,14 @@ export default function AdminChatPage() {
                   </div>
                 </div>
                 {lastError && (
-                  <div className="bg-destructive/10 text-destructive border-destructive/20 mt-3 flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+                  <div className="bg-destructive/10 text-destructive border-destructive/20 mt-3 flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm">
                     <WifiOff className="h-4 w-4 flex-shrink-0" />
-                    <span className="flex-1">{lastError}</span>
+                    <span className="flex-1 font-medium">{lastError}</span>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => setLastError(null)}
-                      className="text-destructive hover:text-destructive h-6 w-6 p-0"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/20 h-7 w-7 rounded-full p-0"
                     >
                       ×
                     </Button>
@@ -1044,27 +1063,40 @@ export default function AdminChatPage() {
 
                 <TypingIndicator users={typingUsers} />
 
-                <div className="flex-shrink-0 border-t p-4">
-                  <MessageInput
-                    onSend={handleSendMessage}
-                    onSendFile={handleSendFile}
-                    onSendVoice={handleSendVoice}
-                    onTypingStart={handleTypingStart}
-                    onTypingStop={handleTypingStop}
-                    disabled={connectionState !== "connected" || isUploading}
-                    replyTo={replyTo}
-                    onCancelReply={() => setReplyTo(null)}
-                    allowFileUpload
-                    allowVoiceMessage
-                  />
-                </div>
+                {selectedConversation.status === 3 ? (
+                  <div className="bg-muted/30 flex-shrink-0 border-t p-4">
+                    <div className="text-muted-foreground flex items-center justify-center gap-2 py-2">
+                      <XCircle className="h-4 w-4" />
+                      <span className="text-sm font-medium">This conversation has been closed</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex-shrink-0 border-t p-4">
+                    <MessageInput
+                      onSend={handleSendMessage}
+                      onSendFile={handleSendFile}
+                      onSendVoice={handleSendVoice}
+                      onTypingStart={handleTypingStart}
+                      onTypingStop={handleTypingStop}
+                      disabled={connectionState !== "connected" || isUploading}
+                      replyTo={replyTo}
+                      onCancelReply={() => setReplyTo(null)}
+                      allowFileUpload
+                      allowVoiceMessage
+                    />
+                  </div>
+                )}
               </CardContent>
             </>
           ) : (
-            <div className="text-muted-foreground flex flex-1 flex-col items-center justify-center p-8">
-              <MessageSquare className="h-16 w-16 opacity-50" />
-              <p className="mt-4 text-lg font-medium">Select a support conversation</p>
-              <p className="text-sm">Choose from the list to start helping a customer</p>
+            <div className="text-muted-foreground flex flex-1 flex-col items-center justify-center gap-3 p-12">
+              <div className="bg-muted/50 rounded-full p-6">
+                <MessageSquare className="h-12 w-12 opacity-40" />
+              </div>
+              <div className="space-y-1 text-center">
+                <p className="text-foreground text-lg font-semibold">Select a conversation</p>
+                <p className="text-sm">Choose a conversation from the list to view and respond to messages</p>
+              </div>
             </div>
           )}
         </Card>
