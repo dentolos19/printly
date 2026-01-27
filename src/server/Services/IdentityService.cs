@@ -120,14 +120,24 @@ public class IdentityService
 
     public async Task<(string, string)> GrantUserAccess(User user)
     {
-        var accessToken = await GenerateAccessToken(user);
-        var refreshToken = await GenerateRefreshToken(user);
+        // Reload user from database to ensure we have the latest role
+        var freshUser = await _userManager.FindByIdAsync(user.Id);
+        if (freshUser == null)
+            throw new Exception("User not found.");
+
+        var accessToken = await GenerateAccessToken(freshUser);
+        var refreshToken = await GenerateRefreshToken(freshUser);
         return (accessToken, refreshToken.Token);
     }
 
     public async Task<(string, string)> ExtendUserAccess(User user, RefreshToken token)
     {
-        var accessToken = await GenerateAccessToken(user);
+        // Reload user from database to ensure we have the latest role
+        var freshUser = await _userManager.FindByIdAsync(user.Id);
+        if (freshUser == null)
+            throw new Exception("User not found.");
+
+        var accessToken = await GenerateAccessToken(freshUser);
         var refreshToken = await RotateRefreshToken(token);
         return (accessToken, refreshToken.Token);
     }
