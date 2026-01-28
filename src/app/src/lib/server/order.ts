@@ -48,6 +48,7 @@ export type OrderItemResponse = {
   imprintId: string | null;
   imprintName: string | null;
   productName: string;
+  productImageUrl: string | null;
   size: ProductSize;
   color: string;
   quantity: number;

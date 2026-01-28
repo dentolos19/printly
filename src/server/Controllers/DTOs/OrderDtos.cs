@@ -33,6 +33,7 @@ public record OrderItemResponse(
     Guid? ImprintId,
     string? ImprintName,
     string ProductName,
+    string? ProductImageUrl,
     ProductSize Size,
     string Color,
     int Quantity,

@@ -2,7 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -16,7 +16,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useServer } from "@/lib/providers/server";
-import { Imprint } from "@/lib/server/imprint";
 import {
   OrderItemResponse,
   OrderResponse,
@@ -34,6 +33,8 @@ import {
 } from "@/lib/server/refund";
 import {
   ArrowLeft,
+  ArrowRight,
+  Calendar,
   CheckCircle2,
   Clock,
   CreditCard,
@@ -48,6 +49,7 @@ import {
   User,
   XCircle,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -78,70 +80,61 @@ const validTransitions: Record<OrderStatus, OrderStatus[]> = {
   [OrderStatus.Refunded]: [],
 };
 
-function OrderItemCard({ item, imprint }: { item: OrderItemResponse; imprint: Imprint | null }) {
+function OrderItemCard({ item }: { item: OrderItemResponse }) {
   const hasImprint = !!item.imprintId;
   const hasCustomization = item.customizationPrice > 0;
 
   return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex gap-4">
-          {/* Product Image Placeholder */}
-          <div className="bg-muted flex h-20 w-20 shrink-0 items-center justify-center rounded-lg">
-            <Package className="text-muted-foreground h-8 w-8" />
+    <div className="flex gap-4 rounded-xl border bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+      {/* Product Image */}
+      <div className="bg-muted relative h-32 w-32 shrink-0 overflow-hidden rounded-lg">
+        {item.productImageUrl ? (
+          <Image src={item.productImageUrl} alt={item.productName} fill className="object-cover" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            <Package className="text-muted-foreground h-12 w-12" />
           </div>
+        )}
+      </div>
 
-          <div className="flex-1 space-y-2">
-            {/* Product Info */}
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="font-semibold">{item.productName}</h3>
-                <p className="text-muted-foreground text-sm">
-                  {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]} • {item.color}
-                </p>
-                <p className="text-muted-foreground mt-1 font-mono text-xs">Variant: {item.variantId.slice(0, 8)}...</p>
-              </div>
-              <div className="text-right">
-                <span className="text-lg font-bold">${item.subtotal.toFixed(2)}</span>
-                <p className="text-muted-foreground text-sm">
-                  {item.quantity} × ${item.unitPrice.toFixed(2)}
-                </p>
-              </div>
-            </div>
-
-            {/* Imprint Info */}
-            {hasImprint && (
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
-                <div className="flex items-start gap-2">
-                  <Paintbrush className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-blue-800">
-                        Custom Design: {item.imprintName || "Unnamed Design"}
-                      </span>
-                      {hasCustomization && (
-                        <span className="text-sm font-medium text-blue-600">
-                          +${item.customizationPrice.toFixed(2)} per item
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-muted-foreground mt-1 font-mono text-xs">Imprint ID: {item.imprintId}</div>
-                    <div className="mt-2 flex gap-2">
-                      <Button variant="outline" size="sm" className="h-7 text-xs" asChild>
-                        <Link href={`/imprinter/${item.imprintId}`} target="_blank">
-                          <ExternalLink className="mr-1 h-3 w-3" />
-                          View Design
-                        </Link>
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+      <div className="flex flex-1 flex-col justify-between">
+        {/* Product Info */}
+        <div>
+          <h3 className="text-lg font-semibold">{item.productName}</h3>
+          <p className="text-muted-foreground text-sm">
+            {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]} • {item.color}
+          </p>
+          <p className="text-muted-foreground mt-1 text-sm">Qty: {item.quantity}</p>
+          <p className="text-muted-foreground mt-1 font-mono text-xs">Variant: {item.variantId.slice(0, 8)}...</p>
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Imprint Badge & View Design CTA */}
+        {hasImprint && (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1">
+              <Paintbrush className="h-3.5 w-3.5 text-blue-600" />
+              <span className="text-sm font-medium text-blue-700">{item.imprintName || "Custom Design"}</span>
+            </div>
+            <Button variant="default" size="sm" className="h-7 bg-blue-600 hover:bg-blue-700" asChild>
+              <Link href={`/imprinter/${item.imprintId}`} target="_blank">
+                View Design
+                <ArrowRight className="ml-1 h-3 w-3" />
+              </Link>
+            </Button>
+            <span className="text-muted-foreground font-mono text-xs">ID: {item.imprintId?.slice(0, 8)}...</span>
+          </div>
+        )}
+
+        {/* Price */}
+        <div className="mt-2 flex items-end justify-between">
+          <div className="text-muted-foreground text-sm">
+            ${item.unitPrice.toFixed(2)} × {item.quantity}
+            {hasCustomization && <span className="text-blue-600"> + ${item.customizationPrice.toFixed(2)} custom</span>}
+          </div>
+          <span className="text-xl font-bold">${item.subtotal.toFixed(2)}</span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -265,7 +258,6 @@ export default function AdminOrderDetailsPage() {
   const orderId = params?.id as string;
 
   const [order, setOrder] = useState<OrderResponse | null>(null);
-  const [imprints, setImprints] = useState<Record<string, Imprint>>({});
   const [refund, setRefund] = useState<RefundResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
@@ -281,27 +273,6 @@ export default function AdminOrderDetailsPage() {
       try {
         const orderData = await api.order.getOrder(orderId);
         setOrder(orderData);
-
-        // Load imprint details for items with imprints
-        const imprintIds = orderData.items.filter((item) => item.imprintId).map((item) => item.imprintId!);
-
-        if (imprintIds.length > 0) {
-          const imprintPromises = imprintIds.map(async (id) => {
-            try {
-              return await api.imprint.getImprint(id);
-            } catch {
-              return null;
-            }
-          });
-          const imprintResults = await Promise.all(imprintPromises);
-          const imprintMap: Record<string, Imprint> = {};
-          imprintResults.forEach((imprint) => {
-            if (imprint) {
-              imprintMap[imprint.id] = imprint;
-            }
-          });
-          setImprints(imprintMap);
-        }
 
         // Load refund if exists
         try {
@@ -367,21 +338,29 @@ export default function AdminOrderDetailsPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto max-w-4xl space-y-6 p-6">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-64 w-full" />
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="mx-auto max-w-7xl space-y-6">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-16 w-full" />
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="space-y-4 lg:col-span-2">
+              <Skeleton className="h-40 w-full" />
+              <Skeleton className="h-40 w-full" />
+            </div>
+            <Skeleton className="h-64 w-full" />
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!order) {
     return (
-      <div className="container mx-auto max-w-4xl p-6">
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Package className="text-muted-foreground mb-4 h-16 w-16" />
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
+        <div className="text-center">
+          <Package className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
           <h2 className="mb-2 text-2xl font-bold">Order not found</h2>
-          <p className="text-muted-foreground mb-6">The order you're looking for doesn't exist.</p>
+          <p className="text-muted-foreground mb-6">The order you&apos;re looking for doesn&apos;t exist.</p>
           <Button asChild>
             <Link href="/admin/orders">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -395,185 +374,229 @@ export default function AdminOrderDetailsPage() {
 
   const StatusIcon = StatusIcons[order.status];
   const availableTransitions = validTransitions[order.status];
+  const subtotal = order.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+  const customizationTotal = order.items.reduce((sum, item) => sum + item.customizationPrice * item.quantity, 0);
 
   return (
-    <div className="container mx-auto max-w-4xl space-y-6 p-6">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/admin/orders">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Order #{order.id.slice(0, 8)}</h1>
-            <p className="text-muted-foreground text-sm">
-              Created on{" "}
-              {new Date(order.createdAt).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </p>
+      <div className="border-b bg-white">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" asChild>
+              <Link href="/admin/orders">
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
+            </Button>
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold">Order #{order.id.slice(0, 8)}</h1>
+                <Badge className={`${OrderStatusColors[order.status]} text-sm`}>{OrderStatusLabels[order.status]}</Badge>
+              </div>
+              <p className="text-muted-foreground text-sm">
+                Created on{" "}
+                {new Date(order.createdAt).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge className={`${OrderStatusColors[order.status]} text-sm`}>{OrderStatusLabels[order.status]}</Badge>
+          <div className="flex gap-2">
+            {availableTransitions.length > 0 && (
+              <Button variant="outline" onClick={() => setStatusDialogOpen(true)}>
+                <RefreshCcw className="mr-2 h-4 w-4" />
+                Update Status
+              </Button>
+            )}
+            <Button variant="outline" className="text-destructive" onClick={() => setDeleteDialogOpen(true)}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <Card>
-        <CardContent className="flex flex-wrap items-center gap-2 p-4">
-          {availableTransitions.length > 0 && (
-            <Button variant="outline" size="sm" onClick={() => setStatusDialogOpen(true)}>
-              <RefreshCcw className="mr-2 h-4 w-4" />
-              Update Status
-            </Button>
-          )}
-          <Button variant="outline" size="sm" className="text-destructive" onClick={() => setDeleteDialogOpen(true)}>
-            <Trash2 className="mr-2 h-4 w-4" />
-            Delete Order
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Main Content */}
+      <div className="mx-auto max-w-7xl px-6 py-8">
+        <div className="grid gap-8 lg:grid-cols-3">
+          {/* Left Column - Order Items */}
+          <div className="space-y-6 lg:col-span-2">
+            {/* Refund Status */}
+            {refund && (
+              <Card className="border-yellow-200 bg-yellow-50">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-yellow-800">
+                      <RefreshCcw className="h-5 w-5" />
+                      Refund Request
+                    </CardTitle>
+                    <Badge className={RefundStatusColors[refund.status]}>{RefundStatusLabels[refund.status]}</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2 text-yellow-700">
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Requested Amount:</span>
+                      <span className="font-medium">${refund.requestedAmount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Reason:</span>
+                      <span className="font-medium">{RefundReasonLabels[refund.reason]}</span>
+                    </div>
+                    {refund.approvedAmount && (
+                      <div className="flex justify-between text-sm">
+                        <span>Approved Amount:</span>
+                        <span className="font-medium text-green-700">${refund.approvedAmount.toFixed(2)}</span>
+                      </div>
+                    )}
+                  </div>
+                  {refund.customerNotes && (
+                    <div className="rounded-lg bg-yellow-100 p-2">
+                      <span className="text-xs font-medium">Customer Notes:</span>
+                      <p className="text-sm">{refund.customerNotes}</p>
+                    </div>
+                  )}
+                  <Button variant="outline" size="sm" className="mt-2 w-full" asChild>
+                    <Link href="/admin/refunds">
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      Manage in Refunds
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
 
-      {/* Customer Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Customer Information</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="flex items-center gap-3">
-            <User className="text-muted-foreground h-5 w-5" />
+            {/* Order Items */}
             <div>
-              <Label className="text-muted-foreground text-xs">User ID</Label>
-              <p className="font-mono text-sm">{order.userId}</p>
+              <h2 className="mb-4 text-lg font-semibold">Order Items ({order.items.length})</h2>
+              <div className="space-y-4">
+                {order.items.map((item) => (
+                  <OrderItemCard key={item.id} item={item} />
+                ))}
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Mail className="text-muted-foreground h-5 w-5" />
-            <div>
-              <Label className="text-muted-foreground text-xs">Email</Label>
-              <p className="text-sm">{order.userEmail}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Refund Status */}
-      {refund && (
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-lg text-yellow-800">
-                <RefreshCcw className="h-5 w-5" />
-                Refund Request
-              </CardTitle>
-              <Badge className={RefundStatusColors[refund.status]}>{RefundStatusLabels[refund.status]}</Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-2 text-yellow-700">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <Label className="text-yellow-600">Requested Amount</Label>
-                <p className="font-medium">${refund.requestedAmount.toFixed(2)}</p>
-              </div>
-              <div>
-                <Label className="text-yellow-600">Reason</Label>
-                <p className="font-medium">{RefundReasonLabels[refund.reason]}</p>
-              </div>
-              {refund.approvedAmount && (
-                <div>
-                  <Label className="text-yellow-600">Approved Amount</Label>
-                  <p className="font-medium text-green-700">${refund.approvedAmount.toFixed(2)}</p>
+            {/* Cost Breakdown */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Cost Breakdown</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Products Subtotal</span>
+                  <span>${subtotal.toFixed(2)}</span>
                 </div>
-              )}
-            </div>
-            {refund.customerNotes && (
-              <div className="rounded-lg bg-yellow-100 p-2">
-                <Label className="text-yellow-600">Customer Notes</Label>
-                <p className="text-sm">{refund.customerNotes}</p>
-              </div>
-            )}
-            {refund.adminNotes && (
-              <div className="rounded-lg bg-yellow-100 p-2">
-                <Label className="text-yellow-600">Admin Notes</Label>
-                <p className="text-sm italic">{refund.adminNotes}</p>
-              </div>
-            )}
-            <Button variant="outline" size="sm" className="mt-2" asChild>
-              <Link href="/admin/refunds">
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Manage in Refunds
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+                {customizationTotal > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Customization Fees</span>
+                    <span className="text-blue-600">${customizationTotal.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Shipping</span>
+                  <span className="text-green-600">Free</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between text-xl font-bold">
+                  <span>Total</span>
+                  <span className="text-primary">${order.totalAmount.toFixed(2)}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-      {/* Order Items */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Order Items ({order.items.length})</CardTitle>
-          <CardDescription>Products ordered by the customer</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {order.items.map((item) => (
-            <OrderItemCard key={item.id} item={item} imprint={item.imprintId ? imprints[item.imprintId] : null} />
-          ))}
-        </CardContent>
-      </Card>
+          {/* Right Column - Order Details */}
+          <div className="space-y-6">
+            {/* Order Details */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Order Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 rounded-full p-2">
+                    <Package className="text-primary h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Order Number</p>
+                    <p className="font-mono font-medium">#{order.id.slice(0, 8)}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 rounded-full p-2">
+                    <Calendar className="text-primary h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Order Date</p>
+                    <p className="font-medium">
+                      {new Date(order.createdAt).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 rounded-full p-2">
+                    <StatusIcon className="text-primary h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Status</p>
+                    <p className="font-medium">{OrderStatusLabels[order.status]}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 rounded-full p-2">
+                    <Clock className="text-primary h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Last Updated</p>
+                    <p className="font-medium">
+                      {new Date(order.updatedAt).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-      {/* Order Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Order Summary</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Products Subtotal</span>
-            <span>${order.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0).toFixed(2)}</span>
+            {/* Customer Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Customer</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 rounded-full p-2">
+                    <User className="text-primary h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">User ID</p>
+                    <p className="font-mono text-sm">{order.userId.slice(0, 12)}...</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 rounded-full p-2">
+                    <Mail className="text-primary h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Email</p>
+                    <p className="text-sm">{order.userEmail}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-          {order.items.some((item) => item.customizationPrice > 0) && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Customization Fees</span>
-              <span>
-                ${order.items.reduce((sum, item) => sum + item.customizationPrice * item.quantity, 0).toFixed(2)}
-              </span>
-            </div>
-          )}
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Shipping</span>
-            <span className="text-green-600">Free</span>
-          </div>
-          <Separator />
-          <div className="flex justify-between text-lg font-bold">
-            <span>Total</span>
-            <span>${order.totalAmount.toFixed(2)}</span>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Timestamps */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Timeline</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Created</span>
-            <span>{new Date(order.createdAt).toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Last Updated</span>
-            <span>{new Date(order.updatedAt).toLocaleString()}</span>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Dialogs */}
       <UpdateStatusDialog

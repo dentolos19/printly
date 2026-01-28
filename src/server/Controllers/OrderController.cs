@@ -713,6 +713,7 @@ public class OrderController(DatabaseContext context) : BaseController(context)
                     i.ImprintId,
                     i.Imprint?.Name,
                     i.Variant.Product.Name,
+                    i.Variant.Product.ImageId != null ? $"/assets/{i.Variant.Product.ImageId}/view" : null,
                     i.Variant.Size,
                     i.Variant.Color,
                     i.Quantity,

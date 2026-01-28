@@ -3,7 +3,7 @@
 import { OrderProgressTracker } from "@/components/order-progress-tracker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +19,6 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useServer } from "@/lib/providers/server";
-import { Imprint } from "@/lib/server/imprint";
 import {
   OrderItemResponse,
   OrderResponse,
@@ -39,11 +38,12 @@ import {
 } from "@/lib/server/refund";
 import {
   ArrowLeft,
+  ArrowRight,
+  Calendar,
   CheckCircle2,
   Clock,
   CreditCard,
-  ExternalLink,
-  Loader2,
+  HelpCircle,
   MessageSquare,
   Package,
   Paintbrush,
@@ -70,67 +70,59 @@ const StatusIcons: Record<OrderStatus, React.ElementType<{ className?: string }>
   [OrderStatus.Refunded]: CheckCircle2,
 };
 
-function OrderItemCard({ item, imprint }: { item: OrderItemResponse; imprint: Imprint | null }) {
+function OrderItemCard({ item }: { item: OrderItemResponse }) {
   const hasImprint = !!item.imprintId;
   const hasCustomization = item.customizationPrice > 0;
 
   return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex gap-4">
-          {/* Product Image Placeholder */}
-          <div className="bg-muted flex h-24 w-24 shrink-0 items-center justify-center rounded-lg">
-            <Package className="text-muted-foreground h-10 w-10" />
+    <div className="flex gap-4 rounded-xl border bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+      {/* Product Image */}
+      <div className="bg-muted relative h-32 w-32 shrink-0 overflow-hidden rounded-lg">
+        {item.productImageUrl ? (
+          <Image src={item.productImageUrl} alt={item.productName} fill className="object-cover" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            <Package className="text-muted-foreground h-12 w-12" />
           </div>
+        )}
+      </div>
 
-          <div className="flex-1 space-y-2">
-            {/* Product Info */}
-            <div>
-              <h3 className="font-semibold">{item.productName}</h3>
-              <p className="text-muted-foreground text-sm">
-                {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]} • {item.color}
-              </p>
-            </div>
-
-            {/* Imprint Info */}
-            {hasImprint && (
-              <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-2">
-                <Paintbrush className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-blue-800">
-                      Custom Design: {item.imprintName || "Unnamed Design"}
-                    </span>
-                    {hasCustomization && (
-                      <span className="text-sm text-blue-600">+${item.customizationPrice.toFixed(2)}</span>
-                    )}
-                  </div>
-                  {imprint && (
-                    <Button variant="link" size="sm" className="h-auto p-0 text-xs text-blue-600" asChild>
-                      <Link href={`/imprinter/${item.imprintId}`}>
-                        <ExternalLink className="mr-1 h-3 w-3" />
-                        View Design
-                      </Link>
-                    </Button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Price Info */}
-            <div className="flex items-center justify-between pt-1">
-              <div className="text-muted-foreground text-sm">
-                <span>
-                  {item.quantity} × ${item.unitPrice.toFixed(2)}
-                </span>
-                {hasCustomization && <span> + ${item.customizationPrice.toFixed(2)} customization</span>}
-              </div>
-              <span className="text-lg font-bold">${item.subtotal.toFixed(2)}</span>
-            </div>
-          </div>
+      <div className="flex flex-1 flex-col justify-between">
+        {/* Product Info */}
+        <div>
+          <h3 className="text-lg font-semibold">{item.productName}</h3>
+          <p className="text-muted-foreground text-sm">
+            {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]} • {item.color}
+          </p>
+          <p className="text-muted-foreground mt-1 text-sm">Qty: {item.quantity}</p>
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Imprint Badge & View Design CTA */}
+        {hasImprint && (
+          <div className="mt-2 flex items-center gap-2">
+            <div className="flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1">
+              <Paintbrush className="h-3.5 w-3.5 text-blue-600" />
+              <span className="text-sm font-medium text-blue-700">{item.imprintName || "Custom Design"}</span>
+            </div>
+            <Button variant="link" size="sm" className="h-auto p-0 text-blue-600" asChild>
+              <Link href={`/imprinter/${item.imprintId}`}>
+                View Design
+                <ArrowRight className="ml-1 h-3 w-3" />
+              </Link>
+            </Button>
+          </div>
+        )}
+
+        {/* Price */}
+        <div className="mt-2 flex items-end justify-between">
+          <div className="text-muted-foreground text-sm">
+            ${item.unitPrice.toFixed(2)} × {item.quantity}
+            {hasCustomization && <span className="text-blue-600"> + ${item.customizationPrice.toFixed(2)} custom</span>}
+          </div>
+          <span className="text-xl font-bold">${item.subtotal.toFixed(2)}</span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -232,7 +224,6 @@ export default function OrderDetailsPage() {
   const orderId = params?.id as string;
 
   const [order, setOrder] = useState<OrderResponse | null>(null);
-  const [imprints, setImprints] = useState<Record<string, Imprint>>({});
   const [refund, setRefund] = useState<RefundResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refundDialogOpen, setRefundDialogOpen] = useState(false);
@@ -246,27 +237,6 @@ export default function OrderDetailsPage() {
       try {
         const orderData = await api.order.getOrder(orderId);
         setOrder(orderData);
-
-        // Load imprint details for items with imprints
-        const imprintIds = orderData.items.filter((item) => item.imprintId).map((item) => item.imprintId!);
-
-        if (imprintIds.length > 0) {
-          const imprintPromises = imprintIds.map(async (id) => {
-            try {
-              return await api.imprint.getImprint(id);
-            } catch {
-              return null;
-            }
-          });
-          const imprintResults = await Promise.all(imprintPromises);
-          const imprintMap: Record<string, Imprint> = {};
-          imprintResults.forEach((imprint) => {
-            if (imprint) {
-              imprintMap[imprint.id] = imprint;
-            }
-          });
-          setImprints(imprintMap);
-        }
 
         // Load refund if exists
         try {
@@ -317,22 +287,30 @@ export default function OrderDetailsPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto max-w-4xl space-y-6 p-6">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-64 w-full" />
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="mx-auto max-w-7xl space-y-6">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-32 w-full" />
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="space-y-4 lg:col-span-2">
+              <Skeleton className="h-40 w-full" />
+              <Skeleton className="h-40 w-full" />
+            </div>
+            <Skeleton className="h-64 w-full" />
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!order) {
     return (
-      <div className="container mx-auto max-w-4xl p-6">
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Package className="text-muted-foreground mb-4 h-16 w-16" />
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
+        <div className="text-center">
+          <Package className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
           <h2 className="mb-2 text-2xl font-bold">Order not found</h2>
           <p className="text-muted-foreground mb-6">
-            The order you're looking for doesn't exist or you don't have permission to view it.
+            The order you&apos;re looking for doesn&apos;t exist or you don&apos;t have permission to view it.
           </p>
           <Button asChild>
             <Link href="/orders">
@@ -354,156 +332,209 @@ export default function OrderDetailsPage() {
       refund.status,
     );
 
+  const subtotal = order.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+  const customizationTotal = order.items.reduce((sum, item) => sum + item.customizationPrice * item.quantity, 0);
+
   return (
-    <div className="container mx-auto max-w-4xl space-y-6 p-6">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/orders">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Order #{order.id.slice(0, 8)}</h1>
-            <p className="text-muted-foreground text-sm">
-              Placed on{" "}
-              {new Date(order.createdAt).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </p>
+      <div className="border-b bg-white">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" asChild>
+              <Link href="/orders">
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
+            </Button>
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold">Order #{order.id.slice(0, 8)}</h1>
+                <Badge className={`${OrderStatusColors[order.status]} text-sm`}>{OrderStatusLabels[order.status]}</Badge>
+              </div>
+              <p className="text-muted-foreground text-sm">
+                Placed on{" "}
+                {new Date(order.createdAt).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" asChild>
+              <Link href="/support">
+                <HelpCircle className="mr-2 h-4 w-4" />
+                Contact Support
+              </Link>
+            </Button>
           </div>
         </div>
-        <Badge className={`${OrderStatusColors[order.status]} text-sm`}>{OrderStatusLabels[order.status]}</Badge>
       </div>
 
       {/* Order Progress */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Order Status</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="border-b bg-white py-6">
+        <div className="mx-auto max-w-7xl px-6">
           <OrderProgressTracker status={order.status} />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Refund Status */}
-      {refund && (
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-lg text-yellow-800">
-                <RefreshCcw className="h-5 w-5" />
-                Refund Request
-              </CardTitle>
-              <Badge className={RefundStatusColors[refund.status]}>{RefundStatusLabels[refund.status]}</Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-2 text-yellow-700">
-            <div className="flex justify-between">
-              <span>Requested Amount:</span>
-              <span className="font-medium">${refund.requestedAmount.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Reason:</span>
-              <span className="font-medium">{RefundReasonLabels[refund.reason]}</span>
-            </div>
-            {refund.approvedAmount && (
-              <div className="flex justify-between">
-                <span>Approved Amount:</span>
-                <span className="font-medium text-green-700">${refund.approvedAmount.toFixed(2)}</span>
-              </div>
+      {/* Main Content */}
+      <div className="mx-auto max-w-7xl px-6 py-8">
+        <div className="grid gap-8 lg:grid-cols-3">
+          {/* Left Column - Order Items */}
+          <div className="space-y-6 lg:col-span-2">
+            {/* Refund Status */}
+            {refund && (
+              <Card className="border-yellow-200 bg-yellow-50">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-yellow-800">
+                      <RefreshCcw className="h-5 w-5" />
+                      Refund Request
+                    </CardTitle>
+                    <Badge className={RefundStatusColors[refund.status]}>{RefundStatusLabels[refund.status]}</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2 text-yellow-700">
+                  <div className="flex justify-between text-sm">
+                    <span>Requested Amount:</span>
+                    <span className="font-medium">${refund.requestedAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Reason:</span>
+                    <span className="font-medium">{RefundReasonLabels[refund.reason]}</span>
+                  </div>
+                  {refund.approvedAmount && (
+                    <div className="flex justify-between text-sm">
+                      <span>Approved Amount:</span>
+                      <span className="font-medium text-green-700">${refund.approvedAmount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {hasActiveRefund && refund.conversationId && (
+                    <Button variant="outline" size="sm" className="mt-2 w-full" asChild>
+                      <Link href={`/messages?conversation=${refund.conversationId}`}>
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        Continue in Chat
+                      </Link>
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
             )}
-            {refund.adminNotes && (
-              <div className="rounded-lg bg-yellow-100 p-2">
-                <span className="text-sm font-medium">Admin Notes:</span>
-                <p className="text-sm italic">{refund.adminNotes}</p>
+
+            {/* Order Items */}
+            <div>
+              <h2 className="mb-4 text-lg font-semibold">Order Items ({order.items.length})</h2>
+              <div className="space-y-4">
+                {order.items.map((item) => (
+                  <OrderItemCard key={item.id} item={item} />
+                ))}
               </div>
-            )}
-            {hasActiveRefund && refund.conversationId && (
-              <Button variant="outline" size="sm" className="mt-2" asChild>
-                <Link href={`/messages?conversation=${refund.conversationId}`}>
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  Continue in Chat
-                </Link>
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Order Items */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Order Items ({order.items.length})</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {order.items.map((item) => (
-            <OrderItemCard key={item.id} item={item} imprint={item.imprintId ? imprints[item.imprintId] : null} />
-          ))}
-        </CardContent>
-      </Card>
-
-      {/* Order Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Order Summary</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Subtotal</span>
-            <span>${order.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0).toFixed(2)}</span>
-          </div>
-          {order.items.some((item) => item.customizationPrice > 0) && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Customization Fees</span>
-              <span>
-                ${order.items.reduce((sum, item) => sum + item.customizationPrice * item.quantity, 0).toFixed(2)}
-              </span>
             </div>
-          )}
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Shipping</span>
-            <span className="text-green-600">Free</span>
-          </div>
-          <Separator />
-          <div className="flex justify-between text-lg font-bold">
-            <span>Total</span>
-            <span>${order.totalAmount.toFixed(2)}</span>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Actions */}
-      {canRequestRefund && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium">Need help with this order?</h3>
-                <p className="text-muted-foreground text-sm">You can request a refund if something went wrong.</p>
-              </div>
-              <Button variant="outline" onClick={() => setRefundDialogOpen(true)}>
-                <RefreshCcw className="mr-2 h-4 w-4" />
-                Request Refund
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            {/* Cost Breakdown */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Cost Breakdown</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Products Subtotal</span>
+                  <span>${subtotal.toFixed(2)}</span>
+                </div>
+                {customizationTotal > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Customization Fees</span>
+                    <span className="text-blue-600">${customizationTotal.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Shipping</span>
+                  <span className="text-green-600">Free</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between text-xl font-bold">
+                  <span>Total</span>
+                  <span className="text-primary">${order.totalAmount.toFixed(2)}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column - Order Details */}
+          <div className="space-y-6">
+            {/* Order Details */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Order Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 rounded-full p-2">
+                    <Package className="text-primary h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Order Number</p>
+                    <p className="font-mono font-medium">#{order.id.slice(0, 8)}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 rounded-full p-2">
+                    <Calendar className="text-primary h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Order Date</p>
+                    <p className="font-medium">
+                      {new Date(order.createdAt).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 rounded-full p-2">
+                    <StatusIcon className="text-primary h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Status</p>
+                    <p className="font-medium">{OrderStatusLabels[order.status]}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Actions */}
+            {canRequestRefund && (
+              <Card>
+                <CardContent className="p-4">
+                  <h3 className="mb-2 font-medium">Need help?</h3>
+                  <p className="text-muted-foreground mb-4 text-sm">
+                    If something went wrong with your order, you can request a refund.
+                  </p>
+                  <Button variant="outline" className="w-full" onClick={() => setRefundDialogOpen(true)}>
+                    <RefreshCcw className="mr-2 h-4 w-4" />
+                    Request Refund
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Refund Dialog */}
-      <RefundRequestDialog
-        order={order}
-        open={refundDialogOpen}
-        onOpenChange={setRefundDialogOpen}
-        onSubmit={handleRequestRefund}
-        isLoading={isSubmittingRefund}
-      />
+      {order && (
+        <RefundRequestDialog
+          order={order}
+          open={refundDialogOpen}
+          onOpenChange={setRefundDialogOpen}
+          onSubmit={handleRequestRefund}
+          isLoading={isSubmittingRefund}
+        />
+      )}
     </div>
   );
 }
