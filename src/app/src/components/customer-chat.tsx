@@ -274,24 +274,33 @@ export default function CustomerChat() {
 
       connection.on(
         "ConversationMessageEdited",
-        (data: { id: string; content: string; isEdited: boolean; editedAt: string }) => {
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === data.id ? { ...m, content: data.content, isEdited: data.isEdited, editedAt: data.editedAt } : m,
-            ),
-          );
+        (data: { id: string; conversationId: string; content: string; isEdited: boolean; editedAt: string }) => {
+          if (data.conversationId === selectedConversationRef.current) {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === data.id
+                  ? { ...m, content: data.content, isEdited: data.isEdited, editedAt: data.editedAt }
+                  : m,
+              ),
+            );
+          }
         },
       );
 
-      connection.on("ConversationMessageDeleted", (data: { id: string; isDeleted: boolean; deletedAt: string }) => {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === data.id
-              ? { ...m, content: "This message was deleted", isDeleted: data.isDeleted, deletedAt: data.deletedAt }
-              : m,
-          ),
-        );
-      });
+      connection.on(
+        "ConversationMessageDeleted",
+        (data: { id: string; conversationId: string; isDeleted: boolean; deletedAt: string }) => {
+          if (data.conversationId === selectedConversationRef.current) {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === data.id
+                  ? { ...m, content: "This message was deleted", isDeleted: data.isDeleted, deletedAt: data.deletedAt }
+                  : m,
+              ),
+            );
+          }
+        },
+      );
 
       await connection.start();
       connectionRef.current = connection;

@@ -542,7 +542,7 @@ export default function AdminChatPage() {
         conversationId: selectedConversationId,
         participantId: "",
         senderId: currentUserId,
-        senderName: auth.claims?.name || auth.claims?.email || "You",
+        senderName: auth.claims?.email || "You",
         content,
         isRead: false,
         readAt: null,
@@ -915,12 +915,6 @@ export default function AdminChatPage() {
                       >
                         {selectedConversation.subject || "Support Conversation"}
                       </CardTitle>
-                      <p
-                        className="text-muted-foreground line-clamp-1 text-xs leading-relaxed"
-                        title={selectedConversation.description || "No description provided"}
-                      >
-                        {selectedConversation.description || "No description provided"}
-                      </p>
                       <div className="flex items-center gap-2 pt-0.5">
                         <Badge variant="outline" className="gap-1.5 px-2 py-0.5 text-xs font-medium">
                           <User className="h-3 w-3" />
