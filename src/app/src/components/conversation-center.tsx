@@ -366,7 +366,7 @@ export default function ConversationCenter() {
       conversationId: selectedConversationId,
       participantId: "",
       senderId: currentUserId,
-      senderName: auth.claims?.name || auth.claims?.email || "You",
+      senderName: auth.claims?.email || "You",
       content,
       isRead: false,
       readAt: null,

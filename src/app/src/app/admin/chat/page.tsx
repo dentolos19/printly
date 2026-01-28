@@ -542,7 +542,7 @@ export default function AdminChatPage() {
         conversationId: selectedConversationId,
         participantId: "",
         senderId: currentUserId,
-        senderName: auth.claims?.name || auth.claims?.email || "You",
+        senderName: auth.claims?.email || "You",
         content,
         isRead: false,
         readAt: null,
@@ -803,7 +803,7 @@ export default function AdminChatPage() {
   return (
     <main className="flex h-[calc(100vh-4rem)] w-full flex-col gap-4 p-4">
       {/* Header Bar - Elegant */}
-      <div className="bg-card flex flex-shrink-0 items-center justify-between rounded-lg border px-4 py-3 shadow-sm">
+      <div className="bg-card flex shrink-0 items-center justify-between rounded-lg border px-4 py-3 shadow-sm">
         <div className="flex items-center gap-4">
           <Button
             variant="outline"
@@ -855,7 +855,7 @@ export default function AdminChatPage() {
         {/* Conversation List - Collapsible */}
         <Card
           className={cn(
-            "flex flex-shrink-0 flex-col shadow-sm transition-all duration-300 ease-in-out",
+            "flex shrink-0 flex-col shadow-sm transition-all duration-300 ease-in-out",
             sidebarCollapsed ? "w-0 overflow-hidden border-0 opacity-0" : "w-80 lg:w-96",
           )}
         >
@@ -902,11 +902,11 @@ export default function AdminChatPage() {
         <Card className="flex min-w-0 flex-1 flex-col shadow-sm">
           {selectedConversation ? (
             <>
-              <CardHeader className="bg-muted/30 flex-shrink-0 gap-0 space-y-0 border-b px-4 py-3">
+              <CardHeader className="bg-muted/30 shrink-0 gap-0 space-y-0 border-b px-4 py-3">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex min-w-0 flex-1 items-start gap-3">
                     <StatusIcon
-                      className={cn("mt-1 h-5 w-5 flex-shrink-0", PRIORITY_COLORS[selectedConversation.priority])}
+                      className={cn("mt-1 h-5 w-5 shrink-0", PRIORITY_COLORS[selectedConversation.priority])}
                     />
                     <div className="min-w-0 flex-1 space-y-1 overflow-hidden">
                       <CardTitle
@@ -917,9 +917,9 @@ export default function AdminChatPage() {
                       </CardTitle>
                       <p
                         className="text-muted-foreground line-clamp-1 text-xs leading-relaxed"
-                        title={selectedConversation.description || "No description provided"}
+                        title={selectedConversation.lastMessage?.content || "No messages yet"}
                       >
-                        {selectedConversation.description || "No description provided"}
+                        {selectedConversation.lastMessage?.content || "No messages yet"}
                       </p>
                       <div className="flex items-center gap-2 pt-0.5">
                         <Badge variant="outline" className="gap-1.5 px-2 py-0.5 text-xs font-medium">
@@ -937,7 +937,7 @@ export default function AdminChatPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-shrink-0 items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-2">
                     <Select
                       value={String(selectedConversation.status)}
                       onValueChange={(v) => {
@@ -977,7 +977,7 @@ export default function AdminChatPage() {
                 </div>
                 {lastError && (
                   <div className="bg-destructive/10 text-destructive border-destructive/20 mt-3 flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm">
-                    <WifiOff className="h-4 w-4 flex-shrink-0" />
+                    <WifiOff className="h-4 w-4 shrink-0" />
                     <span className="flex-1 font-medium">{lastError}</span>
                     <Button
                       size="sm"
@@ -1058,14 +1058,14 @@ export default function AdminChatPage() {
                 <TypingIndicator users={typingUsers} />
 
                 {selectedConversation.status === 3 ? (
-                  <div className="bg-muted/30 flex-shrink-0 border-t p-4">
+                  <div className="bg-muted/30 shrink-0 border-t p-4">
                     <div className="text-muted-foreground flex items-center justify-center gap-2 py-2">
                       <XCircle className="h-4 w-4" />
                       <span className="text-sm font-medium">This conversation has been closed</span>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex-shrink-0 border-t p-4">
+                  <div className="shrink-0 border-t p-4">
                     <MessageInput
                       onSend={handleSendMessage}
                       onSendFile={handleSendFile}
