@@ -13,7 +13,7 @@ public interface INotificationService
         NotificationType type,
         string title,
         string message,
-        Guid? ticketId = null,
+        Guid? conversationId = null,
         Guid? messageId = null,
         NotificationPriority priority = NotificationPriority.Normal,
         string? actionUrl = null
@@ -23,19 +23,41 @@ public interface INotificationService
         NotificationType type,
         string title,
         string message,
-        Guid? ticketId = null,
+        Guid? conversationId = null,
         NotificationPriority priority = NotificationPriority.Normal
+    );
+
+    Task NotifyStatusChangeAsync(
+        Guid conversationId,
+        string customerId,
+        ConversationStatus newStatus,
+        string adminName
+    );
+
+    Task NotifyPriorityChangeAsync(
+        Guid conversationId,
+        string customerId,
+        ConversationPriority newPriority,
+        string adminName
+    );
+
+    Task NotifyNewMessageAsync(
+        Guid conversationId,
+        string recipientId,
+        string senderName,
+        string messagePreview,
+        Guid messageId
     );
 }
 
 public class NotificationService(
     DatabaseContext context,
-    IHubContext<SupportHub> supportHubContext,
+    IHubContext<ConversationHub> conversationHubContext,
     ILogger<NotificationService> logger
 ) : INotificationService
 {
     private readonly DatabaseContext _context = context;
-    private readonly IHubContext<SupportHub> _supportHubContext = supportHubContext;
+    private readonly IHubContext<ConversationHub> _conversationHubContext = conversationHubContext;
     private readonly ILogger<NotificationService> _logger = logger;
 
     public async Task CreateNotificationAsync(
@@ -43,19 +65,26 @@ public class NotificationService(
         NotificationType type,
         string title,
         string message,
-        Guid? ticketId = null,
+        Guid? conversationId = null,
         Guid? messageId = null,
         NotificationPriority priority = NotificationPriority.Normal,
         string? actionUrl = null
     )
     {
+        _logger.LogWarning(
+            "[NOTIFICATION DEBUG] CreateNotificationAsync called. UserId: {UserId}, Type: {Type}, Title: {Title}",
+            userId,
+            type,
+            title
+        );
+
         var notification = new Notification
         {
             UserId = userId,
             Type = type,
             Title = title,
             Message = message,
-            TicketId = ticketId,
+            ConversationId = conversationId,
             MessageId = messageId,
             Priority = priority,
             ActionUrl = actionUrl,
@@ -66,8 +95,13 @@ public class NotificationService(
         await _context.Notifications.AddAsync(notification);
         await _context.SaveChangesAsync();
 
-        // Send real-time notification via SignalR
-        await _supportHubContext
+        _logger.LogWarning(
+            "[NOTIFICATION DEBUG] Notification saved to DB with ID: {NotificationId}, UserId: {UserId}",
+            notification.Id,
+            notification.UserId
+        );
+
+        await _conversationHubContext
             .Clients.User(userId)
             .SendAsync(
                 "ReceiveNotification",
@@ -77,7 +111,7 @@ public class NotificationService(
                     type = notification.Type.ToString(),
                     title = notification.Title,
                     message = notification.Message,
-                    ticketId = notification.TicketId,
+                    conversationId = notification.ConversationId,
                     priority = notification.Priority.ToString(),
                     actionUrl = notification.ActionUrl,
                     createdAt = notification.CreatedAt,
@@ -91,11 +125,10 @@ public class NotificationService(
         NotificationType type,
         string title,
         string message,
-        Guid? ticketId = null,
+        Guid? conversationId = null,
         NotificationPriority priority = NotificationPriority.Normal
     )
     {
-        // Get all admin users
         var adminRoleId = await _context.Roles.Where(r => r.Name == "Admin").Select(r => r.Id).FirstOrDefaultAsync();
 
         if (adminRoleId == null)
@@ -109,7 +142,6 @@ public class NotificationService(
             .Select(ur => ur.UserId)
             .ToListAsync();
 
-        // Create notification for each admin
         foreach (var adminId in adminUserIds)
         {
             await CreateNotificationAsync(
@@ -117,11 +149,90 @@ public class NotificationService(
                 type,
                 title,
                 message,
-                ticketId,
+                conversationId,
                 null,
                 priority,
-                ticketId.HasValue ? $"/support?ticket={ticketId}" : null
+                conversationId.HasValue ? $"/chat?conversation={conversationId}" : null
             );
         }
+    }
+
+    public async Task NotifyStatusChangeAsync(
+        Guid conversationId,
+        string customerId,
+        ConversationStatus newStatus,
+        string adminName
+    )
+    {
+        var title = newStatus switch
+        {
+            ConversationStatus.Active => "Conversation Active",
+            ConversationStatus.Resolved => "Conversation Resolved",
+            ConversationStatus.Closed => "Conversation Closed",
+            _ => "Conversation Status Updated",
+        };
+
+        var message = $"{adminName} changed your conversation status to {newStatus}";
+
+        await CreateNotificationAsync(
+            customerId,
+            NotificationType.ConversationStatusChanged,
+            title,
+            message,
+            conversationId,
+            null,
+            NotificationPriority.Normal,
+            $"/chat?conversation={conversationId}"
+        );
+    }
+
+    public async Task NotifyPriorityChangeAsync(
+        Guid conversationId,
+        string customerId,
+        ConversationPriority newPriority,
+        string adminName
+    )
+    {
+        var isEscalation = newPriority >= ConversationPriority.High;
+
+        var title = isEscalation ? "Conversation Escalated" : "Conversation Priority Changed";
+        var message = $"{adminName} set your conversation priority to {newPriority}";
+
+        var notificationPriority =
+            newPriority == ConversationPriority.Urgent ? NotificationPriority.High : NotificationPriority.Normal;
+
+        await CreateNotificationAsync(
+            customerId,
+            NotificationType.ConversationPriorityChanged,
+            title,
+            message,
+            conversationId,
+            null,
+            notificationPriority,
+            $"/chat?conversation={conversationId}"
+        );
+    }
+
+    public async Task NotifyNewMessageAsync(
+        Guid conversationId,
+        string recipientId,
+        string senderName,
+        string messagePreview,
+        Guid messageId
+    )
+    {
+        var title = "New Message";
+        var message = $"{senderName}: {messagePreview}";
+
+        await CreateNotificationAsync(
+            recipientId,
+            NotificationType.NewMessage,
+            title,
+            message,
+            conversationId,
+            messageId,
+            NotificationPriority.Normal,
+            $"/chat?conversation={conversationId}"
+        );
     }
 }

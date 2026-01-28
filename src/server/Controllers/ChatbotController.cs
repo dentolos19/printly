@@ -126,13 +126,6 @@ public class ChatbotController(DatabaseContext context, ChatService chatbotServi
             },
             new
             {
-                id = "anthropic/claude-sonnet-4",
-                displayName = "Claude Sonnet 4",
-                description = "Balanced performance with nuanced understanding",
-                isDefault = false,
-            },
-            new
-            {
                 id = "meta-llama/llama-3.1-70b-instruct",
                 displayName = "Llama 3.1 70B",
                 description = "Open source model with strong capabilities",
@@ -163,7 +156,13 @@ public class ChatbotController(DatabaseContext context, ChatService chatbotServi
             .OrderByDescending(m => m.CreatedAt)
             .Take(limit)
             .OrderBy(m => m.CreatedAt)
-            .Select(m => new { role = m.Role, content = m.Content, model = m.Model, timestamp = m.CreatedAt })
+            .Select(m => new
+            {
+                role = m.Role,
+                content = m.Content,
+                model = m.Model,
+                timestamp = m.CreatedAt,
+            })
             .ToListAsync();
 
         return Ok(new { messages });

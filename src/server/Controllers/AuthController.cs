@@ -5,12 +5,15 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using PrintlyServer.Data;
+using PrintlyServer.Data.Auth;
+using PrintlyServer.Data.Entities;
 using PrintlyServer.Services;
 
 namespace PrintlyServer.Controllers;
 
 [Route("auth")]
-public class AuthController(DatabaseContext database, IdentityService identityService) : BaseController(database)
+public class AuthController(DatabaseContext database, IdentityService identityService, UserManager<User> userManager)
+    : BaseController(database)
 {
     public record RegisterDto(string Name, string Email, string Password);
 
@@ -127,5 +130,42 @@ public class AuthController(DatabaseContext database, IdentityService identitySe
         await identityService.RevokeRefreshToken(refreshToken);
 
         return Ok();
+    }
+
+    [HttpPost]
+    [Route("toggle-role")]
+    [Authorize]
+    public async Task<IActionResult> ToggleRole()
+    {
+        // Get user email from claims
+        var email = User.FindFirst("email")?.Value;
+        if (string.IsNullOrEmpty(email))
+            return Unauthorized();
+
+        // Get user from database
+        var user = await identityService.GetUser(email);
+        if (user == null)
+            return Unauthorized();
+
+        // Get current roles
+        var currentRoles = await userManager.GetRolesAsync(user);
+
+        // Remove current role
+        if (currentRoles.Any())
+        {
+            await userManager.RemoveFromRolesAsync(user, currentRoles);
+        }
+
+        // Toggle role between Admin and User
+        var newRole = user.Role == Roles.Admin ? Roles.User : Roles.Admin;
+        user.Role = newRole;
+
+        // Add new role using UserManager
+        await userManager.AddToRoleAsync(user, newRole);
+
+        // Update user entity
+        await userManager.UpdateAsync(user);
+
+        return Ok(new { role = user.Role });
     }
 }

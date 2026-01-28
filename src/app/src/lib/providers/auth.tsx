@@ -11,6 +11,7 @@ const AuthContext = createContext<{
     accessToken: string;
     refreshToken: string;
   } | null;
+  isInitialized: boolean;
   login: (email: string, password: string) => Promise<void>;
   loginWithToken: (accessToken: string, refreshToken: string) => void;
   logout: () => void;
@@ -20,6 +21,7 @@ const AuthContext = createContext<{
 }>({
   claims: null,
   tokens: null,
+  isInitialized: false,
   login: async () => {},
   loginWithToken: () => {},
   logout: () => {},
@@ -46,6 +48,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [claims, setClaims] = useState<UserClaims | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const decodeAccess = (token: string): UserClaims => {
     const data = jwtDecode<{
@@ -272,6 +275,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           localStorage.removeItem("accessToken");
         }
       }
+
+      setIsInitialized(true);
     })();
   }, []);
 
@@ -341,6 +346,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       value={{
         claims,
         tokens: accessToken && refreshToken ? { accessToken: accessToken, refreshToken: refreshToken } : null,
+        isInitialized,
         login,
         loginWithToken,
         logout,

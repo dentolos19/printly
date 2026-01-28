@@ -6,7 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/compon
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { API_URL } from "@/environment";
 import { useAuth } from "@/lib/providers/auth";
-import * as signalR from "@microsoft/signalr";
+import { getNotificationIcon, type RealTimeNotification, type NotificationResponse } from "@/lib/server/notification";
 import { Archive, Bell, CheckCheck, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ComponentProps, useCallback, useEffect, useState } from "react";
@@ -16,7 +16,7 @@ interface Notification {
   type: string;
   title: string;
   message: string;
-  ticketId?: string;
+  conversationId?: string;
   isRead: boolean;
   readAt?: string;
   isArchived: boolean;
@@ -26,7 +26,7 @@ interface Notification {
 }
 
 export function NotificationBell(props: ComponentProps<typeof Button>) {
-  const { tokens } = useAuth();
+  const { tokens, isInitialized } = useAuth();
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -54,6 +54,8 @@ export function NotificationBell(props: ComponentProps<typeof Button>) {
   const fetchUnreadCount = useCallback(async () => {
     if (!tokens?.accessToken) return;
 
+    console.log("[NOTIFICATION BELL DEBUG] fetchUnreadCount called");
+
     try {
       const response = await fetch(`${API_URL}/notification/unread-count`, {
         headers: { Authorization: `Bearer ${tokens.accessToken}` },
@@ -61,7 +63,10 @@ export function NotificationBell(props: ComponentProps<typeof Button>) {
 
       if (response.ok) {
         const count: number = await response.json();
+        console.log("[NOTIFICATION BELL DEBUG] Unread count:", count);
         setUnreadCount(count);
+      } else {
+        console.error("[NOTIFICATION BELL DEBUG] Error fetching unread count:", response.status);
       }
     } catch (error) {
       console.error("Failed to fetch unread count:", error);
@@ -148,49 +153,20 @@ export function NotificationBell(props: ComponentProps<typeof Button>) {
     }
   };
 
-  // Setup SignalR for real-time notifications
+  // Poll for new notifications every 15 seconds
   useEffect(() => {
-    if (!tokens?.accessToken) return;
+    if (!isInitialized || !tokens?.accessToken) return;
 
-    const connection = new signalR.HubConnectionBuilder()
-      .withUrl(`${API_URL}/hubs/support`, {
-        accessTokenFactory: () => tokens.accessToken,
-      })
-      .withAutomaticReconnect()
-      .build();
-
-    connection.on("ReceiveNotification", (notification: Notification) => {
-      console.log("New notification:", notification);
-
-      // Add to list
-      setNotifications((prev) => [notification, ...prev].slice(0, 10));
-      setUnreadCount((prev) => prev + 1);
-
-      // Play notification sound
-      try {
-        const audio = new Audio("/notification.mp3");
-        audio.play().catch(() => {
-          // Silently fail if autoplay is blocked
-        });
-      } catch (error) {
-        console.error("Failed to play sound:", error);
+    const pollInterval = setInterval(() => {
+      fetchUnreadCount();
+      // Only fetch notifications list if dropdown is open
+      if (isOpen) {
+        fetchNotifications();
       }
+    }, 15000);
 
-      // Show browser notification if document is hidden
-      if (document.hidden && Notification.permission === "granted") {
-        new Notification(notification.title, {
-          body: notification.message,
-          icon: "/logo.png",
-        });
-      }
-    });
-
-    connection.start().catch((err) => console.error("SignalR error:", err));
-
-    return () => {
-      connection.stop();
-    };
-  }, [tokens?.accessToken]);
+    return () => clearInterval(pollInterval);
+  }, [isInitialized, tokens?.accessToken, isOpen, fetchNotifications, fetchUnreadCount]);
 
   // Initial load
   useEffect(() => {
@@ -218,23 +194,6 @@ export function NotificationBell(props: ComponentProps<typeof Button>) {
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
     return date.toLocaleDateString();
-  };
-
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case "TicketCreated":
-        return "🎫";
-      case "NewMessage":
-        return "💬";
-      case "TicketStatusChanged":
-        return "🔄";
-      case "TicketClosed":
-        return "✅";
-      case "BroadcastSent":
-        return "📢";
-      default:
-        return "🔔";
-    }
   };
 
   return (

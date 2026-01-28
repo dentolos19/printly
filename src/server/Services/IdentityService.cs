@@ -40,7 +40,7 @@ public class IdentityService
             new Claim(JwtRegisteredClaimNames.Email, user.Email!),
             new Claim(ClaimTypes.NameIdentifier, user.Id),
             new Claim(ClaimTypes.Email, user.Email!),
-            new Claim(ClaimTypes.Role, roles.FirstOrDefault() ?? Roles.User),
+            new Claim(ClaimTypes.Role, user.Role),
         };
 
         // Create token descriptor
@@ -99,7 +99,7 @@ public class IdentityService
         if (!userResult.Succeeded)
             throw new Exception("Failed to create user.");
 
-        var roleResult = await _userManager.AddToRoleAsync(user, Roles.Admin);
+        var roleResult = await _userManager.AddToRoleAsync(user, Roles.User);
 
         if (!roleResult.Succeeded)
             throw new Exception("Failed to assign role to user.");
@@ -120,14 +120,24 @@ public class IdentityService
 
     public async Task<(string, string)> GrantUserAccess(User user)
     {
-        var accessToken = await GenerateAccessToken(user);
-        var refreshToken = await GenerateRefreshToken(user);
+        // Reload user from database to ensure we have the latest role
+        var freshUser = await _userManager.FindByIdAsync(user.Id);
+        if (freshUser == null)
+            throw new Exception("User not found.");
+
+        var accessToken = await GenerateAccessToken(freshUser);
+        var refreshToken = await GenerateRefreshToken(freshUser);
         return (accessToken, refreshToken.Token);
     }
 
     public async Task<(string, string)> ExtendUserAccess(User user, RefreshToken token)
     {
-        var accessToken = await GenerateAccessToken(user);
+        // Reload user from database to ensure we have the latest role
+        var freshUser = await _userManager.FindByIdAsync(user.Id);
+        if (freshUser == null)
+            throw new Exception("User not found.");
+
+        var accessToken = await GenerateAccessToken(freshUser);
         var refreshToken = await RotateRefreshToken(token);
         return (accessToken, refreshToken.Token);
     }

@@ -11,9 +11,6 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
     public DbSet<Design> Designs { get; set; }
     public DbSet<Imprint> Imprints { get; set; }
     public DbSet<Asset> Assets { get; set; }
-    public DbSet<Message> Messages { get; set; }
-    public DbSet<Ticket> Tickets { get; set; }
-    public DbSet<TicketMessage> TicketMessages { get; set; }
     public DbSet<Broadcast> Broadcasts { get; set; }
     public DbSet<Notification> Notifications { get; set; }
     public DbSet<ChatbotMessage> ChatbotMessages { get; set; }
@@ -27,6 +24,9 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
     public DbSet<PostComment> PostComments { get; set; }
     public DbSet<PostReaction> PostReactions { get; set; }
     public DbSet<PostBookmark> PostBookmarks { get; set; }
+    public DbSet<Conversation> Conversations { get; set; }
+    public DbSet<ConversationParticipant> ConversationParticipants { get; set; }
+    public DbSet<ConversationMessage> ConversationMessages { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
@@ -37,45 +37,6 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-
-        // Configure Message entity with two foreign keys to User
-        // This prevents cascade delete issues with multiple paths to the same table
-        modelBuilder
-            .Entity<Message>()
-            .HasOne(m => m.Sender)
-            .WithMany()
-            .HasForeignKey(m => m.SenderId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder
-            .Entity<Message>()
-            .HasOne(m => m.Receiver)
-            .WithMany()
-            .HasForeignKey(m => m.ReceiverId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        // Ticket relationships
-        modelBuilder
-            .Entity<Ticket>()
-            .HasOne(t => t.Customer)
-            .WithMany()
-            .HasForeignKey(t => t.CustomerId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder
-            .Entity<Ticket>()
-            .HasMany(t => t.Messages)
-            .WithOne(m => m.Ticket)
-            .HasForeignKey(m => m.TicketId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        // TicketMessage relationships
-        modelBuilder
-            .Entity<TicketMessage>()
-            .HasOne(m => m.Sender)
-            .WithMany()
-            .HasForeignKey(m => m.SenderId)
-            .OnDelete(DeleteBehavior.Restrict);
 
         // Broadcast relationships
         modelBuilder
@@ -95,9 +56,9 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
 
         modelBuilder
             .Entity<Notification>()
-            .HasOne(n => n.Ticket)
+            .HasOne(n => n.Conversation)
             .WithMany()
-            .HasForeignKey(n => n.TicketId)
+            .HasForeignKey(n => n.ConversationId)
             .OnDelete(DeleteBehavior.SetNull);
 
         // Index for faster queries
@@ -251,6 +212,46 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
         // Index for PostComment queries
         modelBuilder.Entity<PostComment>().HasIndex(pc => pc.PostId);
         modelBuilder.Entity<PostComment>().HasIndex(pc => pc.AuthorId);
+
+        // Conversations
+        modelBuilder
+            .Entity<ConversationParticipant>()
+            .HasOne(cp => cp.Conversation)
+            .WithMany(c => c.Participants)
+            .HasForeignKey(cp => cp.ConversationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder
+            .Entity<ConversationParticipant>()
+            .HasOne(cp => cp.User)
+            .WithMany()
+            .HasForeignKey(cp => cp.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<ConversationParticipant>().HasIndex(cp => new { cp.ConversationId, cp.UserId }).IsUnique();
+
+        modelBuilder
+            .Entity<ConversationMessage>()
+            .HasOne(cm => cm.Conversation)
+            .WithMany(c => c.Messages)
+            .HasForeignKey(cm => cm.ConversationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder
+            .Entity<ConversationMessage>()
+            .HasOne(cm => cm.Participant)
+            .WithMany()
+            .HasForeignKey(cm => cm.ParticipantId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder
+            .Entity<ConversationMessage>()
+            .HasOne(cm => cm.ReplyToMessage)
+            .WithMany()
+            .HasForeignKey(cm => cm.ReplyToMessageId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<ConversationMessage>().HasIndex(cm => cm.CreatedAt);
     }
 
     public override int SaveChanges()

@@ -19,7 +19,7 @@ public class NotificationController(DatabaseContext context) : BaseController(co
         NotificationType Type,
         string Title,
         string Message,
-        Guid? TicketId,
+        Guid? ConversationId,
         bool IsRead,
         DateTime? ReadAt,
         bool IsArchived,
@@ -44,8 +44,20 @@ public class NotificationController(DatabaseContext context) : BaseController(co
     )
     {
         var userId = GetUserId();
+        Console.WriteLine($"[NOTIFICATION DEBUG] GetNotifications called. UserId from token: {userId}");
+
         if (userId == null)
             return Unauthorized();
+
+        // First, let's see ALL notifications in the database for debugging
+        var allNotifications = await Context.Notifications.Take(20).ToListAsync();
+        Console.WriteLine($"[NOTIFICATION DEBUG] Total notifications in DB (sample): {allNotifications.Count}");
+        foreach (var n in allNotifications)
+        {
+            Console.WriteLine(
+                $"[NOTIFICATION DEBUG] DB Notification - ID: {n.Id}, UserId: {n.UserId}, Title: {n.Title}, IsDeleted: {n.IsDeleted}"
+            );
+        }
 
         var query = Context.Notifications.Where(n => n.UserId == userId && !n.IsDeleted);
 
@@ -69,7 +81,7 @@ public class NotificationController(DatabaseContext context) : BaseController(co
                 n.Type,
                 n.Title,
                 n.Message,
-                n.TicketId,
+                n.ConversationId,
                 n.IsRead,
                 n.ReadAt,
                 n.IsArchived,
@@ -151,10 +163,24 @@ public class NotificationController(DatabaseContext context) : BaseController(co
     }
 
     /// <summary>
-    /// Archive notification.
+    /// Archive notification (POST method).
     /// </summary>
     [HttpPost("{id:guid}/archive")]
     public async Task<IActionResult> Archive(Guid id)
+    {
+        return await ArchiveInternal(id);
+    }
+
+    /// <summary>
+    /// Archive notification (PATCH method).
+    /// </summary>
+    [HttpPatch("{id:guid}/archive")]
+    public async Task<IActionResult> ArchivePatch(Guid id)
+    {
+        return await ArchiveInternal(id);
+    }
+
+    private async Task<IActionResult> ArchiveInternal(Guid id)
     {
         var userId = GetUserId();
         if (userId == null)
@@ -170,6 +196,84 @@ public class NotificationController(DatabaseContext context) : BaseController(co
         await Context.SaveChangesAsync();
 
         return Ok();
+    }
+
+    /// <summary>
+    /// Unarchive notification (POST method).
+    /// </summary>
+    [HttpPost("{id:guid}/unarchive")]
+    public async Task<IActionResult> Unarchive(Guid id)
+    {
+        return await UnarchiveInternal(id);
+    }
+
+    /// <summary>
+    /// Unarchive notification (PATCH method).
+    /// </summary>
+    [HttpPatch("{id:guid}/unarchive")]
+    public async Task<IActionResult> UnarchivePatch(Guid id)
+    {
+        return await UnarchiveInternal(id);
+    }
+
+    private async Task<IActionResult> UnarchiveInternal(Guid id)
+    {
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized();
+
+        var notification = await Context.Notifications.FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
+
+        if (notification == null)
+            return NotFound();
+
+        notification.IsArchived = false;
+        notification.ArchivedAt = null;
+        notification.UpdatedAt = DateTime.UtcNow;
+        await Context.SaveChangesAsync();
+
+        return Ok();
+    }
+
+    /// <summary>
+    /// Get archived notifications.
+    /// </summary>
+    [HttpGet("archived")]
+    public async Task<ActionResult<List<NotificationResponse>>> GetArchivedNotifications([FromQuery] int limit = 50)
+    {
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized();
+
+        var notifications = await Context
+            .Notifications.Where(n => n.UserId == userId && n.IsArchived && !n.IsDeleted)
+            .OrderByDescending(n => n.CreatedAt)
+            .Take(limit)
+            .Select(n => new NotificationResponse(
+                n.Id,
+                n.Type,
+                n.Title,
+                n.Message,
+                n.ConversationId,
+                n.IsRead,
+                n.ReadAt,
+                n.IsArchived,
+                n.Priority,
+                n.ActionUrl,
+                n.CreatedAt
+            ))
+            .ToListAsync();
+
+        return Ok(notifications);
+    }
+
+    /// <summary>
+    /// Mark notification as read (PATCH method).
+    /// </summary>
+    [HttpPatch("{id:guid}/read")]
+    public async Task<IActionResult> MarkAsReadPatch(Guid id)
+    {
+        return await MarkAsRead(id);
     }
 
     /// <summary>

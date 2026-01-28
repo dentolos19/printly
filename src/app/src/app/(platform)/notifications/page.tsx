@@ -8,15 +8,16 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Archive, Trash2, CheckCheck, Bell, Inbox, ArchiveIcon } from "lucide-react";
+import { Archive, Trash2, CheckCheck, Bell, Inbox, ArchiveIcon, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { getNotificationIcon } from "@/lib/server/notification";
 
 interface Notification {
   id: string;
   type: string;
   title: string;
   message: string;
-  ticketId?: string;
+  conversationId?: string;
   isRead: boolean;
   readAt?: string;
   isArchived: boolean;
@@ -36,18 +37,25 @@ export default function NotificationsPage() {
     async (includeArchived = false) => {
       if (!tokens?.accessToken) return;
 
+      console.log("[NOTIFICATION DEBUG] fetchNotifications called, includeArchived:", includeArchived);
+
       try {
         const response = await fetch(`${API_URL}/notification?includeArchived=${includeArchived}&limit=100`, {
           headers: { Authorization: `Bearer ${tokens.accessToken}` },
         });
 
+        console.log("[NOTIFICATION DEBUG] API response status:", response.status);
+
         if (response.ok) {
           const data: Notification[] = await response.json();
+          console.log("[NOTIFICATION DEBUG] Received notifications:", data.length, data);
           if (includeArchived) {
             setArchivedNotifications(data.filter((n: Notification) => n.isArchived));
           } else {
             setNotifications(data.filter((n: Notification) => !n.isArchived));
           }
+        } else {
+          console.error("[NOTIFICATION DEBUG] API error response:", await response.text());
         }
       } catch (error) {
         console.error("Failed to fetch notifications:", error);
@@ -145,9 +153,17 @@ export default function NotificationsPage() {
     }
   };
 
+  // Initial load and polling for new notifications (every 10 seconds)
   useEffect(() => {
     fetchNotifications(false);
     fetchNotifications(true);
+
+    // Poll for new notifications every 10 seconds
+    const pollInterval = setInterval(() => {
+      fetchNotifications(false);
+    }, 10000);
+
+    return () => clearInterval(pollInterval);
   }, [fetchNotifications]);
 
   const formatTime = (dateString: string) => {
@@ -155,24 +171,14 @@ export default function NotificationsPage() {
     return date.toLocaleString();
   };
 
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case "TicketCreated":
-        return "🎫";
-      case "NewMessage":
-        return "💬";
-      case "TicketStatusChanged":
-        return "🔄";
-      case "TicketClosed":
-        return "✅";
-      case "BroadcastSent":
-        return "📢";
-      default:
-        return "🔔";
-    }
-  };
-
   const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await Promise.all([fetchNotifications(false), fetchNotifications(true)]);
+    setIsRefreshing(false);
+  };
 
   const renderNotification = (notification: Notification, showArchive = true) => (
     <div
@@ -237,6 +243,10 @@ export default function NotificationsPage() {
               {unreadCount > 0 && <Badge variant="destructive">{unreadCount}</Badge>}
             </CardTitle>
             <div className="flex gap-2">
+              <Button onClick={handleRefresh} variant="outline" size="sm" disabled={isRefreshing}>
+                <RefreshCw className={`mr-2 size-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
               {unreadCount > 0 && (
                 <Button onClick={markAllAsRead} variant="outline" size="sm">
                   <CheckCheck className="mr-2 size-4" />

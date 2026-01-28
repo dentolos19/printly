@@ -5,40 +5,35 @@ import {
   ChatMessage,
   ConversationList,
   MessageInput,
-  TypingIndicator,
   type ReplyInfo,
+  TypingIndicator,
 } from "@/components/chat";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { API_URL } from "@/environment";
 import { useAuth } from "@/lib/providers/auth";
-import { type ConversationMessage, type ConversationSummary } from "@/lib/server/conversation";
+import {
+  type AdminInfo,
+  type ConversationMessage,
+  type ConversationPriority,
+  type ConversationStatus,
+  type ConversationSummary,
+} from "@/lib/server/conversation";
 import { cn } from "@/lib/utils";
 import * as signalR from "@microsoft/signalr";
+import { Tabs, TabsList, TabsTrigger } from "@radix-ui/react-tabs";
 import {
-  AlertCircle,
   CheckCircle2,
-  Circle,
   Clock,
   Loader2,
-  MessageSquarePlus,
+  MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
   RefreshCw,
+  User,
   Wifi,
   WifiOff,
   XCircle,
@@ -47,49 +42,34 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const HUB_URL = `${API_URL}/hubs/conversation`;
 
-// Status labels and colors - improved visual hierarchy
-const STATUS_LABELS: Record<number, string> = {
-  0: "Pending",
-  1: "Active",
-  2: "Resolved",
-  3: "Closed",
-};
-
-const STATUS_COLORS: Record<number, string> = {
-  0: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800",
-  1: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800",
-  2: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-800",
-  3: "bg-gray-50 text-gray-500 border-gray-200 dark:bg-gray-900/50 dark:text-gray-400 dark:border-gray-700",
-};
-
-const STATUS_ICONS: Record<number, typeof Circle> = {
-  0: Clock,
-  1: Circle,
-  2: CheckCircle2,
-  3: XCircle,
-};
-
-const PRIORITY_LABELS: Record<number, string> = {
-  0: "Low",
-  1: "Normal",
-  2: "High",
-  3: "Urgent",
-};
-
-const PRIORITY_COLORS: Record<number, string> = {
-  0: "bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-900/50 dark:text-slate-400 dark:border-slate-700",
-  1: "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/50 dark:text-sky-400 dark:border-sky-800",
-  2: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/50 dark:text-orange-400 dark:border-orange-800",
-  3: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-800",
-};
-
 interface TypingUser {
   userId: string;
   userName: string;
   isAdmin: boolean;
 }
 
-export default function ChatPage() {
+const STATUS_ICONS: Record<ConversationStatus, typeof Clock> = {
+  0: Clock, // Pending
+  1: MessageSquare, // Active
+  2: CheckCircle2, // Resolved
+  3: XCircle, // Closed
+};
+
+const STATUS_COLORS: Record<ConversationStatus, string> = {
+  0: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400",
+  1: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400",
+  2: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-400",
+  3: "bg-gray-50 text-gray-500 border-gray-200 dark:bg-gray-900/50 dark:text-gray-400",
+};
+
+const PRIORITY_COLORS: Record<ConversationPriority, string> = {
+  0: "text-slate-500", // Low
+  1: "text-sky-600", // Normal
+  2: "text-orange-500", // High
+  3: "text-red-500", // Urgent
+};
+
+export default function AdminChatPage() {
   const auth = useAuth();
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
@@ -101,10 +81,8 @@ export default function ChatPage() {
   );
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
-  const [newConversationOpen, setNewConversationOpen] = useState(false);
-  const [newSubject, setNewSubject] = useState("");
-  const [newMessage, setNewMessage] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [admins, setAdmins] = useState<AdminInfo[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
   const [pendingOptimisticMessages, setPendingOptimisticMessages] = useState<Set<string>>(new Set());
@@ -143,7 +121,11 @@ export default function ChatPage() {
     if (!auth.tokens?.accessToken) return;
     setIsLoadingConversations(true);
     try {
-      const response = await authorizedFetch(`${API_URL}/conversation`);
+      const params = new URLSearchParams({ includeAllForStaff: "true" });
+      if (statusFilter !== "all") {
+        params.set("status", statusFilter);
+      }
+      const response = await authorizedFetch(`${API_URL}/conversation?${params.toString()}`);
       if (response.ok) {
         const data = (await response.json()) as ConversationSummary[];
         setConversations(data);
@@ -152,11 +134,11 @@ export default function ChatPage() {
         }
       }
     } catch (error) {
-      console.error("[Chat] Failed to fetch conversations", error);
+      console.error("[Admin Chat] Failed to fetch conversations", error);
     } finally {
       setIsLoadingConversations(false);
     }
-  }, [authorizedFetch, auth.tokens?.accessToken]);
+  }, [authorizedFetch, auth.tokens?.accessToken, statusFilter]);
 
   const fetchMessages = useCallback(
     async (conversationId: string) => {
@@ -169,7 +151,7 @@ export default function ChatPage() {
           setMessages(data);
         }
       } catch (error) {
-        console.error("[Chat] Failed to fetch messages", error);
+        console.error("[Admin Chat] Failed to fetch messages", error);
       } finally {
         setIsLoadingMessages(false);
       }
@@ -190,10 +172,146 @@ export default function ChatPage() {
           prev.map((conv) => (conv.id === conversationId ? { ...conv, unreadCount: 0 } : conv)),
         );
       } catch (error) {
-        console.error("[Chat] Failed to mark read", error);
+        console.error("[Admin Chat] Failed to mark read", error);
       }
     },
     [authorizedFetch, auth.tokens?.accessToken],
+  );
+
+  const updateConversationStatus = useCallback(
+    async (conversationId: string, status: ConversationStatus) => {
+      try {
+        const response = await authorizedFetch(`${API_URL}/conversation/${conversationId}/status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status }),
+        });
+        if (response.ok) {
+          setConversations((prev) => prev.map((c) => (c.id === conversationId ? { ...c, status } : c)));
+        } else {
+          console.error("[Admin Chat] Failed to update status - response not ok", await response.text());
+        }
+      } catch (error) {
+        console.error("[Admin Chat] Failed to update status", error);
+      }
+    },
+    [authorizedFetch],
+  );
+
+  const updateConversationPriority = useCallback(
+    async (conversationId: string, priority: ConversationPriority) => {
+      try {
+        const response = await authorizedFetch(`${API_URL}/conversation/${conversationId}/priority`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ priority }),
+        });
+        if (response.ok) {
+          setConversations((prev) => prev.map((c) => (c.id === conversationId ? { ...c, priority } : c)));
+        } else {
+          console.error("[Admin Chat] Failed to update priority - response not ok", await response.text());
+        }
+      } catch (error) {
+        console.error("[Admin Chat] Failed to update priority", error);
+      }
+    },
+    [authorizedFetch],
+  );
+
+  const fetchAdmins = useCallback(async () => {
+    if (!auth.tokens?.accessToken) return;
+    try {
+      const response = await authorizedFetch(`${API_URL}/conversation/admins`);
+      if (response.ok) {
+        const data = (await response.json()) as AdminInfo[];
+        setAdmins(data);
+      }
+    } catch (error) {
+      console.error("[Admin Chat] Failed to fetch admins", error);
+    }
+  }, [authorizedFetch, auth.tokens?.accessToken]);
+
+  const assignConversation = useCallback(
+    async (conversationId: string, adminId: string | null) => {
+      try {
+        const response = await authorizedFetch(`${API_URL}/conversation/${conversationId}/assign`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ adminId }),
+        });
+        if (response.ok) {
+          const assignedAdmin = adminId ? admins.find((a) => a.id === adminId) : null;
+          setConversations((prev) =>
+            prev.map((c) =>
+              c.id === conversationId
+                ? { ...c, assignedToAdminId: adminId, assignedToAdminName: assignedAdmin?.userName ?? null }
+                : c,
+            ),
+          );
+        }
+      } catch (error) {
+        console.error("[Admin Chat] Failed to assign conversation", error);
+      }
+    },
+    [authorizedFetch, admins],
+  );
+
+  const uploadFile = useCallback(
+    async (
+      conversationId: string,
+      file: File,
+    ): Promise<{ assetId: string; fileUrl: string; fileName: string; fileType: string; fileSize: number } | null> => {
+      setIsUploading(true);
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        const response = await authorizedFetch(`${API_URL}/conversation/${conversationId}/upload-file`, {
+          method: "POST",
+          body: formData,
+        });
+        if (response.ok) {
+          return await response.json();
+        }
+        console.error("[Admin Chat] File upload failed:", await response.text());
+        return null;
+      } catch (error) {
+        console.error("[Admin Chat] Failed to upload file", error);
+        return null;
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [authorizedFetch],
+  );
+
+  const uploadVoice = useCallback(
+    async (
+      conversationId: string,
+      blob: Blob,
+      duration: number,
+    ): Promise<{ assetId: string; voiceUrl: string; duration: number } | null> => {
+      setIsUploading(true);
+      try {
+        const formData = new FormData();
+        formData.append("file", blob, "voice-message.webm");
+        formData.append("duration", duration.toString());
+        const response = await authorizedFetch(`${API_URL}/conversation/${conversationId}/upload-voice`, {
+          method: "POST",
+          body: formData,
+        });
+        if (response.ok) {
+          return await response.json();
+        }
+        console.error("[Admin Chat] Voice upload failed:", await response.text());
+        return null;
+      } catch (error) {
+        console.error("[Admin Chat] Failed to upload voice", error);
+        return null;
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [authorizedFetch],
   );
 
   const startConnection = useCallback(async () => {
@@ -238,7 +356,6 @@ export default function ChatPage() {
           setMessages((prev) => {
             // Remove any optimistic messages and add the real one
             const withoutOptimistic = prev.filter((m) => {
-              // Remove optimistic messages that match this real message
               if (m.id.startsWith("optimistic-") && m.senderId === message.senderId && m.content === message.content) {
                 // Clean up pending optimistic message tracking
                 setPendingOptimisticMessages((pendingPrev) => {
@@ -339,7 +456,7 @@ export default function ChatPage() {
         }
       });
 
-      // Handle conversation status updates (e.g., when admin closes the conversation)
+      // Handle conversation status updates from other admins
       connection.on(
         "ConversationStatusUpdated",
         (data: {
@@ -349,7 +466,7 @@ export default function ChatPage() {
           updatedByUserName: string;
           updatedAt: string;
         }) => {
-          console.log("[Chat] Conversation status updated:", data);
+          console.log("[Admin Chat] Conversation status updated:", data);
           setConversations((prev) =>
             prev.map((c) => (c.id === data.conversationId ? { ...c, status: data.status as 0 | 1 | 2 | 3 } : c)),
           );
@@ -360,7 +477,7 @@ export default function ChatPage() {
       connectionRef.current = connection;
       setConnectionState("connected");
     } catch (error) {
-      console.error("[Chat] Connection failed", error);
+      console.error("[Admin Chat] Connection failed", error);
       setConnectionState("error");
     }
   }, [auth.tokens?.accessToken, currentUserId, markConversationRead]);
@@ -368,12 +485,17 @@ export default function ChatPage() {
   useEffect(() => {
     if (auth.tokens?.accessToken) {
       fetchConversations();
+      fetchAdmins();
       startConnection();
     }
     return () => {
       connectionRef.current?.stop();
     };
-  }, [auth.tokens?.accessToken, fetchConversations, startConnection]);
+  }, [auth.tokens?.accessToken, startConnection]);
+
+  useEffect(() => {
+    fetchConversations();
+  }, [statusFilter, fetchConversations]);
 
   useEffect(() => {
     if (selectedConversationId && auth.tokens?.accessToken) {
@@ -469,7 +591,7 @@ export default function ChatPage() {
         // Clear any previous errors
         setLastError(null);
       } catch (error) {
-        console.error("[Chat] Failed to send message", error);
+        console.error("[Admin Chat] Failed to send message", error);
         // Remove optimistic message on failure
         setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
         setPendingOptimisticMessages((prev) => {
@@ -486,64 +608,6 @@ export default function ChatPage() {
     [selectedConversationId, currentUserId, auth.claims, messages, connectionState],
   );
 
-  const uploadFile = useCallback(
-    async (
-      conversationId: string,
-      file: File,
-    ): Promise<{ assetId: string; fileUrl: string; fileName: string; fileType: string; fileSize: number } | null> => {
-      setIsUploading(true);
-      try {
-        const formData = new FormData();
-        formData.append("file", file);
-        const response = await authorizedFetch(`${API_URL}/conversation/${conversationId}/upload-file`, {
-          method: "POST",
-          body: formData,
-        });
-        if (response.ok) {
-          return await response.json();
-        }
-        console.error("[Chat] File upload failed:", await response.text());
-        return null;
-      } catch (error) {
-        console.error("[Chat] Failed to upload file", error);
-        return null;
-      } finally {
-        setIsUploading(false);
-      }
-    },
-    [authorizedFetch],
-  );
-
-  const uploadVoice = useCallback(
-    async (
-      conversationId: string,
-      blob: Blob,
-      duration: number,
-    ): Promise<{ assetId: string; voiceUrl: string; duration: number } | null> => {
-      setIsUploading(true);
-      try {
-        const formData = new FormData();
-        formData.append("file", blob, "voice-message.webm");
-        formData.append("duration", duration.toString());
-        const response = await authorizedFetch(`${API_URL}/conversation/${conversationId}/upload-voice`, {
-          method: "POST",
-          body: formData,
-        });
-        if (response.ok) {
-          return await response.json();
-        }
-        console.error("[Chat] Voice upload failed:", await response.text());
-        return null;
-      } catch (error) {
-        console.error("[Chat] Failed to upload voice", error);
-        return null;
-      } finally {
-        setIsUploading(false);
-      }
-    },
-    [authorizedFetch],
-  );
-
   const handleSendFile = useCallback(
     async (file: File, content: string, replyToMessageId?: string) => {
       if (!selectedConversationId || !connectionRef.current || !currentUserId) return;
@@ -557,7 +621,7 @@ export default function ChatPage() {
         conversationId: selectedConversationId,
         participantId: "",
         senderId: currentUserId,
-        senderName: auth.claims?.email || "You",
+        senderName: auth.claims?.email || "Admin",
         content: content || file.name,
         isRead: false,
         readAt: null,
@@ -607,7 +671,7 @@ export default function ChatPage() {
           replyToMessageId || null,
         );
       } catch (error) {
-        console.error("[Chat] Failed to send file message", error);
+        console.error("[Admin Chat] Failed to send file message", error);
         // Remove optimistic message on failure
         setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
         setPendingOptimisticMessages((prev) => {
@@ -619,7 +683,7 @@ export default function ChatPage() {
         setTimeout(() => setLastError(null), 5000);
       }
     },
-    [selectedConversationId, uploadFile],
+    [selectedConversationId, uploadFile, currentUserId, auth.claims, messages],
   );
 
   const handleSendVoice = useCallback(
@@ -628,7 +692,7 @@ export default function ChatPage() {
       try {
         const uploadResult = await uploadVoice(selectedConversationId, blob, duration);
         if (!uploadResult) {
-          console.error("[Chat] Voice upload failed");
+          console.error("[Admin Chat] Voice upload failed");
           return;
         }
         await connectionRef.current.invoke(
@@ -640,7 +704,7 @@ export default function ChatPage() {
           replyToMessageId || null,
         );
       } catch (error) {
-        console.error("[Chat] Failed to send voice message", error);
+        console.error("[Admin Chat] Failed to send voice message", error);
       }
     },
     [selectedConversationId, uploadVoice],
@@ -663,7 +727,7 @@ export default function ChatPage() {
       try {
         await connectionRef.current.invoke("EditMessage", messageId, newContent);
       } catch (error) {
-        console.error("[Chat] Failed to edit message", error);
+        console.error("[Admin Chat] Failed to edit message", error);
         // Revert on failure
         if (originalMessage) {
           setMessages((prev) => prev.map((m) => (m.id === messageId ? originalMessage : m)));
@@ -692,7 +756,7 @@ export default function ChatPage() {
       try {
         await connectionRef.current.invoke("DeleteMessage", messageId);
       } catch (error) {
-        console.error("[Chat] Failed to delete message", error);
+        console.error("[Admin Chat] Failed to delete message", error);
         // Revert on failure
         if (originalMessage) {
           setMessages((prev) => prev.map((m) => (m.id === messageId ? originalMessage : m)));
@@ -712,33 +776,6 @@ export default function ChatPage() {
     connectionRef.current.invoke("StopTyping", selectedConversationId).catch(() => {});
   }, [selectedConversationId]);
 
-  const handleCreateConversation = useCallback(async () => {
-    if (!newSubject.trim()) return;
-    setIsCreating(true);
-    try {
-      const response = await authorizedFetch(`${API_URL}/conversation/support`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subject: newSubject.trim(),
-          initialMessage: newMessage.trim() || null,
-        }),
-      });
-      if (response.ok) {
-        const conversation = (await response.json()) as ConversationSummary;
-        setConversations((prev) => [conversation, ...prev]);
-        setSelectedConversationId(conversation.id);
-        setNewConversationOpen(false);
-        setNewSubject("");
-        setNewMessage("");
-      }
-    } catch (error) {
-      console.error("[Chat] Failed to create conversation", error);
-    } finally {
-      setIsCreating(false);
-    }
-  }, [newSubject, newMessage, authorizedFetch]);
-
   const groupedMessages = useMemo(() => {
     const groups: { date: string; messages: ConversationMessage[] }[] = [];
     let currentDate = "";
@@ -757,25 +794,31 @@ export default function ChatPage() {
   }, [messages]);
 
   const selectedConversation = conversations.find((c) => c.id === selectedConversationId);
+  const StatusIcon = selectedConversation ? STATUS_ICONS[selectedConversation.status] : MessageSquare;
 
-  const handleCreateNew = useCallback(() => {
-    setNewConversationOpen(true);
-  }, []);
+  const filteredConversations = useMemo(() => {
+    return conversations.filter((c) => c.supportMode);
+  }, [conversations]);
 
   return (
-    <main className="flex h-[calc(100vh-4rem)] w-full flex-col gap-3 p-3">
-      {/* Header Bar - Compact */}
-      <div className="flex flex-shrink-0 items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="gap-2">
+    <main className="flex h-[calc(100vh-4rem)] w-full flex-col gap-4 p-4">
+      {/* Header Bar - Elegant */}
+      <div className="bg-card flex shrink-0 items-center justify-between rounded-lg border px-4 py-3 shadow-sm">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="hover:bg-accent h-9 gap-2 px-3"
+          >
             {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-            <span className="hidden sm:inline">{sidebarCollapsed ? "Show" : "Hide"}</span>
+            <span className="hidden font-medium sm:inline">{sidebarCollapsed ? "Show" : "Hide"} Sidebar</span>
           </Button>
           <div>
-            <h1 className="text-xl font-bold">Support Chat</h1>
+            <h1 className="text-xl font-bold tracking-tight">Support Inbox</h1>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Badge
             variant={
               connectionState === "connected"
@@ -784,9 +827,9 @@ export default function ChatPage() {
                   ? "secondary"
                   : "destructive"
             }
-            className="gap-1 px-2 py-0.5 text-xs"
+            className="gap-1.5 px-3 py-1 text-xs font-medium"
           >
-            {connectionState === "connected" ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+            {connectionState === "connected" ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
             <span className="hidden sm:inline">
               {connectionState === "connected"
                 ? "Connected"
@@ -795,137 +838,152 @@ export default function ChatPage() {
                   : "Disconnected"}
             </span>
           </Badge>
-          <Button variant="ghost" size="icon" onClick={fetchConversations} disabled={isLoadingConversations}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={fetchConversations}
+            disabled={isLoadingConversations}
+            className="hover:bg-accent h-9 w-9"
+          >
             <RefreshCw className={cn("h-4 w-4", isLoadingConversations && "animate-spin")} />
           </Button>
-          <Dialog open={newConversationOpen} onOpenChange={setNewConversationOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="gap-2">
-                <MessageSquarePlus className="h-4 w-4" />
-                <span className="hidden sm:inline">New</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>New Support Conversation</DialogTitle>
-                <DialogDescription>Describe your inquiry and our team will get back to you shortly.</DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="subject">Subject</Label>
-                  <Input
-                    id="subject"
-                    placeholder="e.g., Order inquiry, Technical issue"
-                    value={newSubject}
-                    onChange={(e) => setNewSubject(e.target.value)}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="message">Message (optional)</Label>
-                  <Textarea
-                    id="message"
-                    placeholder="Describe your issue or question..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    rows={4}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setNewConversationOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleCreateConversation} disabled={!newSubject.trim() || isCreating}>
-                  {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Start Conversation
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex min-h-0 flex-1 gap-3">
+      <div className="flex min-h-0 flex-1 gap-4">
         {/* Conversation List - Collapsible */}
         <Card
           className={cn(
-            "flex flex-shrink-0 flex-col transition-all duration-300 ease-in-out",
-            sidebarCollapsed ? "w-0 overflow-hidden border-0 opacity-0" : "w-72 lg:w-80",
+            "flex shrink-0 flex-col shadow-sm transition-all duration-300 ease-in-out",
+            sidebarCollapsed ? "w-0 overflow-hidden border-0 opacity-0" : "w-80 lg:w-96",
           )}
         >
-          <CardHeader className="border-b px-3 py-2">
-            <CardTitle className="text-sm font-medium">Conversations</CardTitle>
+          <CardHeader className="bg-muted/30 border-b px-4 py-3">
+            <CardTitle className="text-base font-semibold">Conversations</CardTitle>
           </CardHeader>
+          <div className="border-b p-2">
+            <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+              <TabsList className="grid h-8 w-full grid-cols-5">
+                <TabsTrigger value="all" className="px-1.5 text-[11px] font-medium">
+                  All
+                </TabsTrigger>
+                <TabsTrigger value="0" className="px-1.5 text-[11px] font-medium">
+                  Pending
+                </TabsTrigger>
+                <TabsTrigger value="1" className="px-1.5 text-[11px] font-medium">
+                  Active
+                </TabsTrigger>
+                <TabsTrigger value="2" className="px-1.5 text-[11px] font-medium">
+                  Resolved
+                </TabsTrigger>
+                <TabsTrigger value="3" className="px-1.5 text-[11px] font-medium">
+                  Closed
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
           <ScrollArea className="flex-1">
             <ConversationList
-              conversations={conversations}
+              conversations={filteredConversations}
               selectedId={selectedConversationId}
               onSelect={setSelectedConversationId}
               isLoading={isLoadingConversations}
               showStatus
               showPriority
-              emptyMessage="No conversations yet. Start one!"
+              showAssignment
+              showCustomerName
+              emptyMessage="No support conversations found"
             />
           </ScrollArea>
         </Card>
 
         {/* Chat Area - Expands when sidebar collapses */}
-        <Card className="flex min-w-0 flex-1 flex-col">
+        <Card className="flex min-w-0 flex-1 flex-col shadow-sm">
           {selectedConversation ? (
             <>
-              <CardHeader className="flex-shrink-0 gap-0 space-y-0 border-b px-2 py-0.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {(() => {
-                      const StatusIcon = STATUS_ICONS[selectedConversation.status] || Circle;
-                      return (
-                        <StatusIcon
-                          className={cn(
-                            "h-5 w-5",
-                            selectedConversation.status === 0
-                              ? "text-amber-500"
-                              : selectedConversation.status === 1
-                                ? "text-emerald-500"
-                                : selectedConversation.status === 2
-                                  ? "text-blue-500"
-                                  : "text-gray-400",
-                          )}
-                        />
-                      );
-                    })()}
-                    <div className="min-w-0">
-                      <CardTitle className="truncate text-base">
-                        {selectedConversation.subject || "Conversation"}
+              <CardHeader className="bg-muted/30 shrink-0 gap-0 space-y-0 border-b px-4 py-3">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <StatusIcon
+                      className={cn("mt-1 h-5 w-5 shrink-0", PRIORITY_COLORS[selectedConversation.priority])}
+                    />
+                    <div className="min-w-0 flex-1 space-y-1 overflow-hidden">
+                      <CardTitle
+                        className="truncate text-base leading-tight font-semibold"
+                        title={selectedConversation.subject || "Support Conversation"}
+                      >
+                        {selectedConversation.subject || "Support Conversation"}
                       </CardTitle>
-                      <p className="text-muted-foreground truncate text-sm">Printly Customer Support 😊</p>
+                      <p
+                        className="text-muted-foreground line-clamp-1 text-xs leading-relaxed"
+                        title={selectedConversation.lastMessage?.content || "No messages yet"}
+                      >
+                        {selectedConversation.lastMessage?.content || "No messages yet"}
+                      </p>
+                      <div className="flex items-center gap-2 pt-0.5">
+                        <Badge variant="outline" className="gap-1.5 px-2 py-0.5 text-xs font-medium">
+                          <User className="h-3 w-3" />
+                          <span title={selectedConversation.participants.find((p) => p.role === 0)?.name || "Unknown"}>
+                            {selectedConversation.participants.find((p) => p.role === 0)?.name || "Unknown"}
+                          </span>
+                        </Badge>
+                        <span
+                          className="text-muted-foreground font-mono text-[10px]"
+                          title={`Customer ID: ${selectedConversation.participants.find((p) => p.role === 0)?.id || "N/A"}`}
+                        >
+                          ID: {selectedConversation.participants.find((p) => p.role === 0)?.id?.slice(0, 8) || "N/A"}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <Badge
-                      variant="outline"
-                      className={cn("gap-1 border px-2 py-0.5 text-xs", STATUS_COLORS[selectedConversation.status])}
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Select
+                      value={String(selectedConversation.status)}
+                      onValueChange={(v) => {
+                        const statusValue = parseInt(v, 10) as ConversationStatus;
+                        updateConversationStatus(selectedConversation.id, statusValue);
+                      }}
                     >
-                      {STATUS_LABELS[selectedConversation.status]}
-                    </Badge>
-                    <Badge
-                      variant="outline"
-                      className={cn("gap-1 border px-2 py-0.5 text-xs", PRIORITY_COLORS[selectedConversation.priority])}
+                      <SelectTrigger className="h-8 w-[100px] text-xs font-medium">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">Pending</SelectItem>
+                        <SelectItem value="1">Active</SelectItem>
+                        <SelectItem value="2">Resolved</SelectItem>
+                        <SelectItem value="3">Closed</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select
+                      value={String(selectedConversation.priority)}
+                      onValueChange={(v) => {
+                        const priorityValue = parseInt(v, 10) as ConversationPriority;
+                        updateConversationPriority(selectedConversation.id, priorityValue);
+                      }}
                     >
-                      {selectedConversation.priority === 3 && <AlertCircle className="h-3 w-3" />}
-                      {PRIORITY_LABELS[selectedConversation.priority]}
-                    </Badge>
+                      <SelectTrigger className="h-8 w-[90px] text-xs font-medium">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">Low</SelectItem>
+                        <SelectItem value="1">Normal</SelectItem>
+                        <SelectItem value="2">High</SelectItem>
+                        <SelectItem value="3">Urgent</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 {lastError && (
-                  <div className="bg-destructive/10 text-destructive border-destructive/20 mt-3 flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
-                    <WifiOff className="h-4 w-4 flex-shrink-0" />
-                    <span className="flex-1">{lastError}</span>
+                  <div className="bg-destructive/10 text-destructive border-destructive/20 mt-3 flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm">
+                    <WifiOff className="h-4 w-4 shrink-0" />
+                    <span className="flex-1 font-medium">{lastError}</span>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => setLastError(null)}
-                      className="text-destructive hover:text-destructive h-6 w-6 p-0"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/20 h-7 w-7 rounded-full p-0"
                     >
                       ×
                     </Button>
@@ -941,9 +999,9 @@ export default function ChatPage() {
                     </div>
                   ) : messages.length === 0 ? (
                     <div className="text-muted-foreground flex h-40 flex-col items-center justify-center">
-                      <MessageSquarePlus className="h-16 w-16" />
-                      <p className="mt-4">No messages yet.</p>
-                      <p className="text-sm">Send a message to start the conversation!</p>
+                      <MessageSquare className="h-16 w-16" />
+                      <p className="mt-4">No messages in this conversation.</p>
+                      <p className="text-sm">The customer hasn&apos;t sent any messages yet.</p>
                     </div>
                   ) : (
                     <>
@@ -999,18 +1057,15 @@ export default function ChatPage() {
 
                 <TypingIndicator users={typingUsers} />
 
-                {/* Show closed banner when conversation is closed, otherwise show message input */}
                 {selectedConversation.status === 3 ? (
-                  <div className="bg-muted/50 flex-shrink-0 border-t p-4">
-                    <div className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/50">
-                      <XCircle className="h-5 w-5 text-gray-500" />
-                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                        This conversation has been closed by support.
-                      </span>
+                  <div className="bg-muted/30 shrink-0 border-t p-4">
+                    <div className="text-muted-foreground flex items-center justify-center gap-2 py-2">
+                      <XCircle className="h-4 w-4" />
+                      <span className="text-sm font-medium">This conversation has been closed</span>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex-shrink-0 border-t p-4">
+                  <div className="shrink-0 border-t p-4">
                     <MessageInput
                       onSend={handleSendMessage}
                       onSendFile={handleSendFile}
@@ -1028,10 +1083,14 @@ export default function ChatPage() {
               </CardContent>
             </>
           ) : (
-            <div className="text-muted-foreground flex flex-1 flex-col items-center justify-center p-8">
-              <MessageSquarePlus className="h-16 w-16 opacity-50" />
-              <p className="mt-4 text-lg font-medium">Select a conversation</p>
-              <p className="text-sm">Or start a new one to get help from our support team</p>
+            <div className="text-muted-foreground flex flex-1 flex-col items-center justify-center gap-3 p-12">
+              <div className="bg-muted/50 rounded-full p-6">
+                <MessageSquare className="h-12 w-12 opacity-40" />
+              </div>
+              <div className="space-y-1 text-center">
+                <p className="text-foreground text-lg font-semibold">Select a conversation</p>
+                <p className="text-sm">Choose a conversation from the list to view and respond to messages</p>
+              </div>
             </div>
           )}
         </Card>
