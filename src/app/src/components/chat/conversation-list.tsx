@@ -133,12 +133,43 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
   ) => {
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("all");
+    if (isLoading) {
+      return (
+        <div className="flex h-full items-center justify-center p-12">
+          <div className="text-muted-foreground flex flex-col items-center gap-3">
+            <div className="h-10 w-10 animate-spin rounded-full border-3 border-current border-t-transparent" />
+            <span className="text-sm font-medium">Loading conversations...</span>
+          </div>
+        </div>
+      );
+    }
 
     const filteredConversations = conversations.filter((conv) => {
       const matchesSearch =
         !searchQuery ||
         (showCustomerName ? conv.customerName : conv.subject || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
         conv.lastMessage?.content?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "pending" && conv.status === 0) ||
+        (statusFilter === "open" && conv.status === 1) ||
+        (statusFilter === "resolved" && conv.status === 2) ||
+        (statusFilter === "closed" && conv.status === 3);
+
+      return matchesSearch && matchesStatus;
+    });
+
+    if (conversations.length === 0) {
+      return (
+        <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-3 p-12">
+          <div className="bg-muted/50 rounded-full p-4">
+            <MessageSquare className="h-10 w-10 opacity-40" />
+          </div>
+          <p className="text-foreground text-sm font-medium">{emptyMessage}</p>
+        </div>
+      );
+    }
 
       const matchesStatus =
         statusFilter === "all" ||
@@ -174,6 +205,25 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                 />
               </div>
             )}
+            return (
+              <button
+                key={conversation.id}
+                onClick={() => onSelect(conversation.id)}
+                className={cn(
+                  "hover:bg-accent/50 flex w-full items-start gap-3 border-b px-4 py-3.5 text-left transition-all duration-200",
+                  "border-l-4 hover:shadow-sm",
+                  showPriority ? getPriorityCardBorder(conversation.priority) : "border-l-transparent",
+                  isSelected && "bg-accent shadow-sm",
+                  requiresAttention && "border-l-amber-500 bg-amber-50/50 dark:bg-amber-950/10",
+                )}
+              >
+                <Avatar className="ring-border/5 h-11 w-11 shrink-0 ring-2">
+                  <AvatarFallback
+                    className={cn("text-sm font-semibold", showPriority && getPriorityColor(conversation.priority))}
+                  >
+                    {getInitials(displayName)}
+                  </AvatarFallback>
+                </Avatar>
 
             {showFilter && (
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -191,18 +241,35 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
             )}
           </div>
         )}
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        "min-w-0 flex-1 truncate text-sm font-semibold",
+                        showPriority && getPriorityColor(conversation.priority),
+                      )}
+                      title={displayName}
+                    >
+                      {displayName}
+                    </span>
+                    <span className="text-muted-foreground shrink-0 text-xs font-medium">
+                      {formatRelativeTime(conversation.lastMessageAt || conversation.createdAt)}
+                    </span>
+                  </div>
 
         {isLoading ? (
-          <div className="flex h-full items-center justify-center p-8">
-            <div className="text-muted-foreground flex flex-col items-center gap-2">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              <span className="text-sm">Loading...</span>
+          <div className="flex h-full items-center justify-center p-12">
+            <div className="text-muted-foreground flex flex-col items-center gap-3">
+              <div className="h-10 w-10 animate-spin rounded-full border-3 border-current border-t-transparent" />
+              <span className="text-sm font-medium">Loading conversations...</span>
             </div>
           </div>
         ) : filteredConversations.length === 0 ? (
-          <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-2 p-8">
-            <MessageSquare className="h-12 w-12" />
-            <p className="text-sm">{searchQuery ? "No conversations found" : emptyMessage}</p>
+          <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-3 p-12">
+            <div className="bg-muted/50 rounded-full p-4">
+              <MessageSquare className="h-10 w-10 opacity-40" />
+            </div>
+            <p className="text-foreground text-sm font-medium">{searchQuery ? "No conversations found" : emptyMessage}</p>
           </div>
         ) : (
           <ScrollArea ref={ref} className="flex-1">
@@ -221,28 +288,75 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                     key={conversation.id}
                     onClick={() => onSelect(conversation.id)}
                     className={cn(
-                      "hover:bg-accent flex w-full items-start gap-3 border-b p-4 text-left transition-colors",
-                      isSelected && "bg-accent",
+                      "hover:bg-accent/50 flex w-full items-start gap-3 border-b px-4 py-3.5 text-left transition-all duration-200",
+                      "border-l-4 hover:shadow-sm",
+                      showPriority ? getPriorityCardBorder(conversation.priority) : "border-l-transparent",
+                      isSelected && "bg-accent shadow-sm",
+                      requiresAttention && "border-l-amber-500 bg-amber-50/50 dark:bg-amber-950/10",
                     )}
                   >
-                    <Avatar className="h-10 w-10 shrink-0">
-                      <AvatarFallback className="bg-muted">{getInitials(displayName)}</AvatarFallback>
+                    <Avatar className="ring-border/5 h-11 w-11 shrink-0 ring-2">
+                      <AvatarFallback
+                        className={cn("text-sm font-semibold", showPriority && getPriorityColor(conversation.priority))}
+                      >
+                        {getInitials(displayName)}
+                      </AvatarFallback>
                     </Avatar>
 
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 flex items-start justify-between gap-2">
-                        <div className="flex min-w-0 flex-1 items-center gap-2">
-                          <span className="truncate font-medium">{displayName}</span>
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={cn(
+                            "min-w-0 flex-1 truncate text-sm font-semibold",
+                            showPriority && getPriorityColor(conversation.priority),
+                          )}
+                          title={displayName}
+                        >
+                          {displayName}
+                        </span>
+                        <span className="text-muted-foreground shrink-0 text-xs font-medium">
+                          {formatRelativeTime(conversation.lastMessageAt || conversation.createdAt)}
+                        </span>
+                      </div>
+                      {(showStatus || showAssignment) && (
+                        <div className="flex flex-wrap items-center gap-1.5">
                           {showStatus && (
-                            <Badge variant={getStatusVariant(conversation.status)} className="shrink-0 text-xs">
-                              {getStatusText(conversation.status)}
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "gap-1 px-2 py-0.5 text-[10px] font-medium",
+                                getStatusBadgeClasses(conversation.status),
+                              )}
+                            >
+                              {getStatusIcon(conversation.status)}
+                              {getStatusLabel(conversation.status)}
                             </Badge>
+                          )}
+                          {showPriority && conversation.priority >= 2 && (
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "gap-1 px-2 py-0.5 text-[10px] font-medium",
+                                getPriorityBadgeClasses(conversation.priority),
+                              )}
+                            >
+                              {getPriorityIcon(conversation.priority)}
+                              {getPriorityLabel(conversation.priority)}
+                            </Badge>
+                          )}
                           )}
                         </div>
                       </div>
 
                       {showAssignment && conversation.assignedToAdminName && (
-                        <div className="text-muted-foreground mb-1 text-xs">{conversation.assignedToAdminName}</div>
+                        <Badge
+                          variant="outline"
+                          className="gap-1 border-blue-200 bg-blue-50/50 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:border-blue-800 dark:bg-blue-950/20 dark:text-blue-400"
+                          title={conversation.assignedToAdminName}
+                        >
+                          <User className="h-2.5 w-2.5" />
+                          <span className="max-w-[70px] truncate">{conversation.assignedToAdminName}</span>
+                        </Badge>
                       )}
 
                       <p className="text-muted-foreground line-clamp-2 text-sm">{lastMessageContent}</p>
@@ -258,13 +372,38 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                         )}
                       </div>
                     </div>
-                  </button>
-                );
-              })}
-            </div>
-          </ScrollArea>
-        )}
-      </div>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <div className="text-muted-foreground min-w-0 flex-1 text-xs leading-relaxed">
+                      {conversation.lastMessage ? (
+                        <>
+                          <span className="text-foreground/70 font-medium" title={conversation.lastMessage.senderName}>
+                            {conversation.lastMessage.senderName}
+                          </span>
+                          <span className="mx-1">·</span>
+                          <span className="truncate" title={lastMessageContent}>
+                            {lastMessageContent}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="truncate italic" title={lastMessageContent}>
+                          {lastMessageContent}
+                        </span>
+                      )}
+                    </div>
+                    {conversation.unreadCount > 0 && (
+                      <Badge className="h-5 min-w-[20px] shrink-0 justify-center rounded-full bg-blue-600 px-1.5 text-[10px] font-semibold hover:bg-blue-600">
+                        {conversation.unreadCount > 99 ? "99+" : conversation.unreadCount}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </ScrollArea>
     );
   },
 );

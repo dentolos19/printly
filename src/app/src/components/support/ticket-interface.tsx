@@ -710,6 +710,8 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
   /** Edit a message */
   const handleEditMessage = async (messageId: string, newContent: string) => {
     if (!connectionRef.current || connectionState !== "connected") return;
+    // Skip optimistic messages (non-GUID IDs)
+    if (messageId.startsWith("optimistic-")) return;
 
     try {
       await connectionRef.current.invoke("EditMessage", messageId, newContent);
@@ -723,6 +725,8 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
   /** Delete a message */
   const handleDeleteMessage = async (messageId: string) => {
     if (!connectionRef.current || connectionState !== "connected") return;
+    // Skip optimistic messages (non-GUID IDs)
+    if (messageId.startsWith("optimistic-")) return;
 
     try {
       await connectionRef.current.invoke("DeleteMessage", messageId);

@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using PrintlyServer.Data;
 using PrintlyServer.Data.Auth;
 using PrintlyServer.Data.Entities;
 using PrintlyServer.Extensions;
+using PrintlyServer.Hubs;
 using PrintlyServer.Services;
 
 namespace PrintlyServer.Controllers;
@@ -14,11 +16,13 @@ namespace PrintlyServer.Controllers;
 public class ConversationController(
     DatabaseContext context,
     INotificationService notificationService,
-    StorageService storageService
+    StorageService storageService,
+    IHubContext<ConversationHub> hubContext
 ) : BaseController(context)
 {
     private readonly INotificationService _notificationService = notificationService;
     private readonly StorageService _storageService = storageService;
+    private readonly IHubContext<ConversationHub> _hubContext = hubContext;
 
     public record ContactResponse(string Id, string Name, string Email, string Role);
 
@@ -337,16 +341,16 @@ public class ConversationController(
             conversation.UnreadCount = 1;
 
             await Context.SaveChangesAsync();
-
-            // Notify admins about the new conversation
-            await _notificationService.NotifyAdminsAsync(
-                NotificationType.NewMessage,
-                "New Support Conversation",
-                $"{currentUser.UserName ?? currentUser.Email} started a conversation: {request.Subject}",
-                conversation.Id,
-                NotificationPriority.Normal
-            );
         }
+
+        // Notify admins about the new conversation
+        await _notificationService.NotifyAdminsAsync(
+            NotificationType.ConversationCreated,
+            "New Support Conversation",
+            $"{currentUser.UserName ?? currentUser.Email} started a conversation: {request.Subject}",
+            conversation.Id,
+            NotificationPriority.Normal
+        );
 
         // Build and return the response
         var participants = await Context
@@ -413,23 +417,50 @@ public class ConversationController(
         if (conversation is null)
             return NotFound();
 
+        var currentUserId = User.GetUserId();
+        var currentUserName = User.Identity?.Name ?? "Admin";
+
         conversation.Status = request.Status;
         await Context.SaveChangesAsync();
 
-        // Notify the customer if resolved or closed
-        if (request.Status == ConversationStatus.Resolved || request.Status == ConversationStatus.Closed)
+        // Broadcast status update in real-time to all participants
+        var statusResponse = new
         {
-            var statusText = request.Status == ConversationStatus.Resolved ? "resolved" : "closed";
-            await _notificationService.CreateNotificationAsync(
-                conversation.CustomerId,
-                NotificationType.ConversationStatusChanged,
-                $"Conversation {statusText}",
-                $"Your support conversation has been marked as {statusText}",
-                conversationId,
-                null,
-                NotificationPriority.Normal,
-                $"/chat?conversation={conversationId}"
-            );
+            conversationId,
+            status = (int)request.Status,
+            updatedByUserId = currentUserId,
+            updatedByUserName = currentUserName,
+            updatedAt = DateTime.UtcNow,
+        };
+
+        await _hubContext
+            .Clients.Group($"conversation-{conversationId}")
+            .SendAsync("ConversationStatusUpdated", statusResponse);
+
+        // Also notify staff inbox
+        await _hubContext.Clients.Group("staff").SendAsync("ConversationStatusUpdated", statusResponse);
+
+        // Notify the customer if closed (non-blocking)
+        if (request.Status == ConversationStatus.Closed)
+        {
+            try
+            {
+                await _notificationService.CreateNotificationAsync(
+                    conversation.CustomerId,
+                    NotificationType.ConversationStatusChanged,
+                    "Conversation Closed",
+                    "Your support conversation has been closed",
+                    conversationId,
+                    null,
+                    NotificationPriority.Normal,
+                    $"/chat?conversation={conversationId}"
+                );
+            }
+            catch (Exception ex)
+            {
+                // Log but don't fail the request - notification is not critical
+                Console.WriteLine($"[ConversationController] Failed to create notification: {ex.Message}");
+            }
         }
 
         return NoContent();
@@ -449,8 +480,27 @@ public class ConversationController(
         if (conversation is null)
             return NotFound();
 
+        var currentUserId = User.GetUserId();
+        var currentUserName = User.Identity?.Name ?? "Admin";
+
         conversation.Priority = request.Priority;
         await Context.SaveChangesAsync();
+
+        // Broadcast priority update in real-time
+        var priorityResponse = new
+        {
+            conversationId,
+            priority = (int)request.Priority,
+            updatedByUserId = currentUserId,
+            updatedByUserName = currentUserName,
+            updatedAt = DateTime.UtcNow,
+        };
+
+        await _hubContext
+            .Clients.Group($"conversation-{conversationId}")
+            .SendAsync("ConversationPriorityUpdated", priorityResponse);
+
+        await _hubContext.Clients.Group("staff").SendAsync("ConversationPriorityUpdated", priorityResponse);
 
         return NoContent();
     }

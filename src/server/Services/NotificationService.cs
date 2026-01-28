@@ -71,6 +71,13 @@ public class NotificationService(
         string? actionUrl = null
     )
     {
+        _logger.LogWarning(
+            "[NOTIFICATION DEBUG] CreateNotificationAsync called. UserId: {UserId}, Type: {Type}, Title: {Title}",
+            userId,
+            type,
+            title
+        );
+
         var notification = new Notification
         {
             UserId = userId,
@@ -87,6 +94,12 @@ public class NotificationService(
 
         await _context.Notifications.AddAsync(notification);
         await _context.SaveChangesAsync();
+
+        _logger.LogWarning(
+            "[NOTIFICATION DEBUG] Notification saved to DB with ID: {NotificationId}, UserId: {UserId}",
+            notification.Id,
+            notification.UserId
+        );
 
         await _conversationHubContext
             .Clients.User(userId)
