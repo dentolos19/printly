@@ -41,10 +41,12 @@ import {
   CheckCircle2,
   Clock,
   CreditCard,
+  ExternalLink,
   Eye,
   Loader2,
   MessageSquare,
   Package,
+  Paintbrush,
   RefreshCcw,
   RotateCcw,
   ShoppingBag,
@@ -266,22 +268,43 @@ function OrderDetailsDialog({
               <div className="space-y-3">
                 <h4 className="font-medium">Order Items</h4>
                 {order.items.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between rounded-lg border p-3">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-muted flex h-12 w-12 items-center justify-center rounded-lg">
-                        <Package className="text-muted-foreground h-6 w-6" />
+                  <div key={item.id} className="rounded-lg border p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-muted flex h-12 w-12 items-center justify-center rounded-lg">
+                          <Package className="text-muted-foreground h-6 w-6" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{item.productName}</p>
+                          <p className="text-muted-foreground text-sm">
+                            {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]} • {item.color}
+                          </p>
+                          <p className="text-muted-foreground text-xs">
+                            Qty: {item.quantity} × ${item.unitPrice.toFixed(2)}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">{item.productName}</p>
-                        <p className="text-muted-foreground text-sm">
-                          {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]} • {item.color}
-                        </p>
-                        <p className="text-muted-foreground text-xs">
-                          Qty: {item.quantity} × ${item.unitPrice.toFixed(2)}
-                        </p>
-                      </div>
+                      <span className="font-semibold">${item.subtotal.toFixed(2)}</span>
                     </div>
-                    <span className="font-semibold">${item.subtotal.toFixed(2)}</span>
+                    {/* Imprint Info */}
+                    {item.imprintId && (
+                      <div className="mt-2 flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5">
+                        <Paintbrush className="h-3.5 w-3.5 text-blue-600" />
+                        <span className="flex-1 text-sm text-blue-700">
+                          Custom Design: {item.imprintName || "Unnamed"}
+                          {item.customizationPrice > 0 && (
+                            <span className="ml-1 text-blue-600">(+${item.customizationPrice.toFixed(2)})</span>
+                          )}
+                        </span>
+                        <Link
+                          href={`/imprinter/${item.imprintId}`}
+                          className="text-xs text-blue-600 hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                        </Link>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -306,6 +329,12 @@ function OrderDetailsDialog({
             </div>
 
             <DialogFooter className="flex-col gap-2 sm:flex-row">
+              <Button variant="default" asChild className="w-full sm:w-auto">
+                <Link href={`/orders/${order.id}`}>
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  View Full Details
+                </Link>
+              </Button>
               {canRequestRefund && (
                 <Button
                   variant="outline"
