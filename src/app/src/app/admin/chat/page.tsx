@@ -10,6 +10,7 @@ import {
 } from "@/components/chat";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { API_URL } from "@/environment";
@@ -23,6 +24,7 @@ import {
 } from "@/lib/server/conversation";
 import { cn } from "@/lib/utils";
 import * as signalR from "@microsoft/signalr";
+import { Tabs, TabsList, TabsTrigger } from "@radix-ui/react-tabs";
 import {
   CheckCircle2,
   Clock,
