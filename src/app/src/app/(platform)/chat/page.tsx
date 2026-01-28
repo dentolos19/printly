@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  CallMessage,
   ChatDateSeparator,
   ChatMessage,
   ConversationList,
@@ -8,6 +9,7 @@ import {
   TypingIndicator,
   type ReplyInfo,
 } from "@/components/chat";
+import { CallInterface, IncomingCallNotification } from "@/components/call-interface";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { API_URL } from "@/environment";
 import { useAuth } from "@/lib/providers/auth";
 import { type ConversationMessage, type ConversationSummary } from "@/lib/server/conversation";
+import { CallType, type CallTokenResponse, type IncomingCallData } from "@/lib/types/call";
 import { cn } from "@/lib/utils";
 import * as signalR from "@microsoft/signalr";
 import {
@@ -38,7 +41,9 @@ import {
   MessageSquarePlus,
   PanelLeftClose,
   PanelLeftOpen,
+  Phone,
   RefreshCw,
+  Video,
   Wifi,
   WifiOff,
   XCircle,
@@ -109,6 +114,17 @@ export default function ChatPage() {
   const [lastError, setLastError] = useState<string | null>(null);
   const [pendingOptimisticMessages, setPendingOptimisticMessages] = useState<Set<string>>(new Set());
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Call state
+  const [isInCall, setIsInCall] = useState(false);
+  const [currentCall, setCurrentCall] = useState<{
+    callId: string;
+    token: string;
+    serverUrl: string;
+    callType: CallType;
+  } | null>(null);
+  const [incomingCall, setIncomingCall] = useState<IncomingCallData | null>(null);
+  const [activeCallId, setActiveCallId] = useState<string | null>(null);
 
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const selectedConversationRef = useRef<string | null>(null);
@@ -353,6 +369,49 @@ export default function ChatPage() {
           setConversations((prev) =>
             prev.map((c) => (c.id === data.conversationId ? { ...c, status: data.status as 0 | 1 | 2 | 3 } : c)),
           );
+        },
+      );
+
+      // Call-related SignalR handlers
+      connection.on("IncomingCall", (data: IncomingCallData) => {
+        console.log("[Chat] Incoming call:", data);
+        setActiveCallId(data.callId);
+
+        // If we initiated the call, we already auto-joined in handleInitiateCall
+        // Only show incoming notification for recipients
+        if (data.initiatorId !== currentUserId) {
+          setIncomingCall(data);
+        }
+      });
+
+      connection.on("UserJoinedCall", (data: { callId: string; userId: string; userName: string }) => {
+        console.log("[Chat] User joined call:", data);
+      });
+
+      connection.on("UserLeftCall", (data: { callId: string; userId: string; userName: string }) => {
+        console.log("[Chat] User left call:", data);
+      });
+
+      connection.on("CallEnded", (data: { callId: string; reason: string }) => {
+        console.log("[Chat] Call ended:", data);
+        if (data.callId === activeCallId || currentCall?.callId === data.callId) {
+          setIsInCall(false);
+          setCurrentCall(null);
+          setIncomingCall(null);
+          setActiveCallId(null);
+        }
+      });
+
+      connection.on(
+        "CallDeclined",
+        (data: { callId: string; declinedByUserId: string; declinedByUserName: string }) => {
+          console.log("[Chat] Call declined:", data);
+          if (data.callId === activeCallId || currentCall?.callId === data.callId) {
+            setIsInCall(false);
+            setCurrentCall(null);
+            setIncomingCall(null);
+            setActiveCallId(null);
+          }
         },
       );
 
@@ -712,6 +771,165 @@ export default function ChatPage() {
     connectionRef.current.invoke("StopTyping", selectedConversationId).catch(() => {});
   }, [selectedConversationId]);
 
+  // Call handlers
+  const handleInitiateCall = useCallback(
+    async (callType: CallType) => {
+      if (!selectedConversationId || !connectionRef.current || !auth.tokens?.accessToken) return;
+
+      try {
+        // Invoke InitiateCall - server will return the callId
+        const callId = await connectionRef.current.invoke<string>("InitiateCall", selectedConversationId, callType);
+        console.log("[Chat] Call initiated:", callType, "callId:", callId);
+
+        // Immediately get token and join the call as the initiator
+        if (callId) {
+          setActiveCallId(callId);
+
+          const response = await fetch(`${API_URL}/conversation/call/${callId}/token`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${auth.tokens.accessToken}`,
+            },
+          });
+
+          if (response.ok) {
+            const tokenData: CallTokenResponse = await response.json();
+            setCurrentCall({
+              callId,
+              token: tokenData.token,
+              serverUrl: tokenData.wsUrl,
+              callType,
+            });
+            setIsInCall(true);
+            console.log("[Chat] Auto-joined call as initiator:", callId);
+          } else {
+            console.error("[Chat] Failed to get call token");
+            setLastError("Failed to get call token. Please try again.");
+            setTimeout(() => setLastError(null), 5000);
+          }
+        }
+      } catch (error) {
+        console.error("[Chat] Failed to initiate call:", error);
+        setLastError("Failed to start call. Please try again.");
+        setTimeout(() => setLastError(null), 5000);
+      }
+    },
+    [selectedConversationId, auth.tokens?.accessToken],
+  );
+
+  const handleAnswerCall = useCallback(
+    async (callId: string, callType: CallType) => {
+      if (!connectionRef.current || !auth.tokens?.accessToken) return;
+
+      try {
+        await connectionRef.current.invoke("AnswerCall", callId);
+
+        const response = await authorizedFetch(`${API_URL}/conversation/call/${callId}/token`, {
+          method: "POST",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to get call token");
+        }
+
+        const tokenData: CallTokenResponse = await response.json();
+
+        setCurrentCall({
+          callId,
+          token: tokenData.token,
+          serverUrl: tokenData.wsUrl,
+          callType,
+        });
+        setIsInCall(true);
+        setIncomingCall(null);
+
+        console.log("[Chat] Joined call:", callId);
+      } catch (error) {
+        console.error("[Chat] Failed to answer call:", error);
+        setLastError("Failed to join call. Please try again.");
+        setTimeout(() => setLastError(null), 5000);
+      }
+    },
+    [auth.tokens?.accessToken, authorizedFetch],
+  );
+
+  const handleDeclineCall = useCallback(async (callId: string) => {
+    if (!connectionRef.current) return;
+
+    try {
+      await connectionRef.current.invoke("DeclineCall", callId);
+      setIncomingCall(null);
+      setActiveCallId(null);
+      console.log("[Chat] Call declined:", callId);
+    } catch (error) {
+      console.error("[Chat] Failed to decline call:", error);
+    }
+  }, []);
+
+  const handleLeaveCall = useCallback(async () => {
+    if (!connectionRef.current || !currentCall) return;
+
+    try {
+      await connectionRef.current.invoke("EndCall", currentCall.callId);
+    } catch (error) {
+      console.error("[Chat] Failed to end call:", error);
+    } finally {
+      setIsInCall(false);
+      setCurrentCall(null);
+      setActiveCallId(null);
+    }
+  }, [currentCall]);
+
+  const handleJoinActiveCall = useCallback(
+    async (callLogId: string) => {
+      if (!connectionRef.current || !auth.tokens?.accessToken) return;
+
+      try {
+        // Get call details first
+        const detailsResponse = await authorizedFetch(`${API_URL}/conversation/call/${callLogId}`);
+        if (!detailsResponse.ok) {
+          throw new Error("Failed to get call details");
+        }
+        const callDetails = (await detailsResponse.json()) as { status: number; type: number };
+
+        // Only join if call is still active (Ringing = 0, Ongoing = 1)
+        if (callDetails.status !== 0 && callDetails.status !== 1) {
+          setLastError("This call has ended.");
+          setTimeout(() => setLastError(null), 3000);
+          return;
+        }
+
+        await connectionRef.current.invoke("AnswerCall", callLogId);
+
+        const response = await authorizedFetch(`${API_URL}/conversation/call/${callLogId}/token`, {
+          method: "POST",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to get call token");
+        }
+
+        const tokenData: CallTokenResponse = await response.json();
+
+        setCurrentCall({
+          callId: callLogId,
+          token: tokenData.token,
+          serverUrl: tokenData.wsUrl,
+          callType: callDetails.type as CallType,
+        });
+        setIsInCall(true);
+        setIncomingCall(null);
+
+        console.log("[Chat] Joined active call:", callLogId);
+      } catch (error) {
+        console.error("[Chat] Failed to join call:", error);
+        setLastError("Failed to join call. Please try again.");
+        setTimeout(() => setLastError(null), 5000);
+      }
+    },
+    [auth.tokens?.accessToken, authorizedFetch],
+  );
+
   const handleCreateConversation = useCallback(async () => {
     if (!newSubject.trim()) return;
     setIsCreating(true);
@@ -915,6 +1133,30 @@ export default function ChatPage() {
                       {selectedConversation.priority === 3 && <AlertCircle className="h-3 w-3" />}
                       {PRIORITY_LABELS[selectedConversation.priority]}
                     </Badge>
+
+                    {/* Call buttons */}
+                    <div className="ml-2 flex items-center gap-1 border-l pl-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => handleInitiateCall(CallType.Audio)}
+                        disabled={connectionState !== "connected" || isInCall || selectedConversation.status === 3}
+                        title="Start voice call"
+                      >
+                        <Phone className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => handleInitiateCall(CallType.Video)}
+                        disabled={connectionState !== "connected" || isInCall || selectedConversation.status === 3}
+                        title="Start video call"
+                      >
+                        <Video className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
                 {lastError && (
@@ -950,46 +1192,70 @@ export default function ChatPage() {
                       {groupedMessages.map((group) => (
                         <div key={group.date}>
                           <ChatDateSeparator date={group.date} />
-                          {group.messages.map((message) => (
-                            <ChatMessage
-                              key={message.id}
-                              id={message.id}
-                              content={message.content}
-                              senderName={message.senderName}
-                              senderId={message.senderId}
-                              isCurrentUser={message.senderId === currentUserId}
-                              isRead={message.isRead}
-                              isEdited={message.isEdited}
-                              isDeleted={message.isDeleted}
-                              createdAt={message.createdAt}
-                              editedAt={message.editedAt}
-                              replyToContent={message.replyToContent}
-                              replyToSenderName={message.replyToSenderName}
-                              fileUrl={message.fileUrl}
-                              fileName={message.fileName}
-                              fileType={message.fileType}
-                              fileSize={message.fileSize}
-                              voiceMessageUrl={message.voiceMessageUrl}
-                              voiceMessageDuration={message.voiceMessageDuration}
-                              onReply={() =>
-                                setReplyTo({
-                                  messageId: message.id,
-                                  senderName: message.senderName,
-                                  content: message.content,
-                                })
-                              }
-                              onEdit={
-                                message.senderId === currentUserId && !message.isDeleted
-                                  ? (content) => handleEditMessage(message.id, content)
-                                  : undefined
-                              }
-                              onDelete={
-                                message.senderId === currentUserId && !message.isDeleted
-                                  ? () => handleDeleteMessage(message.id)
-                                  : undefined
-                              }
-                            />
-                          ))}
+                          {group.messages.map((message) =>
+                            message.isCallMessage && message.callLogId ? (
+                              <CallMessage
+                                key={message.id}
+                                content={message.content}
+                                callLogId={message.callLogId}
+                                senderName={message.senderName}
+                                isCurrentUser={message.senderId === currentUserId}
+                                createdAt={message.createdAt}
+                                callType={message.callType}
+                                callStatus={message.callStatus}
+                                callDurationSeconds={message.callDurationSeconds}
+                                callInitiatorId={message.callInitiatorId}
+                                callInitiatorName={message.callInitiatorName}
+                                onJoinCall={() => handleJoinActiveCall(message.callLogId!)}
+                                onAnswerCall={() => handleJoinActiveCall(message.callLogId!)}
+                                onDeclineCall={() => handleDeclineCall(message.callLogId!)}
+                                canJoinCall={!isInCall && activeCallId === message.callLogId}
+                                isRinging={
+                                  !isInCall && activeCallId === message.callLogId && message.senderId !== currentUserId
+                                }
+                                isInCall={isInCall && currentCall?.callId === message.callLogId}
+                              />
+                            ) : (
+                              <ChatMessage
+                                key={message.id}
+                                id={message.id}
+                                content={message.content}
+                                senderName={message.senderName}
+                                senderId={message.senderId}
+                                isCurrentUser={message.senderId === currentUserId}
+                                isRead={message.isRead}
+                                isEdited={message.isEdited}
+                                isDeleted={message.isDeleted}
+                                createdAt={message.createdAt}
+                                editedAt={message.editedAt}
+                                replyToContent={message.replyToContent}
+                                replyToSenderName={message.replyToSenderName}
+                                fileUrl={message.fileUrl}
+                                fileName={message.fileName}
+                                fileType={message.fileType}
+                                fileSize={message.fileSize}
+                                voiceMessageUrl={message.voiceMessageUrl}
+                                voiceMessageDuration={message.voiceMessageDuration}
+                                onReply={() =>
+                                  setReplyTo({
+                                    messageId: message.id,
+                                    senderName: message.senderName,
+                                    content: message.content,
+                                  })
+                                }
+                                onEdit={
+                                  message.senderId === currentUserId && !message.isDeleted
+                                    ? (content) => handleEditMessage(message.id, content)
+                                    : undefined
+                                }
+                                onDelete={
+                                  message.senderId === currentUserId && !message.isDeleted
+                                    ? () => handleDeleteMessage(message.id)
+                                    : undefined
+                                }
+                              />
+                            ),
+                          )}
                         </div>
                       ))}
                       <div ref={messagesEndRef} />
@@ -1036,6 +1302,27 @@ export default function ChatPage() {
           )}
         </Card>
       </div>
+
+      {/* Call Interface */}
+      {isInCall && currentCall && (
+        <CallInterface
+          token={currentCall.token}
+          serverUrl={currentCall.serverUrl}
+          callType={currentCall.callType}
+          onLeave={handleLeaveCall}
+          participantName={auth.claims?.email || "Customer"}
+        />
+      )}
+
+      {/* Incoming Call Notification */}
+      {incomingCall && !isInCall && (
+        <IncomingCallNotification
+          callerName={incomingCall.initiatorName}
+          callType={incomingCall.callType}
+          onAnswer={() => handleAnswerCall(incomingCall.callId, incomingCall.callType)}
+          onDecline={() => handleDeclineCall(incomingCall.callId)}
+        />
+      )}
     </main>
   );
 }

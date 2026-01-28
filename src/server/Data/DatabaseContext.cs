@@ -26,6 +26,8 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
     public DbSet<Conversation> Conversations { get; set; }
     public DbSet<ConversationParticipant> ConversationParticipants { get; set; }
     public DbSet<ConversationMessage> ConversationMessages { get; set; }
+    public DbSet<CallLog> CallLogs { get; set; }
+    public DbSet<CallParticipant> CallParticipants { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {

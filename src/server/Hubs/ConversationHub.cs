@@ -1276,4 +1276,388 @@ public class ConversationHub(
     }
 
     #endregion
+
+    #region Calling
+
+    /// <summary>
+    /// Initiates a voice or video call in a conversation.
+    /// Creates a call log, notifies all participants, and returns the call ID.
+    /// </summary>
+    public async Task<Guid> InitiateCall(Guid conversationId, CallType callType)
+    {
+        var userId = GetUserId();
+        if (userId is null)
+            throw new HubException("User not authenticated");
+
+        var isAdmin = await IsAdminAsync(userId);
+        if (!await HasConversationAccessAsync(conversationId, userId, isAdmin))
+            throw new HubException("Not authorized to initiate call in this conversation");
+
+        var participants = await _context
+            .ConversationParticipants.Where(p => p.ConversationId == conversationId)
+            .ToListAsync();
+
+        var roomName = $"call-{Guid.NewGuid()}";
+        var callLogId = Guid.NewGuid();
+
+        var callLog = new CallLog
+        {
+            Id = callLogId,
+            ConversationId = conversationId,
+            InitiatorId = userId,
+            Type = callType,
+            Status = CallStatus.Ongoing, // Start as ongoing since initiator auto-joins
+            StartedAt = DateTime.UtcNow,
+            LiveKitRoomName = roomName,
+            Participants = participants
+                .Select(p => new CallParticipant
+                {
+                    Id = Guid.NewGuid(),
+                    CallLogId = callLogId,
+                    UserId = p.UserId,
+                    DidAnswer = p.UserId == userId,
+                    JoinedAt = p.UserId == userId ? DateTime.UtcNow : null,
+                })
+                .ToList(),
+        };
+
+        _context.CallLogs.Add(callLog);
+
+        var initiatorParticipant = participants.FirstOrDefault(p => p.UserId == userId);
+        ConversationMessage? callMessage = null;
+        if (initiatorParticipant is not null)
+        {
+            callMessage = new ConversationMessage
+            {
+                Id = Guid.NewGuid(),
+                ConversationId = conversationId,
+                ParticipantId = initiatorParticipant.Id,
+                Content = callType == CallType.Audio ? "Voice call" : "Video call",
+                IsCallMessage = true,
+                CallLogId = callLog.Id,
+                CreatedAt = DateTime.UtcNow,
+                IsRead = false,
+            };
+
+            _context.ConversationMessages.Add(callMessage);
+
+            var conversation = await _context.Conversations.FindAsync(conversationId);
+            if (conversation is not null)
+            {
+                conversation.LastMessageAt = DateTime.UtcNow;
+            }
+        }
+
+        await _context.SaveChangesAsync();
+
+        var initiatorName = await GetUserDisplayNameAsync(userId);
+
+        // Broadcast the call message to all participants
+        if (callMessage is not null)
+        {
+            await Clients
+                .Group(ConversationGroupName(conversationId))
+                .SendAsync(
+                    "ConversationMessageReceived",
+                    new
+                    {
+                        callMessage.Id,
+                        callMessage.ConversationId,
+                        callMessage.ParticipantId,
+                        SenderId = userId,
+                        SenderName = initiatorName,
+                        callMessage.Content,
+                        callMessage.IsRead,
+                        ReadAt = (DateTime?)null,
+                        callMessage.IsEdited,
+                        EditedAt = (DateTime?)null,
+                        callMessage.IsDeleted,
+                        DeletedAt = (DateTime?)null,
+                        callMessage.CreatedAt,
+                        ReplyToMessageId = (Guid?)null,
+                        ReplyToContent = (string?)null,
+                        ReplyToSenderName = (string?)null,
+                        FileUrl = (string?)null,
+                        FileName = (string?)null,
+                        FileType = (string?)null,
+                        FileSize = (int?)null,
+                        VoiceMessageUrl = (string?)null,
+                        VoiceMessageDuration = (int?)null,
+                        callMessage.IsCallMessage,
+                        callMessage.CallLogId,
+                    }
+                );
+        }
+
+        var incomingCallPayload = new
+        {
+            CallId = callLog.Id,
+            ConversationId = conversationId,
+            InitiatorId = userId,
+            InitiatorName = initiatorName,
+            CallType = callType,
+            RoomName = roomName,
+            Status = CallStatus.Ringing,
+        };
+
+        // Send to conversation group
+        await Clients.Group(ConversationGroupName(conversationId)).SendAsync("IncomingCall", incomingCallPayload);
+
+        // Also send directly to all participants (in case they haven't joined the group yet)
+        var participantUserIds = participants.Select(p => p.UserId).Where(id => id != userId).ToList();
+        if (participantUserIds.Count > 0)
+        {
+            await Clients.Users(participantUserIds).SendAsync("IncomingCall", incomingCallPayload);
+        }
+
+        _logger.LogInformation(
+            "[ConversationHub] Call initiated by {UserId} in conversation {ConversationId}, callId: {CallId}",
+            userId,
+            conversationId,
+            callLogId
+        );
+
+        return callLogId;
+    }
+
+    /// <summary>
+    /// Answers an incoming call and marks the participant as joined.
+    /// </summary>
+    public async Task AnswerCall(Guid callId)
+    {
+        var userId = GetUserId();
+        if (userId is null)
+            throw new HubException("User not authenticated");
+
+        var callLog = await _context.CallLogs.Include(c => c.Participants).FirstOrDefaultAsync(c => c.Id == callId);
+
+        if (callLog is null)
+            throw new HubException("Call not found");
+
+        var participant = callLog.Participants.FirstOrDefault(p => p.UserId == userId);
+        if (participant is null)
+            throw new HubException("Not a participant in this call");
+
+        participant.DidAnswer = true;
+        participant.JoinedAt = DateTime.UtcNow;
+
+        if (callLog.Status == CallStatus.Ringing)
+        {
+            callLog.Status = CallStatus.Ongoing;
+        }
+
+        await _context.SaveChangesAsync();
+
+        var userName = await GetUserDisplayNameAsync(userId);
+
+        await Clients
+            .Group(ConversationGroupName(callLog.ConversationId))
+            .SendAsync(
+                "UserJoinedCall",
+                new
+                {
+                    CallId = callId,
+                    UserId = userId,
+                    UserName = userName,
+                    JoinedAt = participant.JoinedAt,
+                }
+            );
+
+        _logger.LogInformation("[ConversationHub] User {UserId} answered call {CallId}", userId, callId);
+    }
+
+    /// <summary>
+    /// Declines an incoming call. If all non-initiator participants decline, marks call as Declined.
+    /// </summary>
+    public async Task DeclineCall(Guid callId)
+    {
+        var userId = GetUserId();
+        if (userId is null)
+            throw new HubException("User not authenticated");
+
+        var callLog = await _context
+            .CallLogs.Include(c => c.Participants)
+            .Include(c => c.Conversation)
+                .ThenInclude(c => c.Messages)
+            .FirstOrDefaultAsync(c => c.Id == callId);
+
+        if (callLog is null)
+            throw new HubException("Call not found");
+
+        var participant = callLog.Participants.FirstOrDefault(p => p.UserId == userId);
+        if (participant is null)
+            throw new HubException("Not a participant in this call");
+
+        var allDeclined = callLog.Participants.Where(p => p.UserId != callLog.InitiatorId).All(p => !p.DidAnswer);
+
+        if (userId == callLog.InitiatorId || allDeclined)
+        {
+            callLog.Status = CallStatus.Declined;
+            callLog.EndedAt = DateTime.UtcNow;
+
+            var callMessage = callLog.Conversation.Messages.FirstOrDefault(m => m.CallLogId == callId);
+            if (callMessage is not null)
+            {
+                callMessage.Content =
+                    callLog.Type == CallType.Audio ? "Voice call • Declined" : "Video call • Declined";
+
+                // Broadcast the updated call message
+                await Clients
+                    .Group(ConversationGroupName(callLog.ConversationId))
+                    .SendAsync(
+                        "ConversationMessageEdited",
+                        new
+                        {
+                            Id = callMessage.Id,
+                            ConversationId = callLog.ConversationId,
+                            Content = callMessage.Content,
+                            IsEdited = false,
+                            EditedAt = (DateTime?)null,
+                        }
+                    );
+            }
+        }
+
+        await _context.SaveChangesAsync();
+
+        await Clients
+            .Group(ConversationGroupName(callLog.ConversationId))
+            .SendAsync(
+                "CallDeclined",
+                new
+                {
+                    CallId = callId,
+                    UserId = userId,
+                    Status = callLog.Status,
+                }
+            );
+
+        _logger.LogInformation("[ConversationHub] User {UserId} declined call {CallId}", userId, callId);
+    }
+
+    /// <summary>
+    /// Ends a call or leaves the call. If all participants have left or initiator leaves,
+    /// marks the call as completed and calculates duration.
+    /// </summary>
+    public async Task EndCall(Guid callId)
+    {
+        var userId = GetUserId();
+        if (userId is null)
+            throw new HubException("User not authenticated");
+
+        var callLog = await _context
+            .CallLogs.Include(c => c.Participants)
+            .Include(c => c.Conversation)
+                .ThenInclude(c => c.Messages)
+            .FirstOrDefaultAsync(c => c.Id == callId);
+
+        if (callLog is null)
+            throw new HubException("Call not found");
+
+        var participant = callLog.Participants.FirstOrDefault(p => p.UserId == userId);
+        if (participant is null)
+            throw new HubException("Not a participant in this call");
+
+        participant.LeftAt = DateTime.UtcNow;
+
+        var allLeft = callLog.Participants.All(p => p.LeftAt != null);
+        var initiatorLeft = userId == callLog.InitiatorId;
+
+        if (allLeft || initiatorLeft)
+        {
+            callLog.EndedAt = DateTime.UtcNow;
+
+            var firstAnswer = callLog
+                .Participants.Where(p => p.JoinedAt != null)
+                .OrderBy(p => p.JoinedAt)
+                .FirstOrDefault();
+
+            if (firstAnswer?.JoinedAt != null)
+            {
+                callLog.DurationSeconds = (int)(callLog.EndedAt.Value - firstAnswer.JoinedAt.Value).TotalSeconds;
+                callLog.Status = CallStatus.Completed;
+            }
+            else
+            {
+                callLog.Status = CallStatus.Missed;
+                callLog.DurationSeconds = null;
+            }
+
+            var callMessage = callLog.Conversation.Messages.FirstOrDefault(m => m.CallLogId == callId);
+
+            if (callMessage is not null)
+            {
+                string statusText;
+                if (callLog.Status == CallStatus.Missed)
+                {
+                    statusText = "Missed";
+                }
+                else if (callLog.DurationSeconds.HasValue)
+                {
+                    var minutes = callLog.DurationSeconds.Value / 60;
+                    var seconds = callLog.DurationSeconds.Value % 60;
+                    statusText = $"{minutes}m {seconds}s";
+                }
+                else
+                {
+                    statusText = "Ended";
+                }
+
+                callMessage.Content =
+                    callLog.Type == CallType.Audio ? $"Voice call • {statusText}" : $"Video call • {statusText}";
+
+                // Broadcast the updated call message
+                var initiatorName = await GetUserDisplayNameAsync(callLog.InitiatorId);
+                await Clients
+                    .Group(ConversationGroupName(callLog.ConversationId))
+                    .SendAsync(
+                        "ConversationMessageEdited",
+                        new
+                        {
+                            Id = callMessage.Id,
+                            ConversationId = callLog.ConversationId,
+                            Content = callMessage.Content,
+                            IsEdited = false, // Not a user edit
+                            EditedAt = (DateTime?)null,
+                        }
+                    );
+            }
+        }
+
+        await _context.SaveChangesAsync();
+
+        var userName = await GetUserDisplayNameAsync(userId);
+
+        await Clients
+            .Group(ConversationGroupName(callLog.ConversationId))
+            .SendAsync(
+                "UserLeftCall",
+                new
+                {
+                    CallId = callId,
+                    UserId = userId,
+                    UserName = userName,
+                    LeftAt = participant.LeftAt,
+                }
+            );
+
+        if (callLog.EndedAt != null)
+        {
+            await Clients
+                .Group(ConversationGroupName(callLog.ConversationId))
+                .SendAsync(
+                    "CallEnded",
+                    new
+                    {
+                        CallId = callId,
+                        Duration = callLog.DurationSeconds,
+                        Status = callLog.Status,
+                    }
+                );
+        }
+
+        _logger.LogInformation("[ConversationHub] User {UserId} left call {CallId}", userId, callId);
+    }
+
+    #endregion
 }
