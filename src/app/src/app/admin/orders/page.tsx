@@ -61,6 +61,10 @@ const validTransitions: Record<OrderStatus, OrderStatus[]> = {
   [OrderStatus.Shipped]: [OrderStatus.Delivered],
   [OrderStatus.Delivered]: [],
   [OrderStatus.Cancelled]: [],
+  // Refund statuses - typically managed by refund flow, not direct updates
+  [OrderStatus.RefundRequested]: [OrderStatus.Paid, OrderStatus.Cancelled], // Can be restored if refund rejected
+  [OrderStatus.RefundApproved]: [], // Cannot be changed directly
+  [OrderStatus.Refunded]: [], // Final state
 };
 
 function UpdateStatusDialog({

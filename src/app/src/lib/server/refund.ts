@@ -13,13 +13,23 @@ export enum RefundStatus {
 }
 
 export enum RefundReason {
-  DefectiveProduct = 0,
-  WrongSize = 1,
-  WrongItem = 2,
-  NotAsDescribed = 3,
+  // Pre-shipping reasons (available for Paid, Processing)
+  ChangedMind = 0,
+  OrderedByMistake = 1,
+  FoundBetterPrice = 2,
+  TooLongToProcess = 3,
+
+  // Post-shipping reasons (available for Shipped, Delivered)
   DamagedInShipping = 4,
-  DidNotMeetExpectations = 5,
-  Other = 6,
+  WrongItemReceived = 5,
+  ItemNotAsDescribed = 6,
+  DefectiveProduct = 7,
+  WrongSize = 8,
+  QualityNotAsExpected = 9,
+  NeverReceived = 10,
+
+  // Always available
+  Other = 11,
 }
 
 export const RefundStatusLabels: Record<RefundStatus, string> = {
@@ -43,14 +53,59 @@ export const RefundStatusColors: Record<RefundStatus, string> = {
 };
 
 export const RefundReasonLabels: Record<RefundReason, string> = {
+  // Pre-shipping
+  [RefundReason.ChangedMind]: "Changed My Mind",
+  [RefundReason.OrderedByMistake]: "Ordered by Mistake",
+  [RefundReason.FoundBetterPrice]: "Found Better Price",
+  [RefundReason.TooLongToProcess]: "Taking Too Long to Process",
+
+  // Post-shipping
+  [RefundReason.DamagedInShipping]: "Damaged in Shipping",
+  [RefundReason.WrongItemReceived]: "Wrong Item Received",
+  [RefundReason.ItemNotAsDescribed]: "Item Not as Described",
   [RefundReason.DefectiveProduct]: "Defective Product",
   [RefundReason.WrongSize]: "Wrong Size",
-  [RefundReason.WrongItem]: "Wrong Item",
-  [RefundReason.NotAsDescribed]: "Not As Described",
-  [RefundReason.DamagedInShipping]: "Damaged In Shipping",
-  [RefundReason.DidNotMeetExpectations]: "Did Not Meet Expectations",
+  [RefundReason.QualityNotAsExpected]: "Quality Not as Expected",
+  [RefundReason.NeverReceived]: "Never Received",
+
+  // Always available
   [RefundReason.Other]: "Other",
 };
+
+// Helper to get available refund reasons based on order status
+export function getAvailableRefundReasons(orderStatus: OrderStatus): RefundReason[] {
+  const preShippingReasons = [
+    RefundReason.ChangedMind,
+    RefundReason.OrderedByMistake,
+    RefundReason.FoundBetterPrice,
+    RefundReason.TooLongToProcess,
+  ];
+
+  const postShippingReasons = [
+    RefundReason.DamagedInShipping,
+    RefundReason.WrongItemReceived,
+    RefundReason.ItemNotAsDescribed,
+    RefundReason.DefectiveProduct,
+    RefundReason.WrongSize,
+    RefundReason.QualityNotAsExpected,
+    RefundReason.NeverReceived,
+  ];
+
+  const alwaysAvailable = [RefundReason.Other];
+
+  // Pre-shipping (Paid, Processing)
+  if (orderStatus === OrderStatus.Paid || orderStatus === OrderStatus.Processing) {
+    return [...preShippingReasons, ...alwaysAvailable];
+  }
+
+  // Post-shipping (Shipped, Delivered)
+  if (orderStatus === OrderStatus.Shipped || orderStatus === OrderStatus.Delivered) {
+    return [...postShippingReasons, ...alwaysAvailable];
+  }
+
+  // Default - all reasons
+  return [...preShippingReasons, ...postShippingReasons, ...alwaysAvailable];
+}
 
 // Types
 export type RefundResponse = {

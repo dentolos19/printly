@@ -1,11 +1,14 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using PrintlyServer.Controllers.Dtos;
 using PrintlyServer.Data;
 using PrintlyServer.Data.Auth;
 using PrintlyServer.Data.Entities;
+using PrintlyServer.Hubs;
+using PrintlyServer.Services;
 using Stripe;
 using Refund = PrintlyServer.Data.Entities.Refund;
 
@@ -13,8 +16,15 @@ namespace PrintlyServer.Controllers;
 
 [Route("refunds")]
 [Authorize]
-public class RefundController(DatabaseContext context, IConfiguration configuration) : BaseController(context)
+public class RefundController(
+    DatabaseContext context,
+    IConfiguration configuration,
+    INotificationService notificationService,
+    IHubContext<ConversationHub> hubContext
+) : BaseController(context)
 {
+    private readonly INotificationService _notificationService = notificationService;
+    private readonly IHubContext<ConversationHub> _hubContext = hubContext;
     private readonly string _stripeSecretKey =
         Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY")
         ?? configuration["Stripe:SecretKey"]
@@ -82,7 +92,58 @@ public class RefundController(DatabaseContext context, IConfiguration configurat
         if (request.RequestedAmount > payment.Amount)
             return BadRequest(new { message = "Requested amount cannot exceed the payment amount" });
 
-        // Create refund request
+        // Get the user for conversation creation
+        var currentUser = await Context.Users.FindAsync(userId);
+        if (currentUser == null)
+            return Unauthorized();
+
+        // Get the reason label for the conversation subject
+        var reasonLabel = GetReasonLabel((RefundReason)request.Reason);
+
+        // Create a support conversation for this refund
+        var conversation = new Conversation
+        {
+            Subject = $"Refund Request - Order #{order.Id.ToString()[..8]} - {reasonLabel}",
+            CustomerId = userId,
+            OrderId = order.Id,
+            SupportMode = true,
+            Status = ConversationStatus.Pending,
+            Priority = ConversationPriority.High, // Refund requests are high priority
+        };
+        Context.Conversations.Add(conversation);
+
+        // Add the customer as a participant
+        var customerParticipant = new ConversationParticipant
+        {
+            ConversationId = conversation.Id,
+            UserId = userId,
+            Role = ConversationParticipantRole.Member,
+        };
+        Context.ConversationParticipants.Add(customerParticipant);
+
+        await Context.SaveChangesAsync();
+
+        // Create initial message with refund details
+        var initialMessage =
+            $"**Refund Request Submitted**\n\n"
+            + $"**Order:** #{order.Id.ToString()[..8]}\n"
+            + $"**Amount Requested:** ${request.RequestedAmount:F2}\n"
+            + $"**Reason:** {reasonLabel}\n"
+            + (string.IsNullOrWhiteSpace(request.CustomerNotes) ? "" : $"\n**Details:**\n{request.CustomerNotes}");
+
+        var message = new ConversationMessage
+        {
+            ConversationId = conversation.Id,
+            ParticipantId = customerParticipant.Id,
+            Content = initialMessage,
+            IsRead = false,
+        };
+        Context.ConversationMessages.Add(message);
+
+        conversation.LastMessageAt = DateTime.UtcNow;
+        conversation.UnreadCount = 1;
+
+        // Create refund request with conversation link
         var refund = new Refund
         {
             PaymentId = payment.Id,
@@ -93,10 +154,24 @@ public class RefundController(DatabaseContext context, IConfiguration configurat
             CustomerNotes = request.CustomerNotes,
             Status = RefundStatus.Requested,
             RequestedAt = DateTime.UtcNow,
+            ConversationId = conversation.Id,
         };
 
         Context.Refunds.Add(refund);
+
+        // Update order status to RefundRequested
+        order.Status = OrderStatus.RefundRequested;
+
         await Context.SaveChangesAsync();
+
+        // Notify admins about the new refund request
+        await _notificationService.NotifyAdminsAsync(
+            NotificationType.ConversationCreated,
+            "New Refund Request",
+            $"{currentUser.UserName ?? currentUser.Email} requested a refund for Order #{order.Id.ToString()[..8]} - ${request.RequestedAmount:F2}",
+            conversation.Id,
+            NotificationPriority.High
+        );
 
         // Reload with navigation properties
         var createdRefund = await Context
@@ -310,6 +385,7 @@ public class RefundController(DatabaseContext context, IConfiguration configurat
             .Refunds.Include(r => r.RequestedByUser)
             .Include(r => r.ProcessedByUser)
             .Include(r => r.Payment)
+            .Include(r => r.Order)
             .FirstOrDefaultAsync(r => r.Id == id);
 
         if (refund == null)
@@ -333,7 +409,30 @@ public class RefundController(DatabaseContext context, IConfiguration configurat
         refund.ProcessedByUserId = userId;
         refund.ProcessedAt = DateTime.UtcNow;
 
+        // Update order status to RefundApproved
+        refund.Order.Status = OrderStatus.RefundApproved;
+
         await Context.SaveChangesAsync();
+
+        // Send notification to customer
+        await _notificationService.CreateNotificationAsync(
+            refund.RequestedByUserId,
+            NotificationType.RefundApproved,
+            "Refund Approved",
+            $"Your refund request for Order #{refund.OrderId.ToString()[..8]} has been approved for ${approvedAmount:F2}.",
+            refund.ConversationId,
+            priority: NotificationPriority.High
+        );
+
+        // Add system message to conversation if linked
+        if (refund.ConversationId.HasValue)
+        {
+            await AddSystemMessageToConversation(
+                refund.ConversationId.Value,
+                $"✅ **Refund Approved**\n\nApproved amount: ${approvedAmount:F2}"
+                    + (string.IsNullOrWhiteSpace(request.AdminNotes) ? "" : $"\n\nAdmin notes: {request.AdminNotes}")
+            );
+        }
 
         // Reload with navigation properties
         await Context.Entry(refund).Reference(r => r.ProcessedByUser).LoadAsync();
@@ -355,6 +454,7 @@ public class RefundController(DatabaseContext context, IConfiguration configurat
         var refund = await Context
             .Refunds.Include(r => r.RequestedByUser)
             .Include(r => r.ProcessedByUser)
+            .Include(r => r.Order)
             .FirstOrDefaultAsync(r => r.Id == id);
 
         if (refund == null)
@@ -368,7 +468,32 @@ public class RefundController(DatabaseContext context, IConfiguration configurat
         refund.ProcessedByUserId = userId;
         refund.ProcessedAt = DateTime.UtcNow;
 
+        // Restore order status based on payment status (default to Paid)
+        // This could be improved to track the previous status
+        refund.Order.Status = OrderStatus.Paid;
+
         await Context.SaveChangesAsync();
+
+        // Send notification to customer
+        await _notificationService.CreateNotificationAsync(
+            refund.RequestedByUserId,
+            NotificationType.RefundRejected,
+            "Refund Rejected",
+            $"Your refund request for Order #{refund.OrderId.ToString()[..8]} has been rejected."
+                + (string.IsNullOrWhiteSpace(request.AdminNotes) ? "" : $" Reason: {request.AdminNotes}"),
+            refund.ConversationId,
+            priority: NotificationPriority.High
+        );
+
+        // Add system message to conversation if linked
+        if (refund.ConversationId.HasValue)
+        {
+            await AddSystemMessageToConversation(
+                refund.ConversationId.Value,
+                $"❌ **Refund Rejected**"
+                    + (string.IsNullOrWhiteSpace(request.AdminNotes) ? "" : $"\n\nReason: {request.AdminNotes}")
+            );
+        }
 
         // Reload with navigation properties
         await Context.Entry(refund).Reference(r => r.ProcessedByUser).LoadAsync();
@@ -443,10 +568,37 @@ public class RefundController(DatabaseContext context, IConfiguration configurat
                 // Update payment status
                 refund.Payment.Status = PaymentStatus.Refunded;
 
-                // Update order status
-                refund.Order.Status = OrderStatus.Cancelled;
+                // Update order status to Refunded
+                refund.Order.Status = OrderStatus.Refunded;
 
                 await Context.SaveChangesAsync();
+
+                // Send notification to customer
+                await _notificationService.CreateNotificationAsync(
+                    refund.RequestedByUserId,
+                    NotificationType.RefundCompleted,
+                    "Refund Completed",
+                    $"Your refund of ${refund.ApprovedAmount:F2} for Order #{refund.OrderId.ToString()[..8]} has been processed. The funds will appear in your account within 5-10 business days.",
+                    refund.ConversationId,
+                    priority: NotificationPriority.High
+                );
+
+                // Add system message to conversation if linked
+                if (refund.ConversationId.HasValue)
+                {
+                    await AddSystemMessageToConversation(
+                        refund.ConversationId.Value,
+                        $"💰 **Refund Processed**\n\nAmount: ${refund.ApprovedAmount:F2}\nThe funds will appear in your account within 5-10 business days."
+                    );
+
+                    // Close the conversation
+                    var conversation = await Context.Conversations.FindAsync(refund.ConversationId.Value);
+                    if (conversation != null)
+                    {
+                        conversation.Status = ConversationStatus.Resolved;
+                        await Context.SaveChangesAsync();
+                    }
+                }
             }
             else
             {
@@ -496,6 +648,53 @@ public class RefundController(DatabaseContext context, IConfiguration configurat
         return Ok(MapToRefundResponse(refund));
     }
 
+    /// <summary>
+    /// Add a system message to a conversation (for refund status updates)
+    /// </summary>
+    private async Task AddSystemMessageToConversation(Guid conversationId, string content)
+    {
+        var conversation = await Context
+            .Conversations.Include(c => c.Participants)
+            .FirstOrDefaultAsync(c => c.Id == conversationId);
+
+        if (conversation == null)
+            return;
+
+        // Find the first admin participant, or the customer if no admin
+        var participant = conversation.Participants.FirstOrDefault();
+        if (participant == null)
+            return;
+
+        var message = new ConversationMessage
+        {
+            ConversationId = conversationId,
+            ParticipantId = participant.Id,
+            Content = content,
+            IsRead = false,
+        };
+
+        Context.ConversationMessages.Add(message);
+        conversation.LastMessageAt = DateTime.UtcNow;
+        conversation.UnreadCount += 1;
+
+        await Context.SaveChangesAsync();
+
+        // Notify via SignalR
+        await _hubContext
+            .Clients.Group($"conversation:{conversationId}")
+            .SendAsync(
+                "ReceiveMessage",
+                new
+                {
+                    Id = message.Id,
+                    ConversationId = conversationId,
+                    Content = content,
+                    SenderName = "System",
+                    CreatedAt = DateTime.UtcNow,
+                }
+            );
+    }
+
     private static RefundResponse MapToRefundResponse(Refund refund) =>
         new(
             refund.Id,
@@ -518,4 +717,22 @@ public class RefundController(DatabaseContext context, IConfiguration configurat
             refund.CreatedAt,
             refund.UpdatedAt
         );
+
+    private static string GetReasonLabel(RefundReason reason) =>
+        reason switch
+        {
+            RefundReason.ChangedMind => "Changed My Mind",
+            RefundReason.OrderedByMistake => "Ordered by Mistake",
+            RefundReason.FoundBetterPrice => "Found Better Price",
+            RefundReason.TooLongToProcess => "Taking Too Long to Process",
+            RefundReason.DamagedInShipping => "Damaged in Shipping",
+            RefundReason.WrongItemReceived => "Wrong Item Received",
+            RefundReason.ItemNotAsDescribed => "Item Not as Described",
+            RefundReason.DefectiveProduct => "Defective Product",
+            RefundReason.WrongSize => "Wrong Size",
+            RefundReason.QualityNotAsExpected => "Quality Not as Expected",
+            RefundReason.NeverReceived => "Never Received",
+            RefundReason.Other => "Other",
+            _ => "Unknown Reason",
+        };
 }

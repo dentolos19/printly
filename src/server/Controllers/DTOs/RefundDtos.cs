@@ -17,13 +17,23 @@ public enum RefundStatusDto
 
 public enum RefundReasonDto
 {
-    DefectiveProduct = 0,
-    WrongSize = 1,
-    WrongItem = 2,
-    NotAsDescribed = 3,
+    // Pre-shipping reasons (available for Paid, Processing)
+    ChangedMind = 0,
+    OrderedByMistake = 1,
+    FoundBetterPrice = 2,
+    TooLongToProcess = 3,
+
+    // Post-shipping reasons (available for Shipped, Delivered)
     DamagedInShipping = 4,
-    DidNotMeetExpectations = 5,
-    Other = 6,
+    WrongItemReceived = 5,
+    ItemNotAsDescribed = 6,
+    DefectiveProduct = 7,
+    WrongSize = 8,
+    QualityNotAsExpected = 9,
+    NeverReceived = 10,
+
+    // Always available
+    Other = 11,
 }
 
 // Request DTOs

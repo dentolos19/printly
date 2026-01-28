@@ -11,6 +11,11 @@ export enum NotificationType {
   MentionedInMessage = 6,
   AdminJoinedConversation = 7,
   BroadcastSent = 8,
+  // Refund notifications
+  RefundRequested = 9,
+  RefundApproved = 10,
+  RefundRejected = 11,
+  RefundCompleted = 12,
 }
 
 // Notification priority matching backend enum
@@ -32,6 +37,10 @@ export const NotificationTypeLabels: Record<NotificationType, string> = {
   [NotificationType.MentionedInMessage]: "You Were Mentioned",
   [NotificationType.AdminJoinedConversation]: "Admin Joined",
   [NotificationType.BroadcastSent]: "Broadcast",
+  [NotificationType.RefundRequested]: "Refund Requested",
+  [NotificationType.RefundApproved]: "Refund Approved",
+  [NotificationType.RefundRejected]: "Refund Rejected",
+  [NotificationType.RefundCompleted]: "Refund Completed",
 };
 
 export const NotificationPriorityLabels: Record<NotificationPriority, string> = {
@@ -52,6 +61,10 @@ export const NotificationTypeIcons: Record<NotificationType, string> = {
   [NotificationType.MentionedInMessage]: "📣",
   [NotificationType.AdminJoinedConversation]: "👋",
   [NotificationType.BroadcastSent]: "📢",
+  [NotificationType.RefundRequested]: "🔄",
+  [NotificationType.RefundApproved]: "✅",
+  [NotificationType.RefundRejected]: "❌",
+  [NotificationType.RefundCompleted]: "💰",
 };
 
 // Helper to get icon from type (handles both number and string types)

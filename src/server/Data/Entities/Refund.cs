@@ -16,12 +16,22 @@ public enum RefundStatus
 
 public enum RefundReason
 {
+    // Pre-shipping reasons (available for Paid, Processing)
+    ChangedMind,
+    OrderedByMistake,
+    FoundBetterPrice,
+    TooLongToProcess,
+
+    // Post-shipping reasons (available for Shipped, Delivered)
+    DamagedInShipping,
+    WrongItemReceived,
+    ItemNotAsDescribed,
     DefectiveProduct,
     WrongSize,
-    WrongItem,
-    NotAsDescribed,
-    DamagedInShipping,
-    DidNotMeetExpectations,
+    QualityNotAsExpected,
+    NeverReceived,
+
+    // Always available
     Other,
 }
 

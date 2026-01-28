@@ -44,11 +44,13 @@ import {
   CreditCard,
   Eye,
   Loader2,
+  MessageSquare,
   MoreHorizontal,
   RefreshCcw,
   X,
   XCircle,
 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -186,6 +188,24 @@ function RefundDetailsDialog({
               )}
             </div>
           </div>
+
+          {/* Conversation Link */}
+          {refund.conversationId && (
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-blue-700">
+                  <MessageSquare className="h-4 w-4" />
+                  <span className="text-sm font-medium">Support Chat Linked</span>
+                </div>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/admin/support?conversation=${refund.conversationId}`}>
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Open Chat
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Customer Notes */}
           {refund.customerNotes && (

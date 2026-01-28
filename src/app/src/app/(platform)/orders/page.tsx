@@ -29,6 +29,7 @@ import {
 } from "@/lib/server/order";
 import { ProductSizeLabels } from "@/lib/server/product";
 import {
+  getAvailableRefundReasons,
   RefundReason,
   RefundReasonLabels,
   RefundResponse,
@@ -45,6 +46,7 @@ import {
   MessageSquare,
   Package,
   RefreshCcw,
+  RotateCcw,
   ShoppingBag,
   Truck,
   XCircle,
@@ -60,6 +62,9 @@ const StatusIcons: Record<OrderStatus, React.ElementType<{ className?: string }>
   [OrderStatus.Shipped]: Truck,
   [OrderStatus.Delivered]: CheckCircle2,
   [OrderStatus.Cancelled]: XCircle,
+  [OrderStatus.RefundRequested]: RotateCcw,
+  [OrderStatus.RefundApproved]: RefreshCcw,
+  [OrderStatus.Refunded]: CheckCircle2,
 };
 
 function OrdersSkeleton() {
@@ -445,9 +450,9 @@ function RefundRequestDialog({
                 <SelectValue placeholder="Select a reason" />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(RefundReasonLabels).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
+                {getAvailableRefundReasons(order.status).map((reasonValue) => (
+                  <SelectItem key={reasonValue} value={reasonValue.toString()}>
+                    {RefundReasonLabels[reasonValue]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -466,10 +471,14 @@ function RefundRequestDialog({
           </div>
 
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700">
-            <p className="font-medium">What happens next?</p>
+            <div className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              <p className="font-medium">What happens next?</p>
+            </div>
             <ul className="mt-1 list-inside list-disc text-xs">
+              <li>A support chat will be created for this refund request</li>
+              <li>You can discuss the refund with our support team via chat</li>
               <li>Our team will review your request within 1-2 business days</li>
-              <li>You may be contacted for additional information</li>
               <li>Once approved, the refund will be processed to your original payment method</li>
             </ul>
           </div>
@@ -632,8 +641,22 @@ export default function OrdersPage() {
 
       setSelectedOrderRefund(refund);
       setRefundOpen(false);
+
+      // Re-fetch orders to update the status
+      fetchOrders();
+
       toast.success("Refund request submitted", {
-        description: "Our team will review your request and get back to you soon.",
+        description: refund.conversationId
+          ? "A support chat has been created for your refund request."
+          : "Our team will review your request and get back to you soon.",
+        action: refund.conversationId
+          ? {
+              label: "Open Chat",
+              onClick: () => {
+                window.location.href = `/messages?conversation=${refund.conversationId}`;
+              },
+            }
+          : undefined,
       });
     } catch (error) {
       console.error("Failed to submit refund request:", error);
