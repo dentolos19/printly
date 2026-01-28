@@ -1153,7 +1153,6 @@ export default function AdminChatPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="0">Pending</SelectItem>
                         <SelectItem value="1">Active</SelectItem>
                         <SelectItem value="2">Resolved</SelectItem>
                         <SelectItem value="3">Closed</SelectItem>

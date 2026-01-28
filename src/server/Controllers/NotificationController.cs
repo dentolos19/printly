@@ -321,4 +321,28 @@ public class NotificationController(DatabaseContext context) : BaseController(co
 
         return Ok(new { count = notifications.Count });
     }
+
+    /// <summary>
+    /// Test endpoint to send a notification to yourself.
+    /// </summary>
+    [HttpPost("test")]
+    public async Task<IActionResult> TestNotification([FromServices] Services.INotificationService notificationService)
+    {
+        var userId = GetUserId();
+        if (userId == null)
+            return Unauthorized();
+
+        await notificationService.CreateNotificationAsync(
+            userId,
+            NotificationType.NewMessage,
+            "Test Notification",
+            "This is a test notification to verify the real-time notification system works correctly.",
+            null,
+            null,
+            NotificationPriority.Normal,
+            null
+        );
+
+        return Ok(new { message = "Test notification sent", userId });
+    }
 }

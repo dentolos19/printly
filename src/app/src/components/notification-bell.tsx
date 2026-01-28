@@ -7,9 +7,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { API_URL } from "@/environment";
 import { useAuth } from "@/lib/providers/auth";
 import { getNotificationIcon, type RealTimeNotification, type NotificationResponse } from "@/lib/server/notification";
+import * as signalR from "@microsoft/signalr";
 import { Archive, Bell, CheckCheck, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { ComponentProps, useCallback, useEffect, useState } from "react";
+import { ComponentProps, useCallback, useEffect, useRef, useState } from "react";
 
 interface Notification {
   id: string;
@@ -180,6 +181,85 @@ export function NotificationBell(props: ComponentProps<typeof Button>) {
       }
     }
   }, [fetchNotifications, fetchUnreadCount]);
+
+  // Setup SignalR for real-time notifications
+  const connectionRef = useRef<signalR.HubConnection | null>(null);
+
+  useEffect(() => {
+    if (!isInitialized || !tokens?.accessToken) return;
+
+    // Don't create duplicate connections
+    if (connectionRef.current) return;
+
+    console.log("[NotificationBell] Setting up SignalR connection for real-time notifications");
+
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl(`${API_URL}/hubs/conversation`, {
+        accessTokenFactory: () => tokens.accessToken,
+      })
+      .withAutomaticReconnect()
+      .configureLogging(signalR.LogLevel.Warning)
+      .build();
+
+    connection.on("ReceiveNotification", (notification: RealTimeNotification) => {
+      console.log("[NotificationBell] Received real-time notification:", notification);
+
+      const formattedNotification: Notification = {
+        id: notification.id,
+        type: notification.type,
+        title: notification.title,
+        message: notification.message,
+        conversationId: notification.conversationId,
+        isRead: false,
+        isArchived: false,
+        priority: notification.priority || "Normal",
+        actionUrl: notification.actionUrl,
+        createdAt: notification.createdAt,
+      };
+
+      // Add to list (at the beginning)
+      setNotifications((prev) => [formattedNotification, ...prev].slice(0, 10));
+      setUnreadCount((prev) => prev + 1);
+
+      // Play notification sound
+      try {
+        const audio = new Audio("/assets/notification.mp3");
+        audio.volume = 0.5;
+        audio.play().catch(() => {
+          // Silently fail if autoplay is blocked
+        });
+      } catch (error) {
+        console.error("Failed to play notification sound:", error);
+      }
+
+      // Show browser notification if document is hidden
+      if (document.hidden && typeof window !== "undefined" && "Notification" in window) {
+        if (Notification.permission === "granted") {
+          new window.Notification(notification.title, {
+            body: notification.message,
+            icon: "/logo.png",
+          });
+        }
+      }
+    });
+
+    connection
+      .start()
+      .then(() => {
+        console.log("[NotificationBell] SignalR connected for notifications");
+        connectionRef.current = connection;
+      })
+      .catch((err) => {
+        console.error("[NotificationBell] SignalR connection error:", err);
+      });
+
+    return () => {
+      if (connectionRef.current) {
+        connectionRef.current.stop();
+        connectionRef.current = null;
+      }
+    };
+  }, [isInitialized, tokens?.accessToken]);
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
