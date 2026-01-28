@@ -27,6 +27,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
     public DbSet<Conversation> Conversations { get; set; }
     public DbSet<ConversationParticipant> ConversationParticipants { get; set; }
     public DbSet<ConversationMessage> ConversationMessages { get; set; }
+    public DbSet<Refund> Refunds { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
@@ -252,6 +253,50 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<ConversationMessage>().HasIndex(cm => cm.CreatedAt);
+
+        // Refund relationships
+        modelBuilder
+            .Entity<Refund>()
+            .HasOne(r => r.Payment)
+            .WithMany()
+            .HasForeignKey(r => r.PaymentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder
+            .Entity<Refund>()
+            .HasOne(r => r.Order)
+            .WithMany()
+            .HasForeignKey(r => r.OrderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder
+            .Entity<Refund>()
+            .HasOne(r => r.RequestedByUser)
+            .WithMany()
+            .HasForeignKey(r => r.RequestedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder
+            .Entity<Refund>()
+            .HasOne(r => r.ProcessedByUser)
+            .WithMany()
+            .HasForeignKey(r => r.ProcessedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder
+            .Entity<Refund>()
+            .HasOne(r => r.Conversation)
+            .WithMany()
+            .HasForeignKey(r => r.ConversationId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Refund indexes
+        modelBuilder.Entity<Refund>().HasIndex(r => r.PaymentId);
+        modelBuilder.Entity<Refund>().HasIndex(r => r.OrderId);
+        modelBuilder.Entity<Refund>().HasIndex(r => r.RequestedByUserId);
+        modelBuilder.Entity<Refund>().HasIndex(r => r.Status);
+        modelBuilder.Entity<Refund>().HasIndex(r => r.RequestedAt);
+        modelBuilder.Entity<Refund>().HasIndex(r => r.StripeRefundId).IsUnique();
     }
 
     public override int SaveChanges()

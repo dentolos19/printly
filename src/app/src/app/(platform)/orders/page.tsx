@@ -12,9 +12,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { useServer } from "@/lib/providers/server";
 import {
   OrderResponse,
@@ -24,7 +28,27 @@ import {
   OrderSummaryResponse,
 } from "@/lib/server/order";
 import { ProductSizeLabels } from "@/lib/server/product";
-import { CheckCircle2, Clock, CreditCard, Eye, Loader2, Package, ShoppingBag, Truck, XCircle } from "lucide-react";
+import {
+  RefundReason,
+  RefundReasonLabels,
+  RefundResponse,
+  RefundStatus,
+  RefundStatusColors,
+  RefundStatusLabels,
+} from "@/lib/server/refund";
+import {
+  CheckCircle2,
+  Clock,
+  CreditCard,
+  Eye,
+  Loader2,
+  MessageSquare,
+  Package,
+  RefreshCcw,
+  ShoppingBag,
+  Truck,
+  XCircle,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -138,17 +162,34 @@ function OrderDetailsDialog({
   open,
   onOpenChange,
   isLoading,
+  refund,
+  onRequestRefund,
+  isLoadingRefund,
 }: {
   order: OrderResponse | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   isLoading?: boolean;
+  refund?: RefundResponse | null;
+  onRequestRefund?: () => void;
+  isLoadingRefund?: boolean;
 }) {
   const StatusIcon = order ? StatusIcons[order.status] : Package;
 
+  // Check if order is eligible for refund
+  const canRequestRefund =
+    order && [OrderStatus.Paid, OrderStatus.Shipped, OrderStatus.Delivered].includes(order.status) && !refund;
+
+  // Check if there's an active refund request
+  const hasActiveRefund =
+    refund &&
+    [RefundStatus.Requested, RefundStatus.UnderReview, RefundStatus.Approved, RefundStatus.Processing].includes(
+      refund.status,
+    );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-8">
             <Loader2 className="text-primary h-8 w-8 animate-spin" />
@@ -187,6 +228,35 @@ function OrderDetailsDialog({
             <div className="space-y-4">
               {/* Order Progress Tracker */}
               <OrderProgressTracker status={order.status} />
+
+              {/* Refund Status Section */}
+              {refund && (
+                <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <RefreshCcw className="h-4 w-4 text-yellow-600" />
+                      <span className="font-medium text-yellow-800">Refund Request</span>
+                    </div>
+                    <Badge className={RefundStatusColors[refund.status]}>{RefundStatusLabels[refund.status]}</Badge>
+                  </div>
+                  <div className="mt-2 text-sm text-yellow-700">
+                    <p>Amount: ${refund.requestedAmount.toFixed(2)}</p>
+                    <p>Reason: {RefundReasonLabels[refund.reason]}</p>
+                    {refund.approvedAmount && (
+                      <p className="font-medium">Approved Amount: ${refund.approvedAmount.toFixed(2)}</p>
+                    )}
+                    {refund.adminNotes && <p className="mt-1 italic">Admin: {refund.adminNotes}</p>}
+                  </div>
+                  {hasActiveRefund && refund.conversationId && (
+                    <Button variant="outline" size="sm" className="mt-2" asChild>
+                      <Link href={`/messages?conversation=${refund.conversationId}`}>
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        Continue in Chat
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              )}
 
               <div className="space-y-3">
                 <h4 className="font-medium">Order Items</h4>
@@ -230,8 +300,19 @@ function OrderDetailsDialog({
               </div>
             </div>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full">
+            <DialogFooter className="flex-col gap-2 sm:flex-row">
+              {canRequestRefund && (
+                <Button
+                  variant="outline"
+                  onClick={onRequestRefund}
+                  disabled={isLoadingRefund}
+                  className="w-full sm:w-auto"
+                >
+                  <RefreshCcw className="mr-2 h-4 w-4" />
+                  {isLoadingRefund ? "Loading..." : "Request Refund"}
+                </Button>
+              )}
+              <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
                 Close
               </Button>
             </DialogFooter>
@@ -279,6 +360,134 @@ function CancelConfirmDialog({
   );
 }
 
+function RefundRequestDialog({
+  order,
+  open,
+  onOpenChange,
+  onConfirm,
+  isLoading,
+}: {
+  order: OrderResponse | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: (data: { requestedAmount: number; reason: RefundReason; customerNotes?: string }) => void;
+  isLoading: boolean;
+}) {
+  const [requestedAmount, setRequestedAmount] = useState<string>("");
+  const [reason, setReason] = useState<RefundReason | "">("");
+  const [customerNotes, setCustomerNotes] = useState<string>("");
+
+  // Reset form when dialog opens
+  useEffect(() => {
+    if (open && order) {
+      setRequestedAmount(order.totalAmount.toFixed(2));
+      setReason("");
+      setCustomerNotes("");
+    }
+  }, [open, order]);
+
+  if (!order) return null;
+
+  const handleSubmit = () => {
+    if (!reason) {
+      toast.error("Please select a reason for your refund request");
+      return;
+    }
+
+    const amount = parseFloat(requestedAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error("Please enter a valid refund amount");
+      return;
+    }
+
+    if (amount > order.totalAmount) {
+      toast.error("Refund amount cannot exceed the order total");
+      return;
+    }
+
+    onConfirm({
+      requestedAmount: amount,
+      reason: reason as RefundReason,
+      customerNotes: customerNotes.trim() || undefined,
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Request Refund</DialogTitle>
+          <DialogDescription>
+            Request a refund for order #{order.id.slice(0, 8)}. Our team will review your request.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="refund-amount">Refund Amount ($)</Label>
+            <Input
+              id="refund-amount"
+              type="number"
+              step="0.01"
+              min="0.01"
+              max={order.totalAmount}
+              value={requestedAmount}
+              onChange={(e) => setRequestedAmount(e.target.value)}
+              placeholder={`Max: $${order.totalAmount.toFixed(2)}`}
+            />
+            <p className="text-muted-foreground text-xs">Order total: ${order.totalAmount.toFixed(2)}</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="refund-reason">Reason for Refund *</Label>
+            <Select value={reason.toString()} onValueChange={(v) => setReason(parseInt(v) as RefundReason)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a reason" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(RefundReasonLabels).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="customer-notes">Additional Details (Optional)</Label>
+            <Textarea
+              id="customer-notes"
+              value={customerNotes}
+              onChange={(e) => setCustomerNotes(e.target.value)}
+              placeholder="Please provide any additional details about your refund request..."
+              rows={3}
+            />
+          </div>
+
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700">
+            <p className="font-medium">What happens next?</p>
+            <ul className="mt-1 list-inside list-disc text-xs">
+              <li>Our team will review your request within 1-2 business days</li>
+              <li>You may be contacted for additional information</li>
+              <li>Once approved, the refund will be processed to your original payment method</li>
+            </ul>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} disabled={isLoading || !reason}>
+            {isLoading ? "Submitting..." : "Submit Request"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function EmptyOrders() {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -308,6 +517,12 @@ export default function OrdersPage() {
   const [isPaying, setIsPaying] = useState<string | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+
+  // Refund state
+  const [refundOpen, setRefundOpen] = useState(false);
+  const [isRequestingRefund, setIsRequestingRefund] = useState(false);
+  const [selectedOrderRefund, setSelectedOrderRefund] = useState<RefundResponse | null>(null);
+  const [isLoadingRefund, setIsLoadingRefund] = useState(false);
 
   const fetchOrders = async () => {
     try {
@@ -359,11 +574,26 @@ export default function OrdersPage() {
   const handleViewDetails = async (order: OrderSummaryResponse) => {
     setSelectedOrder(order);
     setIsLoadingDetails(true);
+    setSelectedOrderRefund(null);
     setDetailsOpen(true);
 
     try {
       const details = await server.api.order.getMyOrder(order.id);
       setSelectedOrderDetails(details);
+
+      // Also try to fetch refund info if order is eligible
+      if ([OrderStatus.Paid, OrderStatus.Shipped, OrderStatus.Delivered].includes(order.status)) {
+        setIsLoadingRefund(true);
+        try {
+          const refund = await server.api.refund.getRefundByOrder(order.id);
+          setSelectedOrderRefund(refund);
+        } catch {
+          // No refund exists for this order, which is fine
+          setSelectedOrderRefund(null);
+        } finally {
+          setIsLoadingRefund(false);
+        }
+      }
     } catch (error) {
       console.error("Failed to fetch order details:", error);
       toast.error("Failed to load order details", {
@@ -378,6 +608,41 @@ export default function OrdersPage() {
   const handleCancelClick = (order: OrderSummaryResponse) => {
     setSelectedOrder(order);
     setCancelOpen(true);
+  };
+
+  const handleRequestRefund = () => {
+    setRefundOpen(true);
+  };
+
+  const handleRefundSubmit = async (data: {
+    requestedAmount: number;
+    reason: RefundReason;
+    customerNotes?: string;
+  }) => {
+    if (!selectedOrderDetails) return;
+
+    setIsRequestingRefund(true);
+    try {
+      const refund = await server.api.refund.createRefundRequest({
+        orderId: selectedOrderDetails.id,
+        requestedAmount: data.requestedAmount,
+        reason: data.reason,
+        customerNotes: data.customerNotes,
+      });
+
+      setSelectedOrderRefund(refund);
+      setRefundOpen(false);
+      toast.success("Refund request submitted", {
+        description: "Our team will review your request and get back to you soon.",
+      });
+    } catch (error) {
+      console.error("Failed to submit refund request:", error);
+      toast.error("Failed to submit refund request", {
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
+    } finally {
+      setIsRequestingRefund(false);
+    }
   };
 
   const handlePayOrder = async (order: OrderSummaryResponse) => {
@@ -488,6 +753,9 @@ export default function OrdersPage() {
         open={detailsOpen}
         onOpenChange={setDetailsOpen}
         isLoading={isLoadingDetails}
+        refund={selectedOrderRefund}
+        onRequestRefund={handleRequestRefund}
+        isLoadingRefund={isLoadingRefund}
       />
 
       <CancelConfirmDialog
@@ -496,6 +764,14 @@ export default function OrdersPage() {
         onOpenChange={setCancelOpen}
         onConfirm={handleCancelConfirm}
         isLoading={isCancelling}
+      />
+
+      <RefundRequestDialog
+        order={selectedOrderDetails}
+        open={refundOpen}
+        onOpenChange={setRefundOpen}
+        onConfirm={handleRefundSubmit}
+        isLoading={isRequestingRefund}
       />
     </div>
   );

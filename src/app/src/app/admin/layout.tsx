@@ -38,6 +38,7 @@ import {
   MessageCircleIcon,
   MoreVerticalIcon,
   Package,
+  RefreshCcw,
   ShoppingCart,
   UserIcon,
 } from "lucide-react";
@@ -50,6 +51,7 @@ const navItems = [
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/inventory", label: "Inventory", icon: Box },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
+  { href: "/admin/refunds", label: "Refunds", icon: RefreshCcw },
   { href: "/admin/chat", label: "Chat", icon: MessageCircleIcon },
 ];
 

@@ -6,219 +6,11 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace PrintlyServer.Migrations
 {
     /// <inheritdoc />
-    public partial class AddPaymentTable : Migration
+    public partial class AddRefundsTable : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AlterColumn<DateTime>(
-                name: "UpdatedAt",
-                table: "Tickets",
-                type: "TEXT",
-                nullable: false,
-                oldClrType: typeof(DateTime),
-                oldType: "timestamp with time zone");
-
-            migrationBuilder.AlterColumn<int>(
-                name: "UnreadCount",
-                table: "Tickets",
-                type: "INTEGER",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "integer");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "Subject",
-                table: "Tickets",
-                type: "TEXT",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "text");
-
-            migrationBuilder.AlterColumn<int>(
-                name: "Status",
-                table: "Tickets",
-                type: "INTEGER",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "integer");
-
-            migrationBuilder.AlterColumn<int>(
-                name: "Priority",
-                table: "Tickets",
-                type: "INTEGER",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "integer");
-
-            migrationBuilder.AlterColumn<Guid>(
-                name: "OrderId",
-                table: "Tickets",
-                type: "TEXT",
-                nullable: true,
-                oldClrType: typeof(Guid),
-                oldType: "uuid",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<DateTime>(
-                name: "LastMessageAt",
-                table: "Tickets",
-                type: "TEXT",
-                nullable: false,
-                oldClrType: typeof(DateTime),
-                oldType: "timestamp with time zone");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "CustomerId",
-                table: "Tickets",
-                type: "TEXT",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "text");
-
-            migrationBuilder.AlterColumn<DateTime>(
-                name: "CreatedAt",
-                table: "Tickets",
-                type: "TEXT",
-                nullable: false,
-                oldClrType: typeof(DateTime),
-                oldType: "timestamp with time zone");
-
-            migrationBuilder.AlterColumn<Guid>(
-                name: "Id",
-                table: "Tickets",
-                type: "TEXT",
-                nullable: false,
-                oldClrType: typeof(Guid),
-                oldType: "uuid");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "VoiceMessageUrl",
-                table: "TicketMessages",
-                type: "TEXT",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "text",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<int>(
-                name: "VoiceMessageDuration",
-                table: "TicketMessages",
-                type: "INTEGER",
-                nullable: true,
-                oldClrType: typeof(int),
-                oldType: "integer",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<DateTime>(
-                name: "UpdatedAt",
-                table: "TicketMessages",
-                type: "TEXT",
-                nullable: false,
-                oldClrType: typeof(DateTime),
-                oldType: "timestamp with time zone");
-
-            migrationBuilder.AlterColumn<Guid>(
-                name: "TicketId",
-                table: "TicketMessages",
-                type: "TEXT",
-                nullable: false,
-                oldClrType: typeof(Guid),
-                oldType: "uuid");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "SenderId",
-                table: "TicketMessages",
-                type: "TEXT",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "text");
-
-            migrationBuilder.AlterColumn<Guid>(
-                name: "ReplyToMessageId",
-                table: "TicketMessages",
-                type: "TEXT",
-                nullable: true,
-                oldClrType: typeof(Guid),
-                oldType: "uuid",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<bool>(
-                name: "IsReadByCustomer",
-                table: "TicketMessages",
-                type: "INTEGER",
-                nullable: false,
-                oldClrType: typeof(bool),
-                oldType: "boolean");
-
-            migrationBuilder.AlterColumn<bool>(
-                name: "IsReadByAdmin",
-                table: "TicketMessages",
-                type: "INTEGER",
-                nullable: false,
-                oldClrType: typeof(bool),
-                oldType: "boolean");
-
-            migrationBuilder.AlterColumn<DateTime>(
-                name: "CreatedAt",
-                table: "TicketMessages",
-                type: "TEXT",
-                nullable: false,
-                oldClrType: typeof(DateTime),
-                oldType: "timestamp with time zone");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "Content",
-                table: "TicketMessages",
-                type: "TEXT",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "text");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "CallParticipants",
-                table: "TicketMessages",
-                type: "TEXT",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "text",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<bool>(
-                name: "CallMissed",
-                table: "TicketMessages",
-                type: "INTEGER",
-                nullable: true,
-                oldClrType: typeof(bool),
-                oldType: "boolean",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<string>(
-                name: "CallId",
-                table: "TicketMessages",
-                type: "TEXT",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "text",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<int>(
-                name: "CallDuration",
-                table: "TicketMessages",
-                type: "INTEGER",
-                nullable: true,
-                oldClrType: typeof(int),
-                oldType: "integer",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<Guid>(
-                name: "Id",
-                table: "TicketMessages",
-                type: "TEXT",
-                nullable: false,
-                oldClrType: typeof(Guid),
-                oldType: "uuid");
-
             migrationBuilder.AlterColumn<string>(
                 name: "UserId",
                 table: "RefreshTokens",
@@ -385,6 +177,18 @@ namespace PrintlyServer.Migrations
                 nullable: false,
                 oldClrType: typeof(Guid),
                 oldType: "uuid");
+
+            migrationBuilder.AddColumn<Guid>(
+                name: "ImageId",
+                table: "Products",
+                type: "TEXT",
+                nullable: true);
+
+            migrationBuilder.AddColumn<Guid>(
+                name: "ModelId",
+                table: "Products",
+                type: "TEXT",
+                nullable: true);
 
             migrationBuilder.AlterColumn<int>(
                 name: "Visibility",
@@ -732,15 +536,6 @@ namespace PrintlyServer.Migrations
                 oldClrType: typeof(string),
                 oldType: "text");
 
-            migrationBuilder.AlterColumn<Guid>(
-                name: "TicketId",
-                table: "Notifications",
-                type: "TEXT",
-                nullable: true,
-                oldClrType: typeof(Guid),
-                oldType: "uuid",
-                oldNullable: true);
-
             migrationBuilder.AlterColumn<DateTime>(
                 name: "ReadAt",
                 table: "Notifications",
@@ -816,6 +611,15 @@ namespace PrintlyServer.Migrations
                 oldClrType: typeof(DateTime),
                 oldType: "timestamp with time zone");
 
+            migrationBuilder.AlterColumn<Guid>(
+                name: "ConversationId",
+                table: "Notifications",
+                type: "TEXT",
+                nullable: true,
+                oldClrType: typeof(Guid),
+                oldType: "uuid",
+                oldNullable: true);
+
             migrationBuilder.AlterColumn<DateTime>(
                 name: "ArchivedAt",
                 table: "Notifications",
@@ -837,114 +641,6 @@ namespace PrintlyServer.Migrations
             migrationBuilder.AlterColumn<Guid>(
                 name: "Id",
                 table: "Notifications",
-                type: "TEXT",
-                nullable: false,
-                oldClrType: typeof(Guid),
-                oldType: "uuid");
-
-            migrationBuilder.AlterColumn<DateTime>(
-                name: "UpdatedAt",
-                table: "Messages",
-                type: "TEXT",
-                nullable: false,
-                oldClrType: typeof(DateTime),
-                oldType: "timestamp with time zone");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "SenderId",
-                table: "Messages",
-                type: "TEXT",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "text");
-
-            migrationBuilder.AlterColumn<Guid>(
-                name: "ReplyToMessageId",
-                table: "Messages",
-                type: "TEXT",
-                nullable: true,
-                oldClrType: typeof(Guid),
-                oldType: "uuid",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<string>(
-                name: "ReceiverId",
-                table: "Messages",
-                type: "TEXT",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "text");
-
-            migrationBuilder.AlterColumn<DateTime>(
-                name: "ReadAt",
-                table: "Messages",
-                type: "TEXT",
-                nullable: true,
-                oldClrType: typeof(DateTime),
-                oldType: "timestamp with time zone",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<bool>(
-                name: "IsRead",
-                table: "Messages",
-                type: "INTEGER",
-                nullable: false,
-                oldClrType: typeof(bool),
-                oldType: "boolean");
-
-            migrationBuilder.AlterColumn<bool>(
-                name: "IsEdited",
-                table: "Messages",
-                type: "INTEGER",
-                nullable: false,
-                oldClrType: typeof(bool),
-                oldType: "boolean");
-
-            migrationBuilder.AlterColumn<bool>(
-                name: "IsDeleted",
-                table: "Messages",
-                type: "INTEGER",
-                nullable: false,
-                oldClrType: typeof(bool),
-                oldType: "boolean");
-
-            migrationBuilder.AlterColumn<DateTime>(
-                name: "EditedAt",
-                table: "Messages",
-                type: "TEXT",
-                nullable: true,
-                oldClrType: typeof(DateTime),
-                oldType: "timestamp with time zone",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<DateTime>(
-                name: "DeletedAt",
-                table: "Messages",
-                type: "TEXT",
-                nullable: true,
-                oldClrType: typeof(DateTime),
-                oldType: "timestamp with time zone",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<DateTime>(
-                name: "CreatedAt",
-                table: "Messages",
-                type: "TEXT",
-                nullable: false,
-                oldClrType: typeof(DateTime),
-                oldType: "timestamp with time zone");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "Content",
-                table: "Messages",
-                type: "TEXT",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "text");
-
-            migrationBuilder.AlterColumn<Guid>(
-                name: "Id",
-                table: "Messages",
                 type: "TEXT",
                 nullable: false,
                 oldClrType: typeof(Guid),
@@ -1100,6 +796,325 @@ namespace PrintlyServer.Migrations
             migrationBuilder.AlterColumn<Guid>(
                 name: "Id",
                 table: "Designs",
+                type: "TEXT",
+                nullable: false,
+                oldClrType: typeof(Guid),
+                oldType: "uuid");
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "UpdatedAt",
+                table: "Conversations",
+                type: "TEXT",
+                nullable: false,
+                oldClrType: typeof(DateTime),
+                oldType: "timestamp with time zone");
+
+            migrationBuilder.AlterColumn<int>(
+                name: "UnreadCount",
+                table: "Conversations",
+                type: "INTEGER",
+                nullable: false,
+                oldClrType: typeof(int),
+                oldType: "integer");
+
+            migrationBuilder.AlterColumn<bool>(
+                name: "SupportMode",
+                table: "Conversations",
+                type: "INTEGER",
+                nullable: false,
+                oldClrType: typeof(bool),
+                oldType: "boolean");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Subject",
+                table: "Conversations",
+                type: "TEXT",
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "text",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<int>(
+                name: "Status",
+                table: "Conversations",
+                type: "INTEGER",
+                nullable: false,
+                oldClrType: typeof(int),
+                oldType: "integer");
+
+            migrationBuilder.AlterColumn<int>(
+                name: "Priority",
+                table: "Conversations",
+                type: "INTEGER",
+                nullable: false,
+                oldClrType: typeof(int),
+                oldType: "integer");
+
+            migrationBuilder.AlterColumn<Guid>(
+                name: "OrderId",
+                table: "Conversations",
+                type: "TEXT",
+                nullable: true,
+                oldClrType: typeof(Guid),
+                oldType: "uuid",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "LastMessageAt",
+                table: "Conversations",
+                type: "TEXT",
+                nullable: true,
+                oldClrType: typeof(DateTime),
+                oldType: "timestamp with time zone",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "CustomerId",
+                table: "Conversations",
+                type: "TEXT",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "text");
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "CreatedAt",
+                table: "Conversations",
+                type: "TEXT",
+                nullable: false,
+                oldClrType: typeof(DateTime),
+                oldType: "timestamp with time zone");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "AssignedToAdminId",
+                table: "Conversations",
+                type: "TEXT",
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "text",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<Guid>(
+                name: "Id",
+                table: "Conversations",
+                type: "TEXT",
+                nullable: false,
+                oldClrType: typeof(Guid),
+                oldType: "uuid");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "UserId",
+                table: "ConversationParticipants",
+                type: "TEXT",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "text");
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "UpdatedAt",
+                table: "ConversationParticipants",
+                type: "TEXT",
+                nullable: false,
+                oldClrType: typeof(DateTime),
+                oldType: "timestamp with time zone");
+
+            migrationBuilder.AlterColumn<int>(
+                name: "Role",
+                table: "ConversationParticipants",
+                type: "INTEGER",
+                nullable: false,
+                oldClrType: typeof(int),
+                oldType: "integer");
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "CreatedAt",
+                table: "ConversationParticipants",
+                type: "TEXT",
+                nullable: false,
+                oldClrType: typeof(DateTime),
+                oldType: "timestamp with time zone");
+
+            migrationBuilder.AlterColumn<Guid>(
+                name: "ConversationId",
+                table: "ConversationParticipants",
+                type: "TEXT",
+                nullable: false,
+                oldClrType: typeof(Guid),
+                oldType: "uuid");
+
+            migrationBuilder.AlterColumn<Guid>(
+                name: "Id",
+                table: "ConversationParticipants",
+                type: "TEXT",
+                nullable: false,
+                oldClrType: typeof(Guid),
+                oldType: "uuid");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "VoiceMessageUrl",
+                table: "ConversationMessages",
+                type: "TEXT",
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "text",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<int>(
+                name: "VoiceMessageDuration",
+                table: "ConversationMessages",
+                type: "INTEGER",
+                nullable: true,
+                oldClrType: typeof(int),
+                oldType: "integer",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "UpdatedAt",
+                table: "ConversationMessages",
+                type: "TEXT",
+                nullable: false,
+                oldClrType: typeof(DateTime),
+                oldType: "timestamp with time zone");
+
+            migrationBuilder.AlterColumn<Guid>(
+                name: "ReplyToMessageId",
+                table: "ConversationMessages",
+                type: "TEXT",
+                nullable: true,
+                oldClrType: typeof(Guid),
+                oldType: "uuid",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "ReadAt",
+                table: "ConversationMessages",
+                type: "TEXT",
+                nullable: true,
+                oldClrType: typeof(DateTime),
+                oldType: "timestamp with time zone",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<Guid>(
+                name: "ParticipantId",
+                table: "ConversationMessages",
+                type: "TEXT",
+                nullable: false,
+                oldClrType: typeof(Guid),
+                oldType: "uuid");
+
+            migrationBuilder.AlterColumn<bool>(
+                name: "IsRead",
+                table: "ConversationMessages",
+                type: "INTEGER",
+                nullable: false,
+                oldClrType: typeof(bool),
+                oldType: "boolean");
+
+            migrationBuilder.AlterColumn<bool>(
+                name: "IsEdited",
+                table: "ConversationMessages",
+                type: "INTEGER",
+                nullable: false,
+                oldClrType: typeof(bool),
+                oldType: "boolean");
+
+            migrationBuilder.AlterColumn<bool>(
+                name: "IsDeleted",
+                table: "ConversationMessages",
+                type: "INTEGER",
+                nullable: false,
+                oldClrType: typeof(bool),
+                oldType: "boolean");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "FileUrl",
+                table: "ConversationMessages",
+                type: "TEXT",
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "text",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "FileType",
+                table: "ConversationMessages",
+                type: "TEXT",
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "text",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<long>(
+                name: "FileSize",
+                table: "ConversationMessages",
+                type: "INTEGER",
+                nullable: true,
+                oldClrType: typeof(long),
+                oldType: "bigint",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "FileName",
+                table: "ConversationMessages",
+                type: "TEXT",
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "text",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "EditedAt",
+                table: "ConversationMessages",
+                type: "TEXT",
+                nullable: true,
+                oldClrType: typeof(DateTime),
+                oldType: "timestamp with time zone",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "DeletedAt",
+                table: "ConversationMessages",
+                type: "TEXT",
+                nullable: true,
+                oldClrType: typeof(DateTime),
+                oldType: "timestamp with time zone",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "CreatedAt",
+                table: "ConversationMessages",
+                type: "TEXT",
+                nullable: false,
+                oldClrType: typeof(DateTime),
+                oldType: "timestamp with time zone");
+
+            migrationBuilder.AlterColumn<Guid>(
+                name: "ConversationId",
+                table: "ConversationMessages",
+                type: "TEXT",
+                nullable: false,
+                oldClrType: typeof(Guid),
+                oldType: "uuid");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Content",
+                table: "ConversationMessages",
+                type: "TEXT",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "text");
+
+            migrationBuilder.AlterColumn<Guid>(
+                name: "AssetId",
+                table: "ConversationMessages",
+                type: "TEXT",
+                nullable: true,
+                oldClrType: typeof(Guid),
+                oldType: "uuid",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<Guid>(
+                name: "Id",
+                table: "ConversationMessages",
                 type: "TEXT",
                 nullable: false,
                 oldClrType: typeof(Guid),
@@ -1389,6 +1404,14 @@ namespace PrintlyServer.Migrations
                 oldClrType: typeof(string),
                 oldType: "text",
                 oldNullable: true);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Role",
+                table: "AspNetUsers",
+                type: "TEXT",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "text");
 
             migrationBuilder.AlterColumn<bool>(
                 name: "PhoneNumberConfirmed",
@@ -1683,6 +1706,73 @@ namespace PrintlyServer.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Refunds",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    PaymentId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    OrderId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    RequestedByUserId = table.Column<string>(type: "TEXT", nullable: false),
+                    ProcessedByUserId = table.Column<string>(type: "TEXT", nullable: true),
+                    RequestedAmount = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
+                    ApprovedAmount = table.Column<decimal>(type: "decimal(10,2)", nullable: true),
+                    Reason = table.Column<int>(type: "INTEGER", nullable: false),
+                    CustomerNotes = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
+                    AdminNotes = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
+                    Status = table.Column<int>(type: "INTEGER", nullable: false),
+                    RequestedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    ProcessedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    StripeRefundId = table.Column<string>(type: "TEXT", maxLength: 255, nullable: true),
+                    ConversationId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Refunds", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Refunds_AspNetUsers_ProcessedByUserId",
+                        column: x => x.ProcessedByUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Refunds_AspNetUsers_RequestedByUserId",
+                        column: x => x.RequestedByUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Refunds_Conversations_ConversationId",
+                        column: x => x.ConversationId,
+                        principalTable: "Conversations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_Refunds_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Refunds_Payments_PaymentId",
+                        column: x => x.PaymentId,
+                        principalTable: "Payments",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_ImageId",
+                table: "Products",
+                column: "ImageId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_ModelId",
+                table: "Products",
+                column: "ModelId");
+
             migrationBuilder.CreateIndex(
                 name: "IX_Payments_OrderId",
                 table: "Payments",
@@ -1699,221 +1789,95 @@ namespace PrintlyServer.Migrations
                 table: "Payments",
                 column: "StripeCheckoutSessionId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Refunds_ConversationId",
+                table: "Refunds",
+                column: "ConversationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Refunds_OrderId",
+                table: "Refunds",
+                column: "OrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Refunds_PaymentId",
+                table: "Refunds",
+                column: "PaymentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Refunds_ProcessedByUserId",
+                table: "Refunds",
+                column: "ProcessedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Refunds_RequestedAt",
+                table: "Refunds",
+                column: "RequestedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Refunds_RequestedByUserId",
+                table: "Refunds",
+                column: "RequestedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Refunds_Status",
+                table: "Refunds",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Refunds_StripeRefundId",
+                table: "Refunds",
+                column: "StripeRefundId",
+                unique: true);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_Products_Assets_ImageId",
+                table: "Products",
+                column: "ImageId",
+                principalTable: "Assets",
+                principalColumn: "Id");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_Products_Assets_ModelId",
+                table: "Products",
+                column: "ModelId",
+                principalTable: "Assets",
+                principalColumn: "Id");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropForeignKey(
+                name: "FK_Products_Assets_ImageId",
+                table: "Products");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_Products_Assets_ModelId",
+                table: "Products");
+
+            migrationBuilder.DropTable(
+                name: "Refunds");
+
             migrationBuilder.DropTable(
                 name: "Payments");
 
-            migrationBuilder.AlterColumn<DateTime>(
-                name: "UpdatedAt",
-                table: "Tickets",
-                type: "timestamp with time zone",
-                nullable: false,
-                oldClrType: typeof(DateTime),
-                oldType: "TEXT");
+            migrationBuilder.DropIndex(
+                name: "IX_Products_ImageId",
+                table: "Products");
 
-            migrationBuilder.AlterColumn<int>(
-                name: "UnreadCount",
-                table: "Tickets",
-                type: "integer",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "INTEGER");
+            migrationBuilder.DropIndex(
+                name: "IX_Products_ModelId",
+                table: "Products");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "Subject",
-                table: "Tickets",
-                type: "text",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "TEXT");
+            migrationBuilder.DropColumn(
+                name: "ImageId",
+                table: "Products");
 
-            migrationBuilder.AlterColumn<int>(
-                name: "Status",
-                table: "Tickets",
-                type: "integer",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "INTEGER");
-
-            migrationBuilder.AlterColumn<int>(
-                name: "Priority",
-                table: "Tickets",
-                type: "integer",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "INTEGER");
-
-            migrationBuilder.AlterColumn<Guid>(
-                name: "OrderId",
-                table: "Tickets",
-                type: "uuid",
-                nullable: true,
-                oldClrType: typeof(Guid),
-                oldType: "TEXT",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<DateTime>(
-                name: "LastMessageAt",
-                table: "Tickets",
-                type: "timestamp with time zone",
-                nullable: false,
-                oldClrType: typeof(DateTime),
-                oldType: "TEXT");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "CustomerId",
-                table: "Tickets",
-                type: "text",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "TEXT");
-
-            migrationBuilder.AlterColumn<DateTime>(
-                name: "CreatedAt",
-                table: "Tickets",
-                type: "timestamp with time zone",
-                nullable: false,
-                oldClrType: typeof(DateTime),
-                oldType: "TEXT");
-
-            migrationBuilder.AlterColumn<Guid>(
-                name: "Id",
-                table: "Tickets",
-                type: "uuid",
-                nullable: false,
-                oldClrType: typeof(Guid),
-                oldType: "TEXT");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "VoiceMessageUrl",
-                table: "TicketMessages",
-                type: "text",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "TEXT",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<int>(
-                name: "VoiceMessageDuration",
-                table: "TicketMessages",
-                type: "integer",
-                nullable: true,
-                oldClrType: typeof(int),
-                oldType: "INTEGER",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<DateTime>(
-                name: "UpdatedAt",
-                table: "TicketMessages",
-                type: "timestamp with time zone",
-                nullable: false,
-                oldClrType: typeof(DateTime),
-                oldType: "TEXT");
-
-            migrationBuilder.AlterColumn<Guid>(
-                name: "TicketId",
-                table: "TicketMessages",
-                type: "uuid",
-                nullable: false,
-                oldClrType: typeof(Guid),
-                oldType: "TEXT");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "SenderId",
-                table: "TicketMessages",
-                type: "text",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "TEXT");
-
-            migrationBuilder.AlterColumn<Guid>(
-                name: "ReplyToMessageId",
-                table: "TicketMessages",
-                type: "uuid",
-                nullable: true,
-                oldClrType: typeof(Guid),
-                oldType: "TEXT",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<bool>(
-                name: "IsReadByCustomer",
-                table: "TicketMessages",
-                type: "boolean",
-                nullable: false,
-                oldClrType: typeof(bool),
-                oldType: "INTEGER");
-
-            migrationBuilder.AlterColumn<bool>(
-                name: "IsReadByAdmin",
-                table: "TicketMessages",
-                type: "boolean",
-                nullable: false,
-                oldClrType: typeof(bool),
-                oldType: "INTEGER");
-
-            migrationBuilder.AlterColumn<DateTime>(
-                name: "CreatedAt",
-                table: "TicketMessages",
-                type: "timestamp with time zone",
-                nullable: false,
-                oldClrType: typeof(DateTime),
-                oldType: "TEXT");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "Content",
-                table: "TicketMessages",
-                type: "text",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "TEXT");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "CallParticipants",
-                table: "TicketMessages",
-                type: "text",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "TEXT",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<bool>(
-                name: "CallMissed",
-                table: "TicketMessages",
-                type: "boolean",
-                nullable: true,
-                oldClrType: typeof(bool),
-                oldType: "INTEGER",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<string>(
-                name: "CallId",
-                table: "TicketMessages",
-                type: "text",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "TEXT",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<int>(
-                name: "CallDuration",
-                table: "TicketMessages",
-                type: "integer",
-                nullable: true,
-                oldClrType: typeof(int),
-                oldType: "INTEGER",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<Guid>(
-                name: "Id",
-                table: "TicketMessages",
-                type: "uuid",
-                nullable: false,
-                oldClrType: typeof(Guid),
-                oldType: "TEXT");
+            migrationBuilder.DropColumn(
+                name: "ModelId",
+                table: "Products");
 
             migrationBuilder.AlterColumn<string>(
                 name: "UserId",
@@ -2428,15 +2392,6 @@ namespace PrintlyServer.Migrations
                 oldClrType: typeof(string),
                 oldType: "TEXT");
 
-            migrationBuilder.AlterColumn<Guid>(
-                name: "TicketId",
-                table: "Notifications",
-                type: "uuid",
-                nullable: true,
-                oldClrType: typeof(Guid),
-                oldType: "TEXT",
-                oldNullable: true);
-
             migrationBuilder.AlterColumn<DateTime>(
                 name: "ReadAt",
                 table: "Notifications",
@@ -2512,6 +2467,15 @@ namespace PrintlyServer.Migrations
                 oldClrType: typeof(DateTime),
                 oldType: "TEXT");
 
+            migrationBuilder.AlterColumn<Guid>(
+                name: "ConversationId",
+                table: "Notifications",
+                type: "uuid",
+                nullable: true,
+                oldClrType: typeof(Guid),
+                oldType: "TEXT",
+                oldNullable: true);
+
             migrationBuilder.AlterColumn<DateTime>(
                 name: "ArchivedAt",
                 table: "Notifications",
@@ -2533,114 +2497,6 @@ namespace PrintlyServer.Migrations
             migrationBuilder.AlterColumn<Guid>(
                 name: "Id",
                 table: "Notifications",
-                type: "uuid",
-                nullable: false,
-                oldClrType: typeof(Guid),
-                oldType: "TEXT");
-
-            migrationBuilder.AlterColumn<DateTime>(
-                name: "UpdatedAt",
-                table: "Messages",
-                type: "timestamp with time zone",
-                nullable: false,
-                oldClrType: typeof(DateTime),
-                oldType: "TEXT");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "SenderId",
-                table: "Messages",
-                type: "text",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "TEXT");
-
-            migrationBuilder.AlterColumn<Guid>(
-                name: "ReplyToMessageId",
-                table: "Messages",
-                type: "uuid",
-                nullable: true,
-                oldClrType: typeof(Guid),
-                oldType: "TEXT",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<string>(
-                name: "ReceiverId",
-                table: "Messages",
-                type: "text",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "TEXT");
-
-            migrationBuilder.AlterColumn<DateTime>(
-                name: "ReadAt",
-                table: "Messages",
-                type: "timestamp with time zone",
-                nullable: true,
-                oldClrType: typeof(DateTime),
-                oldType: "TEXT",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<bool>(
-                name: "IsRead",
-                table: "Messages",
-                type: "boolean",
-                nullable: false,
-                oldClrType: typeof(bool),
-                oldType: "INTEGER");
-
-            migrationBuilder.AlterColumn<bool>(
-                name: "IsEdited",
-                table: "Messages",
-                type: "boolean",
-                nullable: false,
-                oldClrType: typeof(bool),
-                oldType: "INTEGER");
-
-            migrationBuilder.AlterColumn<bool>(
-                name: "IsDeleted",
-                table: "Messages",
-                type: "boolean",
-                nullable: false,
-                oldClrType: typeof(bool),
-                oldType: "INTEGER");
-
-            migrationBuilder.AlterColumn<DateTime>(
-                name: "EditedAt",
-                table: "Messages",
-                type: "timestamp with time zone",
-                nullable: true,
-                oldClrType: typeof(DateTime),
-                oldType: "TEXT",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<DateTime>(
-                name: "DeletedAt",
-                table: "Messages",
-                type: "timestamp with time zone",
-                nullable: true,
-                oldClrType: typeof(DateTime),
-                oldType: "TEXT",
-                oldNullable: true);
-
-            migrationBuilder.AlterColumn<DateTime>(
-                name: "CreatedAt",
-                table: "Messages",
-                type: "timestamp with time zone",
-                nullable: false,
-                oldClrType: typeof(DateTime),
-                oldType: "TEXT");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "Content",
-                table: "Messages",
-                type: "text",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "TEXT");
-
-            migrationBuilder.AlterColumn<Guid>(
-                name: "Id",
-                table: "Messages",
                 type: "uuid",
                 nullable: false,
                 oldClrType: typeof(Guid),
@@ -2796,6 +2652,325 @@ namespace PrintlyServer.Migrations
             migrationBuilder.AlterColumn<Guid>(
                 name: "Id",
                 table: "Designs",
+                type: "uuid",
+                nullable: false,
+                oldClrType: typeof(Guid),
+                oldType: "TEXT");
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "UpdatedAt",
+                table: "Conversations",
+                type: "timestamp with time zone",
+                nullable: false,
+                oldClrType: typeof(DateTime),
+                oldType: "TEXT");
+
+            migrationBuilder.AlterColumn<int>(
+                name: "UnreadCount",
+                table: "Conversations",
+                type: "integer",
+                nullable: false,
+                oldClrType: typeof(int),
+                oldType: "INTEGER");
+
+            migrationBuilder.AlterColumn<bool>(
+                name: "SupportMode",
+                table: "Conversations",
+                type: "boolean",
+                nullable: false,
+                oldClrType: typeof(bool),
+                oldType: "INTEGER");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Subject",
+                table: "Conversations",
+                type: "text",
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "TEXT",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<int>(
+                name: "Status",
+                table: "Conversations",
+                type: "integer",
+                nullable: false,
+                oldClrType: typeof(int),
+                oldType: "INTEGER");
+
+            migrationBuilder.AlterColumn<int>(
+                name: "Priority",
+                table: "Conversations",
+                type: "integer",
+                nullable: false,
+                oldClrType: typeof(int),
+                oldType: "INTEGER");
+
+            migrationBuilder.AlterColumn<Guid>(
+                name: "OrderId",
+                table: "Conversations",
+                type: "uuid",
+                nullable: true,
+                oldClrType: typeof(Guid),
+                oldType: "TEXT",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "LastMessageAt",
+                table: "Conversations",
+                type: "timestamp with time zone",
+                nullable: true,
+                oldClrType: typeof(DateTime),
+                oldType: "TEXT",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "CustomerId",
+                table: "Conversations",
+                type: "text",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "TEXT");
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "CreatedAt",
+                table: "Conversations",
+                type: "timestamp with time zone",
+                nullable: false,
+                oldClrType: typeof(DateTime),
+                oldType: "TEXT");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "AssignedToAdminId",
+                table: "Conversations",
+                type: "text",
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "TEXT",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<Guid>(
+                name: "Id",
+                table: "Conversations",
+                type: "uuid",
+                nullable: false,
+                oldClrType: typeof(Guid),
+                oldType: "TEXT");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "UserId",
+                table: "ConversationParticipants",
+                type: "text",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "TEXT");
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "UpdatedAt",
+                table: "ConversationParticipants",
+                type: "timestamp with time zone",
+                nullable: false,
+                oldClrType: typeof(DateTime),
+                oldType: "TEXT");
+
+            migrationBuilder.AlterColumn<int>(
+                name: "Role",
+                table: "ConversationParticipants",
+                type: "integer",
+                nullable: false,
+                oldClrType: typeof(int),
+                oldType: "INTEGER");
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "CreatedAt",
+                table: "ConversationParticipants",
+                type: "timestamp with time zone",
+                nullable: false,
+                oldClrType: typeof(DateTime),
+                oldType: "TEXT");
+
+            migrationBuilder.AlterColumn<Guid>(
+                name: "ConversationId",
+                table: "ConversationParticipants",
+                type: "uuid",
+                nullable: false,
+                oldClrType: typeof(Guid),
+                oldType: "TEXT");
+
+            migrationBuilder.AlterColumn<Guid>(
+                name: "Id",
+                table: "ConversationParticipants",
+                type: "uuid",
+                nullable: false,
+                oldClrType: typeof(Guid),
+                oldType: "TEXT");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "VoiceMessageUrl",
+                table: "ConversationMessages",
+                type: "text",
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "TEXT",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<int>(
+                name: "VoiceMessageDuration",
+                table: "ConversationMessages",
+                type: "integer",
+                nullable: true,
+                oldClrType: typeof(int),
+                oldType: "INTEGER",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "UpdatedAt",
+                table: "ConversationMessages",
+                type: "timestamp with time zone",
+                nullable: false,
+                oldClrType: typeof(DateTime),
+                oldType: "TEXT");
+
+            migrationBuilder.AlterColumn<Guid>(
+                name: "ReplyToMessageId",
+                table: "ConversationMessages",
+                type: "uuid",
+                nullable: true,
+                oldClrType: typeof(Guid),
+                oldType: "TEXT",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "ReadAt",
+                table: "ConversationMessages",
+                type: "timestamp with time zone",
+                nullable: true,
+                oldClrType: typeof(DateTime),
+                oldType: "TEXT",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<Guid>(
+                name: "ParticipantId",
+                table: "ConversationMessages",
+                type: "uuid",
+                nullable: false,
+                oldClrType: typeof(Guid),
+                oldType: "TEXT");
+
+            migrationBuilder.AlterColumn<bool>(
+                name: "IsRead",
+                table: "ConversationMessages",
+                type: "boolean",
+                nullable: false,
+                oldClrType: typeof(bool),
+                oldType: "INTEGER");
+
+            migrationBuilder.AlterColumn<bool>(
+                name: "IsEdited",
+                table: "ConversationMessages",
+                type: "boolean",
+                nullable: false,
+                oldClrType: typeof(bool),
+                oldType: "INTEGER");
+
+            migrationBuilder.AlterColumn<bool>(
+                name: "IsDeleted",
+                table: "ConversationMessages",
+                type: "boolean",
+                nullable: false,
+                oldClrType: typeof(bool),
+                oldType: "INTEGER");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "FileUrl",
+                table: "ConversationMessages",
+                type: "text",
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "TEXT",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "FileType",
+                table: "ConversationMessages",
+                type: "text",
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "TEXT",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<long>(
+                name: "FileSize",
+                table: "ConversationMessages",
+                type: "bigint",
+                nullable: true,
+                oldClrType: typeof(long),
+                oldType: "INTEGER",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "FileName",
+                table: "ConversationMessages",
+                type: "text",
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "TEXT",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "EditedAt",
+                table: "ConversationMessages",
+                type: "timestamp with time zone",
+                nullable: true,
+                oldClrType: typeof(DateTime),
+                oldType: "TEXT",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "DeletedAt",
+                table: "ConversationMessages",
+                type: "timestamp with time zone",
+                nullable: true,
+                oldClrType: typeof(DateTime),
+                oldType: "TEXT",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "CreatedAt",
+                table: "ConversationMessages",
+                type: "timestamp with time zone",
+                nullable: false,
+                oldClrType: typeof(DateTime),
+                oldType: "TEXT");
+
+            migrationBuilder.AlterColumn<Guid>(
+                name: "ConversationId",
+                table: "ConversationMessages",
+                type: "uuid",
+                nullable: false,
+                oldClrType: typeof(Guid),
+                oldType: "TEXT");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Content",
+                table: "ConversationMessages",
+                type: "text",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "TEXT");
+
+            migrationBuilder.AlterColumn<Guid>(
+                name: "AssetId",
+                table: "ConversationMessages",
+                type: "uuid",
+                nullable: true,
+                oldClrType: typeof(Guid),
+                oldType: "TEXT",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<Guid>(
+                name: "Id",
+                table: "ConversationMessages",
                 type: "uuid",
                 nullable: false,
                 oldClrType: typeof(Guid),
@@ -3085,6 +3260,14 @@ namespace PrintlyServer.Migrations
                 oldClrType: typeof(string),
                 oldType: "TEXT",
                 oldNullable: true);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Role",
+                table: "AspNetUsers",
+                type: "text",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "TEXT");
 
             migrationBuilder.AlterColumn<bool>(
                 name: "PhoneNumberConfirmed",
