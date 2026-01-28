@@ -127,6 +127,28 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .HasForeignKey(i => i.VariantId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // OrderItem -> Imprint relationship (nullable - only for customized products)
+        modelBuilder
+            .Entity<OrderItem>()
+            .HasOne(i => i.Imprint)
+            .WithMany()
+            .HasForeignKey(i => i.ImprintId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Imprint -> Product relationship (optional association)
+        modelBuilder
+            .Entity<Imprint>()
+            .HasOne(i => i.Product)
+            .WithMany()
+            .HasForeignKey(i => i.ProductId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Index for OrderItem imprint queries
+        modelBuilder.Entity<OrderItem>().HasIndex(i => i.ImprintId);
+
+        // Index for Imprint product queries
+        modelBuilder.Entity<Imprint>().HasIndex(i => i.ProductId);
+
         // Index for querying orders by user and status
         modelBuilder.Entity<Order>().HasIndex(o => o.UserId);
         modelBuilder.Entity<Order>().HasIndex(o => o.Status);

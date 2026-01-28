@@ -45,11 +45,14 @@ export type OrderItemResponse = {
   orderId: string;
   variantId: string;
   requestId: string | null;
+  imprintId: string | null;
+  imprintName: string | null;
   productName: string;
   size: ProductSize;
   color: string;
   quantity: number;
   unitPrice: number;
+  customizationPrice: number;
   subtotal: number;
   createdAt: string;
   updatedAt: string;
@@ -80,6 +83,7 @@ export type OrderSummaryResponse = {
 export type CreateOrderItemDto = {
   variantId: string;
   requestId?: string | null;
+  imprintId?: string | null;
   quantity: number;
 };
 
@@ -99,14 +103,17 @@ export type AdminUpdateOrderDto = {
 export type AddOrderItemDto = {
   variantId: string;
   requestId?: string | null;
+  imprintId?: string | null;
   quantity: number;
   unitPrice: number;
+  customizationPrice?: number;
 };
 
 export type UpdateOrderItemDto = {
   quantity?: number;
   unitPrice?: number;
   requestId?: string | null;
+  imprintId?: string | null;
 };
 
 export type UserOrderStatsResponse = {

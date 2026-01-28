@@ -10,9 +10,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { useCart } from "@/lib/providers/cart";
 import { cn } from "@/lib/utils";
-import { Book, ChevronDown, FileDown, Home, Info, Keyboard, RotateCcw, Save } from "lucide-react";
+import { Book, ChevronDown, FileDown, Home, Info, Keyboard, RotateCcw, Save, ShoppingCart } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 import { SaveIndicator } from "../../shared/components/save-indicator";
 import { useImprinter } from "./hooks/use-imprinter";
 
@@ -23,8 +26,72 @@ type ToolbarHeaderProps = {
 
 export function ToolbarHeader({ className, title = "Printly Imprinter" }: ToolbarHeaderProps) {
   const router = useRouter();
-  const { imprintName, setImprintName, saveStatus, isDirty, lastSavedAt, saveImprint, exportRender, resetCamera } =
-    useImprinter();
+  const { addItemWithImprint } = useCart();
+  const {
+    imprintId,
+    imprintName,
+    setImprintName,
+    saveStatus,
+    isDirty,
+    lastSavedAt,
+    saveImprint,
+    exportRender,
+    resetCamera,
+    selectedProduct,
+  } = useImprinter();
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+
+  const handleAddToCart = async () => {
+    // Validate product and variant are selected
+    if (!selectedProduct?.product || !selectedProduct?.variant) {
+      toast.error("No product selected", {
+        description: "Please select a product and variant before adding to cart.",
+      });
+      return;
+    }
+
+    setIsAddingToCart(true);
+
+    try {
+      // Save imprint first if there are unsaved changes or if it's new
+      let currentImprintId = imprintId;
+      if (isDirty || !imprintId) {
+        currentImprintId = await saveImprint();
+      }
+
+      if (!currentImprintId) {
+        toast.error("Failed to save imprint", {
+          description: "Please try saving your design manually first.",
+        });
+        setIsAddingToCart(false);
+        return;
+      }
+
+      const { product, variant } = selectedProduct;
+
+      // Add to cart with imprint
+      addItemWithImprint(product, variant, 1, {
+        id: currentImprintId,
+        name: imprintName || "Custom Design",
+        customizationPrice: 5.0, // Default customization price - could be fetched from backend
+      });
+
+      toast.success("Added to cart!", {
+        description: `${product.name} with custom design added to your cart.`,
+        action: {
+          label: "View Cart",
+          onClick: () => router.push("/cart"),
+        },
+      });
+    } catch (error) {
+      console.error("Failed to add to cart:", error);
+      toast.error("Failed to add to cart", {
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+      });
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
 
   return (
     <header className={cn("bg-background flex h-12 items-center justify-between border-b px-4", className)}>
@@ -96,6 +163,16 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
 
       <div className="flex flex-1 items-center justify-end gap-2">
         <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} isDirty={isDirty} />
+        <Button
+          variant="default"
+          size="sm"
+          className="h-8 gap-2"
+          onClick={handleAddToCart}
+          disabled={isAddingToCart || !selectedProduct?.variant}
+        >
+          <ShoppingCart className="h-4 w-4" />
+          {isAddingToCart ? "Adding..." : "Add to Cart"}
+        </Button>
       </div>
 
       <div className="flex items-center justify-end pl-4">

@@ -32,17 +32,21 @@ public class OrderItemController(DatabaseContext context) : BaseController(conte
         var items = await query
             .Include(i => i.Variant)
                 .ThenInclude(v => v.Product)
+            .Include(i => i.Imprint)
             .OrderByDescending(i => i.CreatedAt)
             .Select(i => new OrderItemResponse(
                 i.Id,
                 i.OrderId,
                 i.VariantId,
                 i.RequestId,
+                i.ImprintId,
+                i.Imprint != null ? i.Imprint.Name : null,
                 i.Variant.Product.Name,
                 i.Variant.Size,
                 i.Variant.Color,
                 i.Quantity,
                 i.UnitPrice,
+                i.Imprint != null ? i.Imprint.CustomizationPrice : 0m,
                 i.Subtotal,
                 i.CreatedAt,
                 i.UpdatedAt
@@ -61,6 +65,7 @@ public class OrderItemController(DatabaseContext context) : BaseController(conte
         var item = await Context
             .OrderItems.Include(i => i.Variant)
                 .ThenInclude(v => v.Product)
+            .Include(i => i.Imprint)
             .FirstOrDefaultAsync(i => i.Id == id);
 
         if (item == null)
@@ -72,11 +77,14 @@ public class OrderItemController(DatabaseContext context) : BaseController(conte
                 item.OrderId,
                 item.VariantId,
                 item.RequestId,
+                item.ImprintId,
+                item.Imprint?.Name,
                 item.Variant.Product.Name,
                 item.Variant.Size,
                 item.Variant.Color,
                 item.Quantity,
                 item.UnitPrice,
+                item.Imprint?.CustomizationPrice ?? 0m,
                 item.Subtotal,
                 item.CreatedAt,
                 item.UpdatedAt
@@ -141,13 +149,16 @@ public class OrderItemController(DatabaseContext context) : BaseController(conte
             // Deduct stock
             variant.Inventory.Quantity -= dto.Quantity;
 
-            var subtotal = dto.UnitPrice * dto.Quantity;
+            // Handle customization price from imprint
+            decimal customizationPrice = dto.CustomizationPrice;
+            var subtotal = (dto.UnitPrice + customizationPrice) * dto.Quantity;
 
             var item = new OrderItem
             {
                 OrderId = orderId,
                 VariantId = dto.VariantId,
                 RequestId = dto.RequestId,
+                ImprintId = dto.ImprintId,
                 Quantity = dto.Quantity,
                 UnitPrice = dto.UnitPrice,
                 Subtotal = subtotal,
@@ -161,6 +172,13 @@ public class OrderItemController(DatabaseContext context) : BaseController(conte
             await Context.SaveChangesAsync();
             await transaction.CommitAsync();
 
+            // Load imprint for response
+            Imprint? imprint = null;
+            if (dto.ImprintId.HasValue)
+            {
+                imprint = await Context.Imprints.FindAsync(dto.ImprintId.Value);
+            }
+
             return CreatedAtAction(
                 nameof(GetOrderItem),
                 new { id = item.Id },
@@ -169,11 +187,14 @@ public class OrderItemController(DatabaseContext context) : BaseController(conte
                     item.OrderId,
                     item.VariantId,
                     item.RequestId,
+                    item.ImprintId,
+                    imprint?.Name,
                     variant.Product.Name,
                     variant.Size,
                     variant.Color,
                     item.Quantity,
                     item.UnitPrice,
+                    customizationPrice,
                     item.Subtotal,
                     item.CreatedAt,
                     item.UpdatedAt
@@ -254,8 +275,19 @@ public class OrderItemController(DatabaseContext context) : BaseController(conte
             if (dto.RequestId.HasValue)
                 item.RequestId = dto.RequestId.Value;
 
-            // Recalculate subtotal
-            item.Subtotal = item.UnitPrice * item.Quantity;
+            if (dto.ImprintId.HasValue)
+                item.ImprintId = dto.ImprintId.Value;
+
+            // Load imprint for customization price calculation
+            Imprint? imprint = null;
+            if (item.ImprintId.HasValue)
+            {
+                imprint = await Context.Imprints.FindAsync(item.ImprintId.Value);
+            }
+
+            // Recalculate subtotal including customization price
+            decimal customizationPrice = imprint?.CustomizationPrice ?? 0m;
+            item.Subtotal = (item.UnitPrice + customizationPrice) * item.Quantity;
 
             // Update order total
             item.Order.TotalAmount = item.Order.TotalAmount - oldSubtotal + item.Subtotal;
@@ -269,11 +301,14 @@ public class OrderItemController(DatabaseContext context) : BaseController(conte
                     item.OrderId,
                     item.VariantId,
                     item.RequestId,
+                    item.ImprintId,
+                    imprint?.Name,
                     item.Variant.Product.Name,
                     item.Variant.Size,
                     item.Variant.Color,
                     item.Quantity,
                     item.UnitPrice,
+                    customizationPrice,
                     item.Subtotal,
                     item.CreatedAt,
                     item.UpdatedAt

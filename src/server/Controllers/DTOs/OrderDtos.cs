@@ -30,11 +30,14 @@ public record OrderItemResponse(
     Guid OrderId,
     Guid VariantId,
     Guid? RequestId,
+    Guid? ImprintId,
+    string? ImprintName,
     string ProductName,
     ProductSize Size,
     string Color,
     int Quantity,
     decimal UnitPrice,
+    decimal CustomizationPrice,
     decimal Subtotal,
     DateTime CreatedAt,
     DateTime UpdatedAt
@@ -53,6 +56,7 @@ public record CreateOrderDto(
 public record CreateOrderItemDto(
     [Required] Guid VariantId,
     Guid? RequestId,
+    Guid? ImprintId,
     [Required] [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1")] int Quantity
 );
 
@@ -72,8 +76,10 @@ public record AdminUpdateOrderDto(OrderStatus? Status, decimal? TotalAmount);
 public record AddOrderItemDto(
     [Required] Guid VariantId,
     Guid? RequestId,
+    Guid? ImprintId,
     [Required] [Range(1, int.MaxValue)] int Quantity,
-    [Required] [Range(0.01, double.MaxValue)] decimal UnitPrice
+    [Required] [Range(0.01, double.MaxValue)] decimal UnitPrice,
+    [Range(0, double.MaxValue)] decimal CustomizationPrice = 0
 );
 
 /// <summary>
@@ -82,7 +88,8 @@ public record AddOrderItemDto(
 public record UpdateOrderItemDto(
     [Range(1, int.MaxValue)] int? Quantity,
     [Range(0.01, double.MaxValue)] decimal? UnitPrice,
-    Guid? RequestId
+    Guid? RequestId,
+    Guid? ImprintId
 );
 
 /// <summary>

@@ -24,6 +24,8 @@ function CartItemRow({
   onUpdateQuantity: (quantity: number) => void;
   onRemove: () => void;
 }) {
+  const itemPrice = item.unitPrice + (item.customizationPrice ?? 0);
+
   return (
     <div className="flex items-center gap-4 py-4">
       <div className="bg-muted flex h-20 w-20 shrink-0 items-center justify-center rounded-lg">
@@ -34,7 +36,13 @@ function CartItemRow({
         <p className="text-muted-foreground text-sm">
           {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]} • {item.color}
         </p>
-        <p className="font-medium">${item.unitPrice.toFixed(2)}</p>
+        {item.imprintName && <p className="text-primary text-sm font-medium">+ Customization: {item.imprintName}</p>}
+        <div className="flex items-center gap-2">
+          <p className="font-medium">${item.unitPrice.toFixed(2)}</p>
+          {item.customizationPrice && item.customizationPrice > 0 && (
+            <span className="text-primary text-sm">+ ${item.customizationPrice.toFixed(2)}</span>
+          )}
+        </div>
       </div>
       <div className="flex items-center gap-2">
         <Button
@@ -57,7 +65,7 @@ function CartItemRow({
           <Plus className="h-4 w-4" />
         </Button>
       </div>
-      <div className="w-24 text-right font-medium">${(item.unitPrice * item.quantity).toFixed(2)}</div>
+      <div className="w-24 text-right font-medium">${(itemPrice * item.quantity).toFixed(2)}</div>
       <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={onRemove}>
         <Trash2 className="h-4 w-4" />
       </Button>
@@ -111,6 +119,7 @@ export default function CartPage() {
       const orderItems = items.map((item) => ({
         variantId: item.variantId,
         quantity: item.quantity,
+        imprintId: item.imprintId,
       }));
 
       const order = await server.api.order.createOrder({ items: orderItems });
@@ -202,10 +211,10 @@ export default function CartPage() {
                   <div className="divide-y">
                     {items.map((item) => (
                       <CartItemRow
-                        key={item.variantId}
+                        key={`${item.variantId}-${item.imprintId || "no-imprint"}`}
                         item={item}
-                        onUpdateQuantity={(qty) => updateQuantity(item.variantId, qty)}
-                        onRemove={() => removeItem(item.variantId)}
+                        onUpdateQuantity={(qty) => updateQuantity(item.variantId, qty, item.imprintId)}
+                        onRemove={() => removeItem(item.variantId, item.imprintId)}
                       />
                     ))}
                   </div>
