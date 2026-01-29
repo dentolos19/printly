@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@/lib/providers/auth";
-import { API_URL } from "@/environment";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Archive, Trash2, CheckCheck, Bell, Inbox, ArchiveIcon, RefreshCw } from "lucide-react";
+import { API_URL } from "@/environment";
+import { useAuth } from "@/lib/providers/auth";
+import { getNotificationIcon, type RealTimeNotification } from "@/lib/server/notification";
+import * as signalR from "@microsoft/signalr";
+import { Archive, ArchiveIcon, Bell, CheckCheck, Inbox, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { getNotificationIcon } from "@/lib/server/notification";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Notification {
   id: string;
@@ -27,11 +28,12 @@ interface Notification {
 }
 
 export default function NotificationsPage() {
-  const { tokens } = useAuth();
+  const { tokens, isInitialized } = useAuth();
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [archivedNotifications, setArchivedNotifications] = useState<Notification[]>([]);
   const [activeTab, setActiveTab] = useState("all");
+  const connectionRef = useRef<signalR.HubConnection | null>(null);
 
   const fetchNotifications = useCallback(
     async (includeArchived = false) => {
@@ -153,18 +155,64 @@ export default function NotificationsPage() {
     }
   };
 
-  // Initial load and polling for new notifications (every 10 seconds)
+  // Initial load and polling for new notifications (every 30 seconds as backup)
   useEffect(() => {
     fetchNotifications(false);
     fetchNotifications(true);
 
-    // Poll for new notifications every 10 seconds
     const pollInterval = setInterval(() => {
       fetchNotifications(false);
-    }, 10000);
+    }, 30000);
 
     return () => clearInterval(pollInterval);
   }, [fetchNotifications]);
+
+  // Real-time notifications via SignalR
+  useEffect(() => {
+    if (!isInitialized || !tokens?.accessToken) return;
+    if (connectionRef.current) return;
+
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl(`${API_URL}/hubs/conversation`, {
+        accessTokenFactory: () => tokens.accessToken,
+      })
+      .withAutomaticReconnect()
+      .configureLogging(signalR.LogLevel.Warning)
+      .build();
+
+    connection.on("ReceiveNotification", (notification: RealTimeNotification) => {
+      const formattedNotification: Notification = {
+        id: notification.id,
+        type: notification.type,
+        title: notification.title,
+        message: notification.message,
+        conversationId: notification.conversationId ?? undefined,
+        isRead: false,
+        isArchived: false,
+        priority: notification.priority || "Normal",
+        actionUrl: notification.actionUrl ?? undefined,
+        createdAt: notification.createdAt,
+      };
+
+      setNotifications((prev) => [formattedNotification, ...prev]);
+    });
+
+    connection
+      .start()
+      .then(() => {
+        connectionRef.current = connection;
+      })
+      .catch((err) => {
+        console.error("[Notifications] SignalR connection error:", err);
+      });
+
+    return () => {
+      if (connectionRef.current) {
+        connectionRef.current.stop();
+        connectionRef.current = null;
+      }
+    };
+  }, [isInitialized, tokens?.accessToken]);
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);

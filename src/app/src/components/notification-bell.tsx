@@ -223,7 +223,7 @@ export function NotificationBell(props: ComponentProps<typeof Button>) {
 
       // Play notification sound
       try {
-        const audio = new Audio("/assets/notification.mp3");
+        const audio = new Audio("/assets/notification.wav");
         audio.volume = 0.5;
         audio.play().catch(() => {
           // Silently fail if autoplay is blocked

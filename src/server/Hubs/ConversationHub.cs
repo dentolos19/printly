@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -23,6 +24,16 @@ public class ConversationHub(
     private readonly DatabaseContext _context = context;
     private readonly ILogger<ConversationHub> _logger = logger;
     private readonly INotificationService _notificationService = notificationService;
+
+    // Tracks which users are actively viewing which conversations (userId -> set of conversationIds)
+    private static readonly ConcurrentDictionary<string, ConcurrentDictionary<Guid, byte>> _userPresence = new();
+
+    // Tracks connectionId -> userId for cleanup on disconnect
+    private static readonly ConcurrentDictionary<string, string> _connectionUserMap = new();
+
+    // Tracks connectionId -> set of joined conversationIds for cleanup on disconnect
+    private static readonly ConcurrentDictionary<string, ConcurrentDictionary<Guid, byte>> _connectionConversations =
+        new();
 
     private static string ConversationGroupName(Guid conversationId) => $"conversation-{conversationId}";
 
@@ -198,6 +209,28 @@ public class ConversationHub(
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         var userId = GetUserId();
+        var connectionId = Context.ConnectionId;
+
+        // Clean up presence tracking for this connection
+        if (_connectionConversations.TryRemove(connectionId, out var conversationIds))
+        {
+            if (userId != null && _userPresence.TryGetValue(userId, out var userConversations))
+            {
+                foreach (var convId in conversationIds.Keys)
+                {
+                    userConversations.TryRemove(convId, out _);
+                }
+
+                // If user has no more active conversations, remove from presence map
+                if (userConversations.IsEmpty)
+                {
+                    _userPresence.TryRemove(userId, out _);
+                }
+            }
+        }
+
+        _connectionUserMap.TryRemove(connectionId, out _);
+
         _logger.LogDebug("[ConversationHub] User {UserId} disconnected", userId);
         await base.OnDisconnectedAsync(exception);
     }
@@ -231,7 +264,22 @@ public class ConversationHub(
         }
 
         await Groups.AddToGroupAsync(Context.ConnectionId, ConversationGroupName(conversationId));
-        _logger.LogDebug("[ConversationHub] {UserId} joined conversation {ConversationId}", userId, conversationId);
+
+        // Track presence for this user and connection
+        _connectionUserMap[Context.ConnectionId] = userId;
+        var userConversations = _userPresence.GetOrAdd(userId, _ => new ConcurrentDictionary<Guid, byte>());
+        userConversations[conversationId] = 0;
+        var connectionConversations = _connectionConversations.GetOrAdd(
+            Context.ConnectionId,
+            _ => new ConcurrentDictionary<Guid, byte>()
+        );
+        connectionConversations[conversationId] = 0;
+
+        _logger.LogDebug(
+            "[ConversationHub] {UserId} joined conversation {ConversationId} (presence tracked)",
+            userId,
+            conversationId
+        );
     }
 
     /// <summary>
@@ -239,9 +287,85 @@ public class ConversationHub(
     /// </summary>
     public async Task LeaveConversation(Guid conversationId)
     {
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, ConversationGroupName(conversationId));
         var userId = GetUserId();
-        _logger.LogDebug("[ConversationHub] {UserId} left conversation {ConversationId}", userId, conversationId);
+        var connectionId = Context.ConnectionId;
+
+        await Groups.RemoveFromGroupAsync(connectionId, ConversationGroupName(conversationId));
+
+        // Remove presence tracking for this conversation
+        if (_connectionConversations.TryGetValue(connectionId, out var connectionConversations))
+        {
+            connectionConversations.TryRemove(conversationId, out _);
+        }
+
+        if (userId != null && _userPresence.TryGetValue(userId, out var userConversations))
+        {
+            userConversations.TryRemove(conversationId, out _);
+        }
+
+        _logger.LogDebug(
+            "[ConversationHub] {UserId} left conversation {ConversationId} (presence removed)",
+            userId,
+            conversationId
+        );
+    }
+
+    /// <summary>
+    /// Checks if a user is currently viewing a specific conversation.
+    /// Used to suppress notifications when the user is already in the chat.
+    /// </summary>
+    private static bool IsUserInConversation(string userId, Guid conversationId)
+    {
+        return _userPresence.TryGetValue(userId, out var conversations) && conversations.ContainsKey(conversationId);
+    }
+
+    /// <summary>
+    /// Notifies admins about a conversation event, but skips notification for admins
+    /// who are already actively viewing the conversation.
+    /// </summary>
+    private async Task NotifyAdminsIfNotPresentAsync(
+        Guid conversationId,
+        NotificationType type,
+        string title,
+        string message
+    )
+    {
+        var adminRoleId = await _context.Roles.Where(r => r.Name == "Admin").Select(r => r.Id).FirstOrDefaultAsync();
+
+        if (adminRoleId == null)
+        {
+            _logger.LogWarning("[ConversationHub] Admin role not found");
+            return;
+        }
+
+        var adminUserIds = await _context
+            .UserRoles.Where(ur => ur.RoleId == adminRoleId)
+            .Select(ur => ur.UserId)
+            .ToListAsync();
+
+        foreach (var adminId in adminUserIds)
+        {
+            if (IsUserInConversation(adminId, conversationId))
+            {
+                _logger.LogDebug(
+                    "[ConversationHub] Skipping notification for admin {AdminId} - already in conversation {ConversationId}",
+                    adminId,
+                    conversationId
+                );
+                continue;
+            }
+
+            await _notificationService.CreateNotificationAsync(
+                adminId,
+                type,
+                title,
+                message,
+                conversationId,
+                null,
+                NotificationPriority.Normal,
+                $"/chat?conversation={conversationId}"
+            );
+        }
     }
 
     #endregion
@@ -388,14 +512,14 @@ public class ConversationHub(
                 );
 
             // Send push notification to admins (don't fail message send if notification fails)
+            // Skip if admins are already viewing the conversation
             try
             {
-                await _notificationService.NotifyAdminsAsync(
+                await NotifyAdminsIfNotPresentAsync(
+                    conversationId,
                     NotificationType.NewMessage,
                     "New Customer Message",
-                    $"{senderName} sent a message: {(content.Length > 50 ? content[..50] + "..." : content)}",
-                    conversationId,
-                    NotificationPriority.Normal
+                    $"{senderName} sent a message: {(content.Length > 50 ? content[..50] + "..." : content)}"
                 );
             }
             catch (Exception ex)
@@ -409,35 +533,41 @@ public class ConversationHub(
         }
         else
         {
-            // Admin replied, notify the customer (don't fail message send if notification fails)
-            try
+            // Admin replied, notify the customer if they're not already viewing the conversation
+            if (!IsUserInConversation(conversation.CustomerId, conversationId))
             {
-                _logger.LogWarning(
-                    "[NOTIFICATION DEBUG] Admin sending message. Creating notification for CustomerId: {CustomerId}, ConversationId: {ConversationId}, SenderName: {SenderName}",
-                    conversation.CustomerId,
-                    conversationId,
-                    senderName
-                );
-                await _notificationService.CreateNotificationAsync(
-                    conversation.CustomerId,
-                    NotificationType.NewMessage,
-                    "New Reply from Support",
-                    $"{senderName} replied to your conversation",
-                    conversationId,
-                    message.Id,
-                    NotificationPriority.Normal,
-                    $"/support?conversation={conversationId}"
-                );
-                _logger.LogWarning(
-                    "[NOTIFICATION DEBUG] Notification created successfully for CustomerId: {CustomerId}",
-                    conversation.CustomerId
-                );
+                try
+                {
+                    _logger.LogDebug(
+                        "[ConversationHub] Creating notification for CustomerId: {CustomerId}, ConversationId: {ConversationId}",
+                        conversation.CustomerId,
+                        conversationId
+                    );
+                    await _notificationService.CreateNotificationAsync(
+                        conversation.CustomerId,
+                        NotificationType.NewMessage,
+                        "New Reply from Support",
+                        $"{senderName} replied to your conversation",
+                        conversationId,
+                        message.Id,
+                        NotificationPriority.Normal,
+                        $"/support?conversation={conversationId}"
+                    );
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "[ConversationHub] Failed to send customer notification for message in conversation {ConversationId}",
+                        conversationId
+                    );
+                }
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogWarning(
-                    ex,
-                    "[ConversationHub] Failed to send customer notification for message in conversation {ConversationId}",
+                _logger.LogDebug(
+                    "[ConversationHub] Skipping notification for CustomerId: {CustomerId} - already in conversation {ConversationId}",
+                    conversation.CustomerId,
                     conversationId
                 );
             }
@@ -604,12 +734,11 @@ public class ConversationHub(
 
             try
             {
-                await _notificationService.NotifyAdminsAsync(
+                await NotifyAdminsIfNotPresentAsync(
+                    conversationId,
                     NotificationType.NewMessage,
                     "New File Attachment",
-                    $"{senderName} sent a file: {fileName}",
-                    conversationId,
-                    NotificationPriority.Normal
+                    $"{senderName} sent a file: {fileName}"
                 );
             }
             catch (Exception ex)
@@ -623,26 +752,29 @@ public class ConversationHub(
         }
         else
         {
-            try
+            if (!IsUserInConversation(conversation.CustomerId, conversationId))
             {
-                await _notificationService.CreateNotificationAsync(
-                    conversation.CustomerId,
-                    NotificationType.NewMessage,
-                    "New File from Support",
-                    $"{senderName} sent a file: {fileName}",
-                    conversationId,
-                    message.Id,
-                    NotificationPriority.Normal,
-                    $"/chat?conversation={conversationId}"
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(
-                    ex,
-                    "[ConversationHub] Failed to send customer notification for file message in conversation {ConversationId}",
-                    conversationId
-                );
+                try
+                {
+                    await _notificationService.CreateNotificationAsync(
+                        conversation.CustomerId,
+                        NotificationType.NewMessage,
+                        "New File from Support",
+                        $"{senderName} sent a file: {fileName}",
+                        conversationId,
+                        message.Id,
+                        NotificationPriority.Normal,
+                        $"/chat?conversation={conversationId}"
+                    );
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "[ConversationHub] Failed to send customer notification for file message in conversation {ConversationId}",
+                        conversationId
+                    );
+                }
             }
         }
 
@@ -797,12 +929,11 @@ public class ConversationHub(
 
             try
             {
-                await _notificationService.NotifyAdminsAsync(
+                await NotifyAdminsIfNotPresentAsync(
+                    conversationId,
                     NotificationType.NewMessage,
                     "New Voice Message",
-                    $"{senderName} sent a voice message ({FormatDuration(duration)})",
-                    conversationId,
-                    NotificationPriority.Normal
+                    $"{senderName} sent a voice message ({FormatDuration(duration)})"
                 );
             }
             catch (Exception ex)
@@ -816,26 +947,29 @@ public class ConversationHub(
         }
         else
         {
-            try
+            if (!IsUserInConversation(conversation.CustomerId, conversationId))
             {
-                await _notificationService.CreateNotificationAsync(
-                    conversation.CustomerId,
-                    NotificationType.NewMessage,
-                    "New Voice Message from Support",
-                    $"{senderName} sent a voice message ({FormatDuration(duration)})",
-                    conversationId,
-                    message.Id,
-                    NotificationPriority.Normal,
-                    $"/chat?conversation={conversationId}"
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(
-                    ex,
-                    "[ConversationHub] Failed to send customer notification for voice message in conversation {ConversationId}",
-                    conversationId
-                );
+                try
+                {
+                    await _notificationService.CreateNotificationAsync(
+                        conversation.CustomerId,
+                        NotificationType.NewMessage,
+                        "New Voice Message from Support",
+                        $"{senderName} sent a voice message ({FormatDuration(duration)})",
+                        conversationId,
+                        message.Id,
+                        NotificationPriority.Normal,
+                        $"/chat?conversation={conversationId}"
+                    );
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "[ConversationHub] Failed to send customer notification for voice message in conversation {ConversationId}",
+                        conversationId
+                    );
+                }
             }
         }
 

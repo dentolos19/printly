@@ -536,6 +536,14 @@ export default function AdminChatPage() {
       await connection.start();
       connectionRef.current = connection;
       setConnectionState("connected");
+
+      // Join the selected conversation if one is already selected
+      const conversationId = selectedConversationRef.current;
+      if (conversationId) {
+        try {
+          await connection.invoke("JoinConversation", conversationId);
+        } catch {}
+      }
     } catch (error) {
       console.error("[Admin Chat] Connection failed", error);
       setConnectionState("error");
