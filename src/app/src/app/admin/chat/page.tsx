@@ -1,13 +1,14 @@
 "use client";
 
+import { CallInterface, IncomingCallNotification } from "@/components/call-interface";
 import {
   CallMessage,
   ChatDateSeparator,
   ChatMessage,
   ConversationList,
   MessageInput,
-  type ReplyInfo,
   TypingIndicator,
+  type ReplyInfo,
 } from "@/components/chat";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import {
   type ConversationStatus,
   type ConversationSummary,
 } from "@/lib/server/conversation";
+import { CallType, type CallTokenResponse, type IncomingCallData } from "@/lib/types/call";
 import { cn } from "@/lib/utils";
 import * as signalR from "@microsoft/signalr";
 import { Tabs, TabsList, TabsTrigger } from "@radix-ui/react-tabs";
@@ -42,8 +44,6 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CallInterface, IncomingCallNotification } from "@/components/call-interface";
-import { CallType, type CallTokenResponse, type IncomingCallData } from "@/lib/types/call";
 
 const HUB_URL = `${API_URL}/hubs/conversation`;
 
@@ -1022,7 +1022,7 @@ export default function AdminChatPage() {
   return (
     <main className="flex h-[calc(100vh-4rem)] w-full flex-col gap-2 p-2">
       {/* Header Bar - Compact */}
-      <div className="bg-card flex flex-shrink-0 items-center justify-between rounded-lg border px-3 py-2 shadow-sm">
+      <div className="bg-card flex shrink-0 items-center justify-between rounded-lg border px-3 py-2 shadow-sm">
         <div className="flex items-center gap-3">
           <Button
             variant="outline"
@@ -1112,11 +1112,11 @@ export default function AdminChatPage() {
         <Card className="flex min-w-0 flex-1 flex-col shadow-sm">
           {selectedConversation ? (
             <>
-              <CardHeader className="bg-muted/30 flex-shrink-0 gap-0 space-y-0 border-b px-3 py-1.5">
+              <CardHeader className="bg-muted/30 shrink-0 gap-0 space-y-0 border-b px-3 py-1.5">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex min-w-0 flex-1 items-start gap-2">
                     <StatusIcon
-                      className={cn("mt-0.5 h-4 w-4 flex-shrink-0", PRIORITY_COLORS[selectedConversation.priority])}
+                      className={cn("mt-0.5 h-4 w-4 shrink-0", PRIORITY_COLORS[selectedConversation.priority])}
                     />
                     <div className="min-w-0 flex-1 space-y-0.5 overflow-hidden">
                       <CardTitle
@@ -1338,7 +1338,7 @@ export default function AdminChatPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex-shrink-0 border-t p-2">
+                  <div className="shrink-0 border-t p-2">
                     <MessageInput
                       onSend={handleSendMessage}
                       onSendFile={handleSendFile}

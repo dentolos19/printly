@@ -6,7 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/compon
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { API_URL } from "@/environment";
 import { useAuth } from "@/lib/providers/auth";
-import { getNotificationIcon, type RealTimeNotification, type NotificationResponse } from "@/lib/server/notification";
+import { getNotificationIcon, type RealTimeNotification } from "@/lib/server/notification";
 import * as signalR from "@microsoft/signalr";
 import { Archive, Bell, CheckCheck, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -17,12 +17,12 @@ interface Notification {
   type: string;
   title: string;
   message: string;
-  conversationId?: string;
+  conversationId?: string | null;
   isRead: boolean;
-  readAt?: string;
+  readAt?: string | null;
   isArchived: boolean;
   priority: string;
-  actionUrl?: string;
+  actionUrl?: string | null;
   createdAt: string;
 }
 

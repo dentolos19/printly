@@ -1,5 +1,6 @@
 "use client";
 
+import { CallInterface, IncomingCallNotification } from "@/components/call-interface";
 import {
   CallMessage,
   ChatDateSeparator,
@@ -9,7 +10,6 @@ import {
   TypingIndicator,
   type ReplyInfo,
 } from "@/components/chat";
-import { CallInterface, IncomingCallNotification } from "@/components/call-interface";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -983,7 +983,7 @@ export default function ChatPage() {
   return (
     <main className="flex h-[calc(100vh-4rem)] w-full flex-col gap-3 p-3">
       {/* Header Bar - Compact */}
-      <div className="flex flex-shrink-0 items-center justify-between">
+      <div className="flex shrink-0 items-center justify-between">
         <div className="flex items-center gap-3">
           <Button variant="outline" size="sm" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="gap-2">
             {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
@@ -1068,7 +1068,7 @@ export default function ChatPage() {
         {/* Conversation List - Collapsible */}
         <Card
           className={cn(
-            "flex flex-shrink-0 flex-col transition-all duration-300 ease-in-out",
+            "flex shrink-0 flex-col transition-all duration-300 ease-in-out",
             sidebarCollapsed ? "w-0 overflow-hidden border-0 opacity-0" : "w-72 lg:w-80",
           )}
         >
@@ -1092,7 +1092,7 @@ export default function ChatPage() {
         <Card className="flex min-w-0 flex-1 flex-col">
           {selectedConversation ? (
             <>
-              <CardHeader className="flex-shrink-0 gap-0 space-y-0 border-b px-2 py-0.5">
+              <CardHeader className="shrink-0 gap-0 space-y-0 border-b px-2 py-0.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {(() => {
@@ -1161,7 +1161,7 @@ export default function ChatPage() {
                 </div>
                 {lastError && (
                   <div className="bg-destructive/10 text-destructive border-destructive/20 mt-3 flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
-                    <WifiOff className="h-4 w-4 flex-shrink-0" />
+                    <WifiOff className="h-4 w-4 shrink-0" />
                     <span className="flex-1">{lastError}</span>
                     <Button
                       size="sm"
@@ -1267,7 +1267,7 @@ export default function ChatPage() {
 
                 {/* Show closed banner when conversation is closed, otherwise show message input */}
                 {selectedConversation.status === 3 ? (
-                  <div className="bg-muted/50 flex-shrink-0 border-t p-4">
+                  <div className="bg-muted/50 shrink-0 border-t p-4">
                     <div className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/50">
                       <XCircle className="h-5 w-5 text-gray-500" />
                       <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -1276,7 +1276,7 @@ export default function ChatPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex-shrink-0 border-t p-4">
+                  <div className="shrink-0 border-t p-4">
                     <MessageInput
                       onSend={handleSendMessage}
                       onSendFile={handleSendFile}

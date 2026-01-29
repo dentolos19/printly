@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CallType } from "@/lib/types/call";
 import {
-  LiveKitRoom,
-  RoomAudioRenderer,
   ControlBar,
-  useTracks,
   GridLayout,
+  LiveKitRoom,
   ParticipantTile,
+  RoomAudioRenderer,
+  useTracks,
 } from "@livekit/components-react";
 import "@livekit/components-styles";
 import { Track } from "livekit-client";
@@ -65,7 +65,7 @@ function VideoCallLayout() {
         </GridLayout>
       </div>
       <RoomAudioRenderer />
-      <div className="absolute right-0 bottom-0 left-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+      <div className="absolute right-0 bottom-0 left-0 bg-linear-to-t from-black/80 to-transparent p-4">
         <ControlBar variation="minimal" />
       </div>
     </div>
@@ -91,7 +91,7 @@ export function CallInterface({ token, serverUrl, callType, onLeave, participant
         data-lk-theme="default"
         style={{ height: "100%", display: "flex", flexDirection: "column" }}
       >
-        <div className="bg-card flex flex-shrink-0 items-center justify-between border-b p-4">
+        <div className="bg-card flex shrink-0 items-center justify-between border-b p-4">
           <div>
             <h2 className="text-lg font-semibold">{callType === CallType.Audio ? "Voice Call" : "Video Call"}</h2>
             <p className="text-muted-foreground text-sm">{isConnected ? "Connected" : "Connecting..."}</p>
