@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  CallMessage,
   ChatDateSeparator,
   ChatMessage,
   ConversationList,
@@ -32,13 +33,17 @@ import {
   MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
+  Phone,
   RefreshCw,
   User,
+  Video,
   Wifi,
   WifiOff,
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CallInterface, IncomingCallNotification } from "@/components/call-interface";
+import { CallType, type CallTokenResponse, type IncomingCallData } from "@/lib/types/call";
 
 const HUB_URL = `${API_URL}/hubs/conversation`;
 
@@ -87,6 +92,17 @@ export default function AdminChatPage() {
   const [lastError, setLastError] = useState<string | null>(null);
   const [pendingOptimisticMessages, setPendingOptimisticMessages] = useState<Set<string>>(new Set());
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Call state
+  const [isInCall, setIsInCall] = useState(false);
+  const [currentCall, setCurrentCall] = useState<{
+    callId: string;
+    token: string;
+    serverUrl: string;
+    callType: CallType;
+  } | null>(null);
+  const [incomingCall, setIncomingCall] = useState<IncomingCallData | null>(null);
+  const [activeCallId, setActiveCallId] = useState<string | null>(null);
 
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const selectedConversationRef = useRef<string | null>(null);
@@ -473,6 +489,50 @@ export default function AdminChatPage() {
         },
       );
 
+      // Call event handlers
+      connection.on("IncomingCall", (data: IncomingCallData) => {
+        console.log("[Admin Chat] Incoming call:", data);
+        setActiveCallId(data.callId);
+
+        // If we initiated the call, we already auto-joined in handleInitiateCall
+        // Only show incoming notification for recipients
+        if (data.initiatorId !== currentUserId) {
+          setIncomingCall(data);
+        }
+      });
+
+      connection.on("UserJoinedCall", (data: { callId: string; userId: string; userName: string }) => {
+        console.log("[Admin Chat] User joined call:", data);
+      });
+
+      connection.on("UserLeftCall", (data: { callId: string; userId: string; userName: string }) => {
+        console.log("[Admin Chat] User left call:", data);
+      });
+
+      connection.on("CallEnded", (data: { callId: string; duration: number | null; status: number }) => {
+        console.log("[Admin Chat] Call ended:", data);
+
+        if (currentCall?.callId === data.callId || activeCallId === data.callId) {
+          setIsInCall(false);
+          setCurrentCall(null);
+          setActiveCallId(null);
+        }
+      });
+
+      connection.on("CallDeclined", (data: { callId: string; userId: string; status: number }) => {
+        console.log("[Admin Chat] Call declined:", data);
+
+        if (incomingCall?.callId === data.callId) {
+          setIncomingCall(null);
+        }
+
+        if (currentCall?.callId === data.callId || activeCallId === data.callId) {
+          setIsInCall(false);
+          setCurrentCall(null);
+          setActiveCallId(null);
+        }
+      });
+
       await connection.start();
       connectionRef.current = connection;
       setConnectionState("connected");
@@ -776,6 +836,165 @@ export default function AdminChatPage() {
     connectionRef.current.invoke("StopTyping", selectedConversationId).catch(() => {});
   }, [selectedConversationId]);
 
+  // Call handlers
+  const handleInitiateCall = useCallback(
+    async (callType: CallType) => {
+      if (!selectedConversationId || !connectionRef.current || !auth.tokens?.accessToken) return;
+
+      try {
+        // Invoke InitiateCall - server will return the callId
+        const callId = await connectionRef.current.invoke<string>("InitiateCall", selectedConversationId, callType);
+        console.log("[Admin Chat] Call initiated:", callType, "callId:", callId);
+
+        // Immediately get token and join the call as the initiator
+        if (callId) {
+          setActiveCallId(callId);
+
+          const response = await fetch(`${API_URL}/conversation/call/${callId}/token`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${auth.tokens.accessToken}`,
+            },
+          });
+
+          if (response.ok) {
+            const tokenData: CallTokenResponse = await response.json();
+            setCurrentCall({
+              callId,
+              token: tokenData.token,
+              serverUrl: tokenData.wsUrl,
+              callType,
+            });
+            setIsInCall(true);
+            console.log("[Admin Chat] Auto-joined call as initiator:", callId);
+          } else {
+            console.error("[Admin Chat] Failed to get call token");
+            setLastError("Failed to get call token. Please try again.");
+            setTimeout(() => setLastError(null), 5000);
+          }
+        }
+      } catch (error) {
+        console.error("[Admin Chat] Failed to initiate call:", error);
+        setLastError("Failed to start call. Please try again.");
+        setTimeout(() => setLastError(null), 5000);
+      }
+    },
+    [selectedConversationId, auth.tokens?.accessToken],
+  );
+
+  const handleAnswerCall = useCallback(
+    async (callId: string, callType: CallType) => {
+      if (!connectionRef.current || !auth.tokens?.accessToken) return;
+
+      try {
+        await connectionRef.current.invoke("AnswerCall", callId);
+
+        const response = await authorizedFetch(`${API_URL}/conversation/call/${callId}/token`, {
+          method: "POST",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to get call token");
+        }
+
+        const tokenData: CallTokenResponse = await response.json();
+
+        setCurrentCall({
+          callId,
+          token: tokenData.token,
+          serverUrl: tokenData.wsUrl,
+          callType,
+        });
+        setIsInCall(true);
+        setIncomingCall(null);
+
+        console.log("[Admin Chat] Joined call:", callId);
+      } catch (error) {
+        console.error("[Admin Chat] Failed to answer call:", error);
+        setLastError("Failed to join call. Please try again.");
+        setTimeout(() => setLastError(null), 5000);
+      }
+    },
+    [auth.tokens?.accessToken, authorizedFetch],
+  );
+
+  const handleDeclineCall = useCallback(async (callId: string) => {
+    if (!connectionRef.current) return;
+
+    try {
+      await connectionRef.current.invoke("DeclineCall", callId);
+      setIncomingCall(null);
+      console.log("[Admin Chat] Call declined:", callId);
+    } catch (error) {
+      console.error("[Admin Chat] Failed to decline call:", error);
+    }
+  }, []);
+
+  const handleLeaveCall = useCallback(async () => {
+    if (!currentCall || !connectionRef.current) return;
+
+    try {
+      await connectionRef.current.invoke("EndCall", currentCall.callId);
+    } catch (error) {
+      console.error("[Admin Chat] Failed to leave call:", error);
+    } finally {
+      setIsInCall(false);
+      setCurrentCall(null);
+      setActiveCallId(null);
+      console.log("[Admin Chat] Left call");
+    }
+  }, [currentCall]);
+
+  const handleJoinActiveCall = useCallback(
+    async (callLogId: string) => {
+      if (!connectionRef.current || !auth.tokens?.accessToken) return;
+
+      try {
+        // Get call details first
+        const detailsResponse = await authorizedFetch(`${API_URL}/conversation/call/${callLogId}`);
+        if (!detailsResponse.ok) {
+          throw new Error("Failed to get call details");
+        }
+        const callDetails = (await detailsResponse.json()) as { status: number; type: number };
+
+        // Only join if call is still active (Ongoing = 1)
+        if (callDetails.status !== 1) {
+          setLastError("This call has ended.");
+          setTimeout(() => setLastError(null), 3000);
+          return;
+        }
+
+        await connectionRef.current.invoke("AnswerCall", callLogId);
+
+        const response = await authorizedFetch(`${API_URL}/conversation/call/${callLogId}/token`, {
+          method: "POST",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to get call token");
+        }
+
+        const tokenData: CallTokenResponse = await response.json();
+
+        setCurrentCall({
+          callId: callLogId,
+          token: tokenData.token,
+          serverUrl: tokenData.wsUrl,
+          callType: callDetails.type as CallType,
+        });
+        setIsInCall(true);
+        setIncomingCall(null);
+
+        console.log("[Admin Chat] Joined active call:", callLogId);
+      } catch (error) {
+        console.error("[Admin Chat] Failed to join call:", error);
+        setLastError("Failed to join call. Please try again.");
+        setTimeout(() => setLastError(null), 5000);
+      }
+    },
+    [auth.tokens?.accessToken, authorizedFetch],
+  );
+
   const groupedMessages = useMemo(() => {
     const groups: { date: string; messages: ConversationMessage[] }[] = [];
     let currentDate = "";
@@ -801,24 +1020,22 @@ export default function AdminChatPage() {
   }, [conversations]);
 
   return (
-    <main className="flex h-[calc(100vh-4rem)] w-full flex-col gap-4 p-4">
-      {/* Header Bar - Elegant */}
-      <div className="bg-card flex shrink-0 items-center justify-between rounded-lg border px-4 py-3 shadow-sm">
-        <div className="flex items-center gap-4">
+    <main className="flex h-[calc(100vh-4rem)] w-full flex-col gap-2 p-2">
+      {/* Header Bar - Compact */}
+      <div className="bg-card flex flex-shrink-0 items-center justify-between rounded-lg border px-3 py-2 shadow-sm">
+        <div className="flex items-center gap-3">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="hover:bg-accent h-9 gap-2 px-3"
+            className="hover:bg-accent h-8 gap-1.5 px-2"
           >
             {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-            <span className="hidden font-medium sm:inline">{sidebarCollapsed ? "Show" : "Hide"} Sidebar</span>
+            <span className="hidden font-medium sm:inline">{sidebarCollapsed ? "Show" : "Hide"}</span>
           </Button>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight">Support Inbox</h1>
-          </div>
+          <h1 className="text-lg font-bold tracking-tight">Support Inbox</h1>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Badge
             variant={
               connectionState === "connected"
@@ -827,31 +1044,24 @@ export default function AdminChatPage() {
                   ? "secondary"
                   : "destructive"
             }
-            className="gap-1.5 px-3 py-1 text-xs font-medium"
+            className="gap-1 px-2 py-0.5 text-xs"
           >
-            {connectionState === "connected" ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
-            <span className="hidden sm:inline">
-              {connectionState === "connected"
-                ? "Connected"
-                : connectionState === "connecting"
-                  ? "Connecting..."
-                  : "Disconnected"}
-            </span>
+            {connectionState === "connected" ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
           </Badge>
           <Button
             variant="ghost"
             size="icon"
             onClick={fetchConversations}
             disabled={isLoadingConversations}
-            className="hover:bg-accent h-9 w-9"
+            className="hover:bg-accent h-7 w-7"
           >
-            <RefreshCw className={cn("h-4 w-4", isLoadingConversations && "animate-spin")} />
+            <RefreshCw className={cn("h-3.5 w-3.5", isLoadingConversations && "animate-spin")} />
           </Button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex min-h-0 flex-1 gap-4">
+      <div className="flex min-h-0 flex-1 gap-2">
         {/* Conversation List - Collapsible */}
         <Card
           className={cn(
@@ -859,8 +1069,8 @@ export default function AdminChatPage() {
             sidebarCollapsed ? "w-0 overflow-hidden border-0 opacity-0" : "w-80 lg:w-96",
           )}
         >
-          <CardHeader className="bg-muted/30 border-b px-4 py-3">
-            <CardTitle className="text-base font-semibold">Conversations</CardTitle>
+          <CardHeader className="bg-muted/30 border-b px-3 py-2">
+            <CardTitle className="text-sm font-semibold">Conversations</CardTitle>
           </CardHeader>
           <div className="border-b p-2">
             <Tabs value={statusFilter} onValueChange={setStatusFilter}>
@@ -902,15 +1112,15 @@ export default function AdminChatPage() {
         <Card className="flex min-w-0 flex-1 flex-col shadow-sm">
           {selectedConversation ? (
             <>
-              <CardHeader className="bg-muted/30 shrink-0 gap-0 space-y-0 border-b px-4 py-3">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex min-w-0 flex-1 items-start gap-3">
+              <CardHeader className="bg-muted/30 flex-shrink-0 gap-0 space-y-0 border-b px-3 py-1.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex min-w-0 flex-1 items-start gap-2">
                     <StatusIcon
-                      className={cn("mt-1 h-5 w-5 shrink-0", PRIORITY_COLORS[selectedConversation.priority])}
+                      className={cn("mt-0.5 h-4 w-4 flex-shrink-0", PRIORITY_COLORS[selectedConversation.priority])}
                     />
-                    <div className="min-w-0 flex-1 space-y-1 overflow-hidden">
+                    <div className="min-w-0 flex-1 space-y-0.5 overflow-hidden">
                       <CardTitle
-                        className="truncate text-base leading-tight font-semibold"
+                        className="truncate text-sm leading-tight font-semibold"
                         title={selectedConversation.subject || "Support Conversation"}
                       >
                         {selectedConversation.subject || "Support Conversation"}
@@ -921,9 +1131,9 @@ export default function AdminChatPage() {
                       >
                         {selectedConversation.lastMessage?.content || "No messages yet"}
                       </p>
-                      <div className="flex items-center gap-2 pt-0.5">
-                        <Badge variant="outline" className="gap-1.5 px-2 py-0.5 text-xs font-medium">
-                          <User className="h-3 w-3" />
+                      <div className="flex items-center gap-1.5 pt-0">
+                        <Badge variant="outline" className="gap-1 px-1.5 py-0 text-[10px] font-medium">
+                          <User className="h-2.5 w-2.5" />
                           <span title={selectedConversation.participants.find((p) => p.role === 0)?.name || "Unknown"}>
                             {selectedConversation.participants.find((p) => p.role === 0)?.name || "Unknown"}
                           </span>
@@ -945,11 +1155,10 @@ export default function AdminChatPage() {
                         updateConversationStatus(selectedConversation.id, statusValue);
                       }}
                     >
-                      <SelectTrigger className="h-8 w-[100px] text-xs font-medium">
+                      <SelectTrigger className="h-7 w-[90px] text-[11px] font-medium">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="0">Pending</SelectItem>
                         <SelectItem value="1">Active</SelectItem>
                         <SelectItem value="2">Resolved</SelectItem>
                         <SelectItem value="3">Closed</SelectItem>
@@ -963,7 +1172,7 @@ export default function AdminChatPage() {
                         updateConversationPriority(selectedConversation.id, priorityValue);
                       }}
                     >
-                      <SelectTrigger className="h-8 w-[90px] text-xs font-medium">
+                      <SelectTrigger className="h-7 w-[80px] text-[11px] font-medium">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -973,6 +1182,46 @@ export default function AdminChatPage() {
                         <SelectItem value="3">Urgent</SelectItem>
                       </SelectContent>
                     </Select>
+
+                    {/* Call buttons */}
+                    <div className="ml-1.5 flex items-center gap-1 border-l pl-1.5">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => handleInitiateCall(CallType.Audio)}
+                        disabled={connectionState !== "connected" || isInCall || selectedConversation.status === 3}
+                        title={
+                          connectionState !== "connected"
+                            ? "Connect to chat to enable calls"
+                            : isInCall
+                              ? "Already in a call"
+                              : selectedConversation.status === 3
+                                ? "Cannot call closed conversations"
+                                : "Start voice call"
+                        }
+                      >
+                        <Phone className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => handleInitiateCall(CallType.Video)}
+                        disabled={connectionState !== "connected" || isInCall || selectedConversation.status === 3}
+                        title={
+                          connectionState !== "connected"
+                            ? "Connect to chat to enable calls"
+                            : isInCall
+                              ? "Already in a call"
+                              : selectedConversation.status === 3
+                                ? "Cannot call closed conversations"
+                                : "Start video call"
+                        }
+                      >
+                        <Video className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
                 {lastError && (
@@ -992,7 +1241,7 @@ export default function AdminChatPage() {
               </CardHeader>
 
               <CardContent className="flex min-h-0 flex-1 flex-col p-0">
-                <ScrollArea className="min-h-0 flex-1 p-4">
+                <ScrollArea className="min-h-0 flex-1 px-2 py-1">
                   {isLoadingMessages ? (
                     <div className="flex h-40 items-center justify-center">
                       <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
@@ -1008,46 +1257,70 @@ export default function AdminChatPage() {
                       {groupedMessages.map((group) => (
                         <div key={group.date}>
                           <ChatDateSeparator date={group.date} />
-                          {group.messages.map((message) => (
-                            <ChatMessage
-                              key={message.id}
-                              id={message.id}
-                              content={message.content}
-                              senderName={message.senderName}
-                              senderId={message.senderId}
-                              isCurrentUser={message.senderId === currentUserId}
-                              isRead={message.isRead}
-                              isEdited={message.isEdited}
-                              isDeleted={message.isDeleted}
-                              createdAt={message.createdAt}
-                              editedAt={message.editedAt}
-                              replyToContent={message.replyToContent}
-                              replyToSenderName={message.replyToSenderName}
-                              fileUrl={message.fileUrl}
-                              fileName={message.fileName}
-                              fileType={message.fileType}
-                              fileSize={message.fileSize}
-                              voiceMessageUrl={message.voiceMessageUrl}
-                              voiceMessageDuration={message.voiceMessageDuration}
-                              onReply={() =>
-                                setReplyTo({
-                                  messageId: message.id,
-                                  senderName: message.senderName,
-                                  content: message.content,
-                                })
-                              }
-                              onEdit={
-                                message.senderId === currentUserId && !message.isDeleted
-                                  ? (content) => handleEditMessage(message.id, content)
-                                  : undefined
-                              }
-                              onDelete={
-                                message.senderId === currentUserId && !message.isDeleted
-                                  ? () => handleDeleteMessage(message.id)
-                                  : undefined
-                              }
-                            />
-                          ))}
+                          {group.messages.map((message) =>
+                            message.isCallMessage && message.callLogId ? (
+                              <CallMessage
+                                key={message.id}
+                                content={message.content}
+                                callLogId={message.callLogId}
+                                senderName={message.senderName}
+                                isCurrentUser={message.senderId === currentUserId}
+                                createdAt={message.createdAt}
+                                callType={message.callType}
+                                callStatus={message.callStatus}
+                                callDurationSeconds={message.callDurationSeconds}
+                                callInitiatorId={message.callInitiatorId}
+                                callInitiatorName={message.callInitiatorName}
+                                onJoinCall={() => handleJoinActiveCall(message.callLogId!)}
+                                onAnswerCall={() => handleJoinActiveCall(message.callLogId!)}
+                                onDeclineCall={() => handleDeclineCall(message.callLogId!)}
+                                canJoinCall={!isInCall && activeCallId === message.callLogId}
+                                isRinging={
+                                  !isInCall && activeCallId === message.callLogId && message.senderId !== currentUserId
+                                }
+                                isInCall={isInCall && currentCall?.callId === message.callLogId}
+                              />
+                            ) : (
+                              <ChatMessage
+                                key={message.id}
+                                id={message.id}
+                                content={message.content}
+                                senderName={message.senderName}
+                                senderId={message.senderId}
+                                isCurrentUser={message.senderId === currentUserId}
+                                isRead={message.isRead}
+                                isEdited={message.isEdited}
+                                isDeleted={message.isDeleted}
+                                createdAt={message.createdAt}
+                                editedAt={message.editedAt}
+                                replyToContent={message.replyToContent}
+                                replyToSenderName={message.replyToSenderName}
+                                fileUrl={message.fileUrl}
+                                fileName={message.fileName}
+                                fileType={message.fileType}
+                                fileSize={message.fileSize}
+                                voiceMessageUrl={message.voiceMessageUrl}
+                                voiceMessageDuration={message.voiceMessageDuration}
+                                onReply={() =>
+                                  setReplyTo({
+                                    messageId: message.id,
+                                    senderName: message.senderName,
+                                    content: message.content,
+                                  })
+                                }
+                                onEdit={
+                                  message.senderId === currentUserId && !message.isDeleted
+                                    ? (content) => handleEditMessage(message.id, content)
+                                    : undefined
+                                }
+                                onDelete={
+                                  message.senderId === currentUserId && !message.isDeleted
+                                    ? () => handleDeleteMessage(message.id)
+                                    : undefined
+                                }
+                              />
+                            ),
+                          )}
                         </div>
                       ))}
                       <div ref={messagesEndRef} />
@@ -1065,7 +1338,7 @@ export default function AdminChatPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="shrink-0 border-t p-4">
+                  <div className="flex-shrink-0 border-t p-2">
                     <MessageInput
                       onSend={handleSendMessage}
                       onSendFile={handleSendFile}
@@ -1095,6 +1368,27 @@ export default function AdminChatPage() {
           )}
         </Card>
       </div>
+
+      {/* Call Interface */}
+      {isInCall && currentCall && (
+        <CallInterface
+          token={currentCall.token}
+          serverUrl={currentCall.serverUrl}
+          callType={currentCall.callType}
+          onLeave={handleLeaveCall}
+          participantName={auth.claims?.email || "Admin"}
+        />
+      )}
+
+      {/* Incoming Call Notification */}
+      {incomingCall && !isInCall && (
+        <IncomingCallNotification
+          callerName={incomingCall.initiatorName}
+          callType={incomingCall.callType}
+          onAnswer={() => handleAnswerCall(incomingCall.callId, incomingCall.callType)}
+          onDecline={() => handleDeclineCall(incomingCall.callId)}
+        />
+      )}
     </main>
   );
 }

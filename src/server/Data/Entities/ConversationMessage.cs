@@ -37,4 +37,11 @@ public class ConversationMessage : BaseEntity
     // Voice message fields
     public string? VoiceMessageUrl { get; set; }
     public int? VoiceMessageDuration { get; set; } // in seconds
+
+    // Call message fields
+    public bool IsCallMessage { get; set; } = false;
+    public Guid? CallLogId { get; set; }
+
+    [ForeignKey(nameof(CallLogId))]
+    public CallLog? CallLog { get; set; }
 }

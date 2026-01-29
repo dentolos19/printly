@@ -101,22 +101,41 @@ public class NotificationService(
             notification.UserId
         );
 
-        await _conversationHubContext
-            .Clients.User(userId)
-            .SendAsync(
-                "ReceiveNotification",
-                new
-                {
-                    id = notification.Id,
-                    type = notification.Type.ToString(),
-                    title = notification.Title,
-                    message = notification.Message,
-                    conversationId = notification.ConversationId,
-                    priority = notification.Priority.ToString(),
-                    actionUrl = notification.ActionUrl,
-                    createdAt = notification.CreatedAt,
-                }
+        // Send via SignalR
+        try
+        {
+            await _conversationHubContext
+                .Clients.User(userId)
+                .SendAsync(
+                    "ReceiveNotification",
+                    new
+                    {
+                        id = notification.Id,
+                        type = notification.Type.ToString(),
+                        title = notification.Title,
+                        message = notification.Message,
+                        conversationId = notification.ConversationId,
+                        messageId = notification.MessageId,
+                        priority = notification.Priority.ToString(),
+                        actionUrl = notification.ActionUrl,
+                        isRead = false,
+                        createdAt = notification.CreatedAt,
+                    }
+                );
+
+            _logger.LogInformation(
+                "[NotificationService] SignalR notification sent successfully to UserId: {UserId}",
+                userId
             );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "[NotificationService] Failed to send SignalR notification to UserId: {UserId}",
+                userId
+            );
+        }
 
         _logger.LogInformation("Notification created for user {UserId}: {Type}", userId, type);
     }

@@ -41,6 +41,14 @@ export type ConversationMessage = {
   // Voice message fields
   voiceMessageUrl?: string | null;
   voiceMessageDuration?: number | null;
+  // Call message fields
+  isCallMessage?: boolean;
+  callLogId?: string | null;
+  callType?: 0 | 1 | null; // 0 = Audio, 1 = Video
+  callStatus?: 0 | 1 | 2 | 3 | 4 | 5 | null; // Ringing, Ongoing, Completed, Missed, Declined, Failed
+  callDurationSeconds?: number | null;
+  callInitiatorId?: string | null;
+  callInitiatorName?: string | null;
 };
 
 export type MessagePreview = {

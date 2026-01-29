@@ -68,7 +68,15 @@ public class ConversationController(
         string? FileType,
         long? FileSize,
         string? VoiceMessageUrl,
-        int? VoiceMessageDuration
+        int? VoiceMessageDuration,
+        // Call message fields
+        bool IsCallMessage,
+        Guid? CallLogId,
+        CallType? CallType,
+        CallStatus? CallStatus,
+        int? CallDurationSeconds,
+        string? CallInitiatorId,
+        string? CallInitiatorName
     );
 
     public record ConversationResponse(
@@ -676,6 +684,8 @@ public class ConversationController(
 
         var messages = await Context
             .ConversationMessages.Where(m => m.ConversationId == conversationId)
+            .Include(m => m.CallLog)
+                .ThenInclude(cl => cl!.Initiator)
             .OrderBy(m => m.CreatedAt)
             .Take(take)
             .Select(m => new MessageResponse(
@@ -702,7 +712,15 @@ public class ConversationController(
                 m.FileType,
                 m.FileSize,
                 m.VoiceMessageUrl,
-                m.VoiceMessageDuration
+                m.VoiceMessageDuration,
+                // Call message fields
+                m.IsCallMessage,
+                m.CallLogId,
+                m.CallLog != null ? m.CallLog.Type : (CallType?)null,
+                m.CallLog != null ? m.CallLog.Status : (CallStatus?)null,
+                m.CallLog != null ? m.CallLog.DurationSeconds : (int?)null,
+                m.CallLog != null ? m.CallLog.InitiatorId : null,
+                m.CallLog != null ? m.CallLog.Initiator.UserName ?? m.CallLog.Initiator.Email : null
             ))
             .ToListAsync();
 
@@ -986,4 +1004,118 @@ public class ConversationController(
             "audio/webm" => "webm",
             _ => "audio",
         };
+
+    #region Calling
+
+    public record CallTokenResponse(string Token, string RoomName, string WsUrl);
+
+    /// <summary>
+    /// Gets a LiveKit token to join a call.
+    /// </summary>
+    [HttpPost("call/{callId:guid}/token")]
+    public async Task<ActionResult<CallTokenResponse>> GetCallToken(
+        Guid callId,
+        [FromServices] ILiveKitService liveKitService,
+        [FromServices] IConfiguration configuration
+    )
+    {
+        var currentUserId = User.GetUserId();
+        if (currentUserId is null)
+            return Unauthorized();
+
+        var callLog = await Context.CallLogs.Include(c => c.Participants).FirstOrDefaultAsync(c => c.Id == callId);
+
+        if (callLog is null)
+            return NotFound("Call not found");
+
+        var participant = callLog.Participants.FirstOrDefault(p => p.UserId == currentUserId);
+        if (participant is null)
+            return Forbid();
+
+        if (string.IsNullOrEmpty(callLog.LiveKitRoomName))
+            return BadRequest("Call room not initialized");
+
+        var user = await Context.Users.FindAsync(currentUserId);
+        var userName = user?.UserName ?? user?.Email ?? "Unknown";
+
+        var token = liveKitService.GenerateToken(
+            participantId: currentUserId,
+            participantName: userName,
+            roomName: callLog.LiveKitRoomName
+        );
+
+        var wsUrl = configuration["LIVEKIT_URL"] ?? throw new InvalidOperationException("LIVEKIT_URL not configured");
+
+        return Ok(new CallTokenResponse(token, callLog.LiveKitRoomName, wsUrl));
+    }
+
+    public record CallParticipantResponse(string Id, string Name, bool DidAnswer, DateTime? JoinedAt, DateTime? LeftAt);
+
+    public record CallDetailsResponse(
+        Guid Id,
+        Guid ConversationId,
+        CallType Type,
+        CallStatus Status,
+        DateTime StartedAt,
+        DateTime? EndedAt,
+        int? DurationSeconds,
+        string LiveKitRoomName,
+        CallParticipantResponse Initiator,
+        List<CallParticipantResponse> Participants
+    );
+
+    /// <summary>
+    /// Gets details about a specific call.
+    /// </summary>
+    [HttpGet("call/{callId:guid}")]
+    public async Task<ActionResult<CallDetailsResponse>> GetCallDetails(Guid callId)
+    {
+        var currentUserId = User.GetUserId();
+        if (currentUserId is null)
+            return Unauthorized();
+
+        var callLog = await Context
+            .CallLogs.Include(c => c.Participants)
+                .ThenInclude(p => p.User)
+            .Include(c => c.Initiator)
+            .FirstOrDefaultAsync(c => c.Id == callId);
+
+        if (callLog is null)
+            return NotFound("Call not found");
+
+        var isParticipant = callLog.Participants.Any(p => p.UserId == currentUserId);
+        if (!isParticipant)
+            return Forbid();
+
+        return Ok(
+            new CallDetailsResponse(
+                callLog.Id,
+                callLog.ConversationId,
+                callLog.Type,
+                callLog.Status,
+                callLog.StartedAt,
+                callLog.EndedAt,
+                callLog.DurationSeconds,
+                callLog.LiveKitRoomName ?? "",
+                new CallParticipantResponse(
+                    callLog.Initiator.Id,
+                    callLog.Initiator.UserName ?? callLog.Initiator.Email ?? "Unknown",
+                    true,
+                    callLog.StartedAt,
+                    null
+                ),
+                callLog
+                    .Participants.Select(p => new CallParticipantResponse(
+                        p.User.Id,
+                        p.User.UserName ?? p.User.Email ?? "Unknown",
+                        p.DidAnswer,
+                        p.JoinedAt,
+                        p.LeftAt
+                    ))
+                    .ToList()
+            )
+        );
+    }
+
+    #endregion
 }
