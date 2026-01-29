@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { OrderStatus } from "@/lib/server/order";
-import { CheckCircle2, Circle, Clock, CreditCard, Package, Truck, XCircle } from "lucide-react";
+import { CheckCircle2, Circle, Clock, CreditCard, Package, RotateCcw, Truck, XCircle } from "lucide-react";
 
 interface OrderProgressTrackerProps {
   status: OrderStatus;
@@ -54,6 +54,55 @@ export function OrderProgressTracker({ status, className }: OrderProgressTracker
           <div>
             <p className="font-medium text-red-800">Order Cancelled</p>
             <p className="text-sm text-red-600">This order has been cancelled</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle refund-related statuses
+  if (status === OrderStatus.RefundRequested) {
+    return (
+      <div className={cn("rounded-lg border border-orange-200 bg-orange-50 p-4", className)}>
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100">
+            <RotateCcw className="h-5 w-5 text-orange-600" />
+          </div>
+          <div>
+            <p className="font-medium text-orange-800">Refund Requested</p>
+            <p className="text-sm text-orange-600">Your refund request is being reviewed</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === OrderStatus.RefundApproved) {
+    return (
+      <div className={cn("rounded-lg border border-amber-200 bg-amber-50 p-4", className)}>
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
+            <CheckCircle2 className="h-5 w-5 text-amber-600" />
+          </div>
+          <div>
+            <p className="font-medium text-amber-800">Refund Approved</p>
+            <p className="text-sm text-amber-600">Your refund has been approved and is being processed</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === OrderStatus.Refunded) {
+    return (
+      <div className={cn("rounded-lg border border-gray-200 bg-gray-50 p-4", className)}>
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
+            <CheckCircle2 className="h-5 w-5 text-gray-600" />
+          </div>
+          <div>
+            <p className="font-medium text-gray-800">Refunded</p>
+            <p className="text-sm text-gray-600">This order has been refunded</p>
           </div>
         </div>
       </div>

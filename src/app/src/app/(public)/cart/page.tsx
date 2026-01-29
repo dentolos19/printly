@@ -24,6 +24,8 @@ function CartItemRow({
   onUpdateQuantity: (quantity: number) => void;
   onRemove: () => void;
 }) {
+  const itemPrice = item.unitPrice + (item.customizationPrice ?? 0);
+
   return (
     <div className="flex items-center gap-4 py-4">
       <div className="bg-muted flex h-20 w-20 shrink-0 items-center justify-center rounded-lg">
@@ -34,7 +36,13 @@ function CartItemRow({
         <p className="text-muted-foreground text-sm">
           {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]} • {item.color}
         </p>
-        <p className="font-medium">${item.unitPrice.toFixed(2)}</p>
+        {item.imprintName && <p className="text-primary text-sm font-medium">+ Customization: {item.imprintName}</p>}
+        <div className="flex items-center gap-2">
+          <p className="font-medium">${item.unitPrice.toFixed(2)}</p>
+          {item.customizationPrice && item.customizationPrice > 0 && (
+            <span className="text-primary text-sm">+ ${item.customizationPrice.toFixed(2)}</span>
+          )}
+        </div>
       </div>
       <div className="flex items-center gap-2">
         <Button
@@ -57,7 +65,7 @@ function CartItemRow({
           <Plus className="h-4 w-4" />
         </Button>
       </div>
-      <div className="w-24 text-right font-medium">${(item.unitPrice * item.quantity).toFixed(2)}</div>
+      <div className="w-24 text-right font-medium">${(itemPrice * item.quantity).toFixed(2)}</div>
       <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={onRemove}>
         <Trash2 className="h-4 w-4" />
       </Button>
@@ -87,6 +95,7 @@ export default function CartPage() {
   const { items, updateQuantity, removeItem, clearCart, getTotal } = useCart();
   const server = useServer();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const handleCheckout = async () => {
     if (!claims) {
@@ -110,16 +119,23 @@ export default function CartPage() {
       const orderItems = items.map((item) => ({
         variantId: item.variantId,
         quantity: item.quantity,
+        imprintId: item.imprintId,
       }));
 
-      await server.api.order.createOrder({ items: orderItems });
+      const order = await server.api.order.createOrder({ items: orderItems });
+
+      // Set redirecting flag to prevent showing empty cart
+      setIsRedirecting(true);
+
+      // Clear cart and redirect immediately to orders page
+      clearCart();
 
       toast.success("Order placed successfully!", {
         description: "Your order has been created and is pending payment.",
       });
 
-      clearCart();
-      router.push("/orders");
+      // Use replace to prevent going back to cart page
+      router.replace("/orders");
     } catch (error) {
       console.error("Checkout failed:", error);
       toast.error("Checkout failed", {
@@ -173,8 +189,13 @@ export default function CartPage() {
           </p>
         </div>
 
-        {items.length === 0 ? (
+        {items.length === 0 && !isRedirecting ? (
           <EmptyCart />
+        ) : isRedirecting ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="text-primary mb-4 h-16 w-16 animate-spin rounded-full border-4 border-current border-t-transparent" />
+            <h2 className="mb-2 text-xl font-bold">Redirecting to your orders...</h2>
+          </div>
         ) : (
           <div className="grid gap-8 lg:grid-cols-3">
             {/* Cart Items */}
@@ -190,10 +211,10 @@ export default function CartPage() {
                   <div className="divide-y">
                     {items.map((item) => (
                       <CartItemRow
-                        key={item.variantId}
+                        key={`${item.variantId}-${item.imprintId || "no-imprint"}`}
                         item={item}
-                        onUpdateQuantity={(qty) => updateQuantity(item.variantId, qty)}
-                        onRemove={() => removeItem(item.variantId)}
+                        onUpdateQuantity={(qty) => updateQuantity(item.variantId, qty, item.imprintId)}
+                        onRemove={() => removeItem(item.variantId, item.imprintId)}
                       />
                     ))}
                   </div>

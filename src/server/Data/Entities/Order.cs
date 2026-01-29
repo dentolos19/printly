@@ -11,6 +11,11 @@ public enum OrderStatus
     Shipped,
     Delivered,
     Cancelled,
+
+    // Refund-related statuses
+    RefundRequested,
+    RefundApproved,
+    Refunded,
 }
 
 public class Order : BaseEntity

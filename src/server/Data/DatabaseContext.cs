@@ -19,6 +19,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
     public DbSet<Inventory> Inventories { get; set; }
     public DbSet<Order> Orders { get; set; }
     public DbSet<OrderItem> OrderItems { get; set; }
+    public DbSet<Payment> Payments { get; set; }
     public DbSet<Post> Posts { get; set; }
     public DbSet<PostComment> PostComments { get; set; }
     public DbSet<PostReaction> PostReactions { get; set; }
@@ -26,6 +27,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
     public DbSet<Conversation> Conversations { get; set; }
     public DbSet<ConversationParticipant> ConversationParticipants { get; set; }
     public DbSet<ConversationMessage> ConversationMessages { get; set; }
+    public DbSet<Refund> Refunds { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
@@ -125,10 +127,45 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .HasForeignKey(i => i.VariantId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // OrderItem -> Imprint relationship (nullable - only for customized products)
+        modelBuilder
+            .Entity<OrderItem>()
+            .HasOne(i => i.Imprint)
+            .WithMany()
+            .HasForeignKey(i => i.ImprintId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Imprint -> Product relationship (optional association)
+        modelBuilder
+            .Entity<Imprint>()
+            .HasOne(i => i.Product)
+            .WithMany()
+            .HasForeignKey(i => i.ProductId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Index for OrderItem imprint queries
+        modelBuilder.Entity<OrderItem>().HasIndex(i => i.ImprintId);
+
+        // Index for Imprint product queries
+        modelBuilder.Entity<Imprint>().HasIndex(i => i.ProductId);
+
         // Index for querying orders by user and status
         modelBuilder.Entity<Order>().HasIndex(o => o.UserId);
         modelBuilder.Entity<Order>().HasIndex(o => o.Status);
         modelBuilder.Entity<Order>().HasIndex(o => o.CreatedAt);
+
+        // Payment relationships (1:1 with Order)
+        modelBuilder
+            .Entity<Payment>()
+            .HasOne(p => p.Order)
+            .WithOne()
+            .HasForeignKey<Payment>(p => p.OrderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Unique constraints for Payment
+        modelBuilder.Entity<Payment>().HasIndex(p => p.OrderId).IsUnique();
+        modelBuilder.Entity<Payment>().HasIndex(p => p.StripeCheckoutSessionId).IsUnique();
+        modelBuilder.Entity<Payment>().HasIndex(p => p.Status);
 
         modelBuilder.Entity<Post>().HasOne(p => p.Author).WithMany().HasForeignKey(p => p.AuthorId).IsRequired();
 
@@ -238,6 +275,50 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<ConversationMessage>().HasIndex(cm => cm.CreatedAt);
+
+        // Refund relationships
+        modelBuilder
+            .Entity<Refund>()
+            .HasOne(r => r.Payment)
+            .WithMany()
+            .HasForeignKey(r => r.PaymentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder
+            .Entity<Refund>()
+            .HasOne(r => r.Order)
+            .WithMany()
+            .HasForeignKey(r => r.OrderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder
+            .Entity<Refund>()
+            .HasOne(r => r.RequestedByUser)
+            .WithMany()
+            .HasForeignKey(r => r.RequestedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder
+            .Entity<Refund>()
+            .HasOne(r => r.ProcessedByUser)
+            .WithMany()
+            .HasForeignKey(r => r.ProcessedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder
+            .Entity<Refund>()
+            .HasOne(r => r.Conversation)
+            .WithMany()
+            .HasForeignKey(r => r.ConversationId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Refund indexes
+        modelBuilder.Entity<Refund>().HasIndex(r => r.PaymentId);
+        modelBuilder.Entity<Refund>().HasIndex(r => r.OrderId);
+        modelBuilder.Entity<Refund>().HasIndex(r => r.RequestedByUserId);
+        modelBuilder.Entity<Refund>().HasIndex(r => r.Status);
+        modelBuilder.Entity<Refund>().HasIndex(r => r.RequestedAt);
+        modelBuilder.Entity<Refund>().HasIndex(r => r.StripeRefundId).IsUnique();
     }
 
     public override int SaveChanges()

@@ -12,18 +12,23 @@ namespace PrintlyServer.Controllers;
 [Authorize(Roles = "User,Admin")]
 public class ImprintController(DatabaseContext context) : BaseController(context)
 {
-    public record CreateImprintDto(string Name, string? Description, string Data);
+    public record CreateImprintDto(string Name, string? Description, string Data, Guid? ProductId = null);
 
-    public record UpdateImprintDto(string? Name, string? Description, string? Data);
+    public record UpdateImprintDto(string? Name, string? Description, string? Data, Guid? ProductId = null);
 
     public record ImprintResponse(
         Guid Id,
         string Name,
         string? Description,
         string Data,
+        Guid? ProductId,
+        string? ProductName,
+        decimal CustomizationPrice,
         DateTime CreatedAt,
         DateTime UpdatedAt
     );
+
+    public record ImprintValidationResponse(bool IsValid, decimal CustomizationPrice, string? Message);
 
     /// <summary>
     /// Gets all imprints for the authenticated user.
@@ -38,8 +43,19 @@ public class ImprintController(DatabaseContext context) : BaseController(context
 
         var imprints = await Context
             .Imprints.Where(i => i.UserId == userId)
+            .Include(i => i.Product)
             .OrderByDescending(i => i.UpdatedAt)
-            .Select(i => new ImprintResponse(i.Id, i.Name, i.Description, i.Data, i.CreatedAt, i.UpdatedAt))
+            .Select(i => new ImprintResponse(
+                i.Id,
+                i.Name,
+                i.Description,
+                i.Data,
+                i.ProductId,
+                i.Product != null ? i.Product.Name : null,
+                i.CustomizationPrice,
+                i.CreatedAt,
+                i.UpdatedAt
+            ))
             .ToListAsync();
 
         return Ok(imprints);
@@ -59,7 +75,18 @@ public class ImprintController(DatabaseContext context) : BaseController(context
 
         var imprint = await Context
             .Imprints.Where(i => i.Id == Guid.Parse(id) && i.UserId == userId)
-            .Select(i => new ImprintResponse(i.Id, i.Name, i.Description, i.Data, i.CreatedAt, i.UpdatedAt))
+            .Include(i => i.Product)
+            .Select(i => new ImprintResponse(
+                i.Id,
+                i.Name,
+                i.Description,
+                i.Data,
+                i.ProductId,
+                i.Product != null ? i.Product.Name : null,
+                i.CustomizationPrice,
+                i.CreatedAt,
+                i.UpdatedAt
+            ))
             .FirstOrDefaultAsync();
 
         if (imprint is null)
@@ -80,6 +107,15 @@ public class ImprintController(DatabaseContext context) : BaseController(context
         if (userId is null)
             return Unauthorized();
 
+        // Validate product exists if ProductId is provided
+        Product? product = null;
+        if (body.ProductId.HasValue)
+        {
+            product = await Context.Products.FirstOrDefaultAsync(p => p.Id == body.ProductId.Value);
+            if (product is null)
+                return BadRequest(new { message = "Product not found" });
+        }
+
         var imprint = new Imprint
         {
             Id = Guid.NewGuid(),
@@ -87,6 +123,8 @@ public class ImprintController(DatabaseContext context) : BaseController(context
             Description = body.Description,
             Data = body.Data,
             UserId = userId,
+            ProductId = body.ProductId,
+            CustomizationPrice = 5.00m, // Default constant price for now
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
         };
@@ -99,6 +137,9 @@ public class ImprintController(DatabaseContext context) : BaseController(context
             imprint.Name,
             imprint.Description,
             imprint.Data,
+            imprint.ProductId,
+            product?.Name,
+            imprint.CustomizationPrice,
             imprint.CreatedAt,
             imprint.UpdatedAt
         );
@@ -119,7 +160,9 @@ public class ImprintController(DatabaseContext context) : BaseController(context
         if (userId is null)
             return Unauthorized();
 
-        var imprint = await Context.Imprints.FirstOrDefaultAsync(i => i.Id == Guid.Parse(id) && i.UserId == userId);
+        var imprint = await Context
+            .Imprints.Include(i => i.Product)
+            .FirstOrDefaultAsync(i => i.Id == Guid.Parse(id) && i.UserId == userId);
 
         if (imprint is null)
             return NotFound();
@@ -133,6 +176,16 @@ public class ImprintController(DatabaseContext context) : BaseController(context
         if (body.Data is not null)
             imprint.Data = body.Data;
 
+        // Handle ProductId update
+        if (body.ProductId.HasValue)
+        {
+            var product = await Context.Products.FirstOrDefaultAsync(p => p.Id == body.ProductId.Value);
+            if (product is null)
+                return BadRequest(new { message = "Product not found" });
+            imprint.ProductId = body.ProductId;
+            imprint.Product = product;
+        }
+
         imprint.UpdatedAt = DateTime.UtcNow;
 
         await Context.SaveChangesAsync();
@@ -142,11 +195,52 @@ public class ImprintController(DatabaseContext context) : BaseController(context
             imprint.Name,
             imprint.Description,
             imprint.Data,
+            imprint.ProductId,
+            imprint.Product?.Name,
+            imprint.CustomizationPrice,
             imprint.CreatedAt,
             imprint.UpdatedAt
         );
 
         return Ok(response);
+    }
+
+    /// <summary>
+    /// Validates if an imprint can be used with a specific product.
+    /// </summary>
+    /// <param name="imprintId">The ID of the imprint to validate.</param>
+    /// <param name="productId">The ID of the product to validate against.</param>
+    /// <returns>Validation result with customization price.</returns>
+    [HttpGet("{imprintId}/validate/{productId}")]
+    public async Task<ActionResult<ImprintValidationResponse>> ValidateImprintForProduct(Guid imprintId, Guid productId)
+    {
+        var userId = User.GetUserId();
+        if (userId is null)
+            return Unauthorized();
+
+        var imprint = await Context.Imprints.FirstOrDefaultAsync(i => i.Id == imprintId && i.UserId == userId);
+
+        if (imprint is null)
+            return NotFound(new ImprintValidationResponse(false, 0, "Imprint not found"));
+
+        // Check if product exists
+        var product = await Context.Products.FirstOrDefaultAsync(p => p.Id == productId);
+        if (product is null)
+            return NotFound(new ImprintValidationResponse(false, 0, "Product not found"));
+
+        // Check if imprint is compatible (has no product restriction or matches target product)
+        bool isValid = !imprint.ProductId.HasValue || imprint.ProductId == productId;
+
+        if (!isValid)
+            return Ok(
+                new ImprintValidationResponse(
+                    false,
+                    imprint.CustomizationPrice,
+                    "Imprint is not compatible with selected product"
+                )
+            );
+
+        return Ok(new ImprintValidationResponse(true, imprint.CustomizationPrice, null));
     }
 
     /// <summary>

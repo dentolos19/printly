@@ -5,6 +5,9 @@ export type Imprint = {
   name: string;
   description?: string;
   data: string;
+  productId?: string | null;
+  productName?: string | null;
+  customizationPrice: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -13,12 +16,20 @@ export type CreateImprintDto = {
   name: string;
   description?: string;
   data: string;
+  productId?: string | null;
 };
 
 export type UpdateImprintDto = {
   name?: string;
   description?: string;
   data?: string;
+  productId?: string | null;
+};
+
+export type ImprintValidationResponse = {
+  isValid: boolean;
+  customizationPrice: number;
+  message?: string | null;
 };
 
 export default function initImprintController(fetch: ServerFetch) {
@@ -87,6 +98,18 @@ export default function initImprintController(fetch: ServerFetch) {
       if (!response.ok) {
         throw new Error("Failed to delete imprint");
       }
+    },
+
+    validateImprintForProduct: async (imprintId: string, productId: string): Promise<ImprintValidationResponse> => {
+      const response = await fetch(`/imprint/${imprintId}/validate/${productId}`, {
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to validate imprint for product");
+      }
+
+      return response.json();
     },
   };
 }

@@ -16,6 +16,9 @@ public class OrderItem : BaseEntity
     // Foreign Key to DesignRequest - nullable - not all orders need design requests
     public Guid? RequestId { get; set; }
 
+    // Foreign Key to Imprint - nullable - only set for customized products
+    public Guid? ImprintId { get; set; }
+
     [Required]
     [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1")]
     public int Quantity { get; set; }
@@ -33,6 +36,7 @@ public class OrderItem : BaseEntity
     // Navigation properties
     public Order Order { get; set; } = null!;
     public ProductVariant Variant { get; set; } = null!;
+    public Imprint? Imprint { get; set; }
     // TODO: Add DesignRequest navigation property when that entity is created
     // public DesignRequest? Request { get; set; }
 }

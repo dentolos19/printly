@@ -29,7 +29,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useServer } from "@/lib/providers/server";
 import type { ProductResponse, ProductVariantResponse } from "@/lib/server/product";
 import { ProductSize, ProductSizeLabels, CommonColors } from "@/lib/server/product";
-import { ArrowLeft, Edit, ImageIcon, Package, Plus, Trash2, Upload, X } from "lucide-react";
+import { ArrowLeft, Box, Edit, ImageIcon, Package, Plus, Trash2, Upload, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -65,6 +65,16 @@ export default function ProductDetailPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Product image/model dialog states
+  const [productImageDialogOpen, setProductImageDialogOpen] = useState(false);
+  const [productModelDialogOpen, setProductModelDialogOpen] = useState(false);
+  const [selectedProductImage, setSelectedProductImage] = useState<File | null>(null);
+  const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
+  const [selectedProductModel, setSelectedProductModel] = useState<File | null>(null);
+  const [uploadingProductMedia, setUploadingProductMedia] = useState(false);
+  const productImageInputRef = useRef<HTMLInputElement>(null);
+  const productModelInputRef = useRef<HTMLInputElement>(null);
 
   const loadProduct = useCallback(async () => {
     setLoading(true);
@@ -282,6 +292,109 @@ export default function ProductDetailPage() {
     }
   };
 
+  // Product image handlers
+  const handleProductImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error("Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.");
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("File size must be less than 10MB");
+        return;
+      }
+      setSelectedProductImage(file);
+      setProductImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleProductImageUpload = async () => {
+    if (!selectedProductImage) {
+      toast.error("Please select an image to upload");
+      return;
+    }
+
+    setUploadingProductMedia(true);
+    try {
+      await api.product.uploadProductImage(productId, selectedProductImage);
+      toast.success("Product image uploaded successfully");
+      setProductImageDialogOpen(false);
+      setSelectedProductImage(null);
+      setProductImagePreview(null);
+      loadProduct();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to upload product image");
+    } finally {
+      setUploadingProductMedia(false);
+    }
+  };
+
+  const handleRemoveProductImage = async () => {
+    setUploadingProductMedia(true);
+    try {
+      await api.product.deleteProductImage(productId);
+      toast.success("Product image removed successfully");
+      setProductImageDialogOpen(false);
+      loadProduct();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to remove product image");
+    } finally {
+      setUploadingProductMedia(false);
+    }
+  };
+
+  // Product model handlers
+  const handleProductModelSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.name.toLowerCase().endsWith(".glb")) {
+        toast.error("Invalid file type. Only .glb files are allowed.");
+        return;
+      }
+      if (file.size > 50 * 1024 * 1024) {
+        toast.error("File size must be less than 50MB");
+        return;
+      }
+      setSelectedProductModel(file);
+    }
+  };
+
+  const handleProductModelUpload = async () => {
+    if (!selectedProductModel) {
+      toast.error("Please select a 3D model to upload");
+      return;
+    }
+
+    setUploadingProductMedia(true);
+    try {
+      await api.product.uploadProductModel(productId, selectedProductModel);
+      toast.success("3D model uploaded successfully");
+      setProductModelDialogOpen(false);
+      setSelectedProductModel(null);
+      loadProduct();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to upload 3D model");
+    } finally {
+      setUploadingProductMedia(false);
+    }
+  };
+
+  const handleRemoveProductModel = async () => {
+    setUploadingProductMedia(true);
+    try {
+      await api.product.deleteProductModel(productId);
+      toast.success("3D model removed successfully");
+      setProductModelDialogOpen(false);
+      loadProduct();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to remove 3D model");
+    } finally {
+      setUploadingProductMedia(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -357,6 +470,62 @@ export default function ProductDetailPage() {
           </CardHeader>
           <CardContent>
             <div className="text-lg font-medium">{new Date(product.createdAt).toLocaleDateString()}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Product Image and 3D Model */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-base">Product Image</CardTitle>
+              <CardDescription>Generic product image (can be overridden by variant image)</CardDescription>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setProductImageDialogOpen(true)}>
+              <ImageIcon className="mr-2 size-4" />
+              {product.imageUrl ? "Change" : "Upload"}
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-muted relative aspect-square w-full max-w-[200px] overflow-hidden rounded-lg border">
+              {product.imageUrl ? (
+                <Image src={product.imageUrl} alt={product.name} fill className="object-cover" />
+              ) : (
+                <div className="text-muted-foreground flex h-full w-full flex-col items-center justify-center">
+                  <ImageIcon className="mb-2 size-8" />
+                  <span className="text-sm">No image</span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-base">3D Model</CardTitle>
+              <CardDescription>GLB file for 3D product preview</CardDescription>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setProductModelDialogOpen(true)}>
+              <Box className="mr-2 size-4" />
+              {product.modelUrl ? "Change" : "Upload"}
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-muted flex aspect-square w-full max-w-[200px] flex-col items-center justify-center rounded-lg border">
+              {product.modelUrl ? (
+                <div className="text-center">
+                  <Box className="text-primary mx-auto mb-2 size-12" />
+                  <span className="text-sm font-medium">3D Model uploaded</span>
+                  <p className="text-muted-foreground mt-1 text-xs">Click &quot;Change&quot; to update</p>
+                </div>
+              ) : (
+                <div className="text-muted-foreground text-center">
+                  <Box className="mx-auto mb-2 size-8" />
+                  <span className="text-sm">No 3D model</span>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -736,6 +905,155 @@ export default function ProductDetailPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setImageDialogOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Product Image Upload Dialog */}
+      <Dialog open={productImageDialogOpen} onOpenChange={setProductImageDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Product Image</DialogTitle>
+            <DialogDescription>
+              Upload a generic product image. This will be shown when no variant image is available.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* Current Product Image */}
+            {product?.imageUrl && (
+              <div className="space-y-2">
+                <Label>Current Image</Label>
+                <div className="relative aspect-square w-full overflow-hidden rounded-lg border">
+                  <Image src={product.imageUrl} alt="Current product image" fill className="object-cover" />
+                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="w-full"
+                  onClick={handleRemoveProductImage}
+                  disabled={uploadingProductMedia}
+                >
+                  {uploadingProductMedia ? "Removing..." : "Remove Image"}
+                </Button>
+              </div>
+            )}
+
+            {/* Image Preview */}
+            {productImagePreview && !product?.imageUrl && (
+              <div className="space-y-2">
+                <Label>Preview</Label>
+                <div className="relative aspect-square w-full overflow-hidden rounded-lg border">
+                  <Image src={productImagePreview} alt="Preview" fill className="object-cover" />
+                </div>
+              </div>
+            )}
+
+            {/* Upload Section */}
+            <div className="space-y-2">
+              <Label>{product?.imageUrl ? "Replace Image" : "Upload Image"}</Label>
+              <input
+                ref={productImageInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleProductImageSelect}
+                className="hidden"
+              />
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => productImageInputRef.current?.click()}
+                  disabled={uploadingProductMedia}
+                >
+                  <ImageIcon className="mr-2 size-4" />
+                  Choose File
+                </Button>
+                {selectedProductImage && (
+                  <Button onClick={handleProductImageUpload} disabled={uploadingProductMedia}>
+                    {uploadingProductMedia ? "Uploading..." : "Upload"}
+                  </Button>
+                )}
+              </div>
+              {selectedProductImage && (
+                <p className="text-muted-foreground text-xs">Selected: {selectedProductImage.name}</p>
+              )}
+              <p className="text-muted-foreground text-xs">Supported formats: JPEG, PNG, WebP, GIF. Max size: 10MB.</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setProductImageDialogOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Product 3D Model Upload Dialog */}
+      <Dialog open={productModelDialogOpen} onOpenChange={setProductModelDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>3D Model</DialogTitle>
+            <DialogDescription>Upload a .glb file for 3D product preview in the design tool.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* Current Model Status */}
+            {product?.modelUrl && (
+              <div className="space-y-2">
+                <Label>Current 3D Model</Label>
+                <div className="bg-muted flex aspect-video w-full items-center justify-center rounded-lg border">
+                  <div className="text-center">
+                    <Box className="text-primary mx-auto mb-2 size-12" />
+                    <span className="text-sm font-medium">3D Model uploaded</span>
+                  </div>
+                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="w-full"
+                  onClick={handleRemoveProductModel}
+                  disabled={uploadingProductMedia}
+                >
+                  {uploadingProductMedia ? "Removing..." : "Remove 3D Model"}
+                </Button>
+              </div>
+            )}
+
+            {/* Upload Section */}
+            <div className="space-y-2">
+              <Label>{product?.modelUrl ? "Replace 3D Model" : "Upload 3D Model"}</Label>
+              <input
+                ref={productModelInputRef}
+                type="file"
+                accept=".glb"
+                onChange={handleProductModelSelect}
+                className="hidden"
+              />
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => productModelInputRef.current?.click()}
+                  disabled={uploadingProductMedia}
+                >
+                  <Box className="mr-2 size-4" />
+                  Choose File
+                </Button>
+                {selectedProductModel && (
+                  <Button onClick={handleProductModelUpload} disabled={uploadingProductMedia}>
+                    {uploadingProductMedia ? "Uploading..." : "Upload"}
+                  </Button>
+                )}
+              </div>
+              {selectedProductModel && (
+                <p className="text-muted-foreground text-xs">Selected: {selectedProductModel.name}</p>
+              )}
+              <p className="text-muted-foreground text-xs">Supported format: GLB. Max size: 50MB.</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setProductModelDialogOpen(false)}>
               Close
             </Button>
           </DialogFooter>

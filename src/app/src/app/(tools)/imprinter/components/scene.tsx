@@ -1,12 +1,9 @@
 "use client";
 
-import { Decal, Environment, OrbitControls, PerspectiveCamera, useTexture } from "@react-three/drei";
+import { Decal, Environment, OrbitControls, PerspectiveCamera, useGLTF, useTexture } from "@react-three/drei";
 import { Canvas, createPortal, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { Hoodie } from "../models/hoodie";
-import { Mug } from "../models/mug";
-import { TShirt } from "../models/tshirt";
 import type { AppliedDesign } from "../types";
 import { useImprinter } from "./hooks/use-imprinter";
 
@@ -165,92 +162,144 @@ type MeshMap = {
   rightSleeve: THREE.Mesh | null;
 };
 
+// Dynamic model loader component
+function DynamicModel({ url, color }: { url: string; color: string }) {
+  const { scene } = useGLTF(url);
+  const modelRef = useRef<THREE.Group>(null);
+
+  useEffect(() => {
+    if (!scene) return;
+
+    // Clone the scene to avoid modifying the cached version
+    const clonedScene = scene.clone();
+
+    // Apply color to all meshes
+    clonedScene.traverse((child: THREE.Object3D) => {
+      if (child instanceof THREE.Mesh && child.material) {
+        const material = child.material as THREE.MeshStandardMaterial;
+        // Clone material to avoid affecting other instances
+        child.material = material.clone();
+        (child.material as THREE.MeshStandardMaterial).color = new THREE.Color(color);
+      }
+    });
+
+    if (modelRef.current) {
+      // Clear existing children
+      while (modelRef.current.children.length > 0) {
+        modelRef.current.remove(modelRef.current.children[0]);
+      }
+      // Add cloned scene
+      modelRef.current.add(clonedScene);
+    }
+  }, [scene, color]);
+
+  return <group ref={modelRef} />;
+}
+
+// Placeholder when no model is selected
+function NoModelPlaceholder() {
+  return (
+    <mesh>
+      <boxGeometry args={[1, 1.5, 0.5]} />
+      <meshStandardMaterial color="#666666" wireframe />
+    </mesh>
+  );
+}
+
 function CanvasModel() {
-  const { productModel, productColor, appliedDesigns } = useImprinter();
+  const { productColor, appliedDesigns, modelConfig, selectedProduct } = useImprinter();
   const { gl } = useThree();
   const modelRef = useRef<THREE.Group>(null);
   const [meshes, setMeshes] = useState<MeshMap>({ body: null, leftSleeve: null, rightSleeve: null });
   const maxAnisotropy = useMemo(() => gl.capabilities.getMaxAnisotropy(), [gl]);
 
+  // Get model URL from selected product - use proxied URL to avoid CORS issues
+  const modelUrl = selectedProduct?.product.modelId ? `/assets/${selectedProduct.product.modelId}/view` : null;
+
   // Find and categorize meshes by position and material
   useEffect(() => {
     if (!modelRef.current) return;
 
-    const box = new THREE.Box3().setFromObject(modelRef.current);
-    const center = box.getCenter(new THREE.Vector3());
-    modelRef.current.position.sub(center);
+    // Small delay to allow the model to load
+    const timer = setTimeout(() => {
+      if (!modelRef.current) return;
 
-    let bodyMesh: THREE.Mesh | null = null;
-    let leftSleeveMesh: THREE.Mesh | null = null;
-    let rightSleeveMesh: THREE.Mesh | null = null;
-    let maxBodyDimension = 0;
+      const box = new THREE.Box3().setFromObject(modelRef.current);
+      const center = box.getCenter(new THREE.Vector3());
+      modelRef.current.position.sub(center);
 
-    modelRef.current.traverse((child: THREE.Object3D) => {
-      if (child instanceof THREE.Mesh) {
-        if (child.material) {
-          const material = child.material as THREE.MeshStandardMaterial;
-          material.color = new THREE.Color(productColor);
+      let bodyMesh: THREE.Mesh | null = null;
+      let leftSleeveMesh: THREE.Mesh | null = null;
+      let rightSleeveMesh: THREE.Mesh | null = null;
+      let maxBodyDimension = 0;
 
-          // Categorize mesh by material name or position
-          const materialName = material.name?.toLowerCase() || "";
-          child.geometry.computeBoundingBox();
-          const bbox = child.geometry.boundingBox;
+      modelRef.current.traverse((child: THREE.Object3D) => {
+        if (child instanceof THREE.Mesh) {
+          if (child.material) {
+            const material = child.material as THREE.MeshStandardMaterial;
+            material.color = new THREE.Color(productColor);
 
-          if (bbox) {
-            const meshCenter = bbox.getCenter(new THREE.Vector3());
-            child.localToWorld(meshCenter);
-            const size = new THREE.Vector3();
-            bbox.getSize(size);
-            const dimension = size.length();
+            // Categorize mesh by material name or position
+            const materialName = material.name?.toLowerCase() || "";
+            child.geometry.computeBoundingBox();
+            const bbox = child.geometry.boundingBox;
 
-            // Check if it's a sleeve based on material name or position
-            if (materialName.includes("sleeve")) {
-              if (meshCenter.x < -0.1 && !leftSleeveMesh) {
-                leftSleeveMesh = child;
-              } else if (meshCenter.x > 0.1 && !rightSleeveMesh) {
-                rightSleeveMesh = child;
-              }
-            } else if (materialName.includes("body") || materialName.includes("main")) {
-              // Body mesh
-              if (dimension > maxBodyDimension) {
-                maxBodyDimension = dimension;
-                bodyMesh = child;
-              }
-            } else {
-              // Fallback: largest mesh as body
-              if (dimension > maxBodyDimension) {
-                maxBodyDimension = dimension;
-                bodyMesh = child;
+            if (bbox) {
+              const meshCenter = bbox.getCenter(new THREE.Vector3());
+              child.localToWorld(meshCenter);
+              const size = new THREE.Vector3();
+              bbox.getSize(size);
+              const dimension = size.length();
+
+              // Check if it's a sleeve based on material name or position
+              if (materialName.includes("sleeve")) {
+                if (meshCenter.x < -0.1 && !leftSleeveMesh) {
+                  leftSleeveMesh = child;
+                } else if (meshCenter.x > 0.1 && !rightSleeveMesh) {
+                  rightSleeveMesh = child;
+                }
+              } else if (materialName.includes("body") || materialName.includes("main")) {
+                // Body mesh
+                if (dimension > maxBodyDimension) {
+                  maxBodyDimension = dimension;
+                  bodyMesh = child;
+                }
+              } else {
+                // Fallback: largest mesh as body
+                if (dimension > maxBodyDimension) {
+                  maxBodyDimension = dimension;
+                  bodyMesh = child;
+                }
               }
             }
           }
         }
-      }
-    });
-
-    // Fallback: if no specific meshes found, use the largest as body
-    if (!bodyMesh) {
-      modelRef.current.traverse((child: THREE.Object3D) => {
-        if (!bodyMesh && child instanceof THREE.Mesh) {
-          bodyMesh = child;
-        }
       });
-    }
 
-    setMeshes({
-      body: bodyMesh,
-      leftSleeve: leftSleeveMesh,
-      rightSleeve: rightSleeveMesh,
-    });
-  }, [productColor, productModel]);
+      // Fallback: if no specific meshes found, use the largest as body
+      if (!bodyMesh) {
+        modelRef.current.traverse((child: THREE.Object3D) => {
+          if (!bodyMesh && child instanceof THREE.Mesh) {
+            bodyMesh = child;
+          }
+        });
+      }
+
+      setMeshes({
+        body: bodyMesh,
+        leftSleeve: leftSleeveMesh,
+        rightSleeve: rightSleeveMesh,
+      });
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [productColor, modelUrl]);
 
   useFrame(() => {
     if (modelRef.current) {
       modelRef.current.updateMatrixWorld(true);
     }
   });
-
-  const ModelComponent = productModel === "hoodie" ? Hoodie : productModel === "mug" ? Mug : TShirt;
 
   // Helper function to get the appropriate mesh for a print area
   const getMeshForPrintArea = (printArea: string): THREE.Mesh | null => {
@@ -283,7 +332,13 @@ function CanvasModel() {
 
   return (
     <group ref={modelRef}>
-      <ModelComponent />
+      {modelUrl ? (
+        <Suspense fallback={<NoModelPlaceholder />}>
+          <DynamicModel url={modelUrl} color={productColor} />
+        </Suspense>
+      ) : (
+        <NoModelPlaceholder />
+      )}
 
       {/* Render decals for each mesh */}
       {Array.from(designsByMesh.entries()).map(([mesh, designs]) =>

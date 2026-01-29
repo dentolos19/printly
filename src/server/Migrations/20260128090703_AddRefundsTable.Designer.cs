@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PrintlyServer.Data;
 
@@ -10,9 +11,11 @@ using PrintlyServer.Data;
 namespace PrintlyServer.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20260128090703_AddRefundsTable")]
+    partial class AddRefundsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
@@ -472,9 +475,6 @@ namespace PrintlyServer.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("CustomizationPrice")
-                        .HasColumnType("decimal(10,2)");
-
                     b.Property<string>("Data")
                         .IsRequired()
                         .HasColumnType("jsonb");
@@ -486,9 +486,6 @@ namespace PrintlyServer.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid?>("ProductId")
-                        .HasColumnType("TEXT");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
 
@@ -497,8 +494,6 @@ namespace PrintlyServer.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ProductId");
 
                     b.HasIndex("UserId");
 
@@ -644,9 +639,6 @@ namespace PrintlyServer.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid?>("ImprintId")
-                        .HasColumnType("TEXT");
-
                     b.Property<Guid>("OrderId")
                         .HasColumnType("TEXT");
 
@@ -669,8 +661,6 @@ namespace PrintlyServer.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ImprintId");
 
                     b.HasIndex("OrderId");
 
@@ -1279,18 +1269,11 @@ namespace PrintlyServer.Migrations
 
             modelBuilder.Entity("PrintlyServer.Data.Entities.Imprint", b =>
                 {
-                    b.HasOne("PrintlyServer.Data.Entities.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("PrintlyServer.Data.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Product");
 
                     b.Navigation("User");
                 });
@@ -1337,11 +1320,6 @@ namespace PrintlyServer.Migrations
 
             modelBuilder.Entity("PrintlyServer.Data.Entities.OrderItem", b =>
                 {
-                    b.HasOne("PrintlyServer.Data.Entities.Imprint", "Imprint")
-                        .WithMany()
-                        .HasForeignKey("ImprintId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("PrintlyServer.Data.Entities.Order", "Order")
                         .WithMany("Items")
                         .HasForeignKey("OrderId")
@@ -1353,8 +1331,6 @@ namespace PrintlyServer.Migrations
                         .HasForeignKey("VariantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("Imprint");
 
                     b.Navigation("Order");
 

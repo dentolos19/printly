@@ -5,16 +5,21 @@ import { ImprinterProvider } from "@/app/(tools)/imprinter/components/hooks/use-
 import type { AppliedDesign, CameraState, ProductModel } from "@/app/(tools)/imprinter/types";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useServer } from "@/lib/providers/server";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 export default function Page() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const { api } = useServer();
 
   const imprintId = params?.id as string | undefined;
   const isNew = imprintId === "new";
+
+  // Get product/variant from URL params (from product modal)
+  const initialProductId = searchParams.get("product");
+  const initialVariantId = searchParams.get("variant");
 
   const [initialImprintId, setInitialImprintId] = useState<string | null>(isNew ? null : imprintId || null);
   const [initialImprintName, setInitialImprintName] = useState("Untitled Imprint");
@@ -39,6 +44,12 @@ export default function Page() {
       setIsLoading(false);
     }
   }, [imprintId, isNew, api.imprint, router]);
+
+  // Handler to load products with 3D models
+  const handleLoadProducts = useCallback(async () => {
+    const products = await api.product.getProducts();
+    return products;
+  }, [api.product]);
 
   // Save handler
   const handleSave = useCallback(
@@ -127,9 +138,12 @@ export default function Page() {
         <ImprinterProvider
           initialImprintId={initialImprintId}
           initialImprintName={initialImprintName}
+          initialProductId={initialProductId}
+          initialVariantId={initialVariantId}
           onSave={handleSave}
           onLoad={handleLoad}
           onLoadDesign={handleLoadDesign}
+          onLoadProducts={handleLoadProducts}
         >
           <ImprinterContent />
         </ImprinterProvider>

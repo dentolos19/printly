@@ -56,6 +56,10 @@ export type ProductResponse = {
   name: string;
   basePrice: number;
   isActive: boolean;
+  imageId: string | null;
+  imageUrl: string | null;
+  modelId: string | null;
+  modelUrl: string | null;
   createdAt: string;
   updatedAt: string;
   variants: ProductVariantResponse[];
@@ -66,6 +70,10 @@ export type ProductSummaryResponse = {
   name: string;
   basePrice: number;
   isActive: boolean;
+  imageId: string | null;
+  imageUrl: string | null;
+  modelId: string | null;
+  modelUrl: string | null;
   createdAt: string;
   updatedAt: string;
   variantCount: number;
@@ -110,7 +118,11 @@ export default function initProductController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch products" }));
-        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch products");
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to fetch products",
+        );
       }
 
       return response.json();
@@ -126,7 +138,11 @@ export default function initProductController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch product summaries" }));
-        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch product summaries");
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to fetch product summaries",
+        );
       }
 
       return response.json();
@@ -138,7 +154,11 @@ export default function initProductController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch product" }));
-        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch product");
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to fetch product",
+        );
       }
 
       return response.json();
@@ -154,7 +174,11 @@ export default function initProductController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to create product" }));
-        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to create product");
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to create product",
+        );
       }
 
       return response.json();
@@ -170,7 +194,11 @@ export default function initProductController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to create product with variants" }));
-        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to create product with variants");
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to create product with variants",
+        );
       }
 
       return response.json();
@@ -186,7 +214,11 @@ export default function initProductController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to update product" }));
-        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to update product");
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to update product",
+        );
       }
 
       return response.json();
@@ -198,7 +230,11 @@ export default function initProductController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to delete product" }));
-        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to delete product");
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to delete product",
+        );
       }
     },
 
@@ -208,7 +244,11 @@ export default function initProductController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to deactivate product" }));
-        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to deactivate product");
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to deactivate product",
+        );
       }
 
       return response.json();
@@ -220,7 +260,11 @@ export default function initProductController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to activate product" }));
-        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to activate product");
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to activate product",
+        );
       }
 
       return response.json();
@@ -232,7 +276,87 @@ export default function initProductController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch product variants" }));
-        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch product variants");
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to fetch product variants",
+        );
+      }
+
+      return response.json();
+    },
+
+    // Upload product image
+    uploadProductImage: async (id: string, file: File): Promise<ProductResponse> => {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch(`/products/${id}/image`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: "Failed to upload product image" }));
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to upload product image",
+        );
+      }
+
+      return response.json();
+    },
+
+    // Delete product image
+    deleteProductImage: async (id: string): Promise<ProductResponse> => {
+      const response = await fetch(`/products/${id}/image`, { method: "DELETE" });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: "Failed to delete product image" }));
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to delete product image",
+        );
+      }
+
+      return response.json();
+    },
+
+    // Upload product 3D model
+    uploadProductModel: async (id: string, file: File): Promise<ProductResponse> => {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch(`/products/${id}/model`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: "Failed to upload product model" }));
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to upload product model",
+        );
+      }
+
+      return response.json();
+    },
+
+    // Delete product 3D model
+    deleteProductModel: async (id: string): Promise<ProductResponse> => {
+      const response = await fetch(`/products/${id}/model`, { method: "DELETE" });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: "Failed to delete product model" }));
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to delete product model",
+        );
       }
 
       return response.json();

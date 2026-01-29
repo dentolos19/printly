@@ -44,6 +44,12 @@ public enum NotificationType
     MentionedInMessage = 6,
     AdminJoinedConversation = 7,
     BroadcastSent = 8,
+
+    // Refund notifications
+    RefundRequested = 9,
+    RefundApproved = 10,
+    RefundRejected = 11,
+    RefundCompleted = 12,
 }
 
 public enum NotificationPriority

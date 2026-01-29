@@ -33,12 +33,12 @@ import {
   BellIcon,
   Box,
   Home,
-  Layers,
   LayoutDashboardIcon,
   LogOutIcon,
   MessageCircleIcon,
   MoreVerticalIcon,
   Package,
+  RefreshCcw,
   ShoppingCart,
   UserIcon,
 } from "lucide-react";
@@ -49,9 +49,9 @@ import { ReactNode } from "react";
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: Home },
   { href: "/admin/products", label: "Products", icon: Package },
-  { href: "/admin/variants", label: "Variants", icon: Layers },
   { href: "/admin/inventory", label: "Inventory", icon: Box },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
+  { href: "/admin/refunds", label: "Refunds", icon: RefreshCcw },
   { href: "/admin/chat", label: "Chat", icon: MessageCircleIcon },
 ];
 

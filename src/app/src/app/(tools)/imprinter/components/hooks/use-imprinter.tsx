@@ -1,6 +1,7 @@
 "use client";
 
 import type { Design } from "@/lib/server/design";
+import type { ProductResponse, ProductVariantResponse } from "@/lib/server/product";
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useAutoSave } from "../../../shared/hooks/use-auto-save";
@@ -9,13 +10,29 @@ import type {
   CameraState,
   ImprinterData,
   LeftPanelView,
+  ModelConfig,
   PrintArea,
+  PrintAreaConfig,
   ProductModel,
+  SelectedProduct,
   Tool,
   Transform3D,
 } from "../../types";
 
-const IMPRINTER_DATA_VERSION = "1.0";
+const IMPRINTER_DATA_VERSION = "1.1";
+
+// Default print areas for products
+const DEFAULT_PRINT_AREAS: PrintAreaConfig[] = [
+  { id: "front", name: "Front", rayDirection: [0, 0, 1] },
+  { id: "back", name: "Back", rayDirection: [0, 0, -1] },
+];
+
+// Extended print areas for apparel
+const APPAREL_PRINT_AREAS: PrintAreaConfig[] = [
+  ...DEFAULT_PRINT_AREAS,
+  { id: "left-sleeve", name: "Left Sleeve", rayDirection: [-1, 0, 0] },
+  { id: "right-sleeve", name: "Right Sleeve", rayDirection: [1, 0, 0] },
+];
 
 type ImprinterContextValue = {
   // Product state
@@ -23,6 +40,12 @@ type ImprinterContextValue = {
   productColor: string;
   appliedDesigns: AppliedDesign[];
   selectedDesignId: string | null;
+
+  // Dynamic product state
+  selectedProduct: SelectedProduct;
+  availableProducts: ProductResponse[];
+  modelConfig: ModelConfig | null;
+  availablePrintAreas: PrintAreaConfig[];
 
   // UI state
   activeTool: Tool;
@@ -44,6 +67,8 @@ type ImprinterContextValue = {
   // Product actions
   changeProductModel: (model: ProductModel) => void;
   changeProductColor: (color: string) => void;
+  selectProduct: (product: ProductResponse, variant?: ProductVariantResponse | null) => void;
+  setAvailableProducts: (products: ProductResponse[]) => void;
 
   // Design actions
   addDesignToProduct: (design: Design, printArea: PrintArea) => void;
@@ -62,7 +87,7 @@ type ImprinterContextValue = {
   resetCamera: () => void;
 
   // Persistence
-  saveImprint: () => Promise<void>;
+  saveImprint: () => Promise<string | null>;
   loadImprint: (id: string) => Promise<void>;
   exportRender: (resolution: number) => void;
 };
@@ -73,26 +98,67 @@ type ImprinterProviderProps = {
   children: ReactNode;
   initialImprintId?: string | null;
   initialImprintName?: string;
+  initialProductId?: string | null;
+  initialVariantId?: string | null;
   onSave?: (
     data: { name: string; data: string; currentId: string | null } & Partial<ImprinterData>,
   ) => Promise<{ id: string }>;
   onLoad?: (id: string) => Promise<{ name: string; data: string }>;
   onLoadDesign?: (designId: string) => Promise<Design>;
+  onLoadProducts?: () => Promise<ProductResponse[]>;
 };
+
+// Helper to determine print areas based on product name/type
+function getPrintAreasForProduct(product: ProductResponse): PrintAreaConfig[] {
+  const name = product.name.toLowerCase();
+  // Apparel products have sleeves
+  if (name.includes("shirt") || name.includes("hoodie") || name.includes("jacket") || name.includes("sweater")) {
+    return APPAREL_PRINT_AREAS;
+  }
+  // Default print areas for other products (mugs, caps, etc.)
+  return DEFAULT_PRINT_AREAS;
+}
+
+// Helper to convert color name to hex
+function colorNameToHex(colorName: string): string {
+  const colorMap: Record<string, string> = {
+    black: "#000000",
+    white: "#ffffff",
+    red: "#ef4444",
+    blue: "#3b82f6",
+    green: "#22c55e",
+    navy: "#1e3a5a",
+    gray: "#6b7280",
+    grey: "#6b7280",
+    pink: "#ec4899",
+    purple: "#8b5cf6",
+    orange: "#f97316",
+    yellow: "#eab308",
+    brown: "#78350f",
+  };
+  return colorMap[colorName.toLowerCase()] || "#ffffff";
+}
 
 export function ImprinterProvider({
   children,
   initialImprintId = null,
   initialImprintName = "Untitled Imprint",
+  initialProductId = null,
+  initialVariantId = null,
   onSave,
   onLoad,
   onLoadDesign,
+  onLoadProducts,
 }: ImprinterProviderProps) {
-  // Product state
-  const [productModel, setProductModel] = useState<ProductModel>("tshirt");
+  // Product state (legacy support for hardcoded models)
+  const [productModel, setProductModel] = useState<ProductModel>("");
   const [productColor, setProductColor] = useState("#ffffff");
   const [appliedDesigns, setAppliedDesigns] = useState<AppliedDesign[]>([]);
   const [selectedDesignId, setSelectedDesignId] = useState<string | null>(null);
+
+  // Dynamic product state
+  const [selectedProduct, setSelectedProduct] = useState<SelectedProduct>(null);
+  const [availableProducts, setAvailableProducts] = useState<ProductResponse[]>([]);
 
   // UI state
   const [activeTool, setActiveTool] = useState<Tool>("select");
@@ -110,6 +176,22 @@ export function ImprinterProvider({
   const [imprintName, setImprintNameState] = useState(initialImprintName);
   const [imprintId, setImprintId] = useState<string | null>(initialImprintId);
 
+  // Compute model config from selected product
+  const modelConfig = useMemo<ModelConfig | null>(() => {
+    if (!selectedProduct?.product.modelId) return null;
+    return {
+      id: selectedProduct.product.id,
+      name: selectedProduct.product.name,
+      modelUrl: `/assets/${selectedProduct.product.modelId}/view`,
+      printAreas: getPrintAreasForProduct(selectedProduct.product),
+    };
+  }, [selectedProduct]);
+
+  // Compute available print areas from model config
+  const availablePrintAreas = useMemo<PrintAreaConfig[]>(() => {
+    return modelConfig?.printAreas || DEFAULT_PRINT_AREAS;
+  }, [modelConfig]);
+
   // Serialize function for auto-save
   const serializeImprint = useCallback(() => {
     // Optimize: Strip heavy designData
@@ -124,14 +206,17 @@ export function ImprinterProvider({
 
     const imprintData: ImprinterData = {
       version: IMPRINTER_DATA_VERSION,
-      productModel,
+      productId: selectedProduct?.product.id || null,
+      variantId: selectedProduct?.variant?.id || null,
       productColor,
       appliedDesigns: optimizedAppliedDesigns as AppliedDesign[],
       cameraState,
+      // Legacy support
+      productModel: productModel || undefined,
     };
 
     return imprintData;
-  }, [appliedDesigns, cameraState, productColor, productModel]);
+  }, [appliedDesigns, cameraState, productColor, selectedProduct, productModel]);
 
   // Use shared auto-save hook
   const { saveStatus, lastSavedAt, isDirty, triggerAutoSave, saveNow } = useAutoSave({
@@ -171,6 +256,29 @@ export function ImprinterProvider({
     },
     [triggerAutoSave],
   );
+
+  const selectProduct = useCallback(
+    (product: ProductResponse, variant?: ProductVariantResponse | null) => {
+      setSelectedProduct({ product, variant: variant || null });
+      setProductModel(product.id);
+
+      // Auto-select color from variant if available
+      if (variant?.color) {
+        const hexColor = colorNameToHex(variant.color);
+        setProductColor(hexColor);
+      }
+
+      // Reset print area to front when switching products
+      setActivePrintArea("front");
+
+      triggerAutoSave();
+    },
+    [triggerAutoSave],
+  );
+
+  const handleSetAvailableProducts = useCallback((products: ProductResponse[]) => {
+    setAvailableProducts(products);
+  }, []);
 
   const handleSetImprintName = useCallback(
     (name: string) => {
@@ -277,9 +385,21 @@ export function ImprinterProvider({
 
         setImprintId(id);
         setImprintNameState(result.name);
-        setProductModel(data.productModel);
         setProductColor(data.productColor);
         setCameraState(data.cameraState);
+
+        // Handle legacy productModel or new productId format
+        if (data.productId && availableProducts.length > 0) {
+          const product = availableProducts.find((p) => p.id === data.productId);
+          if (product) {
+            const variant = data.variantId ? product.variants.find((v) => v.id === data.variantId) || null : null;
+            setSelectedProduct({ product, variant });
+            setProductModel(product.id);
+          }
+        } else if (data.productModel) {
+          // Legacy support for hardcoded models
+          setProductModel(data.productModel);
+        }
 
         // Restore full design data for each applied design
         if (onLoadDesign && data.appliedDesigns.length > 0) {
@@ -309,13 +429,51 @@ export function ImprinterProvider({
         throw error;
       }
     },
-    [onLoad, onLoadDesign],
+    [onLoad, onLoadDesign, availableProducts],
   );
 
   const exportRender = useCallback((resolution: number) => {
     // TODO: Implement 3D render export using Three.js render to canvas
     console.log("Export render at resolution:", resolution);
   }, []);
+
+  // ============================================================================
+  // Initial product loading
+  // ============================================================================
+
+  const hasLoadedInitialProduct = useRef(false);
+
+  useEffect(() => {
+    // Load products and set initial product/variant if provided
+    if (onLoadProducts && !hasLoadedInitialProduct.current) {
+      hasLoadedInitialProduct.current = true;
+
+      onLoadProducts()
+        .then((products) => {
+          // Filter to only products with models (using modelId, not modelUrl)
+          const productsWithModels = products.filter((p) => p.modelId);
+          setAvailableProducts(productsWithModels);
+
+          // If initial product ID is provided, select it
+          if (initialProductId) {
+            const product = productsWithModels.find((p) => p.id === initialProductId);
+            if (product) {
+              const variant = initialVariantId ? product.variants.find((v) => v.id === initialVariantId) || null : null;
+              setSelectedProduct({ product, variant });
+              setProductModel(product.id);
+
+              // Auto-select color from variant
+              if (variant?.color) {
+                setProductColor(colorNameToHex(variant.color));
+              }
+            }
+          }
+        })
+        .catch((error) => {
+          console.error("Failed to load products:", error);
+        });
+    }
+  }, [onLoadProducts, initialProductId, initialVariantId]);
 
   // ============================================================================
   // Initial imprint loading
@@ -346,6 +504,12 @@ export function ImprinterProvider({
       appliedDesigns,
       selectedDesignId,
 
+      // Dynamic product state
+      selectedProduct,
+      availableProducts,
+      modelConfig,
+      availablePrintAreas,
+
       // UI state
       activeTool,
       activePrintArea,
@@ -366,6 +530,8 @@ export function ImprinterProvider({
       // Product actions
       changeProductModel,
       changeProductColor,
+      selectProduct,
+      setAvailableProducts: handleSetAvailableProducts,
 
       // Design actions
       addDesignToProduct,
@@ -393,6 +559,10 @@ export function ImprinterProvider({
       productColor,
       appliedDesigns,
       selectedDesignId,
+      selectedProduct,
+      availableProducts,
+      modelConfig,
+      availablePrintAreas,
       activeTool,
       activePrintArea,
       leftPanelView,
@@ -405,6 +575,8 @@ export function ImprinterProvider({
       isDirty,
       changeProductModel,
       changeProductColor,
+      selectProduct,
+      handleSetAvailableProducts,
       addDesignToProduct,
       updateDesignTransform,
       updateDesignOpacity,

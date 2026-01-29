@@ -91,6 +91,8 @@ public class OrderController(DatabaseContext context) : BaseController(context)
             .Include(o => o.Items)
                 .ThenInclude(i => i.Variant)
                     .ThenInclude(v => v.Product)
+            .Include(o => o.Items)
+                .ThenInclude(i => i.Imprint)
             .FirstOrDefaultAsync(o => o.Id == id && o.UserId == userId);
 
         if (order == null)
@@ -166,10 +168,36 @@ public class OrderController(DatabaseContext context) : BaseController(context)
                     );
                 }
 
-                // Calculate price (base price for now, design request price will be added later)
-                // TODO: Add design request extra price when that table is implemented
+                // Calculate base price
                 decimal unitPrice = variant.Product.BasePrice;
-                decimal subtotal = unitPrice * item.Quantity;
+                decimal customizationPrice = 0m;
+
+                // Handle imprint customization
+                if (item.ImprintId.HasValue)
+                {
+                    var imprint = await Context.Imprints.FirstOrDefaultAsync(i =>
+                        i.Id == item.ImprintId.Value && i.UserId == userId
+                    );
+
+                    if (imprint == null)
+                    {
+                        await transaction.RollbackAsync();
+                        return BadRequest(new { message = $"Imprint {item.ImprintId} not found or not owned by user" });
+                    }
+
+                    // Validate imprint is for this product (if it has a product restriction)
+                    if (imprint.ProductId.HasValue && imprint.ProductId != variant.ProductId)
+                    {
+                        await transaction.RollbackAsync();
+                        return BadRequest(new { message = "Imprint is not compatible with selected product" });
+                    }
+
+                    customizationPrice = imprint.CustomizationPrice;
+                }
+
+                // Calculate total price including customization
+                decimal itemTotalPrice = unitPrice + customizationPrice;
+                decimal subtotal = itemTotalPrice * item.Quantity;
 
                 // Deduct stock
                 variant.Inventory.Quantity -= item.Quantity;
@@ -179,6 +207,7 @@ public class OrderController(DatabaseContext context) : BaseController(context)
                 {
                     VariantId = item.VariantId,
                     RequestId = item.RequestId,
+                    ImprintId = item.ImprintId,
                     Quantity = item.Quantity,
                     UnitPrice = unitPrice,
                     Subtotal = subtotal,
@@ -207,6 +236,8 @@ public class OrderController(DatabaseContext context) : BaseController(context)
                 .Include(o => o.Items)
                     .ThenInclude(i => i.Variant)
                         .ThenInclude(v => v.Product)
+                .Include(o => o.Items)
+                    .ThenInclude(i => i.Imprint)
                 .FirstAsync(o => o.Id == order.Id);
 
             return CreatedAtAction(nameof(GetMyOrder), new { id = order.Id }, MapToOrderResponse(createdOrder));
@@ -270,6 +301,8 @@ public class OrderController(DatabaseContext context) : BaseController(context)
                 .Include(o => o.Items)
                     .ThenInclude(i => i.Variant)
                         .ThenInclude(v => v.Product)
+                .Include(o => o.Items)
+                    .ThenInclude(i => i.Imprint)
                 .FirstAsync(o => o.Id == id);
 
             return Ok(MapToOrderResponse(updatedOrder));
@@ -423,6 +456,8 @@ public class OrderController(DatabaseContext context) : BaseController(context)
             .Include(o => o.Items)
                 .ThenInclude(i => i.Variant)
                     .ThenInclude(v => v.Product)
+            .Include(o => o.Items)
+                .ThenInclude(i => i.Imprint)
             .FirstOrDefaultAsync(o => o.Id == id);
 
         if (order == null)
@@ -487,6 +522,8 @@ public class OrderController(DatabaseContext context) : BaseController(context)
                 .Include(o => o.Items)
                     .ThenInclude(i => i.Variant)
                         .ThenInclude(v => v.Product)
+                .Include(o => o.Items)
+                    .ThenInclude(i => i.Imprint)
                 .FirstAsync(o => o.Id == id);
 
             return Ok(MapToOrderResponse(updatedOrder));
@@ -564,6 +601,8 @@ public class OrderController(DatabaseContext context) : BaseController(context)
                 .Include(o => o.Items)
                     .ThenInclude(i => i.Variant)
                         .ThenInclude(v => v.Product)
+                .Include(o => o.Items)
+                    .ThenInclude(i => i.Imprint)
                 .FirstAsync(o => o.Id == id);
 
             return Ok(MapToOrderResponse(updatedOrder));
@@ -671,11 +710,15 @@ public class OrderController(DatabaseContext context) : BaseController(context)
                     i.OrderId,
                     i.VariantId,
                     i.RequestId,
+                    i.ImprintId,
+                    i.Imprint?.Name,
                     i.Variant.Product.Name,
+                    i.Variant.Product.ImageId != null ? $"/assets/{i.Variant.Product.ImageId}/view" : null,
                     i.Variant.Size,
                     i.Variant.Color,
                     i.Quantity,
                     i.UnitPrice,
+                    i.Imprint?.CustomizationPrice ?? 0m,
                     i.Subtotal,
                     i.CreatedAt,
                     i.UpdatedAt

@@ -13,13 +13,23 @@ export type CartItem = {
   quantity: number;
   unitPrice: number;
   maxStock: number;
+  // Optional imprint for customized products
+  imprintId?: string | null;
+  imprintName?: string | null;
+  customizationPrice?: number;
 };
 
 type CartContextType = {
   items: CartItem[];
   addItem: (product: ProductResponse, variant: ProductVariantResponse, quantity: number) => void;
-  removeItem: (variantId: string) => void;
-  updateQuantity: (variantId: string, quantity: number) => void;
+  addItemWithImprint: (
+    product: ProductResponse,
+    variant: ProductVariantResponse,
+    quantity: number,
+    imprint: { id: string; name: string; customizationPrice: number },
+  ) => void;
+  removeItem: (variantId: string, imprintId?: string | null) => void;
+  updateQuantity: (variantId: string, quantity: number, imprintId?: string | null) => void;
   clearCart: () => void;
   getTotal: () => number;
   getItemCount: () => number;
@@ -28,6 +38,7 @@ type CartContextType = {
 const CartContext = createContext<CartContextType>({
   items: [],
   addItem: () => {},
+  addItemWithImprint: () => {},
   removeItem: () => {},
   updateQuantity: () => {},
   clearCart: () => {},
@@ -129,26 +140,104 @@ export default function CartProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const removeItem = (variantId: string) => {
-    setItems((currentItems) => {
-      const item = currentItems.find((i) => i.variantId === variantId);
-      if (item) {
-        toast.success("Removed from cart", {
-          description: `${item.productName} removed from your cart.`,
-        });
-      }
-      return currentItems.filter((i) => i.variantId !== variantId);
-    });
-  };
+  const addItemWithImprint = (
+    product: ProductResponse,
+    variant: ProductVariantResponse,
+    quantity: number,
+    imprint: { id: string; name: string; customizationPrice: number },
+  ) => {
+    const stock = variant.inventory?.quantity ?? 0;
 
-  const updateQuantity = (variantId: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeItem(variantId);
+    if (stock <= 0) {
+      toast.error("Out of stock", {
+        description: `${product.name} (${ProductSizeLabels[variant.size]}, ${variant.color}) is currently out of stock.`,
+      });
       return;
     }
 
     setItems((currentItems) => {
-      const existingIndex = currentItems.findIndex((item) => item.variantId === variantId);
+      // For imprinted items, check if same variant + imprint combo exists
+      const existingIndex = currentItems.findIndex(
+        (item) => item.variantId === variant.id && item.imprintId === imprint.id,
+      );
+
+      if (existingIndex >= 0) {
+        const existingItem = currentItems[existingIndex];
+        const newQuantity = existingItem.quantity + quantity;
+
+        if (newQuantity > stock) {
+          toast.error("Not enough stock", {
+            description: `Only ${stock} items available. You already have ${existingItem.quantity} in your cart.`,
+          });
+          return currentItems;
+        }
+
+        const newItems = [...currentItems];
+        newItems[existingIndex] = { ...existingItem, quantity: newQuantity };
+
+        toast.success("Cart updated", {
+          description: `${product.name} with "${imprint.name}" quantity increased to ${newQuantity}.`,
+        });
+
+        return newItems;
+      }
+
+      if (quantity > stock) {
+        toast.error("Not enough stock", {
+          description: `Only ${stock} items available.`,
+        });
+        return currentItems;
+      }
+
+      const newItem: CartItem = {
+        variantId: variant.id,
+        productId: product.id,
+        productName: product.name,
+        size: variant.size,
+        color: variant.color,
+        quantity,
+        unitPrice: product.basePrice,
+        maxStock: stock,
+        imprintId: imprint.id,
+        imprintName: imprint.name,
+        customizationPrice: imprint.customizationPrice,
+      };
+
+      toast.success("Added to cart", {
+        description: `${product.name} with "${imprint.name}" customization added to your cart.`,
+      });
+
+      return [...currentItems, newItem];
+    });
+  };
+
+  const removeItem = (variantId: string, imprintId?: string | null) => {
+    setItems((currentItems) => {
+      const item = currentItems.find(
+        (i) => i.variantId === variantId && (imprintId === undefined || i.imprintId === imprintId),
+      );
+      if (item) {
+        const itemDesc = item.imprintName ? `${item.productName} with "${item.imprintName}"` : item.productName;
+        toast.success("Removed from cart", {
+          description: `${itemDesc} removed from your cart.`,
+        });
+      }
+      return currentItems.filter(
+        (i) => !(i.variantId === variantId && (imprintId === undefined || i.imprintId === imprintId)),
+      );
+    });
+  };
+
+  const updateQuantity = (variantId: string, quantity: number, imprintId?: string | null) => {
+    if (quantity <= 0) {
+      removeItem(variantId, imprintId);
+      return;
+    }
+
+    setItems((currentItems) => {
+      const existingIndex = currentItems.findIndex(
+        (item) => item.variantId === variantId && (imprintId === undefined || item.imprintId === imprintId),
+      );
 
       if (existingIndex < 0) {
         return currentItems;
@@ -178,7 +267,10 @@ export default function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const getTotal = () => {
-    return items.reduce((total, item) => total + item.unitPrice * item.quantity, 0);
+    return items.reduce((total, item) => {
+      const itemPrice = item.unitPrice + (item.customizationPrice ?? 0);
+      return total + itemPrice * item.quantity;
+    }, 0);
   };
 
   const getItemCount = () => {
@@ -190,6 +282,7 @@ export default function CartProvider({ children }: { children: ReactNode }) {
       value={{
         items,
         addItem,
+        addItemWithImprint,
         removeItem,
         updateQuantity,
         clearCart,

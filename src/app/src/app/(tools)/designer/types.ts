@@ -185,7 +185,7 @@ export type DesignerContextValue = {
   saveStatus: SaveStatus;
   lastSavedAt: Date | null;
   isDirty: boolean;
-  saveDesign: () => Promise<void>;
+  saveDesign: () => Promise<string | null>;
   loadDesign: (id: string) => Promise<void>;
 
   // Object actions

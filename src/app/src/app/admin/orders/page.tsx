@@ -34,7 +34,19 @@ import {
   OrderStatusLabels,
 } from "@/lib/server/order";
 import { ProductSizeLabels } from "@/lib/server/product";
-import { CheckCircle2, Eye, MoreHorizontal, Package, RefreshCw, Search, Trash2, Truck } from "lucide-react";
+import {
+  CheckCircle2,
+  ExternalLink,
+  Eye,
+  MoreHorizontal,
+  Package,
+  Paintbrush,
+  RefreshCw,
+  Search,
+  Trash2,
+  Truck,
+} from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -61,6 +73,10 @@ const validTransitions: Record<OrderStatus, OrderStatus[]> = {
   [OrderStatus.Shipped]: [OrderStatus.Delivered],
   [OrderStatus.Delivered]: [],
   [OrderStatus.Cancelled]: [],
+  // Refund statuses - typically managed by refund flow, not direct updates
+  [OrderStatus.RefundRequested]: [OrderStatus.Paid, OrderStatus.Cancelled], // Can be restored if refund rejected
+  [OrderStatus.RefundApproved]: [], // Cannot be changed directly
+  [OrderStatus.Refunded]: [], // Final state
 };
 
 function UpdateStatusDialog({
@@ -200,32 +216,63 @@ function OrderDetailsDialog({
                 <Label className="text-muted-foreground">Order Items ({order.items.length})</Label>
                 <div className="mt-2 space-y-2">
                   {order.items.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between rounded-lg border p-3">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-muted flex h-10 w-10 items-center justify-center rounded">
-                          <Package className="text-muted-foreground h-5 w-5" />
+                    <div key={item.id} className="rounded-lg border p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-muted flex h-10 w-10 items-center justify-center rounded">
+                            <Package className="text-muted-foreground h-5 w-5" />
+                          </div>
+                          <div>
+                            <p className="font-medium">
+                              {item.productName ||
+                                `${ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]}, ${item.color}`}
+                            </p>
+                            <p className="text-muted-foreground text-sm">
+                              {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]} • {item.color}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium">
-                            {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]}, {item.color}
+                        <div className="text-right">
+                          <p className="font-medium">${item.subtotal.toFixed(2)}</p>
+                          <p className="text-muted-foreground text-sm">
+                            {item.quantity} × ${item.unitPrice.toFixed(2)}
                           </p>
-                          <p className="text-muted-foreground text-sm">Variant: {item.variantId.slice(0, 8)}...</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-medium">${item.subtotal.toFixed(2)}</p>
-                        <p className="text-muted-foreground text-sm">
-                          {item.quantity} × ${item.unitPrice.toFixed(2)}
-                        </p>
-                      </div>
+                      {/* Imprint Info */}
+                      {item.imprintId && (
+                        <div className="mt-2 flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5">
+                          <Paintbrush className="h-3.5 w-3.5 text-blue-600" />
+                          <span className="flex-1 text-sm text-blue-700">
+                            Custom: {item.imprintName || "Unnamed"}
+                            {item.customizationPrice > 0 && (
+                              <span className="ml-1 text-blue-600">(+${item.customizationPrice.toFixed(2)})</span>
+                            )}
+                          </span>
+                          <Link
+                            href={`/imprinter/${item.imprintId}`}
+                            target="_blank"
+                            className="text-xs text-blue-600 hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </Link>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
               </div>
             </div>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <DialogFooter className="flex-col gap-2 sm:flex-row">
+              <Button variant="default" asChild className="w-full sm:w-auto">
+                <Link href={`/admin/orders/${order.id}`}>
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  View Full Details
+                </Link>
+              </Button>
+              <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
                 Close
               </Button>
             </DialogFooter>

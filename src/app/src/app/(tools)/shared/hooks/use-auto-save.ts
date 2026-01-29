@@ -44,7 +44,7 @@ type AutoSaveReturn = {
   lastSavedAt: Date | null;
   isDirty: boolean;
   triggerAutoSave: () => void;
-  saveNow: () => Promise<void>;
+  saveNow: () => Promise<string | null>;
   setId: (id: string | null) => void;
 };
 
@@ -62,7 +62,7 @@ export function useAutoSave<T extends Record<string, unknown>>({
   const [isDirty, setIsDirty] = useState(false);
 
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const savePromiseRef = useRef<Promise<void> | null>(null);
+  const savePromiseRef = useRef<Promise<string | null> | null>(null);
   const lastSavedDataRef = useRef<string | null>(null);
 
   // Update ID when it changes externally
@@ -75,7 +75,7 @@ export function useAutoSave<T extends Record<string, unknown>>({
   const saveNow = useCallback(() => {
     // Early return if no save function
     if (!onSave) {
-      return Promise.resolve();
+      return Promise.resolve(id);
     }
 
     // Prevent duplicate saves by returning existing promise
@@ -93,7 +93,7 @@ export function useAutoSave<T extends Record<string, unknown>>({
         // Skip save if data hasn't changed (deduplication)
         if (lastSavedDataRef.current === dataString && id) {
           setSaveStatus("saved");
-          return;
+          return id;
         }
 
         const result = await onSave({ name, data: dataString, currentId: id, ...serializedData });
@@ -109,9 +109,12 @@ export function useAutoSave<T extends Record<string, unknown>>({
         setSaveStatus("saved");
         setLastSavedAt(new Date());
         setIsDirty(false);
+
+        return result.id || id;
       } catch (error) {
         console.error("Save failed:", error);
         setSaveStatus("error");
+        return null;
       } finally {
         savePromiseRef.current = null;
       }

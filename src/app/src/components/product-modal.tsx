@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCart } from "@/lib/providers/cart";
 import { ProductResponse, ProductSize, ProductSizeLabels, ProductVariantResponse } from "@/lib/server/product";
-import { Minus, Package, Palette, Plus, ShoppingCart } from "lucide-react";
+import { Minus, Package, Stamp, Plus, ShoppingCart } from "lucide-react";
 import Image from "next/image";
 import { useMemo, useState } from "react";
 
@@ -48,7 +48,7 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
     return product.variants.find((v) => v.size === selectedSize && v.color === selectedColor) ?? null;
   }, [product, selectedSize, selectedColor]);
 
-  // Get the display image - show selected variant image or first variant with image for the selected color
+  // Get the display image - show selected variant image, then product image as fallback
   const displayImage = useMemo(() => {
     if (!product) return null;
 
@@ -56,15 +56,17 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
     if (selectedVariant?.imageUrl) return selectedVariant.imageUrl;
 
     // If we have a selected color, show the first variant image for that color
-    // If no image exists for this color, show placeholder (return null)
     if (selectedColor) {
       const colorVariant = product.variants.find((v) => v.color === selectedColor && v.imageUrl);
-      return colorVariant?.imageUrl ?? null;
+      if (colorVariant?.imageUrl) return colorVariant.imageUrl;
     }
 
-    // No color selected yet - show first variant with an image as preview
+    // Try to find any variant with an image
     const variantWithImage = product.variants.find((v) => v.imageUrl);
-    return variantWithImage?.imageUrl ?? null;
+    if (variantWithImage?.imageUrl) return variantWithImage.imageUrl;
+
+    // Fallback to product image if no variant images exist
+    return product.imageUrl ?? null;
   }, [product, selectedVariant, selectedColor]);
 
   // Check stock availability
@@ -209,13 +211,13 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
             onClick={() => {
               if (selectedVariant) {
                 handleOpenChange(false);
-                window.location.href = `/designer/new?product=${product.id}&variant=${selectedVariant.id}`;
+                window.location.href = `/imprinter/new?product=${product.id}&variant=${selectedVariant.id}`;
               }
             }}
             disabled={!selectedVariant}
           >
-            <Palette className="h-4 w-4" />
-            Create Design
+            <Stamp className="h-4 w-4" />
+            Create Imprint
           </Button>
           <Button className="gap-2" onClick={handleAddToCart} disabled={!selectedVariant || !isInStock}>
             <ShoppingCart className="h-4 w-4" />
