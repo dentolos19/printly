@@ -70,22 +70,6 @@ namespace PrintlyServer.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Products",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    BasePrice = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Products", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "AspNetRoleClaims",
                 columns: table => new
                 {
@@ -276,29 +260,6 @@ namespace PrintlyServer.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Imprints",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "text", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: true),
-                    Data = table.Column<string>(type: "jsonb", nullable: false),
-                    UserId = table.Column<string>(type: "text", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Imprints", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Imprints_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Orders",
                 columns: table => new
                 {
@@ -404,29 +365,62 @@ namespace PrintlyServer.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ProductVariants",
+                name: "Products",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProductId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Size = table.Column<int>(type: "integer", nullable: false),
-                    Color = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    BasePrice = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     ImageId = table.Column<Guid>(type: "uuid", nullable: true),
+                    ModelId = table.Column<Guid>(type: "uuid", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ProductVariants", x => x.Id);
+                    table.PrimaryKey("PK_Products", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ProductVariants_Assets_ImageId",
+                        name: "FK_Products_Assets_ImageId",
                         column: x => x.ImageId,
                         principalTable: "Assets",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_ProductVariants_Products_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "Products",
+                        name: "FK_Products_Assets_ModelId",
+                        column: x => x.ModelId,
+                        principalTable: "Assets",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CallLogs",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ConversationId = table.Column<Guid>(type: "uuid", nullable: false),
+                    InitiatorId = table.Column<string>(type: "text", nullable: false),
+                    Type = table.Column<int>(type: "integer", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    StartedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    EndedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    DurationSeconds = table.Column<int>(type: "integer", nullable: true),
+                    LiveKitRoomName = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CallLogs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CallLogs_AspNetUsers_InitiatorId",
+                        column: x => x.InitiatorId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CallLogs_Conversations_ConversationId",
+                        column: x => x.ConversationId,
+                        principalTable: "Conversations",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -496,6 +490,30 @@ namespace PrintlyServer.Migrations
                         principalTable: "Conversations",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Payments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    OrderId = table.Column<Guid>(type: "uuid", nullable: false),
+                    StripeCheckoutSessionId = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    Amount = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
+                    Currency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Payments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Payments_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -590,6 +608,207 @@ namespace PrintlyServer.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Imprints",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    Data = table.Column<string>(type: "jsonb", nullable: false),
+                    CustomizationPrice = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
+                    UserId = table.Column<string>(type: "text", nullable: false),
+                    ProductId = table.Column<Guid>(type: "uuid", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Imprints", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Imprints_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Imprints_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProductVariants",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ProductId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Size = table.Column<int>(type: "integer", nullable: false),
+                    Color = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    ImageId = table.Column<Guid>(type: "uuid", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductVariants", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProductVariants_Assets_ImageId",
+                        column: x => x.ImageId,
+                        principalTable: "Assets",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ProductVariants_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CallParticipants",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    CallLogId = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<string>(type: "text", nullable: false),
+                    JoinedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    LeftAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    DidAnswer = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CallParticipants", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CallParticipants_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CallParticipants_CallLogs_CallLogId",
+                        column: x => x.CallLogId,
+                        principalTable: "CallLogs",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ConversationMessages",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ConversationId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ParticipantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Content = table.Column<string>(type: "text", nullable: false),
+                    IsRead = table.Column<bool>(type: "boolean", nullable: false),
+                    ReadAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    IsEdited = table.Column<bool>(type: "boolean", nullable: false),
+                    EditedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ReplyToMessageId = table.Column<Guid>(type: "uuid", nullable: true),
+                    AssetId = table.Column<Guid>(type: "uuid", nullable: true),
+                    FileUrl = table.Column<string>(type: "text", nullable: true),
+                    FileName = table.Column<string>(type: "text", nullable: true),
+                    FileType = table.Column<string>(type: "text", nullable: true),
+                    FileSize = table.Column<long>(type: "bigint", nullable: true),
+                    VoiceMessageUrl = table.Column<string>(type: "text", nullable: true),
+                    VoiceMessageDuration = table.Column<int>(type: "integer", nullable: true),
+                    IsCallMessage = table.Column<bool>(type: "boolean", nullable: false),
+                    CallLogId = table.Column<Guid>(type: "uuid", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ConversationMessages", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ConversationMessages_CallLogs_CallLogId",
+                        column: x => x.CallLogId,
+                        principalTable: "CallLogs",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ConversationMessages_ConversationMessages_ReplyToMessageId",
+                        column: x => x.ReplyToMessageId,
+                        principalTable: "ConversationMessages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_ConversationMessages_ConversationParticipants_ParticipantId",
+                        column: x => x.ParticipantId,
+                        principalTable: "ConversationParticipants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ConversationMessages_Conversations_ConversationId",
+                        column: x => x.ConversationId,
+                        principalTable: "Conversations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Refunds",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    PaymentId = table.Column<Guid>(type: "uuid", nullable: false),
+                    OrderId = table.Column<Guid>(type: "uuid", nullable: false),
+                    RequestedByUserId = table.Column<string>(type: "text", nullable: false),
+                    ProcessedByUserId = table.Column<string>(type: "text", nullable: true),
+                    RequestedAmount = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
+                    ApprovedAmount = table.Column<decimal>(type: "numeric(10,2)", nullable: true),
+                    Reason = table.Column<int>(type: "integer", nullable: false),
+                    CustomerNotes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    AdminNotes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    RequestedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ProcessedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    StripeRefundId = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    ConversationId = table.Column<Guid>(type: "uuid", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Refunds", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Refunds_AspNetUsers_ProcessedByUserId",
+                        column: x => x.ProcessedByUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Refunds_AspNetUsers_RequestedByUserId",
+                        column: x => x.RequestedByUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Refunds_Conversations_ConversationId",
+                        column: x => x.ConversationId,
+                        principalTable: "Conversations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_Refunds_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Refunds_Payments_PaymentId",
+                        column: x => x.PaymentId,
+                        principalTable: "Payments",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Inventories",
                 columns: table => new
                 {
@@ -619,6 +838,7 @@ namespace PrintlyServer.Migrations
                     OrderId = table.Column<Guid>(type: "uuid", nullable: false),
                     VariantId = table.Column<Guid>(type: "uuid", nullable: false),
                     RequestId = table.Column<Guid>(type: "uuid", nullable: true),
+                    ImprintId = table.Column<Guid>(type: "uuid", nullable: true),
                     Quantity = table.Column<int>(type: "integer", nullable: false),
                     UnitPrice = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
                     Subtotal = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
@@ -628,6 +848,12 @@ namespace PrintlyServer.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_OrderItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OrderItems_Imprints_ImprintId",
+                        column: x => x.ImprintId,
+                        principalTable: "Imprints",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_OrderItems_Orders_OrderId",
                         column: x => x.OrderId,
@@ -640,54 +866,6 @@ namespace PrintlyServer.Migrations
                         principalTable: "ProductVariants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ConversationMessages",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ConversationId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ParticipantId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Content = table.Column<string>(type: "text", nullable: false),
-                    IsRead = table.Column<bool>(type: "boolean", nullable: false),
-                    ReadAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    IsEdited = table.Column<bool>(type: "boolean", nullable: false),
-                    EditedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
-                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    ReplyToMessageId = table.Column<Guid>(type: "uuid", nullable: true),
-                    AssetId = table.Column<Guid>(type: "uuid", nullable: true),
-                    FileUrl = table.Column<string>(type: "text", nullable: true),
-                    FileName = table.Column<string>(type: "text", nullable: true),
-                    FileType = table.Column<string>(type: "text", nullable: true),
-                    FileSize = table.Column<long>(type: "bigint", nullable: true),
-                    VoiceMessageUrl = table.Column<string>(type: "text", nullable: true),
-                    VoiceMessageDuration = table.Column<int>(type: "integer", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ConversationMessages", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ConversationMessages_ConversationMessages_ReplyToMessageId",
-                        column: x => x.ReplyToMessageId,
-                        principalTable: "ConversationMessages",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_ConversationMessages_ConversationParticipants_ParticipantId",
-                        column: x => x.ParticipantId,
-                        principalTable: "ConversationParticipants",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_ConversationMessages_Conversations_ConversationId",
-                        column: x => x.ConversationId,
-                        principalTable: "Conversations",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -736,6 +914,31 @@ namespace PrintlyServer.Migrations
                 name: "IX_Broadcasts_SenderId",
                 table: "Broadcasts",
                 column: "SenderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CallLogs_ConversationId",
+                table: "CallLogs",
+                column: "ConversationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CallLogs_InitiatorId",
+                table: "CallLogs",
+                column: "InitiatorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CallParticipants_CallLogId",
+                table: "CallParticipants",
+                column: "CallLogId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CallParticipants_UserId",
+                table: "CallParticipants",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ConversationMessages_CallLogId",
+                table: "ConversationMessages",
+                column: "CallLogId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ConversationMessages_ConversationId",
@@ -789,6 +992,11 @@ namespace PrintlyServer.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Imprints_ProductId",
+                table: "Imprints",
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Imprints_UserId",
                 table: "Imprints",
                 column: "UserId");
@@ -815,6 +1023,11 @@ namespace PrintlyServer.Migrations
                 columns: new[] { "UserId", "IsRead", "IsDeleted" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_OrderItems_ImprintId",
+                table: "OrderItems",
+                column: "ImprintId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_OrderItems_OrderId",
                 table: "OrderItems",
                 column: "OrderId");
@@ -838,6 +1051,23 @@ namespace PrintlyServer.Migrations
                 name: "IX_Orders_UserId",
                 table: "Orders",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Payments_OrderId",
+                table: "Payments",
+                column: "OrderId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Payments_Status",
+                table: "Payments",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Payments_StripeCheckoutSessionId",
+                table: "Payments",
+                column: "StripeCheckoutSessionId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_PostBookmarks_PostId_UserId",
@@ -902,9 +1132,19 @@ namespace PrintlyServer.Migrations
                 column: "Visibility");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Products_ImageId",
+                table: "Products",
+                column: "ImageId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Products_IsActive",
                 table: "Products",
                 column: "IsActive");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_ModelId",
+                table: "Products",
+                column: "ModelId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ProductVariants_ImageId",
@@ -921,6 +1161,47 @@ namespace PrintlyServer.Migrations
                 name: "IX_RefreshTokens_UserId",
                 table: "RefreshTokens",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Refunds_ConversationId",
+                table: "Refunds",
+                column: "ConversationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Refunds_OrderId",
+                table: "Refunds",
+                column: "OrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Refunds_PaymentId",
+                table: "Refunds",
+                column: "PaymentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Refunds_ProcessedByUserId",
+                table: "Refunds",
+                column: "ProcessedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Refunds_RequestedAt",
+                table: "Refunds",
+                column: "RequestedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Refunds_RequestedByUserId",
+                table: "Refunds",
+                column: "RequestedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Refunds_Status",
+                table: "Refunds",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Refunds_StripeRefundId",
+                table: "Refunds",
+                column: "StripeRefundId",
+                unique: true);
         }
 
         /// <inheritdoc />
@@ -945,6 +1226,9 @@ namespace PrintlyServer.Migrations
                 name: "Broadcasts");
 
             migrationBuilder.DropTable(
+                name: "CallParticipants");
+
+            migrationBuilder.DropTable(
                 name: "ChatbotMessages");
 
             migrationBuilder.DropTable(
@@ -952,9 +1236,6 @@ namespace PrintlyServer.Migrations
 
             migrationBuilder.DropTable(
                 name: "Designs");
-
-            migrationBuilder.DropTable(
-                name: "Imprints");
 
             migrationBuilder.DropTable(
                 name: "Inventories");
@@ -978,13 +1259,19 @@ namespace PrintlyServer.Migrations
                 name: "RefreshTokens");
 
             migrationBuilder.DropTable(
+                name: "Refunds");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoles");
+
+            migrationBuilder.DropTable(
+                name: "CallLogs");
 
             migrationBuilder.DropTable(
                 name: "ConversationParticipants");
 
             migrationBuilder.DropTable(
-                name: "Orders");
+                name: "Imprints");
 
             migrationBuilder.DropTable(
                 name: "ProductVariants");
@@ -993,10 +1280,16 @@ namespace PrintlyServer.Migrations
                 name: "Posts");
 
             migrationBuilder.DropTable(
+                name: "Payments");
+
+            migrationBuilder.DropTable(
                 name: "Conversations");
 
             migrationBuilder.DropTable(
                 name: "Products");
+
+            migrationBuilder.DropTable(
+                name: "Orders");
 
             migrationBuilder.DropTable(
                 name: "Assets");
