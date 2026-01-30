@@ -6,12 +6,12 @@
     "cf:types": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "devDependencies": {
-    "@types/node": "^24.10.4",
+    "@types/node": "^25.1.0",
     "typescript": "^5.9.3",
-    "wrangler": "^4.55.0"
+    "wrangler": "^4.61.1"
   },
   "dependencies": {
-    "@cloudflare/containers": "^0.0.28",
-    "hono": "^4.11.1"
+    "@cloudflare/containers": "^0.1.0",
+    "hono": "^4.11.7"
   }
 }
