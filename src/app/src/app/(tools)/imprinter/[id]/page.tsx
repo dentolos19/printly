@@ -51,10 +51,20 @@ export default function Page() {
     return products;
   }, [api.product]);
 
+  // Upload preview handler
+  const handleUploadPreview = useCallback(
+    async (blob: Blob): Promise<string> => {
+      const file = new File([blob], `imprint-preview-${Date.now()}.png`, { type: "image/png" });
+      const asset = await api.asset.uploadAsset(file, "Imprint preview", "cover");
+      return asset.id;
+    },
+    [api.asset],
+  );
+
   // Save handler
   const handleSave = useCallback(
     (
-      data: { name: string; data: string; currentId: string | null } & Partial<{
+      data: { name: string; data: string; currentId: string | null; previewId?: string | null } & Partial<{
         version: string;
         productModel: ProductModel;
         productColor: string;
@@ -71,6 +81,7 @@ export default function Page() {
             .updateImprint(targetId, {
               name: data.name,
               data: data.data,
+              previewId: data.previewId || undefined,
             })
             .then((imprint) => {
               resolve({ id: imprint.id });
@@ -83,6 +94,7 @@ export default function Page() {
               name: data.name,
               data: data.data,
               description: "Imprint configuration",
+              previewId: data.previewId || undefined,
             })
             .then((imprint) => {
               window.history.replaceState(null, "", `/imprinter/${imprint.id}`);
@@ -144,6 +156,7 @@ export default function Page() {
           onLoad={handleLoad}
           onLoadDesign={handleLoadDesign}
           onLoadProducts={handleLoadProducts}
+          onUploadPreview={handleUploadPreview}
         >
           <ImprinterContent />
         </ImprinterProvider>

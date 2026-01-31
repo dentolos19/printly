@@ -79,7 +79,11 @@ public class AssetController(DatabaseContext context, StorageService storageServ
 
     [HttpPost]
     [RequestSizeLimit(100_000_000)] // 100 MB
-    public async Task<ActionResult<AssetResponse>> UploadAsset(IFormFile file, [FromForm] string? description = null)
+    public async Task<ActionResult<AssetResponse>> UploadAsset(
+        IFormFile file,
+        [FromForm] string? description = null,
+        [FromForm] string? category = null
+    )
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (userId is null)
@@ -90,7 +94,7 @@ public class AssetController(DatabaseContext context, StorageService storageServ
 
         // Upload file to storage and create database record
         await using var stream = file.OpenReadStream();
-        var asset = await storageService.UploadFileAsync(stream, file.FileName);
+        var asset = await storageService.UploadFileAsync(stream, file.FileName, category);
 
         // Associate the asset with the current user
         asset.UserId = userId;

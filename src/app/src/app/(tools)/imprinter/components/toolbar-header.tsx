@@ -163,6 +163,14 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
 
       <div className="flex flex-1 items-center justify-end gap-2">
         <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} isDirty={isDirty} />
+        <div className="flex items-center justify-end pl-4">
+          <Input
+            value={imprintName}
+            onChange={(e) => setImprintName(e.target.value)}
+            className={"h-7 w-48 border-none bg-transparent px-1 text-sm font-medium shadow-none focus-visible:ring-1"}
+            placeholder="Untitled Imprint"
+          />
+        </div>
         <Button
           variant="default"
           size="sm"
@@ -173,15 +181,6 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
           <ShoppingCart className="h-4 w-4" />
           {isAddingToCart ? "Adding..." : "Add to Cart"}
         </Button>
-      </div>
-
-      <div className="flex items-center justify-end pl-4">
-        <Input
-          value={imprintName}
-          onChange={(e) => setImprintName(e.target.value)}
-          className={"h-7 w-48 border-none bg-transparent px-1 text-sm font-medium shadow-none focus-visible:ring-1"}
-          placeholder="Untitled Imprint"
-        />
       </div>
     </header>
   );

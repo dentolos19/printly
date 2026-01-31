@@ -17,26 +17,46 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const { url } = (await response.json()) as { url: string };
 
-    // Fetch the actual file from storage
-    const fileResponse = await fetch(url);
+    // Fetch the actual file from storage with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-    if (!fileResponse.ok) {
-      throw new Error(`Failed to download file: ${fileResponse.statusText}`);
+    try {
+      const fileResponse = await fetch(url, {
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!fileResponse.ok) {
+        throw new Error(`Failed to download file: ${fileResponse.statusText}`);
+      }
+
+      const contentType = fileResponse.headers.get("content-type") || "application/octet-stream";
+      const contentDisposition = fileResponse.headers.get("content-disposition");
+
+      // Stream the file back to the client
+      return new NextResponse(fileResponse.body, {
+        status: 200,
+        headers: {
+          "Content-Type": contentType,
+          "Cache-Control": "public, max-age=31536000, immutable",
+          ...(contentDisposition && { "Content-Disposition": contentDisposition }),
+        },
+      });
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      throw fetchError;
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Error downloading asset:", errorMessage, error);
+
+    // Return more specific error for debugging
+    if (error instanceof Error && error.name === "AbortError") {
+      return NextResponse.json({ error: "Request timed out" }, { status: 504 });
     }
 
-    const contentType = fileResponse.headers.get("content-type") || "application/octet-stream";
-    const contentDisposition = fileResponse.headers.get("content-disposition");
-
-    // Stream the file back to the client
-    return new NextResponse(fileResponse.body, {
-      status: 200,
-      headers: {
-        "Content-Type": contentType,
-        ...(contentDisposition && { "Content-Disposition": contentDisposition }),
-      },
-    });
-  } catch (error) {
-    console.error("Error downloading asset:", error);
-    return NextResponse.json({ error: "Failed to download asset" }, { status: 500 });
+    return NextResponse.json({ error: `Failed to download asset: ${errorMessage}` }, { status: 500 });
   }
 }

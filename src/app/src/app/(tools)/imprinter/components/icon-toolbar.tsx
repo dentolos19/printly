@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Image, MousePointer2, Move, Palette, RotateCw, Scale, Sparkles } from "lucide-react";
+import { Image, MousePointer2, Move, Palette, RotateCw, Scale, Shirt, Sparkles } from "lucide-react";
 import { useImprinter } from "./hooks/use-imprinter";
 
 type ToolItem = {
@@ -27,8 +27,9 @@ const SECONDARY_TOOLS: ToolItem[] = [{ id: "color-picker", icon: Palette, label:
 const PANEL_TOOLS: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
-  view: "designs" | "assets" | "templates";
+  view: "designs" | "assets" | "templates" | "products";
 }[] = [
+  { icon: Shirt, label: "Products", view: "products" },
   { icon: Sparkles, label: "Designs", view: "designs" },
   { icon: Image, label: "Assets", view: "assets" },
 ];
@@ -44,7 +45,7 @@ export function IconToolbar({ className }: IconToolbarProps) {
     setActiveTool(tool);
   }
 
-  function handlePanelToggle(view: "designs" | "assets" | "templates") {
+  function handlePanelToggle(view: "designs" | "assets" | "templates" | "products") {
     setLeftPanelView(leftPanelView === view ? null : view);
   }
 

@@ -2,10 +2,21 @@
 
 import { Decal, Environment, OrbitControls, PerspectiveCamera, useGLTF, useTexture } from "@react-three/drei";
 import { Canvas, createPortal, useFrame, useThree } from "@react-three/fiber";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type { AppliedDesign } from "../types";
 import { useImprinter } from "./hooks/use-imprinter";
+
+// Screenshot capture context
+type ScreenshotContextValue = {
+  captureScreenshot: () => Promise<Blob | null>;
+};
+
+const ScreenshotContext = createContext<ScreenshotContextValue | null>(null);
+
+export function useScreenshot() {
+  return useContext(ScreenshotContext);
+}
 
 // ============================================================================
 // Math & Transform Logic
@@ -341,42 +352,91 @@ function CanvasModel() {
       )}
 
       {/* Render decals for each mesh */}
-      {Array.from(designsByMesh.entries()).map(([mesh, designs]) =>
-        createPortal(
-          <>
-            {designs.map((design) => (
-              <DesignDecal key={design.id} design={design} targetMesh={mesh} maxAnisotropy={maxAnisotropy} />
-            ))}
-          </>,
-          mesh,
-        ),
-      )}
+      {Array.from(designsByMesh.entries()).map(([mesh, designs]) => (
+        <group key={mesh.uuid}>
+          {createPortal(
+            <>
+              {designs.map((design) => (
+                <DesignDecal key={design.id} design={design} targetMesh={mesh} maxAnisotropy={maxAnisotropy} />
+              ))}
+            </>,
+            mesh,
+          )}
+        </group>
+      ))}
     </group>
   );
 }
 
+// Screenshot capture component that registers the GL context
+function ScreenshotCapture({ onRegister }: { onRegister: (capture: () => Promise<Blob | null>) => void }) {
+  const { gl, scene, camera } = useThree();
+  const { registerCaptureFunction } = useImprinter();
+
+  useEffect(() => {
+    const captureFunction = async (): Promise<Blob | null> => {
+      return new Promise((resolve) => {
+        // Render the scene
+        gl.render(scene, camera);
+
+        // Convert canvas to blob
+        gl.domElement.toBlob(
+          (blob) => {
+            resolve(blob);
+          },
+          "image/png",
+          1.0,
+        );
+      });
+    };
+
+    onRegister(captureFunction);
+    registerCaptureFunction(captureFunction);
+  }, [gl, scene, camera, onRegister, registerCaptureFunction]);
+
+  return null;
+}
+
 export function ImprinterScene() {
+  const captureRef = useRef<(() => Promise<Blob | null>) | null>(null);
+
+  const handleRegisterCapture = useCallback((capture: () => Promise<Blob | null>) => {
+    captureRef.current = capture;
+  }, []);
+
+  const captureScreenshot = useCallback(async (): Promise<Blob | null> => {
+    if (captureRef.current) {
+      return captureRef.current();
+    }
+    return null;
+  }, []);
+
+  const contextValue = useMemo(() => ({ captureScreenshot }), [captureScreenshot]);
+
   return (
-    <div className="h-full w-full">
-      <Canvas shadows gl={{ antialias: true, preserveDrawingBuffer: true }}>
-        <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={50} />
-        <ambientLight intensity={0.6} />
-        <spotLight position={[5, 5, 5]} angle={0.3} penumbra={1} intensity={1} castShadow />
-        <spotLight position={[-5, 5, 5]} angle={0.3} penumbra={1} intensity={0.5} />
-        <directionalLight position={[0, 5, 0]} intensity={0.3} />
-        <Environment preset="studio" />
-        <Suspense fallback={null}>
-          <CanvasModel />
-        </Suspense>
-        <OrbitControls
-          enablePan={true}
-          enableZoom={true}
-          enableRotate={true}
-          minDistance={0.5}
-          maxDistance={50}
-          target={[0, 0, 0]}
-        />
-      </Canvas>
-    </div>
+    <ScreenshotContext.Provider value={contextValue}>
+      <div className="h-full w-full">
+        <Canvas shadows gl={{ antialias: true, preserveDrawingBuffer: true }}>
+          <ScreenshotCapture onRegister={handleRegisterCapture} />
+          <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={50} />
+          <ambientLight intensity={0.6} />
+          <spotLight position={[5, 5, 5]} angle={0.3} penumbra={1} intensity={1} castShadow />
+          <spotLight position={[-5, 5, 5]} angle={0.3} penumbra={1} intensity={0.5} />
+          <directionalLight position={[0, 5, 0]} intensity={0.3} />
+          <Environment preset="studio" />
+          <Suspense fallback={null}>
+            <CanvasModel />
+          </Suspense>
+          <OrbitControls
+            enablePan={true}
+            enableZoom={true}
+            enableRotate={true}
+            minDistance={0.5}
+            maxDistance={50}
+            target={[0, 0, 0]}
+          />
+        </Canvas>
+      </div>
+    </ScreenshotContext.Provider>
   );
 }

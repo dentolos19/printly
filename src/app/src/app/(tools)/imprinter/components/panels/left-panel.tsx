@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useServer } from "@/lib/providers/server";
 import { Asset } from "@/lib/server/asset";
 import { Design } from "@/lib/server/design";
+import { ProductVariantResponse } from "@/lib/server/product";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, Loader2, Upload } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -78,6 +79,7 @@ export function LeftPanel({ className }: LeftPanelProps) {
     >
       <PanelHeader view={leftPanelView} onClose={() => setLeftPanelView(null)} />
       <ScrollArea className="h-0 flex-1">
+        {leftPanelView === "products" && <ProductsPanel />}
         {leftPanelView === "designs" && <DesignsPanel />}
         {leftPanelView === "assets" && <AssetsPanel />}
       </ScrollArea>
@@ -97,12 +99,13 @@ export function LeftPanel({ className }: LeftPanelProps) {
 // ============================================================================
 
 type PanelHeaderProps = {
-  view: "designs" | "assets" | "templates";
+  view: "designs" | "assets" | "templates" | "products";
   onClose: () => void;
 };
 
 function PanelHeader({ view, onClose }: PanelHeaderProps) {
   const titles = {
+    products: "Select Product",
     designs: "Your Designs",
     assets: "Your Assets",
     templates: "Templates",
@@ -114,6 +117,122 @@ function PanelHeader({ view, onClose }: PanelHeaderProps) {
       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
         <ChevronLeft className="h-4 w-4" />
       </Button>
+    </div>
+  );
+}
+
+// ============================================================================
+// Products Panel
+// ============================================================================
+
+function ProductsPanel() {
+  const { availableProducts, selectedProduct, selectProduct, productColor, changeProductColor } = useImprinter();
+
+  // Get available colors from the selected product's variants
+  const availableColors =
+    selectedProduct?.product.variants
+      .map((v) => v.color)
+      .filter((color, index, self) => self.indexOf(color) === index) || [];
+
+  function handleProductClick(product: (typeof availableProducts)[0]) {
+    const firstVariant = product.variants[0] || null;
+    selectProduct(product, firstVariant);
+  }
+
+  function handleVariantClick(variant: ProductVariantResponse) {
+    if (selectedProduct) {
+      selectProduct(selectedProduct.product, variant);
+    }
+  }
+
+  if (availableProducts.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center p-6 text-center">
+        <p className="text-muted-foreground text-sm">No products with 3D models available</p>
+        <p className="text-muted-foreground mt-1 text-xs">Contact admin to add products</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4 p-3">
+      {/* Product Grid */}
+      <div className="space-y-2">
+        <span className="text-muted-foreground text-xs font-medium uppercase">Products</span>
+        <div className="grid grid-cols-2 gap-2">
+          {availableProducts.map((product) => (
+            <button
+              key={product.id}
+              className={cn(
+                "group relative aspect-square w-full overflow-hidden rounded-md border transition-all",
+                selectedProduct?.product.id === product.id
+                  ? "border-primary ring-primary/20 ring-2"
+                  : "bg-muted hover:border-primary",
+              )}
+              onClick={() => handleProductClick(product)}
+            >
+              {product.imageId ? (
+                <img
+                  src={`/assets/${product.imageId}/view`}
+                  alt={product.name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="text-muted-foreground flex h-full w-full items-center justify-center text-xs">
+                  No image
+                </div>
+              )}
+              <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/60 to-transparent p-2">
+                <p className="truncate text-xs font-medium text-white">{product.name}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Variant Colors */}
+      {selectedProduct && availableColors.length > 0 && (
+        <div className="space-y-2">
+          <span className="text-muted-foreground text-xs font-medium uppercase">Variant</span>
+          <div className="flex flex-wrap gap-2">
+            {selectedProduct.product.variants.map((variant) => (
+              <button
+                key={variant.id}
+                className={cn(
+                  "rounded-md border px-3 py-1.5 text-xs transition-all",
+                  selectedProduct.variant?.id === variant.id
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "hover:border-primary",
+                )}
+                onClick={() => handleVariantClick(variant)}
+              >
+                {variant.color}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Model Color Picker */}
+      {selectedProduct && (
+        <div className="space-y-2">
+          <span className="text-muted-foreground text-xs font-medium uppercase">Model Color</span>
+          <div className="flex gap-2">
+            <input
+              type="color"
+              value={productColor}
+              onChange={(e) => changeProductColor(e.target.value)}
+              className="h-8 w-8 cursor-pointer rounded border"
+            />
+            <input
+              type="text"
+              value={productColor}
+              onChange={(e) => changeProductColor(e.target.value)}
+              className="border-input bg-background flex-1 rounded-md border px-2 text-xs"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

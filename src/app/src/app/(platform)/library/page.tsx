@@ -699,9 +699,17 @@ export default function Page() {
                 >
                   <Link href={`/imprinter/${imprint.id}`}>
                     <div className={"bg-muted relative aspect-4/3 w-full overflow-hidden"}>
-                      <div className={"flex h-full w-full items-center justify-center"}>
-                        <Box className={"text-muted-foreground/30 h-12 w-12"} />
-                      </div>
+                      {imprint.previewId ? (
+                        <img
+                          src={`/assets/${imprint.previewId}/view`}
+                          alt={imprint.name}
+                          className={"h-full w-full object-cover"}
+                        />
+                      ) : (
+                        <div className={"flex h-full w-full items-center justify-center"}>
+                          <Box className={"text-muted-foreground/30 h-12 w-12"} />
+                        </div>
+                      )}
                       {/* Hover overlay */}
                       <div
                         className={

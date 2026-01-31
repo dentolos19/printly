@@ -63,4 +63,4 @@ export type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 export type Tool = "select" | "move" | "rotate" | "scale" | "color-picker";
 
-export type LeftPanelView = "designs" | "assets" | "templates" | null;
+export type LeftPanelView = "designs" | "assets" | "templates" | "products" | null;

@@ -90,6 +90,7 @@ type ImprinterContextValue = {
   saveImprint: () => Promise<string | null>;
   loadImprint: (id: string) => Promise<void>;
   exportRender: (resolution: number) => void;
+  registerCaptureFunction: (fn: () => Promise<Blob | null>) => void;
 };
 
 const ImprinterContext = createContext<ImprinterContextValue | null>(null);
@@ -101,11 +102,12 @@ type ImprinterProviderProps = {
   initialProductId?: string | null;
   initialVariantId?: string | null;
   onSave?: (
-    data: { name: string; data: string; currentId: string | null } & Partial<ImprinterData>,
+    data: { name: string; data: string; currentId: string | null; previewId?: string | null } & Partial<ImprinterData>,
   ) => Promise<{ id: string }>;
   onLoad?: (id: string) => Promise<{ name: string; data: string }>;
   onLoadDesign?: (designId: string) => Promise<Design>;
   onLoadProducts?: () => Promise<ProductResponse[]>;
+  onUploadPreview?: (blob: Blob) => Promise<string>;
 };
 
 // Helper to determine print areas based on product name/type
@@ -149,6 +151,7 @@ export function ImprinterProvider({
   onLoad,
   onLoadDesign,
   onLoadProducts,
+  onUploadPreview,
 }: ImprinterProviderProps) {
   // Product state (legacy support for hardcoded models)
   const [productModel, setProductModel] = useState<ProductModel>("");
@@ -159,6 +162,7 @@ export function ImprinterProvider({
   // Dynamic product state
   const [selectedProduct, setSelectedProduct] = useState<SelectedProduct>(null);
   const [availableProducts, setAvailableProducts] = useState<ProductResponse[]>([]);
+  const [productsLoaded, setProductsLoaded] = useState(false);
 
   // UI state
   const [activeTool, setActiveTool] = useState<Tool>("select");
@@ -171,6 +175,13 @@ export function ImprinterProvider({
     position: [0, 0, 5],
     target: [0, 0, 0],
   });
+
+  // Screenshot capture function ref
+  const captureFunctionRef = useRef<(() => Promise<Blob | null>) | null>(null);
+
+  const registerCaptureFunction = useCallback((fn: () => Promise<Blob | null>) => {
+    captureFunctionRef.current = fn;
+  }, []);
 
   // Design persistence state
   const [imprintName, setImprintNameState] = useState(initialImprintName);
@@ -218,12 +229,38 @@ export function ImprinterProvider({
     return imprintData;
   }, [appliedDesigns, cameraState, productColor, selectedProduct, productModel]);
 
+  // Wrap onSave to capture and upload preview before saving
+  const onSaveWithPreview = useCallback(
+    async (data: { name: string; data: string; currentId: string | null } & Partial<ImprinterData>) => {
+      if (!onSave) {
+        throw new Error("No save handler provided");
+      }
+
+      let previewId: string | null = null;
+
+      // Capture and upload preview if we have a capture function and upload handler
+      if (captureFunctionRef.current && onUploadPreview) {
+        try {
+          const blob = await captureFunctionRef.current();
+          if (blob) {
+            previewId = await onUploadPreview(blob);
+          }
+        } catch (error) {
+          console.error("Failed to capture/upload preview:", error);
+        }
+      }
+
+      return onSave({ ...data, previewId });
+    },
+    [onSave, onUploadPreview],
+  );
+
   // Use shared auto-save hook
   const { saveStatus, lastSavedAt, isDirty, triggerAutoSave, saveNow } = useAutoSave({
     id: imprintId,
     name: imprintName,
     serialize: serializeImprint,
-    onSave,
+    onSave: onSave ? onSaveWithPreview : undefined,
     onIdChange: (id) => {
       setImprintId(id);
       hasLoadedInitialImprint.current = true;
@@ -376,7 +413,7 @@ export function ImprinterProvider({
   const saveImprint = saveNow;
 
   const loadImprint = useCallback(
-    async (id: string) => {
+    async (id: string, products?: ProductResponse[]) => {
       if (!onLoad) return;
 
       try {
@@ -388,9 +425,12 @@ export function ImprinterProvider({
         setProductColor(data.productColor);
         setCameraState(data.cameraState);
 
+        // Use provided products or fall back to state
+        const productsToSearch = products || availableProducts;
+
         // Handle legacy productModel or new productId format
-        if (data.productId && availableProducts.length > 0) {
-          const product = availableProducts.find((p) => p.id === data.productId);
+        if (data.productId && productsToSearch.length > 0) {
+          const product = productsToSearch.find((p) => p.id === data.productId);
           if (product) {
             const variant = data.variantId ? product.variants.find((v) => v.id === data.variantId) || null : null;
             setSelectedProduct({ product, variant });
@@ -442,6 +482,7 @@ export function ImprinterProvider({
   // ============================================================================
 
   const hasLoadedInitialProduct = useRef(false);
+  const hasLoadedInitialImprint = useRef(false);
 
   useEffect(() => {
     // Load products and set initial product/variant if provided
@@ -449,13 +490,22 @@ export function ImprinterProvider({
       hasLoadedInitialProduct.current = true;
 
       onLoadProducts()
-        .then((products) => {
+        .then(async (products) => {
           // Filter to only products with models (using modelId, not modelUrl)
           const productsWithModels = products.filter((p) => p.modelId);
           setAvailableProducts(productsWithModels);
+          setProductsLoaded(true);
 
-          // If initial product ID is provided, select it
-          if (initialProductId) {
+          // If we have an imprint to load, load it now with products context
+          if (initialImprintId && onLoad && !hasLoadedInitialImprint.current) {
+            hasLoadedInitialImprint.current = true;
+            try {
+              await loadImprint(initialImprintId, productsWithModels);
+            } catch (error) {
+              console.error("Failed to load initial imprint:", error);
+            }
+          } else if (initialProductId) {
+            // If no imprint but initial product ID is provided, select it
             const product = productsWithModels.find((p) => p.id === initialProductId);
             if (product) {
               const variant = initialVariantId ? product.variants.find((v) => v.id === initialVariantId) || null : null;
@@ -471,26 +521,10 @@ export function ImprinterProvider({
         })
         .catch((error) => {
           console.error("Failed to load products:", error);
+          setProductsLoaded(true); // Set to true even on error to unblock UI
         });
     }
-  }, [onLoadProducts, initialProductId, initialVariantId]);
-
-  // ============================================================================
-  // Initial imprint loading
-  // ============================================================================
-
-  const hasLoadedInitialImprint = useRef(false);
-
-  useEffect(() => {
-    // Load the imprint data when we have an initial imprint ID
-    if (initialImprintId && onLoad && !hasLoadedInitialImprint.current) {
-      hasLoadedInitialImprint.current = true;
-
-      loadImprint(initialImprintId).catch((error) => {
-        console.error("Failed to load initial imprint:", error);
-      });
-    }
-  }, [initialImprintId, onLoad, loadImprint]);
+  }, [onLoadProducts, initialProductId, initialVariantId, initialImprintId, onLoad, loadImprint]);
 
   // ============================================================================
   // Context value
@@ -553,6 +587,7 @@ export function ImprinterProvider({
       saveImprint,
       loadImprint,
       exportRender,
+      registerCaptureFunction,
     }),
     [
       productModel,
@@ -587,6 +622,7 @@ export function ImprinterProvider({
       loadImprint,
       exportRender,
       handleSetImprintName,
+      registerCaptureFunction,
     ],
   );
 

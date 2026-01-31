@@ -47,11 +47,14 @@ export default function initAssetController(fetch: ServerFetch) {
       return response.json();
     },
 
-    uploadAsset: async (file: File, description?: string): Promise<Asset> => {
+    uploadAsset: async (file: File, description?: string, category?: string): Promise<Asset> => {
       const formData = new FormData();
       formData.append("file", file);
       if (description) {
         formData.append("description", description);
+      }
+      if (category) {
+        formData.append("category", category);
       }
 
       const response = await fetch("/asset", {
