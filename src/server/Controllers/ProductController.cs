@@ -472,7 +472,7 @@ public class ProductController(DatabaseContext context, StorageService storageSe
     /// </summary>
     [HttpPost("{id:guid}/image")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<ProductResponse>> UploadProductImage(Guid id, [FromForm] IFormFile file)
+    public async Task<ActionResult<ProductResponse>> UploadProductImage(Guid id, IFormFile file)
     {
         var product = await Context.Products.Include(p => p.Image).FirstOrDefaultAsync(p => p.Id == id);
 
@@ -532,7 +532,7 @@ public class ProductController(DatabaseContext context, StorageService storageSe
     /// </summary>
     [HttpPost("{id:guid}/model")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<ProductResponse>> UploadProductModel(Guid id, [FromForm] IFormFile file)
+    public async Task<ActionResult<ProductResponse>> UploadProductModel(Guid id, IFormFile file)
     {
         var product = await Context.Products.Include(p => p.Model).FirstOrDefaultAsync(p => p.Id == id);
 
