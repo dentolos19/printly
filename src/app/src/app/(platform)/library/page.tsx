@@ -379,16 +379,17 @@ export default function Page() {
     <Card
       key={asset.id}
       className={
-        "group hover:border-primary/50 cursor-pointer gap-0 overflow-hidden border-2 p-0 transition-all hover:shadow-xl"
+        "group hover:border-primary/50 relative cursor-pointer gap-0 overflow-hidden border-2 p-0 transition-all hover:shadow-2xl"
       }
       onClick={() => openAssetDetail(asset)}
     >
       <div className={"bg-muted relative aspect-square w-full overflow-hidden"}>
+        <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
         {imageUrls[asset.id] ? (
           <img
             src={imageUrls[asset.id]}
             alt={asset.name}
-            className={"size-full object-cover transition-transform duration-500 group-hover:scale-105"}
+            className={"size-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"}
           />
         ) : (
           <div className={"bg-muted flex size-full items-center justify-center"}>
@@ -398,22 +399,27 @@ export default function Page() {
         {asset.isGenerated && (
           <div
             className={
-              "absolute top-2 right-2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-medium text-white backdrop-blur-sm"
+              "absolute top-3 right-3 flex items-center gap-1.5 rounded-full bg-linear-to-r from-violet-500/90 to-purple-500/90 px-3 py-1 text-xs font-semibold text-white shadow-lg backdrop-blur-sm"
             }
           >
-            <SparklesIcon className={"mr-1 inline size-3"} /> AI
+            <SparklesIcon className={"size-3"} />
+            <span>AI Generated</span>
           </div>
         )}
       </div>
       <div className={"p-4"}>
-        <div className={"space-y-1.5"}>
+        <div className={"space-y-2"}>
           <h3 className={"group-hover:text-primary truncate font-semibold transition-colors"}>{asset.name}</h3>
           {asset.description && (
             <p className={"text-muted-foreground line-clamp-2 text-sm leading-relaxed"}>{asset.description}</p>
           )}
-          <div className={"text-muted-foreground flex items-center justify-between border-t pt-2 text-xs"}>
-            <span className={"font-medium"}>{formatFileSize(asset.size)}</span>
-            <span className={"bg-secondary rounded-md px-2 py-0.5 font-mono text-[10px] uppercase"}>
+          <div className={"text-muted-foreground flex items-center justify-between border-t pt-2.5 text-xs"}>
+            <span className={"font-semibold"}>{formatFileSize(asset.size)}</span>
+            <span
+              className={
+                "bg-secondary rounded-md px-2.5 py-1 font-mono text-[10px] font-medium tracking-wide uppercase"
+              }
+            >
               {asset.type.split("/")[1] || "FILE"}
             </span>
           </div>
@@ -435,43 +441,45 @@ export default function Page() {
   return (
     <div className={"container mx-auto space-y-8 p-6"}>
       {/* Header */}
-      <div className={"space-y-2"}>
-        <h1 className={"text-4xl font-bold tracking-tight"}>Library</h1>
-        <p className={"text-muted-foreground text-lg"}>Manage your designs and assets in one place</p>
+      <div className={"space-y-3"}>
+        <h1 className={"text-4xl font-bold tracking-tight md:text-5xl"}>Library</h1>
+        <p className={"text-muted-foreground text-lg md:text-xl"}>
+          Manage your designs, imprints, and assets in one place
+        </p>
       </div>
 
       <Tabs defaultValue={"designs"} className={"w-full"}>
-        <TabsList className={"grid w-full max-w-2xl grid-cols-3"}>
-          <TabsTrigger value={"designs"} className={"text-base"}>
-            <FileText className={"mr-2 h-4 w-4"} />
+        <TabsList className={"grid h-auto w-full max-w-2xl grid-cols-3 p-1"}>
+          <TabsTrigger value={"designs"} className={"gap-2 py-3 text-base font-medium"}>
+            <FileText className={"h-4 w-4"} />
             Designs
           </TabsTrigger>
-          <TabsTrigger value={"imprints"} className={"text-base"}>
-            <Box className={"mr-2 h-4 w-4"} />
+          <TabsTrigger value={"imprints"} className={"gap-2 py-3 text-base font-medium"}>
+            <Box className={"h-4 w-4"} />
             Imprints
           </TabsTrigger>
-          <TabsTrigger value={"assets"} className={"text-base"}>
-            <ImageIcon className={"mr-2 h-4 w-4"} />
+          <TabsTrigger value={"assets"} className={"gap-2 py-3 text-base font-medium"}>
+            <ImageIcon className={"h-4 w-4"} />
             Assets
           </TabsTrigger>
         </TabsList>
 
         {/* Designs Tab */}
-        <TabsContent value={"designs"} className={"mt-6 space-y-6"}>
+        <TabsContent value={"designs"} className={"mt-8 space-y-6"}>
           <div className={"flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"}>
             <div className={"relative max-w-md flex-1"}>
               <Search className={"text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2"} />
               <Input
                 type={"search"}
-                placeholder={"Search designs..."}
+                placeholder={"Search designs by name or description..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={"pl-10"}
+                className={"h-11 pl-10 shadow-sm"}
               />
             </div>
-            <Button type={"button"} asChild>
+            <Button type={"button"} size={"lg"} className={"gap-2 shadow-sm"} asChild>
               <Link href={"/designer/new"}>
-                <Plus className={"mr-2 h-4 w-4"} />
+                <Plus className={"h-4 w-4"} />
                 New Design
               </Link>
             </Button>
@@ -479,15 +487,16 @@ export default function Page() {
 
           {/* Loading state */}
           {designsLoading && (
-            <div className={"grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"}>
+            <div className={"grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"}>
               {Array.from({ length: 8 }).map((_, i) => (
-                <Card key={i}>
+                <Card key={i} className="overflow-hidden border-2">
                   <CardHeader className={"p-0"}>
-                    <Skeleton className={"aspect-4/3 w-full rounded-t-lg"} />
+                    <Skeleton className={"aspect-4/3 w-full rounded-none"} />
                   </CardHeader>
-                  <CardContent className={"p-4"}>
-                    <Skeleton className={"mb-2 h-5 w-3/4"} />
-                    <Skeleton className={"h-4 w-1/2"} />
+                  <CardContent className={"space-y-3 p-4"}>
+                    <Skeleton className={"h-5 w-3/4"} />
+                    <Skeleton className={"h-4 w-full"} />
+                    <Skeleton className={"h-3 w-1/2"} />
                   </CardContent>
                 </Card>
               ))}
@@ -540,17 +549,18 @@ export default function Page() {
                 <Card
                   key={design.id}
                   className={
-                    "group hover:border-primary/50 gap-0 overflow-hidden border-2 p-0 transition-all hover:shadow-xl"
+                    "group hover:border-primary/50 relative gap-0 overflow-hidden border-2 p-0 transition-all hover:shadow-2xl"
                   }
                 >
                   <Link href={`/designer/${design.id}`}>
                     <div className={"bg-muted relative aspect-4/3 w-full overflow-hidden"}>
+                      <div className="absolute inset-0 bg-linear-to-t from-black/20 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                       {design.preview ? (
                         <img
                           src={design.preview}
                           alt={design.name}
                           className={
-                            "h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            "h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                           }
                         />
                       ) : (
@@ -638,12 +648,12 @@ export default function Page() {
         </TabsContent>
 
         {/* Imprints Tab */}
-        <TabsContent value={"imprints"} className={"mt-6 space-y-6"}>
+        <TabsContent value={"imprints"} className={"mt-8 space-y-6"}>
           <div className={"flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"}>
-            <p className={"text-muted-foreground"}>3D product imprint configurations</p>
-            <Button type={"button"} asChild>
+            <p className={"text-muted-foreground text-base"}>Configure 3D product imprints for your designs</p>
+            <Button type={"button"} size={"lg"} className={"gap-2 shadow-sm"} asChild>
               <Link href={"/imprinter/new"}>
-                <Plus className={"mr-2 h-4 w-4"} />
+                <Plus className={"h-4 w-4"} />
                 New Imprint
               </Link>
             </Button>
@@ -651,15 +661,16 @@ export default function Page() {
 
           {/* Loading state */}
           {imprintsLoading && (
-            <div className={"grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"}>
+            <div className={"grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"}>
               {Array.from({ length: 8 }).map((_, i) => (
-                <Card key={i}>
+                <Card key={i} className="overflow-hidden border-2">
                   <CardHeader className={"p-0"}>
-                    <Skeleton className={"aspect-4/3 w-full rounded-t-lg"} />
+                    <Skeleton className={"aspect-4/3 w-full rounded-none"} />
                   </CardHeader>
-                  <CardContent className={"p-4"}>
-                    <Skeleton className={"mb-2 h-5 w-3/4"} />
-                    <Skeleton className={"h-4 w-1/2"} />
+                  <CardContent className={"space-y-3 p-4"}>
+                    <Skeleton className={"h-5 w-3/4"} />
+                    <Skeleton className={"h-4 w-full"} />
+                    <Skeleton className={"h-3 w-1/2"} />
                   </CardContent>
                 </Card>
               ))}
@@ -694,11 +705,12 @@ export default function Page() {
                 <Card
                   key={imprint.id}
                   className={
-                    "group hover:border-primary/50 gap-0 overflow-hidden border-2 p-0 transition-all hover:shadow-xl"
+                    "group hover:border-primary/50 relative gap-0 overflow-hidden border-2 p-0 transition-all hover:shadow-2xl"
                   }
                 >
                   <Link href={`/imprinter/${imprint.id}`}>
                     <div className={"bg-muted relative aspect-4/3 w-full overflow-hidden"}>
+                      <div className="absolute inset-0 bg-linear-to-t from-black/20 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                       {imprint.previewId ? (
                         <img
                           src={`/assets/${imprint.previewId}/view`}
@@ -793,14 +805,14 @@ export default function Page() {
         </TabsContent>
 
         {/* Assets Tab */}
-        <TabsContent value={"assets"} className={"mt-6 space-y-6"}>
+        <TabsContent value={"assets"} className={"mt-8 space-y-6"}>
           <div className={"flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"}>
-            <p className={"text-muted-foreground"}>Upload images or generate them with AI</p>
-            <div className={"flex gap-2"}>
+            <p className={"text-muted-foreground text-base"}>Upload images or generate stunning visuals with AI</p>
+            <div className={"flex gap-3"}>
               <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button>
-                    <UploadIcon />
+                  <Button size={"lg"} className={"gap-2 shadow-sm"}>
+                    <UploadIcon className="h-4 w-4" />
                     Upload
                   </Button>
                 </DialogTrigger>
@@ -843,9 +855,9 @@ export default function Page() {
 
               <Dialog open={generateDialogOpen} onOpenChange={setGenerateDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant={"outline"}>
-                    <SparklesIcon />
-                    Generate
+                  <Button size={"lg"} variant={"outline"} className={"gap-2 shadow-sm"}>
+                    <SparklesIcon className="h-4 w-4" />
+                    Generate with AI
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -884,22 +896,28 @@ export default function Page() {
               <Spinner className={"size-8"} />
             </div>
           ) : assets.length === 0 ? (
-            <Card className={"border-dashed"}>
-              <CardContent className={"flex flex-col items-center justify-center py-16"}>
-                <div className={"bg-primary/10 mb-4 rounded-full p-4"}>
-                  <ImageIcon className={"text-primary size-8"} />
+            <Card className={"border-2 border-dashed"}>
+              <CardContent className={"flex flex-col items-center justify-center py-20"}>
+                <div className={"bg-primary/10 mb-6 rounded-2xl p-6"}>
+                  <ImageIcon className={"text-primary h-12 w-12"} />
                 </div>
-                <h3 className={"mb-2 text-xl font-semibold"}>No assets yet</h3>
-                <p className={"text-muted-foreground mb-6 max-w-sm text-center"}>
-                  Upload your first asset or use AI to generate stunning images for your designs
+                <h3 className={"mb-3 text-2xl font-semibold tracking-tight"}>No assets yet</h3>
+                <p className={"text-muted-foreground mb-8 max-w-md text-center"}>
+                  Upload your first asset or harness the power of AI to generate stunning, custom images for your
+                  creative designs
                 </p>
-                <div className={"flex gap-3"}>
-                  <Button size={"lg"} onClick={() => setUploadDialogOpen(true)}>
-                    <UploadIcon className={"mr-2 h-5 w-5"} />
+                <div className={"flex gap-4"}>
+                  <Button size={"lg"} className="gap-2 shadow-lg" onClick={() => setUploadDialogOpen(true)}>
+                    <UploadIcon className={"h-5 w-5"} />
                     Upload Asset
                   </Button>
-                  <Button size={"lg"} variant={"outline"} onClick={() => setGenerateDialogOpen(true)}>
-                    <SparklesIcon className={"mr-2 h-5 w-5"} />
+                  <Button
+                    size={"lg"}
+                    variant={"outline"}
+                    className="gap-2 shadow-sm"
+                    onClick={() => setGenerateDialogOpen(true)}
+                  >
+                    <SparklesIcon className={"h-5 w-5"} />
                     Generate with AI
                   </Button>
                 </div>
@@ -907,10 +925,15 @@ export default function Page() {
             </Card>
           ) : (
             <Tabs defaultValue={"all"} className={"w-full"}>
-              <TabsList className={"mb-2"}>
-                <TabsTrigger value={"all"}>All Assets ({assets.length})</TabsTrigger>
-                <TabsTrigger value={"uploaded"}>Uploaded ({assets.filter((a) => !a.isGenerated).length})</TabsTrigger>
-                <TabsTrigger value={"generated"}>
+              <TabsList className={"mb-4 h-auto p-1"}>
+                <TabsTrigger value={"all"} className="px-4 py-2.5 font-medium">
+                  All Assets ({assets.length})
+                </TabsTrigger>
+                <TabsTrigger value={"uploaded"} className="px-4 py-2.5 font-medium">
+                  Uploaded ({assets.filter((a) => !a.isGenerated).length})
+                </TabsTrigger>
+                <TabsTrigger value={"generated"} className="gap-1.5 px-4 py-2.5 font-medium">
+                  <SparklesIcon className="h-3.5 w-3.5" />
                   AI Generated ({assets.filter((a) => a.isGenerated).length})
                 </TabsTrigger>
               </TabsList>
@@ -939,37 +962,45 @@ export default function Page() {
 
       {/* Rename Dialog */}
       <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Rename Design</DialogTitle>
-            <DialogDescription>Enter a new name and description for your design.</DialogDescription>
+            <DialogTitle className="text-2xl">Rename Design</DialogTitle>
+            <DialogDescription className="text-base">
+              Update the name and description for your design.
+            </DialogDescription>
           </DialogHeader>
-          <div className={"flex flex-col gap-4"}>
-            <div className={"flex flex-col gap-2"}>
-              <Label htmlFor={"design-name"}>Name</Label>
+          <div className={"flex flex-col gap-5"}>
+            <div className={"flex flex-col gap-2.5"}>
+              <Label htmlFor={"design-name"} className="text-sm font-semibold">
+                Name
+              </Label>
               <Input
                 id={"design-name"}
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                placeholder={"Design name"}
+                placeholder={"Enter design name"}
+                className="h-11"
               />
             </div>
-            <div className={"flex flex-col gap-2"}>
-              <Label htmlFor={"design-description"}>Description (optional)</Label>
+            <div className={"flex flex-col gap-2.5"}>
+              <Label htmlFor={"design-description"} className="text-sm font-semibold">
+                Description (optional)
+              </Label>
               <Textarea
                 id={"design-description"}
                 value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}
-                placeholder={"Add a description..."}
-                rows={3}
+                placeholder={"Add a description to help organize your work..."}
+                rows={4}
+                className="resize-none"
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button type={"button"} variant={"outline"} onClick={() => setRenameDialogOpen(false)}>
               Cancel
             </Button>
-            <Button type={"button"} onClick={handleRename} disabled={!newName.trim()}>
+            <Button type={"button"} onClick={handleRename} disabled={!newName.trim()} className="gap-2">
               Save Changes
             </Button>
           </DialogFooter>
@@ -1000,15 +1031,26 @@ export default function Page() {
       {/* Asset Detail Dialog */}
       {selectedAsset && (
         <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-          <DialogContent className={"max-w-2xl"}>
+          <DialogContent className={"max-w-3xl"}>
             <DialogHeader>
-              <DialogTitle>{selectedAsset.name}</DialogTitle>
-              <DialogDescription>
-                {selectedAsset.isGenerated ? "AI Generated Image" : "Uploaded Image"}
-              </DialogDescription>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <DialogTitle className="text-2xl">{selectedAsset.name}</DialogTitle>
+                  <DialogDescription className="mt-2 text-base">
+                    {selectedAsset.isGenerated ? (
+                      <span className="inline-flex items-center gap-1.5 text-violet-600">
+                        <SparklesIcon className="h-4 w-4" />
+                        AI Generated Image
+                      </span>
+                    ) : (
+                      "Uploaded Image"
+                    )}
+                  </DialogDescription>
+                </div>
+              </div>
             </DialogHeader>
-            <div className={"space-y-4"}>
-              <div className={"bg-muted relative aspect-video overflow-hidden rounded-lg"}>
+            <div className={"space-y-6"}>
+              <div className={"bg-muted relative aspect-video overflow-hidden rounded-xl border-2"}>
                 {imageUrls[selectedAsset.id] ? (
                   <img
                     src={imageUrls[selectedAsset.id]}
@@ -1017,34 +1059,54 @@ export default function Page() {
                   />
                 ) : (
                   <div className={"flex size-full items-center justify-center"}>
-                    <Spinner />
+                    <Spinner className="h-8 w-8" />
                   </div>
                 )}
               </div>
-              <div className={"space-y-2 text-sm"}>
+              <div className={"bg-muted/50 space-y-3 rounded-xl p-5"}>
                 {selectedAsset.description && (
-                  <div>
-                    <strong>Description:</strong> {selectedAsset.description}
+                  <div className="space-y-1">
+                    <strong className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
+                      Description
+                    </strong>
+                    <p className="text-sm leading-relaxed">{selectedAsset.description}</p>
                   </div>
                 )}
-                <div>
-                  <strong>Type:</strong> {selectedAsset.type}
-                </div>
-                <div>
-                  <strong>Size:</strong> {formatFileSize(selectedAsset.size)}
-                </div>
-                <div>
-                  <strong>Created:</strong> {new Date(selectedAsset.createdAt).toLocaleString()}
+                <div className="grid grid-cols-3 gap-4 pt-2">
+                  <div className="space-y-1">
+                    <strong className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                      Type
+                    </strong>
+                    <p className="font-mono text-sm">{selectedAsset.type}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <strong className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                      Size
+                    </strong>
+                    <p className="text-sm font-semibold">{formatFileSize(selectedAsset.size)}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <strong className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                      Created
+                    </strong>
+                    <p className="text-sm">
+                      {new Date(selectedAsset.createdAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-            <DialogFooter className={"flex gap-2"}>
-              <Button variant={"outline"} onClick={() => handleDownloadAsset(selectedAsset)}>
-                <DownloadIcon />
+            <DialogFooter className={"gap-3"}>
+              <Button variant={"outline"} className="gap-2" onClick={() => handleDownloadAsset(selectedAsset)}>
+                <DownloadIcon className="h-4 w-4" />
                 Download
               </Button>
-              <Button variant={"destructive"} onClick={() => handleDeleteAsset(selectedAsset)}>
-                <Trash2 />
+              <Button variant={"destructive"} className="gap-2" onClick={() => handleDeleteAsset(selectedAsset)}>
+                <Trash2 className="h-4 w-4" />
                 Delete
               </Button>
             </DialogFooter>

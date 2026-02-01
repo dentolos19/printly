@@ -20,6 +20,7 @@ import {
 } from "@/lib/server/order";
 import { ProductSizeLabels } from "@/lib/server/product";
 import {
+  ArrowUpRight,
   CheckCircle2,
   CreditCard,
   DollarSign,
@@ -30,6 +31,7 @@ import {
   PhoneIcon,
   PlusIcon,
   ShoppingBag,
+  TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -41,22 +43,43 @@ function StatCard({
   icon: Icon,
   description,
   loading,
+  trend,
 }: {
   title: string;
   value: string | number;
   icon: React.ElementType<{ className?: string }>;
   description?: string;
   loading?: boolean;
+  trend?: string;
 }) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className="text-muted-foreground h-4 w-4" />
+    <Card className="group relative overflow-hidden transition-all hover:shadow-lg">
+      <div className="from-primary/5 absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+      <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-muted-foreground text-sm font-medium">{title}</CardTitle>
+        <div className="bg-primary/10 group-hover:bg-primary/20 rounded-lg p-2 transition-colors">
+          <Icon className="text-primary h-4 w-4" />
+        </div>
       </CardHeader>
-      <CardContent>
-        {loading ? <Skeleton className="h-8 w-20" /> : <div className="text-2xl font-bold">{value}</div>}
-        {description && <p className="text-muted-foreground text-xs">{description}</p>}
+      <CardContent className="relative">
+        {loading ? (
+          <Skeleton className="h-9 w-24" />
+        ) : (
+          <div className="space-y-1">
+            <div className="text-3xl font-bold tracking-tight">{value}</div>
+            {(description || trend) && (
+              <div className="flex items-center gap-2">
+                {description && <p className="text-muted-foreground text-xs">{description}</p>}
+                {trend && (
+                  <div className="flex items-center gap-1 text-xs font-medium text-green-600">
+                    <TrendingUp className="h-3 w-3" />
+                    {trend}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -64,22 +87,29 @@ function StatCard({
 
 function RecentOrderCard({ order, onClick }: { order: OrderSummaryResponse; onClick: () => void }) {
   return (
-    <Card className="hover:bg-muted/50 cursor-pointer transition-colors" onClick={onClick}>
-      <CardContent className="flex items-center justify-between p-4">
+    <Card
+      className="group hover:border-primary/20 relative cursor-pointer overflow-hidden transition-all hover:shadow-md"
+      onClick={onClick}
+    >
+      <div className="from-primary/5 absolute inset-0 bg-linear-to-r via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+      <CardContent className="relative flex items-center justify-between p-4">
         <div className="flex items-center gap-4">
-          <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-full">
-            <Package className="text-primary h-5 w-5" />
+          <div className="bg-primary/10 group-hover:bg-primary/20 flex h-12 w-12 items-center justify-center rounded-xl transition-colors">
+            <Package className="text-primary h-6 w-6" />
           </div>
           <div>
-            <p className="font-medium">Order #{order.id.slice(0, 8)}</p>
+            <p className="font-semibold tracking-tight">Order #{order.id.slice(0, 8)}</p>
             <p className="text-muted-foreground text-sm">
-              {order.itemCount} {order.itemCount === 1 ? "item" : "items"} • ${order.totalAmount.toFixed(2)}
+              {order.itemCount} {order.itemCount === 1 ? "item" : "items"} •{" "}
+              <span className="text-foreground font-medium">${order.totalAmount.toFixed(2)}</span>
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col items-end gap-2">
           <Badge className={OrderStatusColors[order.status]}>{OrderStatusLabels[order.status]}</Badge>
-          <span className="text-muted-foreground text-sm">{new Date(order.createdAt).toLocaleDateString()}</span>
+          <span className="text-muted-foreground text-xs">
+            {new Date(order.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+          </span>
         </div>
       </CardContent>
     </Card>
@@ -99,75 +129,87 @@ function OrderDetailsDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-2xl">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-8">
+          <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="text-primary h-8 w-8 animate-spin" />
-            <p className="text-muted-foreground mt-2">Loading order details...</p>
+            <p className="text-muted-foreground mt-3 text-sm">Loading order details...</p>
           </div>
         ) : !order ? (
-          <div className="flex flex-col items-center justify-center py-8">
-            <p className="text-muted-foreground">Order details not available</p>
+          <div className="flex flex-col items-center justify-center py-12">
+            <Package className="text-muted-foreground/50 h-12 w-12" />
+            <p className="text-muted-foreground mt-3">Order details not available</p>
           </div>
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>Order #{order.id.slice(0, 8)}</DialogTitle>
-              <DialogDescription>
-                Placed on{" "}
-                {new Date(order.createdAt).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </DialogDescription>
+              <div className="flex items-start justify-between">
+                <div>
+                  <DialogTitle className="text-2xl">Order #{order.id.slice(0, 8)}</DialogTitle>
+                  <DialogDescription className="mt-2">
+                    Placed on{" "}
+                    {new Date(order.createdAt).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </DialogDescription>
+                </div>
+                <Badge className={OrderStatusColors[order.status]}>{OrderStatusLabels[order.status]}</Badge>
+              </div>
             </DialogHeader>
 
-            <div className="space-y-4">
-              {/* Order Progress Tracker */}
+            <div className="space-y-6">
               <OrderProgressTracker status={order.status} />
 
               <Separator />
 
               <div className="space-y-3">
-                <h4 className="font-medium">Order Items</h4>
-                {order.items.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between rounded-lg border p-3">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-muted flex h-10 w-10 items-center justify-center rounded">
-                        <Package className="text-muted-foreground h-5 w-5" />
+                <h4 className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">Order Items</h4>
+                <div className="space-y-2">
+                  {order.items.map((item) => (
+                    <div
+                      key={item.id}
+                      className="group bg-muted/30 hover:bg-muted/50 flex items-center justify-between rounded-xl border p-4 transition-colors"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="bg-background flex h-12 w-12 items-center justify-center rounded-lg shadow-sm">
+                          <Package className="text-muted-foreground h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="font-semibold">
+                            {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]}
+                          </p>
+                          <p className="text-muted-foreground text-sm">
+                            {item.color} • Qty: {item.quantity} × ${item.unitPrice.toFixed(2)}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">
-                          {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]}, {item.color}
-                        </p>
-                        <p className="text-muted-foreground text-sm">
-                          Qty: {item.quantity} × ${item.unitPrice.toFixed(2)}
-                        </p>
-                      </div>
+                      <span className="text-lg font-bold">${item.subtotal.toFixed(2)}</span>
                     </div>
-                    <span className="font-medium">${item.subtotal.toFixed(2)}</span>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
 
               <Separator />
 
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span>${order.totalAmount.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Shipping</span>
-                  <span className="text-green-600">Free</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between font-bold">
-                  <span>Total</span>
-                  <span>${order.totalAmount.toFixed(2)}</span>
+              <div className="bg-muted/30 rounded-xl p-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="font-medium">${order.totalAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Shipping</span>
+                    <span className="font-medium text-green-600">Free</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between text-lg">
+                    <span className="font-bold">Total</span>
+                    <span className="text-primary font-bold">${order.totalAmount.toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -251,14 +293,20 @@ export default function Page() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-8 p-6">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground text-lg">Welcome back! Here's what's happening with your orders.</p>
+      </div>
+
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Active Orders"
           value={orderStats?.activeOrders ?? 0}
           icon={ShoppingBag}
-          description="Orders in progress"
+          description="In progress"
           loading={loadingStats}
         />
         <StatCard
@@ -272,59 +320,74 @@ export default function Page() {
           title="Completed Orders"
           value={orderStats?.completedOrders ?? 0}
           icon={CheckCircle2}
-          description="Successfully delivered"
+          description="Delivered"
           loading={loadingStats}
         />
         <StatCard
           title="Total Spent"
           value={`$${(orderStats?.totalSpent ?? 0).toFixed(2)}`}
           icon={DollarSign}
-          description="Lifetime purchases"
+          description="All time"
           loading={loadingStats}
         />
       </div>
 
       {/* Quick Actions */}
-      <Card>
+      <Card className="border-2">
         <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Get started with common tasks</CardDescription>
+          <CardTitle className="text-2xl">Quick Actions</CardTitle>
+          <CardDescription className="text-base">Get started with common tasks</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-3">
-          <Item variant="outline" asChild>
+          <Item
+            variant="outline"
+            className="group hover:border-primary relative overflow-hidden transition-all hover:shadow-lg"
+            asChild
+          >
             <Link href="/designer/new">
-              <ItemMedia>
-                <PlusIcon />
+              <div className="from-primary/5 absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+              <ItemMedia className="relative">
+                <PlusIcon className="transition-transform group-hover:scale-110" />
               </ItemMedia>
-              <ItemContent>
+              <ItemContent className="relative">
                 <ItemTitle>Create New Design</ItemTitle>
                 <ItemDescription>Build a new design for anything!</ItemDescription>
               </ItemContent>
-              <ItemActions />
+              <ItemActions className="relative" />
             </Link>
           </Item>
-          <Item variant="outline" asChild>
-            <Link href="/designs">
-              <ItemMedia>
-                <ImageIcon />
+          <Item
+            variant="outline"
+            className="group hover:border-primary relative overflow-hidden transition-all hover:shadow-lg"
+            asChild
+          >
+            <Link href="/library">
+              <div className="from-primary/5 absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+              <ItemMedia className="relative">
+                <ImageIcon className="transition-transform group-hover:scale-110" />
               </ItemMedia>
-              <ItemContent>
-                <ItemTitle>Manage My Assets</ItemTitle>
-                <ItemDescription>Manage your design assets and resources.</ItemDescription>
+              <ItemContent className="relative">
+                <ItemTitle>Manage Library</ItemTitle>
+                <ItemDescription>Access your designs, imprints, and assets.</ItemDescription>
               </ItemContent>
-              <ItemActions />
+              <ItemActions className="relative" />
             </Link>
           </Item>
-          <Item variant="outline" asChild>
+          <Item
+            variant="outline"
+            className="group hover:border-primary relative overflow-hidden transition-all hover:shadow-lg"
+            asChild
+          >
             <Link href="/chat">
-              <ItemMedia>
-                <PhoneIcon />
+              <div className="from-primary/5 absolute inset-0 bg-linear-to-br via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+              <ItemMedia className="relative">
+                <PhoneIcon className="transition-transform group-hover:scale-110" />
               </ItemMedia>
-              <ItemContent>
+              <ItemContent className="relative">
                 <ItemTitle>Contact Support</ItemTitle>
                 <ItemDescription>Get help and support for your account.</ItemDescription>
               </ItemContent>
-              <ItemActions />
+              <ItemActions className="relative" />
             </Link>
           </Item>
         </CardContent>
@@ -334,26 +397,32 @@ export default function Page() {
         {/* Recent Orders */}
         <Card className="lg:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Recent Orders</CardTitle>
-              <CardDescription>Your latest orders</CardDescription>
+            <div className="space-y-1">
+              <CardTitle className="text-xl">Recent Orders</CardTitle>
+              <CardDescription>Track your latest purchases</CardDescription>
             </div>
-            <Button asChild variant="outline" size="sm">
-              <Link href="/orders">View All</Link>
+            <Button asChild variant="outline" size="sm" className="gap-1">
+              <Link href="/orders">
+                View All
+                <ArrowUpRight className="h-3 w-3" />
+              </Link>
             </Button>
           </CardHeader>
           <CardContent className="space-y-3">
             {loadingOrders ? (
-              Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[72px] w-full" />)
+              Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 w-full rounded-xl" />)
             ) : recentOrders.length > 0 ? (
               recentOrders.map((order) => (
                 <RecentOrderCard key={order.id} order={order} onClick={() => handleViewOrderDetails(order)} />
               ))
             ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <ShoppingBag className="text-muted-foreground mb-2 h-10 w-10" />
-                <p className="text-muted-foreground">No orders yet</p>
-                <Button asChild variant="link" className="mt-2">
+              <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed py-12 text-center">
+                <div className="bg-primary/10 rounded-full p-4">
+                  <ShoppingBag className="text-primary h-8 w-8" />
+                </div>
+                <p className="mt-3 font-medium">No orders yet</p>
+                <p className="text-muted-foreground mt-1 text-sm">Start shopping to see your orders here</p>
+                <Button asChild variant="default" className="mt-4">
                   <Link href="/#products">Browse Products</Link>
                 </Button>
               </div>
@@ -364,12 +433,15 @@ export default function Page() {
         {/* Recent Designs */}
         <Card className="lg:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Recent Designs</CardTitle>
-              <CardDescription>Your latest design projects</CardDescription>
+            <div className="space-y-1">
+              <CardTitle className="text-xl">Recent Designs</CardTitle>
+              <CardDescription>Continue your creative work</CardDescription>
             </div>
-            <Button asChild variant="outline" size="sm">
-              <Link href="/designs">View All</Link>
+            <Button asChild variant="outline" size="sm" className="gap-1">
+              <Link href="/library">
+                View All
+                <ArrowUpRight className="h-3 w-3" />
+              </Link>
             </Button>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -387,10 +459,15 @@ export default function Page() {
               ))
             ) : designs.length > 0 ? (
               designs.map((design) => (
-                <Item key={design.id} variant="outline" asChild>
+                <Item
+                  key={design.id}
+                  variant="outline"
+                  className="group hover:border-primary transition-all hover:shadow-md"
+                  asChild
+                >
                   <Link href={`/designer/${design.id}`}>
-                    <ItemMedia>
-                      <FileTextIcon />
+                    <ItemMedia className="bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                      <FileTextIcon className="text-primary" />
                     </ItemMedia>
                     <ItemContent>
                       <ItemTitle>{design.name}</ItemTitle>
@@ -401,11 +478,14 @@ export default function Page() {
                 </Item>
               ))
             ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <FileTextIcon className="text-muted-foreground mb-2 h-10 w-10" />
-                <p className="text-muted-foreground">No designs yet</p>
-                <Button asChild variant="link" className="mt-2">
-                  <Link href="/designer/new">Create Your First Design</Link>
+              <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed py-12 text-center">
+                <div className="bg-primary/10 rounded-full p-4">
+                  <FileTextIcon className="text-primary h-8 w-8" />
+                </div>
+                <p className="mt-3 font-medium">No designs yet</p>
+                <p className="text-muted-foreground mt-1 text-sm">Create your first design to get started</p>
+                <Button asChild variant="default" className="mt-4">
+                  <Link href="/designer/new">Create Design</Link>
                 </Button>
               </div>
             )}
