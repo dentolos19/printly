@@ -445,24 +445,34 @@ export function ImprinterProvider({
         if (onLoadDesign && data.appliedDesigns.length > 0) {
           const designsWithFullData = await Promise.all(
             data.appliedDesigns.map(async (appliedDesign) => {
+              const designId = appliedDesign.designData?.id || appliedDesign.designId;
+              if (!designId) {
+                console.warn("Applied design missing designId, skipping");
+                return null;
+              }
+
               try {
-                // Fetch full design data
-                const fullDesign = await onLoadDesign(appliedDesign.designData.id);
+                const fullDesign = await onLoadDesign(designId);
                 return {
                   ...appliedDesign,
                   designData: fullDesign,
                 };
               } catch (error) {
-                console.error(`Failed to load design ${appliedDesign.designData.id}:`, error);
-                // Return with partial data if load fails
-                return appliedDesign;
+                console.error(`Failed to load design ${designId}:`, error);
+                return null;
               }
             }),
           );
-          setAppliedDesigns(designsWithFullData);
+
+          // Filter out failed designs
+          const validDesigns = designsWithFullData.filter(
+            (d): d is NonNullable<typeof d> => d !== null && d.designData !== null,
+          );
+          setAppliedDesigns(validDesigns);
         } else {
-          // Fallback if no onLoadDesign provided
-          setAppliedDesigns(data.appliedDesigns);
+          // Fallback if no onLoadDesign provided - filter designs without valid designData
+          const validDesigns = data.appliedDesigns.filter((d) => d.designData?.coverId);
+          setAppliedDesigns(validDesigns);
         }
       } catch (error) {
         console.error("Failed to load imprint:", error);

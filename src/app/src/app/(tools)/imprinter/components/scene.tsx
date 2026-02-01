@@ -109,15 +109,17 @@ function DesignDecal({
   targetMesh: THREE.Mesh;
   maxAnisotropy: number;
 }) {
-  const textureUrl = design.designData.coverId ? `/assets/${design.designData.coverId}/view` : null;
-  // We use useTexture from drei which suspends, but we need to handle key change or null
-  // Ideally we put this in a Suspense, but for simplicity we can use straight texture loader if we want manual control
-  // Or just use useTexture safely.
+  if (!design.designData) return null;
 
-  // Note: useTexture throws if url is null/empty.
+  const textureUrl = design.designData.coverId ? `/assets/${design.designData.coverId}/view` : null;
+
   if (!textureUrl) return null;
 
-  return <DecalMesh design={design} url={textureUrl} targetMesh={targetMesh} />;
+  return (
+    <Suspense fallback={null}>
+      <DecalMesh design={design} url={textureUrl} targetMesh={targetMesh} />
+    </Suspense>
+  );
 }
 
 function DecalMesh({ design, url, targetMesh }: { design: AppliedDesign; url: string; targetMesh: THREE.Mesh }) {
@@ -331,8 +333,12 @@ function CanvasModel() {
     const grouped = new Map<THREE.Mesh, AppliedDesign[]>();
 
     appliedDesigns.forEach((design) => {
+      // Skip designs without valid designData
+      if (!design.designData?.coverId) return;
+
       const targetMesh = getMeshForPrintArea(design.printArea);
-      if (targetMesh) {
+      // Ensure mesh is valid and attached to the scene
+      if (targetMesh && targetMesh.parent) {
         const existing = grouped.get(targetMesh) || [];
         grouped.set(targetMesh, [...existing, design]);
       }
@@ -352,18 +358,23 @@ function CanvasModel() {
       )}
 
       {/* Render decals for each mesh */}
-      {Array.from(designsByMesh.entries()).map(([mesh, designs]) => (
-        <group key={mesh.uuid}>
-          {createPortal(
-            <>
-              {designs.map((design) => (
-                <DesignDecal key={design.id} design={design} targetMesh={mesh} maxAnisotropy={maxAnisotropy} />
-              ))}
-            </>,
-            mesh,
-          )}
-        </group>
-      ))}
+      {Array.from(designsByMesh.entries()).map(([mesh, designs]) => {
+        // Double-check mesh is still attached to scene
+        if (!mesh.parent) return null;
+
+        return (
+          <group key={mesh.uuid}>
+            {createPortal(
+              <>
+                {designs.map((design) => (
+                  <DesignDecal key={design.id} design={design} targetMesh={mesh} maxAnisotropy={maxAnisotropy} />
+                ))}
+              </>,
+              mesh,
+            )}
+          </group>
+        );
+      })}
     </group>
   );
 }
