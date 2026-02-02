@@ -23,6 +23,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { Check, CheckCheck, CornerUpLeft, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { forwardRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { FileAttachment } from "./file-attachment";
 import { VoiceMessagePlayer } from "./voice-message-player";
 
@@ -189,7 +191,7 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                     {(!hasVoice || !content.startsWith("🎤")) && (!hasFile || !content.startsWith("📎")) && (
                       <div
                         className={cn(
-                          "rounded-2xl px-4 py-2.5 shadow-sm",
+                          "rounded-2xl px-4 py-2.5 shadow-sm text-sm prose prose-sm max-w-none dark:prose-invert",
                           isDeleted
                             ? "bg-muted text-muted-foreground italic"
                             : isCurrentUser
@@ -197,7 +199,54 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                               : "bg-muted",
                         )}
                       >
-                        <p className="text-sm wrap-break-word whitespace-pre-wrap">{content}</p>
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            p: ({ children }) => <p className="mb-1 last:mb-0 wrap-break-word whitespace-pre-wrap">{children}</p>,
+                            strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                            em: ({ children }) => <em className="italic">{children}</em>,
+                            ul: ({ children }) => <ul className="list-disc pl-4 my-1 space-y-0.5">{children}</ul>,
+                            ol: ({ children }) => <ol className="list-decimal pl-4 my-1 space-y-0.5">{children}</ol>,
+                            li: ({ children }) => <li className="text-sm">{children}</li>,
+                            a: ({ href, children }) => (
+                              <a
+                                href={href}
+                                className={cn(
+                                  "underline hover:no-underline",
+                                  isCurrentUser ? "text-blue-100" : "text-primary",
+                                )}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {children}
+                              </a>
+                            ),
+                            code: ({ children, className }) => {
+                              const isInline = !className;
+                              return isInline ? (
+                                <code
+                                  className={cn(
+                                    "rounded px-1 py-0.5 text-xs font-mono",
+                                    isCurrentUser ? "bg-blue-700" : "bg-muted-foreground/10",
+                                  )}
+                                >
+                                  {children}
+                                </code>
+                              ) : (
+                                <code
+                                  className={cn(
+                                    "block rounded p-2 text-xs font-mono overflow-x-auto",
+                                    isCurrentUser ? "bg-blue-700" : "bg-muted-foreground/10",
+                                  )}
+                                >
+                                  {children}
+                                </code>
+                              );
+                            },
+                          }}
+                        >
+                          {content}
+                        </ReactMarkdown>
                       </div>
                     )}
                   </div>
