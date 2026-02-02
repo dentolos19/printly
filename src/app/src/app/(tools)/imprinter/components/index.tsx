@@ -2,7 +2,10 @@
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { Box, Columns2, Grid3X3 } from "lucide-react";
+import { useState } from "react";
 import { useImprinter } from "./hooks/use-imprinter";
 import { useKeyboardShortcuts } from "./hooks/use-keyboard";
 import { IconToolbar } from "./icon-toolbar";
@@ -10,8 +13,10 @@ import { LeftPanel } from "./panels/left-panel";
 import { RightPanel } from "./panels/right-panel";
 import { ImprinterScene } from "./scene";
 import { ToolbarHeader } from "./toolbar-header";
+import { Imprinter2DView } from "./view-2d";
 
 export function ImprinterContent() {
+  const [viewMode, setViewMode] = useState<"3d" | "2d" | "split">("3d");
   const {
     leftPanelView,
     rightPanelOpen,
@@ -30,9 +35,46 @@ export function ImprinterContent() {
         <div className="relative flex flex-1 overflow-hidden">
           <IconToolbar />
           {leftPanelView && <LeftPanel />}
-          <div className="relative flex-1">
+          <div className="relative flex flex-1 flex-col">
             {selectedProduct ? (
-              <ImprinterScene />
+              <Tabs
+                value={viewMode}
+                onValueChange={(v) => setViewMode(v as "3d" | "2d" | "split")}
+                className="flex flex-1 flex-col"
+              >
+                <div className="absolute top-3 left-1/2 z-10 -translate-x-1/2">
+                  <TabsList className="h-9">
+                    <TabsTrigger value="3d" className="gap-1.5 px-3">
+                      <Box className="size-4" />
+                      3D
+                    </TabsTrigger>
+                    <TabsTrigger value="2d" className="gap-1.5 px-3">
+                      <Grid3X3 className="size-4" />
+                      2D
+                    </TabsTrigger>
+                    <TabsTrigger value="split" className="gap-1.5 px-3">
+                      <Columns2 className="size-4" />
+                      Split
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+                <TabsContent value="3d" className="mt-0 flex-1">
+                  <ImprinterScene />
+                </TabsContent>
+                <TabsContent value="2d" className="mt-0 flex-1">
+                  <Imprinter2DView />
+                </TabsContent>
+                <TabsContent value="split" className="mt-0 flex-1">
+                  <div className="flex h-full">
+                    <div className="h-full flex-1 border-r">
+                      <ImprinterScene />
+                    </div>
+                    <div className="h-full flex-1">
+                      <Imprinter2DView />
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
             ) : (
               <div className="flex h-full w-full items-center justify-center">
                 <div className="text-muted-foreground flex flex-col items-center gap-2 text-center">

@@ -33,6 +33,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
     public DbSet<UserFollower> UserFollowers { get; set; }
     public DbSet<Report> Reports { get; set; }
     public DbSet<UserBlock> UserBlocks { get; set; }
+    public DbSet<PrintArea> PrintAreas { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
@@ -86,6 +87,15 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .WithOne(v => v.Product)
             .HasForeignKey(v => v.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder
+            .Entity<Product>()
+            .HasMany(p => p.PrintAreas)
+            .WithOne(pa => pa.Product)
+            .HasForeignKey(pa => pa.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<PrintArea>().HasIndex(pa => new { pa.ProductId, pa.AreaId }).IsUnique();
 
         modelBuilder
             .Entity<ProductVariant>()

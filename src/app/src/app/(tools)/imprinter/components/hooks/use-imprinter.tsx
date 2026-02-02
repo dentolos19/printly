@@ -1,6 +1,7 @@
 "use client";
 
 import type { Design } from "@/lib/server/design";
+import type { PrintAreaResponse } from "@/lib/server/print-area";
 import type { ProductResponse, ProductVariantResponse } from "@/lib/server/product";
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
@@ -21,18 +22,30 @@ import type {
 
 const IMPRINTER_DATA_VERSION = "1.1";
 
-// Default print areas for products
+// Default print areas fallback for products without configured areas
 const DEFAULT_PRINT_AREAS: PrintAreaConfig[] = [
-  { id: "front", name: "Front", rayDirection: [0, 0, 1] },
-  { id: "back", name: "Back", rayDirection: [0, 0, -1] },
+  { id: "front", name: "Front", rayDirection: [0, 0, 1], displayOrder: 0 },
+  { id: "back", name: "Back", rayDirection: [0, 0, -1], displayOrder: 1 },
 ];
 
-// Extended print areas for apparel
+// Extended print areas for apparel (name-based fallback)
 const APPAREL_PRINT_AREAS: PrintAreaConfig[] = [
   ...DEFAULT_PRINT_AREAS,
-  { id: "left-sleeve", name: "Left Sleeve", rayDirection: [-1, 0, 0] },
-  { id: "right-sleeve", name: "Right Sleeve", rayDirection: [1, 0, 0] },
+  { id: "left-sleeve", name: "Left Sleeve", rayDirection: [-1, 0, 0], displayOrder: 2 },
+  { id: "right-sleeve", name: "Right Sleeve", rayDirection: [1, 0, 0], displayOrder: 3 },
 ];
+
+// Convert API response to PrintAreaConfig
+function toPrintAreaConfig(response: PrintAreaResponse): PrintAreaConfig {
+  return {
+    id: response.areaId,
+    name: response.name,
+    meshName: response.meshName,
+    rayDirection: response.rayDirection,
+    displayOrder: response.displayOrder,
+    isAutoDetected: response.isAutoDetected,
+  };
+}
 
 type ImprinterContextValue = {
   // Product state
@@ -76,6 +89,7 @@ type ImprinterContextValue = {
   addDesignToProduct: (design: Design, printArea: PrintArea) => void;
   updateDesignTransform: (id: string, transform: Partial<Transform3D>) => void;
   updateDesignOpacity: (id: string, opacity: number) => void;
+  updateDesignPrintArea: (id: string, printArea: PrintArea) => void;
   removeDesign: (id: string) => void;
   selectDesign: (id: string | null) => void;
 
@@ -112,6 +126,7 @@ type ImprinterProviderProps = {
   onLoad?: (id: string) => Promise<{ name: string; data: string }>;
   onLoadDesign?: (designId: string) => Promise<Design>;
   onLoadProducts?: () => Promise<ProductResponse[]>;
+  onLoadPrintAreas?: (productId: string) => Promise<PrintAreaResponse[]>;
   onUploadPreview?: (blob: Blob) => Promise<string>;
 };
 
@@ -159,6 +174,7 @@ export function ImprinterProvider({
   onLoad,
   onLoadDesign,
   onLoadProducts,
+  onLoadPrintAreas,
   onUploadPreview,
 }: ImprinterProviderProps) {
   // Product state (legacy support for hardcoded models)
@@ -171,6 +187,10 @@ export function ImprinterProvider({
   const [selectedProduct, setSelectedProduct] = useState<SelectedProduct>(null);
   const [availableProducts, setAvailableProducts] = useState<ProductResponse[]>([]);
   const [productsLoaded, setProductsLoaded] = useState(false);
+
+  // Print areas state (loaded from API or fallback)
+  const [loadedPrintAreas, setLoadedPrintAreas] = useState<PrintAreaConfig[] | null>(null);
+  const [printAreasLoading, setPrintAreasLoading] = useState(false);
 
   // UI state
   const [activeTool, setActiveTool] = useState<Tool>("select");
@@ -197,6 +217,21 @@ export function ImprinterProvider({
   const [imprintName, setImprintNameState] = useState(initialImprintName);
   const [imprintId, setImprintId] = useState<string | null>(initialImprintId);
 
+  // Compute available print areas with fallback logic:
+  // 1. Use API-loaded print areas if available
+  // 2. Fall back to name-based detection (apparel vs default)
+  // 3. Fall back to default front/back areas
+  const availablePrintAreas = useMemo<PrintAreaConfig[]>(() => {
+    if (loadedPrintAreas && loadedPrintAreas.length > 0) {
+      return loadedPrintAreas;
+    }
+    // Fallback: use name-based detection
+    if (selectedProduct?.product) {
+      return getPrintAreasForProduct(selectedProduct.product);
+    }
+    return DEFAULT_PRINT_AREAS;
+  }, [loadedPrintAreas, selectedProduct]);
+
   // Compute model config from selected product
   const modelConfig = useMemo<ModelConfig | null>(() => {
     if (!selectedProduct?.product.modelId) return null;
@@ -204,14 +239,43 @@ export function ImprinterProvider({
       id: selectedProduct.product.id,
       name: selectedProduct.product.name,
       modelUrl: `/assets/${selectedProduct.product.modelId}/view`,
-      printAreas: getPrintAreasForProduct(selectedProduct.product),
+      printAreas: availablePrintAreas,
     };
-  }, [selectedProduct]);
+  }, [selectedProduct, availablePrintAreas]);
 
-  // Compute available print areas from model config
-  const availablePrintAreas = useMemo<PrintAreaConfig[]>(() => {
-    return modelConfig?.printAreas || DEFAULT_PRINT_AREAS;
-  }, [modelConfig]);
+  // Load print areas when product changes
+  useEffect(() => {
+    if (!selectedProduct?.product.id) {
+      setLoadedPrintAreas(null);
+      return;
+    }
+
+    if (!onLoadPrintAreas) {
+      // No API handler, use fallback
+      setLoadedPrintAreas(null);
+      return;
+    }
+
+    const productId = selectedProduct.product.id;
+    setPrintAreasLoading(true);
+
+    onLoadPrintAreas(productId)
+      .then((areas) => {
+        if (areas.length > 0) {
+          setLoadedPrintAreas(areas.map(toPrintAreaConfig));
+        } else {
+          // No configured areas, use fallback
+          setLoadedPrintAreas(null);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load print areas:", error);
+        setLoadedPrintAreas(null);
+      })
+      .finally(() => {
+        setPrintAreasLoading(false);
+      });
+  }, [selectedProduct?.product.id, onLoadPrintAreas]);
 
   // Serialize function for auto-save
   const serializeImprint = useCallback(() => {
@@ -413,6 +477,18 @@ export function ImprinterProvider({
   const updateDesignOpacity = useCallback(
     (id: string, opacity: number) => {
       setAppliedDesigns((prev) => prev.map((design) => (design.id === id ? { ...design, opacity } : design)));
+      triggerAutoSave();
+    },
+    [triggerAutoSave],
+  );
+
+  const updateDesignPrintArea = useCallback(
+    (id: string, printArea: PrintArea) => {
+      setAppliedDesigns((prev) =>
+        prev.map((design) =>
+          design.id === id ? { ...design, printArea, transform: { ...design.transform, position: [0, 0, 0] } } : design,
+        ),
+      );
       triggerAutoSave();
     },
     [triggerAutoSave],
@@ -621,6 +697,7 @@ export function ImprinterProvider({
       addDesignToProduct,
       updateDesignTransform,
       updateDesignOpacity,
+      updateDesignPrintArea,
       removeDesign,
       selectDesign,
 
@@ -670,6 +747,7 @@ export function ImprinterProvider({
       addDesignToProduct,
       updateDesignTransform,
       updateDesignOpacity,
+      updateDesignPrintArea,
       removeDesign,
       selectDesign,
       resetCamera,

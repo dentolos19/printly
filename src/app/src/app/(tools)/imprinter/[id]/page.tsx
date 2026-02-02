@@ -139,6 +139,14 @@ export default function Page() {
     [api.design],
   );
 
+  // Load print areas handler
+  const handleLoadPrintAreas = useCallback(
+    (productId: string) => {
+      return api.printArea.getByProduct(productId);
+    },
+    [api.printArea],
+  );
+
   if (isLoading) {
     return (
       <div className="flex h-dvh w-dvw items-center justify-center">
@@ -165,6 +173,7 @@ export default function Page() {
           onLoad={handleLoad}
           onLoadDesign={handleLoadDesign}
           onLoadProducts={handleLoadProducts}
+          onLoadPrintAreas={handleLoadPrintAreas}
           onUploadPreview={handleUploadPreview}
         >
           <ImprinterContent />

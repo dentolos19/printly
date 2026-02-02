@@ -27,9 +27,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useServer } from "@/lib/providers/server";
+import type { PrintAreaResponse } from "@/lib/server/print-area";
 import type { ProductResponse, ProductVariantResponse } from "@/lib/server/product";
-import { ProductSize, ProductSizeLabels, CommonColors } from "@/lib/server/product";
-import { ArrowLeft, Box, Edit, ImageIcon, Package, Plus, Trash2, Upload, X } from "lucide-react";
+import { CommonColors, ProductSize, ProductSizeLabels } from "@/lib/server/product";
+import { ArrowLeft, Box, Edit, ImageIcon, MapPin, Package, Plus, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -76,6 +77,23 @@ export default function ProductDetailPage() {
   const productImageInputRef = useRef<HTMLInputElement>(null);
   const productModelInputRef = useRef<HTMLInputElement>(null);
 
+  // Print area states
+  const [printAreas, setPrintAreas] = useState<PrintAreaResponse[]>([]);
+  const [printAreasLoading, setPrintAreasLoading] = useState(false);
+  const [printAreaDialogOpen, setPrintAreaDialogOpen] = useState(false);
+  const [editPrintAreaDialogOpen, setEditPrintAreaDialogOpen] = useState(false);
+  const [deletePrintAreaDialogOpen, setDeletePrintAreaDialogOpen] = useState(false);
+  const [selectedPrintArea, setSelectedPrintArea] = useState<PrintAreaResponse | null>(null);
+  const [printAreaFormData, setPrintAreaFormData] = useState({
+    areaId: "",
+    name: "",
+    meshName: "",
+    rayDirectionX: "0",
+    rayDirectionY: "0",
+    rayDirectionZ: "1",
+  });
+  const [printAreaSubmitting, setPrintAreaSubmitting] = useState(false);
+
   const loadProduct = useCallback(async () => {
     setLoading(true);
     try {
@@ -90,9 +108,148 @@ export default function ProductDetailPage() {
     }
   }, [api.product, productId, router]);
 
+  const loadPrintAreas = useCallback(async () => {
+    setPrintAreasLoading(true);
+    try {
+      const areas = await api.printArea.getByProduct(productId);
+      setPrintAreas(areas);
+    } catch (error) {
+      console.error("Failed to load print areas:", error);
+    } finally {
+      setPrintAreasLoading(false);
+    }
+  }, [api.printArea, productId]);
+
   useEffect(() => {
     loadProduct();
-  }, [loadProduct]);
+    loadPrintAreas();
+  }, [loadProduct, loadPrintAreas]);
+
+  const resetPrintAreaForm = () => {
+    setPrintAreaFormData({
+      areaId: "",
+      name: "",
+      meshName: "",
+      rayDirectionX: "0",
+      rayDirectionY: "0",
+      rayDirectionZ: "1",
+    });
+  };
+
+  const handleCreatePrintArea = async () => {
+    if (!printAreaFormData.areaId.trim() || !printAreaFormData.name.trim()) {
+      toast.error("Area ID and name are required");
+      return;
+    }
+
+    setPrintAreaSubmitting(true);
+    try {
+      await api.printArea.createPrintArea({
+        productId,
+        areaId: printAreaFormData.areaId.trim(),
+        name: printAreaFormData.name.trim(),
+        meshName: printAreaFormData.meshName.trim() || undefined,
+        rayDirection: [
+          parseFloat(printAreaFormData.rayDirectionX) || 0,
+          parseFloat(printAreaFormData.rayDirectionY) || 0,
+          parseFloat(printAreaFormData.rayDirectionZ) || 1,
+        ],
+      });
+      toast.success("Print area created");
+      setPrintAreaDialogOpen(false);
+      resetPrintAreaForm();
+      loadPrintAreas();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to create print area");
+    } finally {
+      setPrintAreaSubmitting(false);
+    }
+  };
+
+  const handleUpdatePrintArea = async () => {
+    if (!selectedPrintArea) return;
+    if (!printAreaFormData.areaId.trim() || !printAreaFormData.name.trim()) {
+      toast.error("Area ID and name are required");
+      return;
+    }
+
+    setPrintAreaSubmitting(true);
+    try {
+      await api.printArea.updatePrintArea(selectedPrintArea.id, {
+        areaId: printAreaFormData.areaId.trim(),
+        name: printAreaFormData.name.trim(),
+        meshName: printAreaFormData.meshName.trim() || undefined,
+        rayDirection: [
+          parseFloat(printAreaFormData.rayDirectionX) || 0,
+          parseFloat(printAreaFormData.rayDirectionY) || 0,
+          parseFloat(printAreaFormData.rayDirectionZ) || 1,
+        ],
+      });
+      toast.success("Print area updated");
+      setEditPrintAreaDialogOpen(false);
+      setSelectedPrintArea(null);
+      resetPrintAreaForm();
+      loadPrintAreas();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update print area");
+    } finally {
+      setPrintAreaSubmitting(false);
+    }
+  };
+
+  const handleDeletePrintArea = async () => {
+    if (!selectedPrintArea) return;
+
+    setPrintAreaSubmitting(true);
+    try {
+      await api.printArea.deletePrintArea(selectedPrintArea.id);
+      toast.success("Print area deleted");
+      setDeletePrintAreaDialogOpen(false);
+      setSelectedPrintArea(null);
+      loadPrintAreas();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete print area");
+    } finally {
+      setPrintAreaSubmitting(false);
+    }
+  };
+
+  const openEditPrintArea = (area: PrintAreaResponse) => {
+    setSelectedPrintArea(area);
+    setPrintAreaFormData({
+      areaId: area.areaId,
+      name: area.name,
+      meshName: area.meshName || "",
+      rayDirectionX: area.rayDirection[0].toString(),
+      rayDirectionY: area.rayDirection[1].toString(),
+      rayDirectionZ: area.rayDirection[2].toString(),
+    });
+    setEditPrintAreaDialogOpen(true);
+  };
+
+  const openDeletePrintArea = (area: PrintAreaResponse) => {
+    setSelectedPrintArea(area);
+    setDeletePrintAreaDialogOpen(true);
+  };
+
+  const addDefaultPrintAreas = async () => {
+    setPrintAreaSubmitting(true);
+    try {
+      await api.printArea.bulkCreatePrintAreas({
+        productId,
+        printAreas: [
+          { areaId: "front", name: "Front", rayDirection: [0, 0, 1], displayOrder: 0 },
+          { areaId: "back", name: "Back", rayDirection: [0, 0, -1], displayOrder: 1 },
+        ],
+      });
+      toast.success("Default print areas added");
+      loadPrintAreas();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to add default print areas");
+    } finally {
+      setPrintAreaSubmitting(false);
+    }
+  };
 
   const resetVariantForm = () => {
     setFormSize("");
@@ -529,6 +686,84 @@ export default function ProductDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Print Areas */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="size-5" />
+              Print Areas
+            </CardTitle>
+            <CardDescription>Define where designs can be placed on the 3D model</CardDescription>
+          </div>
+          <div className="flex gap-2">
+            {printAreas.length === 0 && (
+              <Button variant="outline" size="sm" onClick={addDefaultPrintAreas} disabled={printAreaSubmitting}>
+                Add Default Areas
+              </Button>
+            )}
+            <Button size="sm" onClick={() => setPrintAreaDialogOpen(true)}>
+              <Plus className="mr-2 size-4" />
+              Add Area
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {printAreasLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : printAreas.length === 0 ? (
+            <div className="text-muted-foreground flex flex-col items-center justify-center py-8 text-center">
+              <MapPin className="mb-2 size-8 opacity-50" />
+              <p className="text-sm">No print areas configured</p>
+              <p className="text-xs">Add print areas to enable design placement on this product</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Area ID</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Mesh Reference</TableHead>
+                  <TableHead>Ray Direction</TableHead>
+                  <TableHead>Source</TableHead>
+                  <TableHead className="w-[100px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {printAreas.map((area) => (
+                  <TableRow key={area.id}>
+                    <TableCell className="font-mono text-sm">{area.areaId}</TableCell>
+                    <TableCell>{area.name}</TableCell>
+                    <TableCell className="font-mono text-sm">{area.meshName || "-"}</TableCell>
+                    <TableCell className="font-mono text-xs">
+                      [{area.rayDirection.map((v) => v.toFixed(1)).join(", ")}]
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={area.isAutoDetected ? "secondary" : "default"}>
+                        {area.isAutoDetected ? "Auto" : "Manual"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => openEditPrintArea(area)}>
+                          <Edit className="size-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => openDeletePrintArea(area)}>
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Variants Table */}
       <Card>
@@ -1059,6 +1294,191 @@ export default function ProductDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create Print Area Dialog */}
+      <Dialog open={printAreaDialogOpen} onOpenChange={setPrintAreaDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Print Area</DialogTitle>
+            <DialogDescription>Define a new printable area on the product</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Area ID</Label>
+                <Input
+                  placeholder="e.g., front, back, left-sleeve"
+                  value={printAreaFormData.areaId}
+                  onChange={(e) => setPrintAreaFormData((p) => ({ ...p, areaId: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Display Name</Label>
+                <Input
+                  placeholder="e.g., Front, Back, Left Sleeve"
+                  value={printAreaFormData.name}
+                  onChange={(e) => setPrintAreaFormData((p) => ({ ...p, name: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Mesh Name (Optional)</Label>
+              <Input
+                placeholder="Name of the mesh in the GLB model"
+                value={printAreaFormData.meshName}
+                onChange={(e) => setPrintAreaFormData((p) => ({ ...p, meshName: e.target.value }))}
+              />
+              <p className="text-muted-foreground text-xs">
+                If specified, designs will be placed on this specific mesh in the 3D model.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Ray Direction</Label>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <Label className="text-muted-foreground text-xs">X</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={printAreaFormData.rayDirectionX}
+                    onChange={(e) => setPrintAreaFormData((p) => ({ ...p, rayDirectionX: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">Y</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={printAreaFormData.rayDirectionY}
+                    onChange={(e) => setPrintAreaFormData((p) => ({ ...p, rayDirectionY: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">Z</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={printAreaFormData.rayDirectionZ}
+                    onChange={(e) => setPrintAreaFormData((p) => ({ ...p, rayDirectionZ: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <p className="text-muted-foreground text-xs">
+                Direction used for raycasting to find the surface. Common values: Front [0,0,1], Back [0,0,-1]
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPrintAreaDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreatePrintArea} disabled={printAreaSubmitting}>
+              {printAreaSubmitting ? "Creating..." : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Print Area Dialog */}
+      <Dialog open={editPrintAreaDialogOpen} onOpenChange={setEditPrintAreaDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Print Area</DialogTitle>
+            <DialogDescription>Update print area configuration</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Area ID</Label>
+                <Input
+                  placeholder="e.g., front, back, left-sleeve"
+                  value={printAreaFormData.areaId}
+                  onChange={(e) => setPrintAreaFormData((p) => ({ ...p, areaId: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Display Name</Label>
+                <Input
+                  placeholder="e.g., Front, Back, Left Sleeve"
+                  value={printAreaFormData.name}
+                  onChange={(e) => setPrintAreaFormData((p) => ({ ...p, name: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Mesh Name (Optional)</Label>
+              <Input
+                placeholder="Name of the mesh in the GLB model"
+                value={printAreaFormData.meshName}
+                onChange={(e) => setPrintAreaFormData((p) => ({ ...p, meshName: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Ray Direction</Label>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <Label className="text-muted-foreground text-xs">X</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={printAreaFormData.rayDirectionX}
+                    onChange={(e) => setPrintAreaFormData((p) => ({ ...p, rayDirectionX: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">Y</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={printAreaFormData.rayDirectionY}
+                    onChange={(e) => setPrintAreaFormData((p) => ({ ...p, rayDirectionY: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">Z</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={printAreaFormData.rayDirectionZ}
+                    onChange={(e) => setPrintAreaFormData((p) => ({ ...p, rayDirectionZ: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditPrintAreaDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdatePrintArea} disabled={printAreaSubmitting}>
+              {printAreaSubmitting ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Print Area Dialog */}
+      <AlertDialog open={deletePrintAreaDialogOpen} onOpenChange={setDeletePrintAreaDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Print Area</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the &quot;{selectedPrintArea?.name}&quot; print area? This action cannot
+              be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeletePrintArea}
+              disabled={printAreaSubmitting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {printAreaSubmitting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
