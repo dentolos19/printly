@@ -21,7 +21,7 @@ public class PaymentController(DatabaseContext context, IConfiguration configura
         ?? throw new InvalidOperationException("Stripe secret key not configured");
 
     private readonly string _frontendUrl =
-        Environment.GetEnvironmentVariable("FRONTEND_URL") ?? configuration["Frontend:Url"] ?? "http://localhost:3000";
+        Environment.GetEnvironmentVariable("APP_URL") ?? configuration["Frontend:Url"] ?? "http://localhost:3000";
 
     /// <summary>
     /// Create a Stripe checkout session for an order
