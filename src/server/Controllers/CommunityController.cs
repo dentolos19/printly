@@ -665,13 +665,14 @@ public class CommunityController(
         if (userId is null)
             return Unauthorized();
 
-        var post = await Context.Posts.FindAsync(dto.PostId);
+        var post = await Context.Posts.Include(p => p.Author).FirstOrDefaultAsync(p => p.Id == dto.PostId);
         if (post is null || post.Visibility == PostVisibility.Deleted)
             return NotFound(new { message = "Post not found" });
 
+        PostComment? parentComment = null;
         if (dto.ParentId.HasValue)
         {
-            var parentComment = await Context.PostComments.FindAsync(dto.ParentId.Value);
+            parentComment = await Context.PostComments.Include(c => c.Author).FirstOrDefaultAsync(c => c.Id == dto.ParentId.Value);
             if (parentComment is null || parentComment.PostId != dto.PostId)
                 return BadRequest(new { message = "Parent comment not found or belongs to different post" });
         }
@@ -688,6 +689,36 @@ public class CommunityController(
         await Context.SaveChangesAsync();
 
         var createdComment = await Context.PostComments.Include(c => c.Author).FirstAsync(c => c.Id == comment.Id);
+
+        // Send notification
+        if (parentComment != null)
+        {
+            // Notify parent comment author about the reply (if not self)
+            if (parentComment.AuthorId != userId)
+            {
+                await CreateNotificationAsync(
+                    parentComment.AuthorId,
+                    NotificationType.CommentReplied,
+                    "New Reply",
+                    $"{createdComment.Author.UserName ?? "Someone"} replied to your comment",
+                    $"/community/posts/{dto.PostId}"
+                );
+            }
+        }
+        else
+        {
+            // Notify post author about the comment (if not self)
+            if (post.AuthorId != userId)
+            {
+                await CreateNotificationAsync(
+                    post.AuthorId,
+                    NotificationType.PostCommented,
+                    "New Comment",
+                    $"{createdComment.Author.UserName ?? "Someone"} commented on your post",
+                    $"/community/posts/{dto.PostId}"
+                );
+            }
+        }
 
         return CreatedAtAction(
             nameof(GetComments),
@@ -828,7 +859,7 @@ public class CommunityController(
         if (userId is null)
             return Unauthorized();
 
-        var post = await Context.Posts.FindAsync(dto.PostId);
+        var post = await Context.Posts.Include(p => p.Author).FirstOrDefaultAsync(p => p.Id == dto.PostId);
         if (post is null || post.Visibility == PostVisibility.Deleted)
             return NotFound(new { message = "Post not found" });
 
@@ -865,6 +896,19 @@ public class CommunityController(
         await Context.SaveChangesAsync();
 
         var currentUser = await Context.Users.FindAsync(userId);
+
+        // Send notification to post author (if not self)
+        if (post.AuthorId != userId)
+        {
+            await CreateNotificationAsync(
+                post.AuthorId,
+                NotificationType.PostLiked,
+                "Post Liked",
+                $"{currentUser?.UserName ?? "Someone"} reacted to your post",
+                $"/community/posts/{dto.PostId}"
+            );
+        }
+
         return CreatedAtAction(
             nameof(GetReactions),
             new { postId = dto.PostId },
@@ -1039,5 +1083,691 @@ public class CommunityController(
         await Context.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    // ============ Follow ============
+
+    /// <summary>
+    /// Follow a user.
+    /// </summary>
+    [HttpPost("follow/{userId}")]
+    public async Task<ActionResult> Follow(string userId)
+    {
+        var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (currentUserId == null)
+            return Unauthorized();
+
+        if (currentUserId == userId)
+            return BadRequest("Cannot follow yourself");
+
+        // Check if user exists
+        var targetUser = await Context.Users.FindAsync(userId);
+        if (targetUser == null)
+            return NotFound("User not found");
+
+        // Check if already following
+        var existingFollow = await Context.UserFollowers.FirstOrDefaultAsync(f =>
+            f.FollowerId == currentUserId && f.FollowingId == userId
+        );
+
+        if (existingFollow != null)
+            return BadRequest("Already following this user");
+
+        var follow = new UserFollower { FollowerId = currentUserId, FollowingId = userId };
+
+        Context.UserFollowers.Add(follow);
+        await Context.SaveChangesAsync();
+
+        // Create notification for the followed user
+        var currentUser = await Context.Users.FindAsync(currentUserId);
+        await CreateNotificationAsync(
+            userId,
+            NotificationType.NewFollower,
+            "New Follower",
+            $"{currentUser?.UserName ?? "Someone"} started following you",
+            $"/profile/{currentUserId}"
+        );
+
+        return Ok();
+    }
+
+    /// <summary>
+    /// Unfollow a user.
+    /// </summary>
+    [HttpDelete("follow/{userId}")]
+    public async Task<ActionResult> Unfollow(string userId)
+    {
+        var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (currentUserId == null)
+            return Unauthorized();
+
+        var follow = await Context.UserFollowers.FirstOrDefaultAsync(f =>
+            f.FollowerId == currentUserId && f.FollowingId == userId
+        );
+
+        if (follow == null)
+            return NotFound("Not following this user");
+
+        Context.UserFollowers.Remove(follow);
+        await Context.SaveChangesAsync();
+
+        return Ok();
+    }
+
+    /// <summary>
+    /// Check if the current user is following a specific user.
+    /// </summary>
+    [HttpGet("follow/{userId}/status")]
+    public async Task<ActionResult<FollowStatusResponse>> GetFollowStatus(string userId)
+    {
+        var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (currentUserId == null)
+            return Unauthorized();
+
+        var isFollowing = await Context.UserFollowers.AnyAsync(f =>
+            f.FollowerId == currentUserId && f.FollowingId == userId
+        );
+
+        var isFollowedBy = await Context.UserFollowers.AnyAsync(f =>
+            f.FollowerId == userId && f.FollowingId == currentUserId
+        );
+
+        return Ok(new FollowStatusResponse(isFollowing, isFollowedBy));
+    }
+
+    /// <summary>
+    /// Get a user's followers with pagination.
+    /// </summary>
+    [HttpGet("follow/{userId}/followers")]
+    [AllowAnonymous]
+    public async Task<ActionResult<FollowListResponse>> GetFollowers(string userId, [FromQuery] FollowListQuery query)
+    {
+        var user = await Context.Users.FindAsync(userId);
+        if (user == null)
+            return NotFound("User not found");
+
+        var followersQuery = Context.UserFollowers
+            .Where(f => f.FollowingId == userId)
+            .Include(f => f.Follower)
+            .OrderByDescending(f => f.CreatedAt);
+
+        var totalCount = await followersQuery.CountAsync();
+        var totalPages = (int)Math.Ceiling(totalCount / (double)query.PageSize);
+
+        var followers = await followersQuery
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .Select(f => new FollowUserResponse(f.Follower.Id, f.Follower.UserName ?? "Unknown", f.CreatedAt))
+            .ToListAsync();
+
+        return Ok(new FollowListResponse(followers, totalCount, query.Page, query.PageSize, totalPages));
+    }
+
+    /// <summary>
+    /// Get users that a user is following with pagination.
+    /// </summary>
+    [HttpGet("follow/{userId}/following")]
+    [AllowAnonymous]
+    public async Task<ActionResult<FollowListResponse>> GetFollowing(string userId, [FromQuery] FollowListQuery query)
+    {
+        var user = await Context.Users.FindAsync(userId);
+        if (user == null)
+            return NotFound("User not found");
+
+        var followingQuery = Context.UserFollowers
+            .Where(f => f.FollowerId == userId)
+            .Include(f => f.Following)
+            .OrderByDescending(f => f.CreatedAt);
+
+        var totalCount = await followingQuery.CountAsync();
+        var totalPages = (int)Math.Ceiling(totalCount / (double)query.PageSize);
+
+        var following = await followingQuery
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .Select(f => new FollowUserResponse(f.Following.Id, f.Following.UserName ?? "Unknown", f.CreatedAt))
+            .ToListAsync();
+
+        return Ok(new FollowListResponse(following, totalCount, query.Page, query.PageSize, totalPages));
+    }
+
+    /// <summary>
+    /// Get follower and following counts for a user.
+    /// </summary>
+    [HttpGet("follow/{userId}/counts")]
+    [AllowAnonymous]
+    public async Task<ActionResult<FollowCountsResponse>> GetFollowCounts(string userId)
+    {
+        var user = await Context.Users.FindAsync(userId);
+        if (user == null)
+            return NotFound("User not found");
+
+        var followerCount = await Context.UserFollowers.CountAsync(f => f.FollowingId == userId);
+        var followingCount = await Context.UserFollowers.CountAsync(f => f.FollowerId == userId);
+
+        return Ok(new FollowCountsResponse(followerCount, followingCount));
+    }
+
+    // ============ Notifications ============
+
+    /// <summary>
+    /// Get community notifications for the current user.
+    /// </summary>
+    [HttpGet("notifications")]
+    public async Task<ActionResult<CommunityNotificationListResponse>> GetNotifications([FromQuery] NotificationListQuery query)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null)
+            return Unauthorized();
+
+        // Filter to only community-related notification types
+        var communityTypes = new[]
+        {
+            NotificationType.NewFollower,
+            NotificationType.PostLiked,
+            NotificationType.PostCommented,
+            NotificationType.CommentReplied
+        };
+
+        var notificationsQuery = Context.Notifications
+            .Where(n => n.UserId == userId && communityTypes.Contains(n.Type) && !n.IsDeleted)
+            .AsQueryable();
+
+        if (query.UnreadOnly == true)
+            notificationsQuery = notificationsQuery.Where(n => !n.IsRead);
+
+        var totalCount = await notificationsQuery.CountAsync();
+        var unreadCount = await Context.Notifications
+            .CountAsync(n => n.UserId == userId && communityTypes.Contains(n.Type) && !n.IsRead && !n.IsDeleted);
+        var totalPages = (int)Math.Ceiling(totalCount / (double)query.PageSize);
+
+        var notifications = await notificationsQuery
+            .OrderByDescending(n => n.CreatedAt)
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .Select(n => new CommunityNotificationResponse(
+                n.Id,
+                n.Type,
+                n.Title,
+                n.Message,
+                n.IsRead,
+                n.ReadAt,
+                n.ActionUrl,
+                n.CreatedAt
+            ))
+            .ToListAsync();
+
+        return Ok(new CommunityNotificationListResponse(notifications, totalCount, unreadCount, query.Page, query.PageSize, totalPages));
+    }
+
+    /// <summary>
+    /// Get notification counts for the current user.
+    /// </summary>
+    [HttpGet("notifications/count")]
+    public async Task<ActionResult<NotificationCountResponse>> GetNotificationCount()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null)
+            return Unauthorized();
+
+        var communityTypes = new[]
+        {
+            NotificationType.NewFollower,
+            NotificationType.PostLiked,
+            NotificationType.PostCommented,
+            NotificationType.CommentReplied
+        };
+
+        var totalCount = await Context.Notifications
+            .CountAsync(n => n.UserId == userId && communityTypes.Contains(n.Type) && !n.IsDeleted);
+        var unreadCount = await Context.Notifications
+            .CountAsync(n => n.UserId == userId && communityTypes.Contains(n.Type) && !n.IsRead && !n.IsDeleted);
+
+        return Ok(new NotificationCountResponse(totalCount, unreadCount));
+    }
+
+    /// <summary>
+    /// Mark a notification as read.
+    /// </summary>
+    [HttpPost("notifications/{id:guid}/read")]
+    public async Task<ActionResult> MarkNotificationRead(Guid id)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null)
+            return Unauthorized();
+
+        var notification = await Context.Notifications.FindAsync(id);
+        if (notification == null)
+            return NotFound("Notification not found");
+
+        if (notification.UserId != userId)
+            return Forbid();
+
+        notification.IsRead = true;
+        notification.ReadAt = DateTime.UtcNow;
+        await Context.SaveChangesAsync();
+
+        return Ok();
+    }
+
+    /// <summary>
+    /// Mark all community notifications as read.
+    /// </summary>
+    [HttpPost("notifications/read-all")]
+    public async Task<ActionResult> MarkAllNotificationsRead()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null)
+            return Unauthorized();
+
+        var communityTypes = new[]
+        {
+            NotificationType.NewFollower,
+            NotificationType.PostLiked,
+            NotificationType.PostCommented,
+            NotificationType.CommentReplied
+        };
+
+        await Context.Notifications
+            .Where(n => n.UserId == userId && communityTypes.Contains(n.Type) && !n.IsRead)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(n => n.IsRead, true)
+                .SetProperty(n => n.ReadAt, DateTime.UtcNow));
+
+        return Ok(new { message = "All notifications marked as read" });
+    }
+
+    /// <summary>
+    /// Delete a notification.
+    /// </summary>
+    [HttpDelete("notifications/{id:guid}")]
+    public async Task<ActionResult> DeleteNotification(Guid id)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null)
+            return Unauthorized();
+
+        var notification = await Context.Notifications.FindAsync(id);
+        if (notification == null)
+            return NotFound("Notification not found");
+
+        if (notification.UserId != userId)
+            return Forbid();
+
+        notification.IsDeleted = true;
+        notification.DeletedAt = DateTime.UtcNow;
+        await Context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Delete all community notifications for the current user.
+    /// </summary>
+    [HttpDelete("notifications/all")]
+    public async Task<ActionResult> DeleteAllNotifications()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null)
+            return Unauthorized();
+
+        var communityTypes = new[]
+        {
+            NotificationType.NewFollower,
+            NotificationType.PostLiked,
+            NotificationType.PostCommented,
+            NotificationType.CommentReplied
+        };
+
+        await Context.Notifications
+            .Where(n => n.UserId == userId && communityTypes.Contains(n.Type))
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(n => n.IsDeleted, true)
+                .SetProperty(n => n.DeletedAt, DateTime.UtcNow));
+
+        return NoContent();
+    }
+
+    // ============ Helper Methods ============
+
+    /// <summary>
+    /// Creates a community notification for a user.
+    /// </summary>
+    private async Task CreateNotificationAsync(
+        string userId,
+        NotificationType type,
+        string title,
+        string message,
+        string? actionUrl = null)
+    {
+        var notification = new Notification
+        {
+            UserId = userId,
+            Type = type,
+            Title = title,
+            Message = message,
+            ActionUrl = actionUrl
+        };
+
+        Context.Notifications.Add(notification);
+        await Context.SaveChangesAsync();
+    }
+
+    // ============ Reports ============
+
+    /// <summary>
+    /// Report a post, comment, or user.
+    /// </summary>
+    [HttpPost("reports")]
+    public async Task<ActionResult<ReportResponse>> CreateReport([FromBody] CreateReportDto dto)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null)
+            return Unauthorized();
+
+        // Validate target exists based on report type
+        switch (dto.ReportType)
+        {
+            case ReportType.Post:
+                if (!dto.PostId.HasValue)
+                    return BadRequest("PostId is required for post reports");
+                var post = await Context.Posts.FindAsync(dto.PostId.Value);
+                if (post == null)
+                    return NotFound("Post not found");
+                break;
+
+            case ReportType.Comment:
+                if (!dto.CommentId.HasValue)
+                    return BadRequest("CommentId is required for comment reports");
+                var comment = await Context.PostComments.FindAsync(dto.CommentId.Value);
+                if (comment == null)
+                    return NotFound("Comment not found");
+                break;
+
+            case ReportType.User:
+                if (string.IsNullOrEmpty(dto.ReportedUserId))
+                    return BadRequest("ReportedUserId is required for user reports");
+                if (dto.ReportedUserId == userId)
+                    return BadRequest("Cannot report yourself");
+                var targetUser = await Context.Users.FindAsync(dto.ReportedUserId);
+                if (targetUser == null)
+                    return NotFound("User not found");
+                break;
+        }
+
+        // Check for duplicate pending report
+        var existingReport = await Context.Reports.FirstOrDefaultAsync(r =>
+            r.ReporterId == userId &&
+            r.Status == ReportStatus.Pending &&
+            r.ReportType == dto.ReportType &&
+            r.PostId == dto.PostId &&
+            r.CommentId == dto.CommentId &&
+            r.ReportedUserId == dto.ReportedUserId
+        );
+
+        if (existingReport != null)
+            return BadRequest("You have already reported this content");
+
+        var report = new Report
+        {
+            ReporterId = userId,
+            ReportType = dto.ReportType,
+            PostId = dto.PostId,
+            CommentId = dto.CommentId,
+            ReportedUserId = dto.ReportedUserId,
+            Reason = dto.Reason,
+            Description = dto.Description
+        };
+
+        Context.Reports.Add(report);
+        await Context.SaveChangesAsync();
+
+        var reporter = await Context.Users.FindAsync(userId);
+
+        return CreatedAtAction(
+            nameof(GetMyReports),
+            new ReportResponse(
+                report.Id,
+                report.ReporterId,
+                reporter?.UserName ?? "Unknown",
+                report.ReportType,
+                report.PostId,
+                report.CommentId,
+                report.ReportedUserId,
+                report.Reason,
+                report.Description,
+                report.Status,
+                report.CreatedAt
+            )
+        );
+    }
+
+    /// <summary>
+    /// Get reports submitted by the current user.
+    /// </summary>
+    [HttpGet("reports/my")]
+    public async Task<ActionResult<List<ReportResponse>>> GetMyReports()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null)
+            return Unauthorized();
+
+        var reports = await Context.Reports
+            .Include(r => r.Reporter)
+            .Where(r => r.ReporterId == userId)
+            .OrderByDescending(r => r.CreatedAt)
+            .Select(r => new ReportResponse(
+                r.Id,
+                r.ReporterId,
+                r.Reporter.UserName ?? "Unknown",
+                r.ReportType,
+                r.PostId,
+                r.CommentId,
+                r.ReportedUserId,
+                r.Reason,
+                r.Description,
+                r.Status,
+                r.CreatedAt
+            ))
+            .ToListAsync();
+
+        return Ok(reports);
+    }
+
+    /// <summary>
+    /// [Admin] Get all reports with filtering and pagination.
+    /// </summary>
+    [HttpGet("admin/reports")]
+    [Authorize(Roles = Roles.Admin)]
+    public async Task<ActionResult<ReportListResponse>> GetAllReports([FromQuery] ReportListQuery query)
+    {
+        var reportsQuery = Context.Reports
+            .Include(r => r.Reporter)
+            .Include(r => r.ReportedUser)
+            .AsQueryable();
+
+        if (query.Status.HasValue)
+            reportsQuery = reportsQuery.Where(r => r.Status == query.Status.Value);
+
+        if (query.Type.HasValue)
+            reportsQuery = reportsQuery.Where(r => r.ReportType == query.Type.Value);
+
+        var totalCount = await reportsQuery.CountAsync();
+        var totalPages = (int)Math.Ceiling(totalCount / (double)query.PageSize);
+
+        var reports = await reportsQuery
+            .OrderByDescending(r => r.CreatedAt)
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .Select(r => new AdminReportResponse(
+                r.Id,
+                r.ReporterId,
+                r.Reporter.UserName ?? "Unknown",
+                r.ReportType,
+                r.PostId,
+                r.CommentId,
+                r.ReportedUserId,
+                r.ReportedUser != null ? r.ReportedUser.UserName : null,
+                r.Reason,
+                r.Description,
+                r.Status,
+                r.AdminNotes,
+                r.ReviewedById,
+                r.CreatedAt,
+                r.ReviewedAt
+            ))
+            .ToListAsync();
+
+        return Ok(new ReportListResponse(reports, totalCount, query.Page, query.PageSize, totalPages));
+    }
+
+    /// <summary>
+    /// [Admin] Update a report's status.
+    /// </summary>
+    [HttpPut("admin/reports/{id:guid}")]
+    [Authorize(Roles = Roles.Admin)]
+    public async Task<ActionResult> UpdateReportStatus(Guid id, [FromBody] UpdateReportStatusDto dto)
+    {
+        var adminId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (adminId == null)
+            return Unauthorized();
+
+        var report = await Context.Reports.FindAsync(id);
+        if (report == null)
+            return NotFound("Report not found");
+
+        report.Status = dto.Status;
+        report.AdminNotes = dto.AdminNotes;
+        report.ReviewedById = adminId;
+        report.ReviewedAt = DateTime.UtcNow;
+
+        await Context.SaveChangesAsync();
+
+        return Ok(new { message = "Report updated successfully" });
+    }
+
+    // ============ Blocking ============
+
+    /// <summary>
+    /// Block a user.
+    /// </summary>
+    [HttpPost("block/{userId}")]
+    public async Task<ActionResult> BlockUser(string userId)
+    {
+        var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (currentUserId == null)
+            return Unauthorized();
+
+        if (currentUserId == userId)
+            return BadRequest("Cannot block yourself");
+
+        var targetUser = await Context.Users.FindAsync(userId);
+        if (targetUser == null)
+            return NotFound("User not found");
+
+        var existingBlock = await Context.UserBlocks
+            .FirstOrDefaultAsync(b => b.BlockerId == currentUserId && b.BlockedId == userId);
+
+        if (existingBlock != null)
+            return BadRequest("User already blocked");
+
+        var block = new UserBlock
+        {
+            BlockerId = currentUserId,
+            BlockedId = userId
+        };
+
+        Context.UserBlocks.Add(block);
+
+        // Also remove any follow relationships between the users
+        var followsToRemove = await Context.UserFollowers
+            .Where(f => (f.FollowerId == currentUserId && f.FollowingId == userId) ||
+                        (f.FollowerId == userId && f.FollowingId == currentUserId))
+            .ToListAsync();
+
+        Context.UserFollowers.RemoveRange(followsToRemove);
+
+        await Context.SaveChangesAsync();
+
+        return Ok(new { message = "User blocked successfully" });
+    }
+
+    /// <summary>
+    /// Unblock a user.
+    /// </summary>
+    [HttpDelete("block/{userId}")]
+    public async Task<ActionResult> UnblockUser(string userId)
+    {
+        var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (currentUserId == null)
+            return Unauthorized();
+
+        var block = await Context.UserBlocks
+            .FirstOrDefaultAsync(b => b.BlockerId == currentUserId && b.BlockedId == userId);
+
+        if (block == null)
+            return NotFound("User not blocked");
+
+        Context.UserBlocks.Remove(block);
+        await Context.SaveChangesAsync();
+
+        return Ok(new { message = "User unblocked successfully" });
+    }
+
+    /// <summary>
+    /// Check block status between current user and another user.
+    /// </summary>
+    [HttpGet("block/{userId}/status")]
+    public async Task<ActionResult<BlockStatusResponse>> GetBlockStatus(string userId)
+    {
+        var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (currentUserId == null)
+            return Unauthorized();
+
+        var isBlocked = await Context.UserBlocks
+            .AnyAsync(b => b.BlockerId == currentUserId && b.BlockedId == userId);
+
+        var isBlockedBy = await Context.UserBlocks
+            .AnyAsync(b => b.BlockerId == userId && b.BlockedId == currentUserId);
+
+        return Ok(new BlockStatusResponse(isBlocked, isBlockedBy));
+    }
+
+    /// <summary>
+    /// Get list of users blocked by current user.
+    /// </summary>
+    [HttpGet("block/list")]
+    public async Task<ActionResult<BlockListResponse>> GetBlockedUsers([FromQuery] BlockListQuery query)
+    {
+        var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (currentUserId == null)
+            return Unauthorized();
+
+        var blocksQuery = Context.UserBlocks
+            .Where(b => b.BlockerId == currentUserId)
+            .Include(b => b.Blocked)
+            .OrderByDescending(b => b.CreatedAt);
+
+        var totalCount = await blocksQuery.CountAsync();
+        var totalPages = (int)Math.Ceiling(totalCount / (double)query.PageSize);
+
+        var blockedUsers = await blocksQuery
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .Select(b => new BlockedUserResponse(b.Blocked.Id, b.Blocked.UserName ?? "Unknown", b.CreatedAt))
+            .ToListAsync();
+
+        return Ok(new BlockListResponse(blockedUsers, totalCount, query.Page, query.PageSize, totalPages));
+    }
+
+    /// <summary>
+    /// Helper method to check if a user is blocked.
+    /// </summary>
+    private async Task<bool> IsBlockedAsync(string userId1, string userId2)
+    {
+        return await Context.UserBlocks.AnyAsync(b =>
+            (b.BlockerId == userId1 && b.BlockedId == userId2) ||
+            (b.BlockerId == userId2 && b.BlockedId == userId1)
+        );
     }
 }
