@@ -2,9 +2,9 @@
 
 public class UserFollower : BaseEntity
 {
-    public Guid FollowerId { get; set; }
-    public User Follower { get; set; }
+    public string FollowerId { get; set; } = null!;
+    public User Follower { get; set; } = null!;
 
-    public Guid FollowingId { get; set; }
-    public User Following { get; set; }
+    public string FollowingId { get; set; } = null!;
+    public User Following { get; set; } = null!;
 }
