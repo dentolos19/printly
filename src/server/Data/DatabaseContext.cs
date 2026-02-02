@@ -322,6 +322,28 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
         modelBuilder.Entity<Refund>().HasIndex(r => r.Status);
         modelBuilder.Entity<Refund>().HasIndex(r => r.RequestedAt);
         modelBuilder.Entity<Refund>().HasIndex(r => r.StripeRefundId).IsUnique();
+
+        // UserFollower relationships
+        modelBuilder
+            .Entity<UserFollower>()
+            .HasOne(uf => uf.Follower)
+            .WithMany(u => u.Following)
+            .HasForeignKey(uf => uf.FollowerId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder
+            .Entity<UserFollower>()
+            .HasOne(uf => uf.Following)
+            .WithMany(u => u.Followers)
+            .HasForeignKey(uf => uf.FollowingId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Prevent duplicate follows
+        modelBuilder.Entity<UserFollower>().HasIndex(uf => new { uf.FollowerId, uf.FollowingId }).IsUnique();
+
+        // Indexes for queries
+        modelBuilder.Entity<UserFollower>().HasIndex(uf => uf.FollowerId);
+        modelBuilder.Entity<UserFollower>().HasIndex(uf => uf.FollowingId);
     }
 
     public override int SaveChanges()
