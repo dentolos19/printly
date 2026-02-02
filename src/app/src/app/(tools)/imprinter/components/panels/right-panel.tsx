@@ -254,36 +254,6 @@ function TransformSection({ open, onOpenChange }: TransformSectionProps) {
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-4 px-2 pt-3 pb-2">
         <div className="space-y-2">
-          <Label className="text-xs">Position X</Label>
-          <Slider
-            value={[selectedDesign.transform.position[0]]}
-            onValueChange={([x]) =>
-              updateDesignTransform(selectedDesign.id, {
-                position: [x, selectedDesign.transform.position[1], selectedDesign.transform.position[2]],
-              })
-            }
-            min={-5}
-            max={5}
-            step={0.1}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-xs">Position Y</Label>
-          <Slider
-            value={[selectedDesign.transform.position[1]]}
-            onValueChange={([y]) =>
-              updateDesignTransform(selectedDesign.id, {
-                position: [selectedDesign.transform.position[0], y, selectedDesign.transform.position[2]],
-              })
-            }
-            min={-5}
-            max={5}
-            step={0.1}
-          />
-        </div>
-
-        <div className="space-y-2">
           <Label className="text-xs">Scale</Label>
           <Slider
             value={[selectedDesign.transform.scale[0]]}

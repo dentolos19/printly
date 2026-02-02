@@ -87,7 +87,7 @@ export function DesignerProvider({
 
     const cover = canvas.toDataURL({
       format: "png",
-      multiplier: 0.25,
+      multiplier: 2,
     });
 
     return {
