@@ -1,6 +1,8 @@
 param(
   [Parameter(Mandatory = $false)]
-  [string]$MigrationName
+  [string]$MigrationName,
+  [Parameter(Mandatory = $false)]
+  [switch]$Force
 )
 
 Write-Host "Checking for production environment..."
@@ -26,7 +28,19 @@ else {
   }
 }
 
-if ([string]::IsNullOrWhiteSpace($MigrationName)) {
+if ($Force) {
+  Write-Host "Force flag detected. Dropping and recreating database..."
+  dotnet ef database drop --force
+  if ($LASTEXITCODE -eq 0) {
+    Write-Host "Database dropped successfully. Applying all migrations..."
+    dotnet ef database update
+  }
+  else {
+    Write-Host "Failed to drop database with exit code: $LASTEXITCODE"
+    exit $LASTEXITCODE
+  }
+}
+elseif ([string]::IsNullOrWhiteSpace($MigrationName)) {
   Write-Host "Running migrations..."
   dotnet ef database update
 }
