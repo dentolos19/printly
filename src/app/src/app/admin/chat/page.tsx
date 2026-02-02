@@ -1146,12 +1146,6 @@ export default function AdminChatPage() {
                             {selectedConversation.participants.find((p) => p.role === 0)?.name || "Unknown"}
                           </span>
                         </Badge>
-                        <span
-                          className="text-muted-foreground font-mono text-[10px]"
-                          title={`Customer ID: ${selectedConversation.participants.find((p) => p.role === 0)?.id || "N/A"}`}
-                        >
-                          ID: {selectedConversation.participants.find((p) => p.role === 0)?.id?.slice(0, 8) || "N/A"}
-                        </span>
                       </div>
                     </div>
                   </div>
@@ -1164,7 +1158,7 @@ export default function AdminChatPage() {
                       }}
                     >
                       <SelectTrigger className="h-7 w-[90px] text-[11px] font-medium">
-                        <SelectValue />
+                        <SelectValue placeholder="Status" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="1">Active</SelectItem>
@@ -1181,7 +1175,7 @@ export default function AdminChatPage() {
                       }}
                     >
                       <SelectTrigger className="h-7 w-[80px] text-[11px] font-medium">
-                        <SelectValue />
+                        <SelectValue placeholder="Priority" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="0">Low</SelectItem>

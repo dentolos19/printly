@@ -349,7 +349,9 @@ export default function OrderDetailsPage() {
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-bold">Order #{order.id.slice(0, 8)}</h1>
-                <Badge className={`${OrderStatusColors[order.status]} text-sm`}>{OrderStatusLabels[order.status]}</Badge>
+                <Badge className={`${OrderStatusColors[order.status]} text-sm`}>
+                  {OrderStatusLabels[order.status]}
+                </Badge>
               </div>
               <p className="text-muted-foreground text-sm">
                 Placed on{" "}
