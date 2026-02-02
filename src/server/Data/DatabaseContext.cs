@@ -31,6 +31,8 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
     public DbSet<CallLog> CallLogs { get; set; }
     public DbSet<CallParticipant> CallParticipants { get; set; }
     public DbSet<UserFollower> UserFollowers { get; set; }
+    public DbSet<Report> Reports { get; set; }
+    public DbSet<UserBlock> UserBlocks { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
@@ -344,6 +346,66 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
         // Indexes for queries
         modelBuilder.Entity<UserFollower>().HasIndex(uf => uf.FollowerId);
         modelBuilder.Entity<UserFollower>().HasIndex(uf => uf.FollowingId);
+
+        // Report relationships
+        modelBuilder
+            .Entity<Report>()
+            .HasOne(r => r.Reporter)
+            .WithMany()
+            .HasForeignKey(r => r.ReporterId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder
+            .Entity<Report>()
+            .HasOne(r => r.ReportedUser)
+            .WithMany()
+            .HasForeignKey(r => r.ReportedUserId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder
+            .Entity<Report>()
+            .HasOne(r => r.ReviewedBy)
+            .WithMany()
+            .HasForeignKey(r => r.ReviewedById)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder
+            .Entity<Report>()
+            .HasOne(r => r.Post)
+            .WithMany()
+            .HasForeignKey(r => r.PostId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder
+            .Entity<Report>()
+            .HasOne(r => r.ReportedComment)
+            .WithMany()
+            .HasForeignKey(r => r.CommentId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Report>().HasIndex(r => r.Status);
+        modelBuilder.Entity<Report>().HasIndex(r => r.ReportType);
+        modelBuilder.Entity<Report>().HasIndex(r => r.ReporterId);
+
+        // UserBlock relationships
+        modelBuilder
+            .Entity<UserBlock>()
+            .HasOne(b => b.Blocker)
+            .WithMany()
+            .HasForeignKey(b => b.BlockerId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder
+            .Entity<UserBlock>()
+            .HasOne(b => b.Blocked)
+            .WithMany()
+            .HasForeignKey(b => b.BlockedId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Prevent duplicate blocks
+        modelBuilder.Entity<UserBlock>().HasIndex(b => new { b.BlockerId, b.BlockedId }).IsUnique();
+        modelBuilder.Entity<UserBlock>().HasIndex(b => b.BlockerId);
+        modelBuilder.Entity<UserBlock>().HasIndex(b => b.BlockedId);
     }
 
     public override int SaveChanges()
