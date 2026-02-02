@@ -188,3 +188,125 @@ public record GenerateCaptionResponse(
     string Caption
 );
 
+// ============ Follow DTOs ============
+
+public record FollowListQuery(int Page = 1, int PageSize = 20);
+
+public record FollowUserResponse(string UserId, string UserName, DateTime FollowedAt);
+
+public record FollowListResponse(
+    List<FollowUserResponse> Users,
+    int TotalCount,
+    int Page,
+    int PageSize,
+    int TotalPages
+);
+
+public record FollowStatusResponse(bool IsFollowing, bool IsFollowedBy);
+
+public record FollowCountsResponse(int FollowerCount, int FollowingCount);
+
+// ============ Notification DTOs ============
+
+public record CommunityNotificationResponse(
+    Guid Id,
+    NotificationType Type,
+    string Title,
+    string Message,
+    bool IsRead,
+    DateTime? ReadAt,
+    string? ActionUrl,
+    DateTime CreatedAt
+);
+
+public record NotificationListQuery(int Page = 1, int PageSize = 20, bool? UnreadOnly = null);
+
+public record CommunityNotificationListResponse(
+    List<CommunityNotificationResponse> Notifications,
+    int TotalCount,
+    int UnreadCount,
+    int Page,
+    int PageSize,
+    int TotalPages
+);
+
+public record NotificationCountResponse(int TotalCount, int UnreadCount);
+
+// ============ Report DTOs ============
+
+public record CreateReportDto(
+    [Required] ReportType ReportType,
+    Guid? PostId,
+    Guid? CommentId,
+    string? ReportedUserId,
+    [Required] ReportReason Reason,
+    [StringLength(1000)] string? Description
+);
+
+public record ReportResponse(
+    Guid Id,
+    string ReporterId,
+    string ReporterName,
+    ReportType ReportType,
+    Guid? PostId,
+    Guid? CommentId,
+    string? ReportedUserId,
+    ReportReason Reason,
+    string? Description,
+    ReportStatus Status,
+    DateTime CreatedAt
+);
+
+public record AdminReportResponse(
+    Guid Id,
+    string ReporterId,
+    string ReporterName,
+    ReportType ReportType,
+    Guid? PostId,
+    Guid? CommentId,
+    string? ReportedUserId,
+    string? ReportedUserName,
+    ReportReason Reason,
+    string? Description,
+    ReportStatus Status,
+    string? AdminNotes,
+    string? ReviewedById,
+    DateTime CreatedAt,
+    DateTime? ReviewedAt
+);
+
+public record UpdateReportStatusDto(
+    [Required] ReportStatus Status,
+    [StringLength(1000)] string? AdminNotes
+);
+
+public record ReportListQuery(
+    int Page = 1,
+    int PageSize = 20,
+    ReportStatus? Status = null,
+    ReportType? Type = null
+);
+
+public record ReportListResponse(
+    List<AdminReportResponse> Reports,
+    int TotalCount,
+    int Page,
+    int PageSize,
+    int TotalPages
+);
+
+// ============ Block DTOs ============
+
+public record BlockedUserResponse(string UserId, string UserName, DateTime BlockedAt);
+
+public record BlockListQuery(int Page = 1, int PageSize = 20);
+
+public record BlockListResponse(
+    List<BlockedUserResponse> Users,
+    int TotalCount,
+    int Page,
+    int PageSize,
+    int TotalPages
+);
+
+public record BlockStatusResponse(bool IsBlocked, bool IsBlockedBy);
