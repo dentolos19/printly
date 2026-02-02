@@ -179,11 +179,11 @@ export default function CommunityPage() {
                 <TabsTrigger value="bookmarks">Bookmarks</TabsTrigger>
               </TabsList>
 
-              {activeTab === "feed" && (
-                <div className="w-full sm:w-64">
+              <div className="w-full sm:w-64">
+                {activeTab === "feed" && (
                   <SearchBar placeholder="Search posts..." onSearch={handleSearch} />
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             <TabsContent value="feed" className="mt-6 space-y-6">
