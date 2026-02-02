@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       allow_reset:
-        description: Reset Database Where Necessary
+        description: Reset Database
         type: boolean
         default: false
 concurrency:
@@ -67,8 +67,10 @@ jobs:
         if: steps.migrations.outcome == 'failure' && github.event.inputs.allow_reset == 'true'
         working-directory: src/server
         run: |
-          echo "Migration failed. Force resetting database..."
-          dotnet ef database drop --force
+          echo "Migration failed. Dropping all tables..."
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          psql $DATABASE_URL -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+          echo "Running migrations on clean schema..."
           dotnet ef database update
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
