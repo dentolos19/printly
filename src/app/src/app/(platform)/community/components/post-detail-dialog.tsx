@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { useAuth } from "@/lib/providers/auth";
 import { useServer } from "@/lib/providers/server";
 import { PostCommentResponse, PostDetailResponse, ReactionType, ReactionTypeEmojis } from "@/lib/server/community";
@@ -108,6 +109,13 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated }: 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+        {/* Hidden title for accessibility when loading or no post */}
+        {(!post || loading) && (
+          <VisuallyHidden>
+            <DialogTitle>{loading ? "Loading post..." : "Post not found"}</DialogTitle>
+          </VisuallyHidden>
+        )}
+
         {loading ? (
           <div className="flex h-64 items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin" />
@@ -133,102 +141,102 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated }: 
             </DialogHeader>
 
             <div className="space-y-4">
-              {post.photoUrl && (
-                <div className="relative aspect-square w-full overflow-hidden rounded-lg">
-                  <img src={post.photoUrl} alt="Post" className="h-full w-full object-cover" />
-                </div>
-              )}
+            {post.photoUrl && (
+              <div className="relative aspect-square w-full overflow-hidden rounded-lg">
+                <img src={post.photoUrl} alt="Post" className="h-full w-full object-cover" />
+              </div>
+            )}
 
-              <p>{post.caption}</p>
+            <p>{post.caption}</p>
 
-              {/* Reactions */}
-              <div className="flex items-center gap-2 border-y py-3">
-                <div className="flex gap-1">
-                  {Object.entries(ReactionTypeEmojis).map(([type, emoji]) => (
-                    <button
-                      key={type}
-                      className={cn(
-                        "rounded-full p-2 text-xl transition-transform hover:scale-110",
-                        post.userReaction === Number(type) && "bg-muted ring-primary ring-2",
-                      )}
-                      onClick={() =>
-                        handleReact(post.userReaction === Number(type) ? null : (Number(type) as ReactionType))
-                      }
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex-1" />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleBookmark}
-                  className={cn(post.isBookmarked && "text-yellow-500")}
-                >
-                  <BookmarkIcon className={cn("h-5 w-5", post.isBookmarked && "fill-current")} />
+            {/* Reactions */}
+            <div className="flex items-center gap-2 border-y py-3">
+              <div className="flex gap-1">
+                {Object.entries(ReactionTypeEmojis).map(([type, emoji]) => (
+                  <button
+                    key={type}
+                    className={cn(
+                      "rounded-full p-2 text-xl transition-transform hover:scale-110",
+                      post.userReaction === Number(type) && "bg-muted ring-primary ring-2",
+                    )}
+                    onClick={() =>
+                      handleReact(post.userReaction === Number(type) ? null : (Number(type) as ReactionType))
+                    }
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+              <div className="flex-1" />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBookmark}
+                className={cn(post.isBookmarked && "text-yellow-500")}
+              >
+                <BookmarkIcon className={cn("h-5 w-5", post.isBookmarked && "fill-current")} />
+              </Button>
+            </div>
+
+            {/* Reaction summary */}
+            {post.reactionSummaries && post.reactionSummaries.length > 0 && (
+              <div className="flex gap-2">
+                {post.reactionSummaries.map((summary) => (
+                  <Badge key={summary.reactionType} variant="secondary">
+                    {ReactionTypeEmojis[summary.reactionType]} {summary.count}
+                  </Badge>
+                ))}
+              </div>
+            )}
+
+            {/* Comments */}
+            <div className="space-y-3">
+              <h4 className="font-semibold">Comments ({comments.length})</h4>
+
+              {/* Add comment */}
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add a comment..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleAddComment()}
+                />
+                <Button onClick={handleAddComment} disabled={submitting || !newComment.trim()}>
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendIcon className="h-4 w-4" />}
                 </Button>
               </div>
 
-              {/* Reaction summary */}
-              {post.reactionSummaries.length > 0 && (
-                <div className="flex gap-2">
-                  {post.reactionSummaries.map((summary) => (
-                    <Badge key={summary.reactionType} variant="secondary">
-                      {ReactionTypeEmojis[summary.reactionType]} {summary.count}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-
-              {/* Comments */}
+              {/* Comments list */}
               <div className="space-y-3">
-                <h4 className="font-semibold">Comments ({comments.length})</h4>
-
-                {/* Add comment */}
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Add a comment..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleAddComment()}
-                  />
-                  <Button onClick={handleAddComment} disabled={submitting || !newComment.trim()}>
-                    {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendIcon className="h-4 w-4" />}
-                  </Button>
-                </div>
-
-                {/* Comments list */}
-                <div className="space-y-3">
-                  {comments.map((comment) => (
-                    <div key={comment.id} className="bg-muted flex gap-3 rounded-lg p-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>{comment.authorName.charAt(0).toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold">{comment.authorName}</span>
-                          <span className="text-muted-foreground text-xs">
-                            {new Date(comment.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <p className="text-sm">{comment.content}</p>
+                {comments.map((comment) => (
+                  <div key={comment.id} className="bg-muted flex gap-3 rounded-lg p-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback>{comment.authorName.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold">{comment.authorName}</span>
+                        <span className="text-muted-foreground text-xs">
+                          {new Date(comment.createdAt).toLocaleDateString()}
+                        </span>
                       </div>
-                      {claims?.id === comment.authorId && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleDeleteComment(comment.id)}
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </Button>
-                      )}
+                      <p className="text-sm">{comment.content}</p>
                     </div>
-                  ))}
-                </div>
+                    {claims?.id === comment.authorId && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleDeleteComment(comment.id)}
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
+          </div>
           </>
         ) : null}
       </DialogContent>
