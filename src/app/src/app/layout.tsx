@@ -4,6 +4,7 @@ import CartProvider from "@/lib/providers/cart";
 import ServerProvider from "@/lib/providers/server";
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
+import { ThemeProvider } from "next-themes";
 import { Fira_Mono, Inter } from "next/font/google";
 import { ReactNode } from "react";
 import "./globals.css";
@@ -25,16 +26,18 @@ export const metadata: Metadata = {
 
 export default function Layout({ children }: { children: ReactNode }) {
   return (
-    <html lang={"en"} className={"scroll-smooth"}>
+    <html lang={"en"} className={"scroll-smooth"} suppressHydrationWarning>
       <body className={cn(fontSans.variable, fontMono.variable, "antialiased")}>
-        <AuthProvider>
-          <ServerProvider>
-            <CartProvider>
-              {children}
-              <Toaster />
-            </CartProvider>
-          </ServerProvider>
-        </AuthProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <AuthProvider>
+            <ServerProvider>
+              <CartProvider>
+                {children}
+                <Toaster />
+              </CartProvider>
+            </ServerProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
