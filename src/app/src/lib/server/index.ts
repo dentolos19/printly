@@ -10,6 +10,7 @@ import initImprintController from "@/lib/server/imprint";
 import initInventoryController from "@/lib/server/inventory";
 import initOrderController from "@/lib/server/order";
 import initPaymentController from "@/lib/server/payment";
+import initPrintAreaController from "@/lib/server/print-area";
 import initProductController from "@/lib/server/product";
 import initRefundController from "@/lib/server/refund";
 import initTicketController from "@/lib/server/ticket";
@@ -26,6 +27,7 @@ export default function generateServerFunctions(fetch: ServerFetch) {
     design: initDesignController(fetch),
     generate: initGenerateController(fetch),
     imprint: initImprintController(fetch),
+    printArea: initPrintAreaController(fetch),
     product: initProductController(fetch),
     variant: initVariantController(fetch),
     inventory: initInventoryController(fetch),

@@ -1,5 +1,6 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Label } from "@/components/ui/label";
@@ -168,7 +169,12 @@ type AppliedDesignsSectionProps = {
 };
 
 function AppliedDesignsSection({ open, onOpenChange }: AppliedDesignsSectionProps) {
-  const { appliedDesigns, selectedDesignId, selectDesign, removeDesign } = useImprinter();
+  const { appliedDesigns, selectedDesignId, selectDesign, removeDesign, availablePrintAreas } = useImprinter();
+
+  const getPrintAreaName = (areaId: string) => {
+    const area = availablePrintAreas.find((a) => a.id === areaId);
+    return area?.name || areaId;
+  };
 
   return (
     <Collapsible open={open} onOpenChange={onOpenChange}>
@@ -199,7 +205,12 @@ function AppliedDesignsSection({ open, onOpenChange }: AppliedDesignsSectionProp
                 onClick={() => selectDesign(design.id)}
               >
                 <Eye className="h-3 w-3 shrink-0" />
-                <span className="truncate text-xs">{design.designData.name}</span>
+                <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
+                  <span className="w-full truncate text-left text-xs">{design.designData.name}</span>
+                  <Badge variant="secondary" className="h-4 px-1 text-[10px]">
+                    {getPrintAreaName(design.printArea)}
+                  </Badge>
+                </div>
               </button>
               <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => removeDesign(design.id)}>
                 <Trash2 className="h-3 w-3" />
@@ -222,9 +233,15 @@ type TransformSectionProps = {
 };
 
 function TransformSection({ open, onOpenChange }: TransformSectionProps) {
-  const { selectedDesignId, appliedDesigns, updateDesignTransform, updateDesignOpacity } = useImprinter();
+  const { selectedDesignId, appliedDesigns, updateDesignTransform, updateDesignOpacity, availablePrintAreas } =
+    useImprinter();
 
   const selectedDesign = appliedDesigns.find((d) => d.id === selectedDesignId);
+
+  const getPrintAreaName = (areaId: string) => {
+    const area = availablePrintAreas.find((a) => a.id === areaId);
+    return area?.name || areaId;
+  };
 
   if (!selectedDesign) {
     return (
@@ -253,6 +270,14 @@ function TransformSection({ open, onOpenChange }: TransformSectionProps) {
         {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-4 px-2 pt-3 pb-2">
+        <div className="space-y-2">
+          <Label className="text-xs">Print Area</Label>
+          <div className="flex items-center gap-2">
+            <MapPin className="text-muted-foreground h-3 w-3" />
+            <span className="text-sm">{getPrintAreaName(selectedDesign.printArea)}</span>
+          </div>
+        </div>
+
         <div className="space-y-2">
           <Label className="text-xs">Scale</Label>
           <Slider

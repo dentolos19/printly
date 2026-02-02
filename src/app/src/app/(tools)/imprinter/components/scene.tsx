@@ -4,7 +4,7 @@ import { Decal, Environment, OrbitControls, PerspectiveCamera, useGLTF, useTextu
 import { Canvas, createPortal, useFrame, useThree } from "@react-three/fiber";
 import { createContext, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import type { AppliedDesign } from "../types";
+import type { AppliedDesign, PrintAreaConfig } from "../types";
 import { useImprinter } from "./hooks/use-imprinter";
 
 // Screenshot capture context
@@ -24,7 +24,7 @@ export function useScreenshot() {
 
 function calculateDecalTransform(
   targetMesh: THREE.Mesh,
-  printArea: string,
+  rayDir: [number, number, number],
   offsetPosition: THREE.Vector3,
 ): { position: THREE.Vector3; orientation: THREE.Euler } {
   const raycaster = new THREE.Raycaster();
@@ -34,22 +34,8 @@ function calculateDecalTransform(
   const meshSize = box.getSize(new THREE.Vector3());
   const maxDimension = Math.max(meshSize.x, meshSize.y, meshSize.z);
 
-  let rayDirection: THREE.Vector3;
-  switch (printArea) {
-    case "back":
-      rayDirection = new THREE.Vector3(0, 0, -1);
-      break;
-    case "left-sleeve":
-      rayDirection = new THREE.Vector3(-1, 0, 0);
-      break;
-    case "right-sleeve":
-      rayDirection = new THREE.Vector3(1, 0, 0);
-      break;
-    case "front":
-    default:
-      rayDirection = new THREE.Vector3(0, 0, 1);
-      break;
-  }
+  // Use provided ray direction
+  const rayDirection = new THREE.Vector3(rayDir[0], rayDir[1], rayDir[2]).normalize();
 
   const rayOrigin = meshCenter
     .clone()
@@ -103,10 +89,12 @@ function layerZOnBox(mesh: THREE.Mesh, offset: number) {
 function DesignDecal({
   design,
   targetMesh,
+  printAreaConfig,
   maxAnisotropy,
 }: {
   design: AppliedDesign;
   targetMesh: THREE.Mesh;
+  printAreaConfig: PrintAreaConfig | undefined;
   maxAnisotropy: number;
 }) {
   if (!design.designData) return null;
@@ -117,13 +105,42 @@ function DesignDecal({
 
   return (
     <Suspense fallback={null}>
-      <DecalMesh design={design} url={textureUrl} targetMesh={targetMesh} />
+      <DecalMesh design={design} url={textureUrl} targetMesh={targetMesh} printAreaConfig={printAreaConfig} />
     </Suspense>
   );
 }
 
-function DecalMesh({ design, url, targetMesh }: { design: AppliedDesign; url: string; targetMesh: THREE.Mesh }) {
+function DecalMesh({
+  design,
+  url,
+  targetMesh,
+  printAreaConfig,
+}: {
+  design: AppliedDesign;
+  url: string;
+  targetMesh: THREE.Mesh;
+  printAreaConfig: PrintAreaConfig | undefined;
+}) {
   const texture = useTexture(url);
+
+  // Get ray direction from config or use default based on area ID
+  const rayDirection = useMemo<[number, number, number]>(() => {
+    if (printAreaConfig?.rayDirection) {
+      return printAreaConfig.rayDirection;
+    }
+    // Fallback based on print area ID
+    switch (design.printArea) {
+      case "back":
+        return [0, 0, -1];
+      case "left-sleeve":
+        return [-1, 0, 0];
+      case "right-sleeve":
+        return [1, 0, 0];
+      case "front":
+      default:
+        return [0, 0, 1];
+    }
+  }, [printAreaConfig, design.printArea]);
 
   // Configuration
   const { position, orientation } = useMemo(() => {
@@ -132,8 +149,8 @@ function DecalMesh({ design, url, targetMesh }: { design: AppliedDesign; url: st
       design.transform.position[1],
       design.transform.position[2],
     );
-    return calculateDecalTransform(targetMesh, design.printArea, offset);
-  }, [targetMesh, design.printArea, design.transform.position]);
+    return calculateDecalTransform(targetMesh, rayDirection, offset);
+  }, [targetMesh, rayDirection, design.transform.position]);
 
   // Apply rotation offset
   const finalOrientation = useMemo(() => {
@@ -220,11 +237,20 @@ function NoModelPlaceholder() {
 }
 
 function CanvasModel() {
-  const { productColor, appliedDesigns, modelConfig, selectedProduct } = useImprinter();
+  const { productColor, appliedDesigns, modelConfig, selectedProduct, availablePrintAreas } = useImprinter();
   const { gl } = useThree();
   const modelRef = useRef<THREE.Group>(null);
   const [meshes, setMeshes] = useState<MeshMap>({ body: null, leftSleeve: null, rightSleeve: null });
   const maxAnisotropy = useMemo(() => gl.capabilities.getMaxAnisotropy(), [gl]);
+
+  // Create a map of print area ID to config for quick lookup
+  const printAreaConfigMap = useMemo(() => {
+    const map = new Map<string, PrintAreaConfig>();
+    availablePrintAreas.forEach((config) => {
+      map.set(config.id, config);
+    });
+    return map;
+  }, [availablePrintAreas]);
 
   // Get model URL from selected product - use proxied URL to avoid CORS issues
   const modelUrl = selectedProduct?.product.modelId ? `/assets/${selectedProduct.product.modelId}/view` : null;
@@ -320,18 +346,34 @@ function CanvasModel() {
   });
 
   // Helper function to get the appropriate mesh for a print area
-  const getMeshForPrintArea = (printArea: string): THREE.Mesh | null => {
-    switch (printArea) {
-      case "left-sleeve":
-        return meshes.leftSleeve || meshes.body;
-      case "right-sleeve":
-        return meshes.rightSleeve || meshes.body;
-      case "front":
-      case "back":
-      default:
-        return meshes.body;
-    }
-  };
+  const getMeshForPrintArea = useCallback(
+    (printArea: string): THREE.Mesh | null => {
+      // First, try to find mesh by name from print area config
+      const config = printAreaConfigMap.get(printArea);
+      if (config?.meshName && modelRef.current) {
+        let foundMesh: THREE.Mesh | null = null;
+        modelRef.current.traverse((child) => {
+          if (child instanceof THREE.Mesh && child.name === config.meshName) {
+            foundMesh = child;
+          }
+        });
+        if (foundMesh) return foundMesh;
+      }
+
+      // Fallback to hardcoded logic
+      switch (printArea) {
+        case "left-sleeve":
+          return meshes.leftSleeve || meshes.body;
+        case "right-sleeve":
+          return meshes.rightSleeve || meshes.body;
+        case "front":
+        case "back":
+        default:
+          return meshes.body;
+      }
+    },
+    [meshes, printAreaConfigMap],
+  );
 
   // Group designs by their target mesh
   const designsByMesh = useMemo(() => {
@@ -350,7 +392,7 @@ function CanvasModel() {
     });
 
     return grouped;
-  }, [appliedDesigns, meshes]);
+  }, [appliedDesigns, getMeshForPrintArea]);
 
   return (
     <group ref={modelRef}>
@@ -372,7 +414,13 @@ function CanvasModel() {
             {createPortal(
               <>
                 {designs.map((design) => (
-                  <DesignDecal key={design.id} design={design} targetMesh={mesh} maxAnisotropy={maxAnisotropy} />
+                  <DesignDecal
+                    key={design.id}
+                    design={design}
+                    targetMesh={mesh}
+                    printAreaConfig={printAreaConfigMap.get(design.printArea)}
+                    maxAnisotropy={maxAnisotropy}
+                  />
                 ))}
               </>,
               mesh,
