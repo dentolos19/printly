@@ -12,7 +12,7 @@ import {
 import { PostSummaryResponse, ReactionType, ReactionTypeEmojis } from "@/lib/server/community";
 import { cn } from "@/lib/utils";
 import { BookmarkIcon, HeartIcon, MessageCircleIcon, MoreHorizontalIcon, TrashIcon } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 interface PostCardProps {
   post: PostSummaryResponse;
@@ -25,6 +25,21 @@ interface PostCardProps {
 
 export function PostCard({ post, onReact, onBookmark, onComment, onDelete, isOwner }: PostCardProps) {
   const [showReactions, setShowReactions] = useState(false);
+  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseEnter = () => {
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+    setShowReactions(true);
+  };
+
+  const handleMouseLeave = () => {
+    hideTimeoutRef.current = setTimeout(() => {
+      setShowReactions(false);
+    }, 300); // 300ms delay before hiding
+  };
 
   return (
     <Card className="overflow-hidden">
@@ -74,8 +89,8 @@ export function PostCard({ post, onReact, onBookmark, onComment, onDelete, isOwn
               size="sm"
               className={cn("gap-1", post.userReaction !== null && "text-red-500")}
               onClick={() => setShowReactions(!showReactions)}
-              onMouseEnter={() => setShowReactions(true)}
-              onMouseLeave={() => setShowReactions(false)}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
             >
               <HeartIcon className={cn("h-4 w-4", post.userReaction !== null && "fill-current")} />
               {post.reactionCount}
@@ -83,8 +98,8 @@ export function PostCard({ post, onReact, onBookmark, onComment, onDelete, isOwn
             {showReactions && (
               <div
                 className="bg-popover absolute bottom-full left-0 mb-2 flex gap-1 rounded-full border p-1 shadow-lg"
-                onMouseEnter={() => setShowReactions(true)}
-                onMouseLeave={() => setShowReactions(false)}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
               >
                 {Object.entries(ReactionTypeEmojis).map(([type, emoji]) => (
                   <button
