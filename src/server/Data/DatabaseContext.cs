@@ -30,6 +30,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
     public DbSet<Refund> Refunds { get; set; }
     public DbSet<CallLog> CallLogs { get; set; }
     public DbSet<CallParticipant> CallParticipants { get; set; }
+    public DbSet<UserFollower> UserFollowers { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
