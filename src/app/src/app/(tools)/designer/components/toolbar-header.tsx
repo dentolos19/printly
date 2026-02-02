@@ -26,7 +26,6 @@ import {
   ArrowDownToLine,
   ArrowUp,
   ArrowUpToLine,
-  Book,
   ChevronDown,
   Clipboard,
   Copy,
@@ -35,13 +34,12 @@ import {
   FilePlus,
   Group,
   Home,
-  Info,
-  Keyboard,
   Maximize,
   Maximize2,
   Redo2,
   Save,
   Scissors,
+  Shirt,
   Trash2,
   Undo2,
   Ungroup,
@@ -64,6 +62,7 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
   const router = useRouter();
   const [resizeDialogOpen, setResizeDialogOpen] = useState(false);
   const {
+    designId,
     designName,
     setDesignName,
     saveStatus,
@@ -96,6 +95,18 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
     resizeDesign,
     canvasSize,
   } = useDesigner();
+
+  async function handleImprint() {
+    try {
+      const savedDesignId = await saveDesign();
+      const idToUse = savedDesignId || designId;
+      if (idToUse) {
+        router.push(`/imprinter/new?design=${idToUse}`);
+      }
+    } catch (error) {
+      console.error("Failed to save design before imprinting:", error);
+    }
+  }
 
   return (
     <div className={cn("bg-background flex h-12 items-center border-b px-2", className)}>
@@ -335,31 +346,6 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        {/* Help Menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button type={"button"} variant={"ghost"} size={"sm"} className={"h-7 px-2 text-sm"}>
-              Help
-              <ChevronDown className={"ml-1 h-3 w-3"} />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align={"start"}>
-            <DropdownMenuItem>
-              <Keyboard className={"mr-2 h-4 w-4"} />
-              Keyboard Shortcuts
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Book className={"mr-2 h-4 w-4"} />
-              Documentation
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Info className={"mr-2 h-4 w-4"} />
-              About
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </nav>
 
       {/* Spacer */}
@@ -376,6 +362,24 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
           className={"h-7 w-48 border-none bg-transparent px-1 text-sm font-medium shadow-none focus-visible:ring-1"}
         />
       </div>
+
+      {/* Imprint button */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type={"button"}
+            variant={"default"}
+            size={"sm"}
+            className={"ml-2 h-7 gap-1.5 px-3"}
+            onClick={handleImprint}
+            disabled={saveStatus === "saving"}
+          >
+            <Shirt className={"h-4 w-4"} />
+            Imprint
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Apply this design to a product</TooltipContent>
+      </Tooltip>
 
       {/* Problem indicator */}
       {problemCount > 0 && (

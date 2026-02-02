@@ -12,7 +12,7 @@ using PrintlyServer.Data;
 namespace PrintlyServer.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20260129031028_Initial")]
+    [Migration("20260202061509_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -20,7 +20,7 @@ namespace PrintlyServer.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.0")
+                .HasAnnotation("ProductVersion", "10.0.2")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -589,6 +589,9 @@ namespace PrintlyServer.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("PreviewId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("ProductId")
                         .HasColumnType("uuid");
 
@@ -600,6 +603,8 @@ namespace PrintlyServer.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("PreviewId");
 
                     b.HasIndex("ProductId");
 
@@ -1426,6 +1431,10 @@ namespace PrintlyServer.Migrations
 
             modelBuilder.Entity("PrintlyServer.Data.Entities.Imprint", b =>
                 {
+                    b.HasOne("PrintlyServer.Data.Entities.Asset", "Preview")
+                        .WithMany()
+                        .HasForeignKey("PreviewId");
+
                     b.HasOne("PrintlyServer.Data.Entities.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
@@ -1436,6 +1445,8 @@ namespace PrintlyServer.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Preview");
 
                     b.Navigation("Product");
 

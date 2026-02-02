@@ -17,13 +17,15 @@ export default function Page() {
   const imprintId = params?.id as string | undefined;
   const isNew = imprintId === "new";
 
-  // Get product/variant from URL params (from product modal)
+  // Get product/variant/design from URL params
   const initialProductId = searchParams.get("product");
   const initialVariantId = searchParams.get("variant");
+  const initialDesignId = searchParams.get("design");
 
   const [initialImprintId, setInitialImprintId] = useState<string | null>(isNew ? null : imprintId || null);
   const [initialImprintName, setInitialImprintName] = useState("Untitled Imprint");
   const [isLoading, setIsLoading] = useState(true);
+  const [needsProductSelection, setNeedsProductSelection] = useState(false);
 
   // Load imprint data if editing an existing one
   useEffect(() => {
@@ -41,9 +43,13 @@ export default function Page() {
           setIsLoading(false);
         });
     } else {
+      // Check if we have a design but no product - need to show product selection
+      if (initialDesignId && !initialProductId) {
+        setNeedsProductSelection(true);
+      }
       setIsLoading(false);
     }
-  }, [imprintId, isNew, api.imprint, router]);
+  }, [imprintId, isNew, initialDesignId, initialProductId, api.imprint, router]);
 
   // Handler to load products with 3D models
   const handleLoadProducts = useCallback(async () => {
@@ -152,6 +158,9 @@ export default function Page() {
           initialImprintName={initialImprintName}
           initialProductId={initialProductId}
           initialVariantId={initialVariantId}
+          initialDesignId={initialDesignId}
+          needsProductSelection={needsProductSelection}
+          onProductSelected={() => setNeedsProductSelection(false)}
           onSave={handleSave}
           onLoad={handleLoad}
           onLoadDesign={handleLoadDesign}

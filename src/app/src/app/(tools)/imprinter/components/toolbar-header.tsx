@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useCart } from "@/lib/providers/cart";
 import { cn } from "@/lib/utils";
-import { Book, ChevronDown, FileDown, Home, Info, Keyboard, RotateCcw, Save, ShoppingCart } from "lucide-react";
+import { ChevronDown, FileDown, Home, RotateCcw, Save, ShoppingCart } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -132,30 +132,6 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
             <DropdownMenuItem onClick={resetCamera}>
               <RotateCcw className="mr-2 h-4 w-4" />
               Reset Camera
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 gap-1">
-              Help
-              <ChevronDown className="h-3 w-3 opacity-50" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem>
-              <Keyboard className="mr-2 h-4 w-4" />
-              Keyboard Shortcuts
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Book className="mr-2 h-4 w-4" />
-              Documentation
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Info className="mr-2 h-4 w-4" />
-              About
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

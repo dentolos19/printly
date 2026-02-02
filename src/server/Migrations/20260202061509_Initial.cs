@@ -618,6 +618,7 @@ namespace PrintlyServer.Migrations
                     CustomizationPrice = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
                     UserId = table.Column<string>(type: "text", nullable: false),
                     ProductId = table.Column<Guid>(type: "uuid", nullable: true),
+                    PreviewId = table.Column<Guid>(type: "uuid", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
@@ -630,6 +631,11 @@ namespace PrintlyServer.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Imprints_Assets_PreviewId",
+                        column: x => x.PreviewId,
+                        principalTable: "Assets",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Imprints_Products_ProductId",
                         column: x => x.ProductId,
@@ -990,6 +996,11 @@ namespace PrintlyServer.Migrations
                 name: "IX_Designs_UserId",
                 table: "Designs",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Imprints_PreviewId",
+                table: "Imprints",
+                column: "PreviewId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Imprints_ProductId",

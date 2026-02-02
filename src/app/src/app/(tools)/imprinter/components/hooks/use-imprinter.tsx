@@ -52,6 +52,8 @@ type ImprinterContextValue = {
   activePrintArea: PrintArea;
   leftPanelView: LeftPanelView;
   rightPanelOpen: boolean;
+  showProductDialog: boolean;
+  pendingDesignId: string | null;
 
   // Camera state
   cameraState: CameraState;
@@ -101,6 +103,9 @@ type ImprinterProviderProps = {
   initialImprintName?: string;
   initialProductId?: string | null;
   initialVariantId?: string | null;
+  initialDesignId?: string | null;
+  needsProductSelection?: boolean;
+  onProductSelected?: () => void;
   onSave?: (
     data: { name: string; data: string; currentId: string | null; previewId?: string | null } & Partial<ImprinterData>,
   ) => Promise<{ id: string }>;
@@ -147,6 +152,9 @@ export function ImprinterProvider({
   initialImprintName = "Untitled Imprint",
   initialProductId = null,
   initialVariantId = null,
+  initialDesignId = null,
+  needsProductSelection = false,
+  onProductSelected,
   onSave,
   onLoad,
   onLoadDesign,
@@ -167,8 +175,10 @@ export function ImprinterProvider({
   // UI state
   const [activeTool, setActiveTool] = useState<Tool>("select");
   const [activePrintArea, setActivePrintArea] = useState<PrintArea>("front");
-  const [leftPanelView, setLeftPanelView] = useState<LeftPanelView>("designs");
+  const [leftPanelView, setLeftPanelView] = useState<LeftPanelView>(needsProductSelection ? "products" : "designs");
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
+  const [showProductDialog, setShowProductDialog] = useState(needsProductSelection);
+  const [pendingDesignId, setPendingDesignId] = useState<string | null>(initialDesignId);
 
   // Camera state
   const [cameraState, setCameraState] = useState<CameraState>({
@@ -295,7 +305,7 @@ export function ImprinterProvider({
   );
 
   const selectProduct = useCallback(
-    (product: ProductResponse, variant?: ProductVariantResponse | null) => {
+    async (product: ProductResponse, variant?: ProductVariantResponse | null) => {
       setSelectedProduct({ product, variant: variant || null });
       setProductModel(product.id);
 
@@ -308,9 +318,37 @@ export function ImprinterProvider({
       // Reset print area to front when switching products
       setActivePrintArea("front");
 
+      // If there's a pending design to load, load it now
+      if (pendingDesignId && onLoadDesign) {
+        try {
+          const design = await onLoadDesign(pendingDesignId);
+          const newDesign: AppliedDesign = {
+            id: crypto.randomUUID(),
+            designId: design.id,
+            designData: design,
+            printArea: "front",
+            transform: {
+              position: [0, 0, 0],
+              rotation: [0, 0, 0],
+              scale: [1, 1, 1],
+            },
+            opacity: 1,
+          };
+          setAppliedDesigns([newDesign]);
+          setSelectedDesignId(newDesign.id);
+          setPendingDesignId(null);
+        } catch (error) {
+          console.error("Failed to load initial design:", error);
+        }
+      }
+
+      // Close product dialog and notify parent
+      setShowProductDialog(false);
+      onProductSelected?.();
+
       triggerAutoSave();
     },
-    [triggerAutoSave],
+    [triggerAutoSave, pendingDesignId, onLoadDesign, onProductSelected],
   );
 
   const handleSetAvailableProducts = useCallback((products: ProductResponse[]) => {
@@ -559,6 +597,8 @@ export function ImprinterProvider({
       activePrintArea,
       leftPanelView,
       rightPanelOpen,
+      showProductDialog,
+      pendingDesignId,
 
       // Camera state
       cameraState,
@@ -609,6 +649,11 @@ export function ImprinterProvider({
       modelConfig,
       availablePrintAreas,
       activeTool,
+      activePrintArea,
+      leftPanelView,
+      rightPanelOpen,
+      showProductDialog,
+      pendingDesignId,
       activePrintArea,
       leftPanelView,
       rightPanelOpen,
