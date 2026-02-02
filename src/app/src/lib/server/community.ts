@@ -883,7 +883,7 @@ export default function initCommunityController(fetch: ServerFetch) {
 
     // Follow a user
     follow: async (userId: string): Promise<void> => {
-      const response = await fetch(`/community/users/${userId}/follow`, {
+      const response = await fetch(`/community/follow/${userId}`, {
         method: "POST",
       });
 
@@ -899,8 +899,8 @@ export default function initCommunityController(fetch: ServerFetch) {
 
     // Unfollow a user
     unfollow: async (userId: string): Promise<void> => {
-      const response = await fetch(`/community/users/${userId}/unfollow`, {
-        method: "POST",
+      const response = await fetch(`/community/follow/${userId}`, {
+        method: "DELETE",
       });
 
       if (!response.ok) {
@@ -915,7 +915,7 @@ export default function initCommunityController(fetch: ServerFetch) {
 
     // Get follow status with a user
     getFollowStatus: async (userId: string): Promise<FollowStatusResponse> => {
-      const response = await fetch(`/community/users/${userId}/follow-status`, { method: "GET" });
+      const response = await fetch(`/community/follow/${userId}/status`, { method: "GET" });
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to get follow status" }));
@@ -935,7 +935,7 @@ export default function initCommunityController(fetch: ServerFetch) {
       if (query?.page) params.append("page", String(query.page));
       if (query?.pageSize) params.append("pageSize", String(query.pageSize));
 
-      const url = `/community/users/${userId}/followers${params.toString() ? `?${params}` : ""}`;
+      const url = `/community/follow/${userId}/followers${params.toString() ? `?${params}` : ""}`;
       const response = await fetch(url, { method: "GET" });
 
       if (!response.ok) {
@@ -956,7 +956,7 @@ export default function initCommunityController(fetch: ServerFetch) {
       if (query?.page) params.append("page", String(query.page));
       if (query?.pageSize) params.append("pageSize", String(query.pageSize));
 
-      const url = `/community/users/${userId}/following${params.toString() ? `?${params}` : ""}`;
+      const url = `/community/follow/${userId}/following${params.toString() ? `?${params}` : ""}`;
       const response = await fetch(url, { method: "GET" });
 
       if (!response.ok) {
@@ -973,7 +973,7 @@ export default function initCommunityController(fetch: ServerFetch) {
 
     // Get follow counts for a user
     getFollowCounts: async (userId: string): Promise<FollowCountsResponse> => {
-      const response = await fetch(`/community/users/${userId}/follow-counts`, { method: "GET" });
+      const response = await fetch(`/community/follow/${userId}/counts`, { method: "GET" });
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch follow counts" }));
@@ -1077,7 +1077,7 @@ export default function initCommunityController(fetch: ServerFetch) {
 
     // Delete all notifications
     deleteAllNotifications: async (): Promise<void> => {
-      const response = await fetch("/community/notifications", {
+      const response = await fetch("/community/notifications/all", {
         method: "DELETE",
       });
 
@@ -1176,7 +1176,7 @@ export default function initCommunityController(fetch: ServerFetch) {
 
     // Block a user
     blockUser: async (userId: string): Promise<void> => {
-      const response = await fetch(`/community/users/${userId}/block`, {
+      const response = await fetch(`/community/block/${userId}`, {
         method: "POST",
       });
 
@@ -1192,8 +1192,8 @@ export default function initCommunityController(fetch: ServerFetch) {
 
     // Unblock a user
     unblockUser: async (userId: string): Promise<void> => {
-      const response = await fetch(`/community/users/${userId}/unblock`, {
-        method: "POST",
+      const response = await fetch(`/community/block/${userId}`, {
+        method: "DELETE",
       });
 
       if (!response.ok) {
@@ -1208,7 +1208,7 @@ export default function initCommunityController(fetch: ServerFetch) {
 
     // Get block status with a user
     getBlockStatus: async (userId: string): Promise<BlockStatusResponse> => {
-      const response = await fetch(`/community/users/${userId}/block-status`, { method: "GET" });
+      const response = await fetch(`/community/block/${userId}/status`, { method: "GET" });
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to get block status" }));
@@ -1228,7 +1228,7 @@ export default function initCommunityController(fetch: ServerFetch) {
       if (query?.page) params.append("page", String(query.page));
       if (query?.pageSize) params.append("pageSize", String(query.pageSize));
 
-      const url = `/community/users/blocked${params.toString() ? `?${params}` : ""}`;
+      const url = `/community/block/list${params.toString() ? `?${params}` : ""}`;
       const response = await fetch(url, { method: "GET" });
 
       if (!response.ok) {
