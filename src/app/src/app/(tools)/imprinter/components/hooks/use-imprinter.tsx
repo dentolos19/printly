@@ -89,6 +89,7 @@ type ImprinterContextValue = {
   addDesignToProduct: (design: Design, printArea: PrintArea) => void;
   updateDesignTransform: (id: string, transform: Partial<Transform3D>) => void;
   updateDesignOpacity: (id: string, opacity: number) => void;
+  updateDesignPrintArea: (id: string, printArea: PrintArea) => void;
   removeDesign: (id: string) => void;
   selectDesign: (id: string | null) => void;
 
@@ -481,6 +482,18 @@ export function ImprinterProvider({
     [triggerAutoSave],
   );
 
+  const updateDesignPrintArea = useCallback(
+    (id: string, printArea: PrintArea) => {
+      setAppliedDesigns((prev) =>
+        prev.map((design) =>
+          design.id === id ? { ...design, printArea, transform: { ...design.transform, position: [0, 0, 0] } } : design,
+        ),
+      );
+      triggerAutoSave();
+    },
+    [triggerAutoSave],
+  );
+
   const removeDesign = useCallback(
     (id: string) => {
       setAppliedDesigns((prev) => prev.filter((design) => design.id !== id));
@@ -684,6 +697,7 @@ export function ImprinterProvider({
       addDesignToProduct,
       updateDesignTransform,
       updateDesignOpacity,
+      updateDesignPrintArea,
       removeDesign,
       selectDesign,
 
@@ -733,6 +747,7 @@ export function ImprinterProvider({
       addDesignToProduct,
       updateDesignTransform,
       updateDesignOpacity,
+      updateDesignPrintArea,
       removeDesign,
       selectDesign,
       resetCamera,
