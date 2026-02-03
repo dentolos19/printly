@@ -397,6 +397,24 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
         modelBuilder.Entity<Report>().HasIndex(r => r.ReportType);
         modelBuilder.Entity<Report>().HasIndex(r => r.ReporterId);
 
+        // Asset relationships
+        modelBuilder
+            .Entity<Asset>()
+            .HasOne(a => a.User)
+            .WithMany()
+            .HasForeignKey(a => a.UserId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // User avatar relationship (separate from Asset.User)
+        modelBuilder
+            .Entity<User>()
+            .HasOne(u => u.Avatar)
+            .WithMany()
+            .HasForeignKey(u => u.AvatarId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<User>().HasIndex(u => u.AvatarId);
+
         // UserBlock relationships
         modelBuilder
             .Entity<UserBlock>()
