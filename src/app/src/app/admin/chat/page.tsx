@@ -1133,12 +1133,6 @@ export default function AdminChatPage() {
                       >
                         {selectedConversation.subject || "Support Conversation"}
                       </CardTitle>
-                      <p
-                        className="text-muted-foreground line-clamp-1 text-xs leading-relaxed"
-                        title={selectedConversation.lastMessage?.content || "No messages yet"}
-                      >
-                        {selectedConversation.lastMessage?.content || "No messages yet"}
-                      </p>
                       <div className="flex items-center gap-1.5 pt-0">
                         <Badge variant="outline" className="gap-1 px-1.5 py-0 text-[10px] font-medium">
                           <User className="h-2.5 w-2.5" />
