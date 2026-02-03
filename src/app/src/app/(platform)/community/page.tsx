@@ -1,8 +1,6 @@
-﻿﻿"use client";
+﻿"use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/providers/auth";
 import { useServer } from "@/lib/providers/server";
@@ -10,13 +8,24 @@ import {
   BookmarkedPostResponse,
   CommunityStatsResponse,
   PostSummaryResponse,
+  PostStatus,
   ReactionType,
+  ReportReason,
+  ReportType,
 } from "@/lib/server/community";
-import { cn } from "@/lib/utils";
-import { BookmarkIcon, Loader2, PlusIcon } from "lucide-react";
+import { BookmarkIcon, PlusIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { CreatePostDialog, PostCard, PostDetailDialog, StatsCard } from "./components";
+import {
+  CreatePostDialog,
+  EmptyState,
+  Pagination,
+  PostCard,
+  PostDetailDialog,
+  PostGrid,
+  SearchBar,
+  StatsCard,
+} from "./components";
 
 // ==================== Main Page Component ====================
 export default function CommunityPage() {
@@ -33,6 +42,7 @@ export default function CommunityPage() {
   const [statsLoading, setStatsLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
@@ -41,7 +51,7 @@ export default function CommunityPage() {
   const loadPosts = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await api.community.getPosts({ page, pageSize: 12 });
+      const data = await api.community.getPosts({ page, pageSize: 12, searchTerm: searchTerm || undefined });
       setPosts(data.posts);
       setTotalPages(data.totalPages);
     } catch (error) {
@@ -49,7 +59,7 @@ export default function CommunityPage() {
     } finally {
       setLoading(false);
     }
-  }, [api.community, page]);
+  }, [api.community, page, searchTerm]);
 
   const loadMyPosts = useCallback(async () => {
     try {
@@ -131,6 +141,31 @@ export default function CommunityPage() {
     }
   };
 
+  const handleArchive = async (postId: string, newStatus: PostStatus) => {
+    try {
+      await api.community.updatePost(postId, { postStatus: newStatus });
+      toast.success(newStatus === PostStatus.Archived ? "Post archived" : "Post published");
+      loadPosts();
+      loadMyPosts();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update post");
+    }
+  };
+
+  const handleReport = async (postId: string, reason: ReportReason, description?: string) => {
+    try {
+      await api.community.createReport({
+        reportType: ReportType.Post,
+        postId,
+        reason,
+        description,
+      });
+      toast.success("Report submitted. Thank you for helping keep our community safe.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to submit report");
+    }
+  };
+
   const handleComment = (postId: string) => {
     setSelectedPostId(postId);
     setPostDetailOpen(true);
@@ -142,61 +177,15 @@ export default function CommunityPage() {
     if (activeTab === "bookmarks") loadBookmarks();
   };
 
-  const renderPosts = (postsToRender: PostSummaryResponse[], showDelete = false) => {
-    if (loading && postsToRender.length === 0) {
-      return (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i}>
-              <CardHeader className="flex flex-row items-center gap-3">
-                <Skeleton className="h-10 w-10 rounded-full" />
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-3 w-16" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="aspect-square w-full rounded-lg" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      );
-    }
-
-    if (postsToRender.length === 0) {
-      return (
-        <div className="flex flex-col items-center justify-center py-12">
-          <p className="text-muted-foreground">No posts yet</p>
-          <Button className="mt-4" onClick={() => setCreateDialogOpen(true)}>
-            <PlusIcon className="mr-2 h-4 w-4" />
-            Create your first post
-          </Button>
-        </div>
-      );
-    }
-
-    return (
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {postsToRender.map((post) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            onReact={handleReact}
-            onBookmark={handleBookmark}
-            onComment={handleComment}
-            onDelete={showDelete ? handleDelete : undefined}
-            isOwner={claims?.id === post.authorId}
-          />
-        ))}
-      </div>
-    );
-  };
+  const handleSearch = useCallback((query: string) => {
+    setSearchTerm(query);
+    setPage(1); // Reset to first page when searching
+  }, []);
 
   return (
     <div className="container mx-auto max-w-7xl space-y-6 p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Community</h1>
           <p className="text-muted-foreground">Share and discover amazing designs</p>
@@ -211,42 +200,59 @@ export default function CommunityPage() {
         {/* Main content */}
         <div className="space-y-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList>
-              <TabsTrigger value="feed">Feed</TabsTrigger>
-              <TabsTrigger value="my-posts">My Posts</TabsTrigger>
-              <TabsTrigger value="bookmarks">Bookmarks</TabsTrigger>
-            </TabsList>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <TabsList>
+                <TabsTrigger value="feed">Feed</TabsTrigger>
+                <TabsTrigger value="my-posts">My Posts</TabsTrigger>
+                <TabsTrigger value="bookmarks">Bookmarks</TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="feed" className="mt-6">
-              {renderPosts(posts)}
+              <div className="w-full sm:w-64">
+                {activeTab === "feed" && <SearchBar placeholder="Search posts..." onSearch={handleSearch} />}
+              </div>
+            </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex justify-center gap-2 pt-6">
-                  <Button variant="outline" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
-                    Previous
-                  </Button>
-                  <span className="flex items-center px-4">
-                    Page {page} of {totalPages}
-                  </span>
-                  <Button variant="outline" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>
-                    Next
-                  </Button>
-                </div>
-              )}
+            <TabsContent value="feed" className="mt-6 space-y-6">
+              <PostGrid
+                posts={posts}
+                loading={loading}
+                currentUserId={claims?.id}
+                onReact={handleReact}
+                onBookmark={handleBookmark}
+                onComment={handleComment}
+                onArchive={handleArchive}
+                onReport={handleReport}
+                emptyTitle={searchTerm ? "No posts found" : "No posts yet"}
+                emptyDescription={searchTerm ? "Try a different search term" : undefined}
+                emptyActionLabel={searchTerm ? undefined : "Create your first post"}
+                onEmptyAction={searchTerm ? undefined : () => setCreateDialogOpen(true)}
+              />
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
             </TabsContent>
 
             <TabsContent value="my-posts" className="mt-6">
-              {renderPosts(myPosts, true)}
+              <PostGrid
+                posts={myPosts}
+                currentUserId={claims?.id}
+                onReact={handleReact}
+                onBookmark={handleBookmark}
+                onComment={handleComment}
+                onDelete={handleDelete}
+                onArchive={handleArchive}
+                onReport={handleReport}
+                emptyTitle="No posts yet"
+                emptyActionLabel="Create your first post"
+                onEmptyAction={() => setCreateDialogOpen(true)}
+              />
             </TabsContent>
 
             <TabsContent value="bookmarks" className="mt-6">
               {bookmarks.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <BookmarkIcon className="text-muted-foreground h-12 w-12" />
-                  <p className="text-muted-foreground mt-4">No bookmarks yet</p>
-                  <p className="text-muted-foreground text-sm">Save posts you like to view them later</p>
-                </div>
+                <EmptyState
+                  icon={BookmarkIcon}
+                  title="No bookmarks yet"
+                  description="Save posts you like to view them later"
+                />
               ) : (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {bookmarks.map((bookmark) => (
@@ -256,6 +262,8 @@ export default function CommunityPage() {
                       onReact={handleReact}
                       onBookmark={handleBookmark}
                       onComment={handleComment}
+                      onArchive={handleArchive}
+                      onReport={handleReport}
                       isOwner={claims?.id === bookmark.post.authorId}
                     />
                   ))}
