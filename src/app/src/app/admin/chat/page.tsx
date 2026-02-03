@@ -362,7 +362,7 @@ export default function AdminChatPage() {
         const conversationId = selectedConversationRef.current;
         if (conversationId) {
           try {
-            await connection.invoke("JoinConversation", conversationId);
+            await connection.invoke("JoinConversation", conversationId, true);
           } catch {}
         }
       });
@@ -541,7 +541,7 @@ export default function AdminChatPage() {
       const conversationId = selectedConversationRef.current;
       if (conversationId) {
         try {
-          await connection.invoke("JoinConversation", conversationId);
+          await connection.invoke("JoinConversation", conversationId, true);
         } catch {}
       }
     } catch (error) {
@@ -574,7 +574,7 @@ export default function AdminChatPage() {
       const joinConversation = async () => {
         if (connectionRef.current?.state === signalR.HubConnectionState.Connected) {
           try {
-            await connectionRef.current.invoke("JoinConversation", selectedConversationId);
+            await connectionRef.current.invoke("JoinConversation", selectedConversationId, true);
             markConversationRead(selectedConversationId);
           } catch {}
         }

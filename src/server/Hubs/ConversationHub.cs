@@ -241,20 +241,27 @@ public class ConversationHub(
 
     /// <summary>
     /// Join a conversation to receive real-time updates.
-    /// Admins are automatically added as participants when they join a support mode conversation.
+    /// Admins are automatically added as participants when they join a support mode conversation
+    /// and explicitly indicate they are joining as admin (asAdmin = true).
     /// </summary>
-    public async Task JoinConversation(Guid conversationId)
+    /// <param name="conversationId">The conversation to join</param>
+    /// <param name="asAdmin">Whether to join as admin. Only admins joining from admin context should pass true.</param>
+    public async Task JoinConversation(Guid conversationId, bool asAdmin = false)
     {
         var userId = GetUserId();
         if (userId is null)
             throw new HubException("User not authenticated");
 
         var isAdmin = await IsAdminAsync(userId);
-        if (!await HasConversationAccessAsync(conversationId, userId, isAdmin))
+
+        // Only allow asAdmin=true if user actually has admin role
+        var effectiveAsAdmin = asAdmin && isAdmin;
+
+        if (!await HasConversationAccessAsync(conversationId, userId, effectiveAsAdmin))
             throw new HubException("Not authorized to join this conversation");
 
-        // If admin joining a support conversation, add them as participant
-        if (isAdmin)
+        // If admin joining a support conversation from admin context, add them as participant
+        if (effectiveAsAdmin)
         {
             var conversation = await _context.Conversations.FindAsync(conversationId);
             if (conversation?.SupportMode == true)
