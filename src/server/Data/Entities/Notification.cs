@@ -50,6 +50,12 @@ public enum NotificationType
     RefundApproved = 10,
     RefundRejected = 11,
     RefundCompleted = 12,
+
+    // Community/Social notifications
+    NewFollower = 20,
+    PostLiked = 21,
+    PostCommented = 22,
+    CommentReplied = 23,
 }
 
 public enum NotificationPriority

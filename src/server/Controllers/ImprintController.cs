@@ -12,9 +12,21 @@ namespace PrintlyServer.Controllers;
 [Authorize(Roles = "User,Admin")]
 public class ImprintController(DatabaseContext context) : BaseController(context)
 {
-    public record CreateImprintDto(string Name, string? Description, string Data, Guid? ProductId = null);
+    public record CreateImprintDto(
+        string Name,
+        string? Description,
+        string Data,
+        Guid? ProductId = null,
+        Guid? PreviewId = null
+    );
 
-    public record UpdateImprintDto(string? Name, string? Description, string? Data, Guid? ProductId = null);
+    public record UpdateImprintDto(
+        string? Name,
+        string? Description,
+        string? Data,
+        Guid? ProductId = null,
+        Guid? PreviewId = null
+    );
 
     public record ImprintResponse(
         Guid Id,
@@ -23,6 +35,7 @@ public class ImprintController(DatabaseContext context) : BaseController(context
         string Data,
         Guid? ProductId,
         string? ProductName,
+        Guid? PreviewId,
         decimal CustomizationPrice,
         DateTime CreatedAt,
         DateTime UpdatedAt
@@ -52,6 +65,7 @@ public class ImprintController(DatabaseContext context) : BaseController(context
                 i.Data,
                 i.ProductId,
                 i.Product != null ? i.Product.Name : null,
+                i.PreviewId,
                 i.CustomizationPrice,
                 i.CreatedAt,
                 i.UpdatedAt
@@ -83,6 +97,7 @@ public class ImprintController(DatabaseContext context) : BaseController(context
                 i.Data,
                 i.ProductId,
                 i.Product != null ? i.Product.Name : null,
+                i.PreviewId,
                 i.CustomizationPrice,
                 i.CreatedAt,
                 i.UpdatedAt
@@ -124,6 +139,7 @@ public class ImprintController(DatabaseContext context) : BaseController(context
             Data = body.Data,
             UserId = userId,
             ProductId = body.ProductId,
+            PreviewId = body.PreviewId,
             CustomizationPrice = 5.00m, // Default constant price for now
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
@@ -139,6 +155,7 @@ public class ImprintController(DatabaseContext context) : BaseController(context
             imprint.Data,
             imprint.ProductId,
             product?.Name,
+            imprint.PreviewId,
             imprint.CustomizationPrice,
             imprint.CreatedAt,
             imprint.UpdatedAt
@@ -186,6 +203,12 @@ public class ImprintController(DatabaseContext context) : BaseController(context
             imprint.Product = product;
         }
 
+        // Handle PreviewId update
+        if (body.PreviewId.HasValue)
+        {
+            imprint.PreviewId = body.PreviewId;
+        }
+
         imprint.UpdatedAt = DateTime.UtcNow;
 
         await Context.SaveChangesAsync();
@@ -197,6 +220,7 @@ public class ImprintController(DatabaseContext context) : BaseController(context
             imprint.Data,
             imprint.ProductId,
             imprint.Product?.Name,
+            imprint.PreviewId,
             imprint.CustomizationPrice,
             imprint.CreatedAt,
             imprint.UpdatedAt

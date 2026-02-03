@@ -16,6 +16,18 @@
       }
     },
     {
+      "label": "Add Migration",
+      "type": "shell",
+      "command": "pwsh -ExecutionPolicy Bypass -File migrate.ps1 -MigrationName ${input:migrationName}",
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}/src/server"
+      },
+      "presentation": {
+        "clear": true
+      }
+    },
+    {
       "label": "Run Migrations",
       "type": "shell",
       "command": "pwsh -ExecutionPolicy Bypass -File migrate.ps1",
@@ -28,9 +40,9 @@
       }
     },
     {
-      "label": "Add Migration",
+      "label": "Force Migrations",
       "type": "shell",
-      "command": "pwsh -ExecutionPolicy Bypass -File migrate.ps1 -MigrationName ${input:migrationName}",
+      "command": "pwsh -ExecutionPolicy Bypass -File migrate.ps1 -Force",
       "problemMatcher": [],
       "options": {
         "cwd": "${workspaceFolder}/src/server"

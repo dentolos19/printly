@@ -15,6 +15,9 @@ export function Header() {
         <Link href="#bulk" className="text-muted-foreground hover:text-primary transition-colors">
           Bulk Orders
         </Link>
+        <Link href="/community" className="text-muted-foreground hover:text-primary transition-colors">
+          Community
+        </Link>
         <Link href="#contact" className="text-muted-foreground hover:text-primary transition-colors">
           Contact
         </Link>

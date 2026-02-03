@@ -165,8 +165,9 @@ export default function Page() {
       return new Promise<{ url: string; assetId: string }>((resolve, reject) => {
         api.generate
           .generateImage(prompt, style)
-          .then(({ blob, assetId }) => {
-            const url = URL.createObjectURL(blob);
+          .then(({ assetId }) => {
+            // Use permanent asset URL instead of blob URL to ensure it persists across sessions
+            const url = `/assets/${assetId}/view`;
             resolve({ url, assetId });
           })
           .catch(reject);

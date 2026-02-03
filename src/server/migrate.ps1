@@ -1,6 +1,8 @@
 param(
   [Parameter(Mandatory = $false)]
-  [string]$MigrationName
+  [string]$MigrationName,
+  [Parameter(Mandatory = $false)]
+  [switch]$Force
 )
 
 Write-Host "Checking for production environment..."
@@ -26,7 +28,33 @@ else {
   }
 }
 
-if ([string]::IsNullOrWhiteSpace($MigrationName)) {
+if ($Force) {
+  Write-Host "Force flag detected. Dropping all tables..."
+  $databaseUrl = [Environment]::GetEnvironmentVariable("DATABASE_URL", "Process")
+
+  if ([string]::IsNullOrEmpty($databaseUrl)) {
+    Write-Host "Error: DATABASE_URL environment variable is not set."
+    exit 1
+  }
+
+  $psqlCommand = Get-Command psql -ErrorAction SilentlyContinue
+  if ($null -eq $psqlCommand) {
+    Write-Host "Error: psql is not installed or not in PATH. Please install PostgreSQL client tools."
+    exit 1
+  }
+
+  psql $databaseUrl -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO public;"
+
+  if ($LASTEXITCODE -eq 0) {
+    Write-Host "All tables dropped successfully. Applying all migrations..."
+    dotnet ef database update
+  }
+  else {
+    Write-Host "Failed to drop tables with exit code: $LASTEXITCODE"
+    exit $LASTEXITCODE
+  }
+}
+elseif ([string]::IsNullOrWhiteSpace($MigrationName)) {
   Write-Host "Running migrations..."
   dotnet ef database update
 }

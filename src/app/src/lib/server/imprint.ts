@@ -7,6 +7,7 @@ export type Imprint = {
   data: string;
   productId?: string | null;
   productName?: string | null;
+  previewId?: string | null;
   customizationPrice: number;
   createdAt: string;
   updatedAt: string;
@@ -17,6 +18,7 @@ export type CreateImprintDto = {
   description?: string;
   data: string;
   productId?: string | null;
+  previewId?: string | null;
 };
 
 export type UpdateImprintDto = {
@@ -24,6 +26,7 @@ export type UpdateImprintDto = {
   description?: string;
   data?: string;
   productId?: string | null;
+  previewId?: string | null;
 };
 
 export type ImprintValidationResponse = {
@@ -52,7 +55,8 @@ export default function initImprintController(fetch: ServerFetch) {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to fetch imprint");
+        const errorText = await response.text().catch(() => "Unknown error");
+        throw new Error(`Failed to fetch imprint (${response.status}): ${errorText}`);
       }
 
       return response.json();

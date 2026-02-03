@@ -24,6 +24,7 @@ public class Product : BaseEntity
     public Guid? ModelId { get; set; }
     public Asset? Model { get; set; }
 
-    // Navigation property
+    // Navigation properties
     public ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
+    public ICollection<PrintArea> PrintAreas { get; set; } = new List<PrintArea>();
 }

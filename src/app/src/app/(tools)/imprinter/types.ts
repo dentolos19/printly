@@ -11,7 +11,19 @@ export type PrintArea = string; // Dynamic print area ID
 export type PrintAreaConfig = {
   id: string;
   name: string;
-  rayDirection: [number, number, number]; // Direction for raycasting
+  meshName?: string | null;
+  rayDirection: [number, number, number];
+  displayOrder?: number;
+  isAutoDetected?: boolean;
+};
+
+// Auto-detected print area from GLB model
+export type DetectedPrintArea = {
+  areaId: string;
+  name: string;
+  meshName: string;
+  rayDirection: [number, number, number];
+  meshNormal: [number, number, number];
 };
 
 // Model configuration
@@ -63,4 +75,4 @@ export type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 export type Tool = "select" | "move" | "rotate" | "scale" | "color-picker";
 
-export type LeftPanelView = "designs" | "assets" | "templates" | null;
+export type LeftPanelView = "designs" | "assets" | "templates" | "products" | null;

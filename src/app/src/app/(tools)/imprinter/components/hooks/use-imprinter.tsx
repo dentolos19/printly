@@ -1,6 +1,7 @@
 "use client";
 
 import type { Design } from "@/lib/server/design";
+import type { PrintAreaResponse } from "@/lib/server/print-area";
 import type { ProductResponse, ProductVariantResponse } from "@/lib/server/product";
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
@@ -21,18 +22,30 @@ import type {
 
 const IMPRINTER_DATA_VERSION = "1.1";
 
-// Default print areas for products
+// Default print areas fallback for products without configured areas
 const DEFAULT_PRINT_AREAS: PrintAreaConfig[] = [
-  { id: "front", name: "Front", rayDirection: [0, 0, 1] },
-  { id: "back", name: "Back", rayDirection: [0, 0, -1] },
+  { id: "front", name: "Front", rayDirection: [0, 0, 1], displayOrder: 0 },
+  { id: "back", name: "Back", rayDirection: [0, 0, -1], displayOrder: 1 },
 ];
 
-// Extended print areas for apparel
+// Extended print areas for apparel (name-based fallback)
 const APPAREL_PRINT_AREAS: PrintAreaConfig[] = [
   ...DEFAULT_PRINT_AREAS,
-  { id: "left-sleeve", name: "Left Sleeve", rayDirection: [-1, 0, 0] },
-  { id: "right-sleeve", name: "Right Sleeve", rayDirection: [1, 0, 0] },
+  { id: "left-sleeve", name: "Left Sleeve", rayDirection: [-1, 0, 0], displayOrder: 2 },
+  { id: "right-sleeve", name: "Right Sleeve", rayDirection: [1, 0, 0], displayOrder: 3 },
 ];
+
+// Convert API response to PrintAreaConfig
+function toPrintAreaConfig(response: PrintAreaResponse): PrintAreaConfig {
+  return {
+    id: response.areaId,
+    name: response.name,
+    meshName: response.meshName,
+    rayDirection: response.rayDirection,
+    displayOrder: response.displayOrder,
+    isAutoDetected: response.isAutoDetected,
+  };
+}
 
 type ImprinterContextValue = {
   // Product state
@@ -52,6 +65,8 @@ type ImprinterContextValue = {
   activePrintArea: PrintArea;
   leftPanelView: LeftPanelView;
   rightPanelOpen: boolean;
+  showProductDialog: boolean;
+  pendingDesignId: string | null;
 
   // Camera state
   cameraState: CameraState;
@@ -74,6 +89,7 @@ type ImprinterContextValue = {
   addDesignToProduct: (design: Design, printArea: PrintArea) => void;
   updateDesignTransform: (id: string, transform: Partial<Transform3D>) => void;
   updateDesignOpacity: (id: string, opacity: number) => void;
+  updateDesignPrintArea: (id: string, printArea: PrintArea) => void;
   removeDesign: (id: string) => void;
   selectDesign: (id: string | null) => void;
 
@@ -90,6 +106,7 @@ type ImprinterContextValue = {
   saveImprint: () => Promise<string | null>;
   loadImprint: (id: string) => Promise<void>;
   exportRender: (resolution: number) => void;
+  registerCaptureFunction: (fn: () => Promise<Blob | null>) => void;
 };
 
 const ImprinterContext = createContext<ImprinterContextValue | null>(null);
@@ -100,12 +117,17 @@ type ImprinterProviderProps = {
   initialImprintName?: string;
   initialProductId?: string | null;
   initialVariantId?: string | null;
+  initialDesignId?: string | null;
+  needsProductSelection?: boolean;
+  onProductSelected?: () => void;
   onSave?: (
-    data: { name: string; data: string; currentId: string | null } & Partial<ImprinterData>,
+    data: { name: string; data: string; currentId: string | null; previewId?: string | null } & Partial<ImprinterData>,
   ) => Promise<{ id: string }>;
   onLoad?: (id: string) => Promise<{ name: string; data: string }>;
   onLoadDesign?: (designId: string) => Promise<Design>;
   onLoadProducts?: () => Promise<ProductResponse[]>;
+  onLoadPrintAreas?: (productId: string) => Promise<PrintAreaResponse[]>;
+  onUploadPreview?: (blob: Blob) => Promise<string>;
 };
 
 // Helper to determine print areas based on product name/type
@@ -145,10 +167,15 @@ export function ImprinterProvider({
   initialImprintName = "Untitled Imprint",
   initialProductId = null,
   initialVariantId = null,
+  initialDesignId = null,
+  needsProductSelection = false,
+  onProductSelected,
   onSave,
   onLoad,
   onLoadDesign,
   onLoadProducts,
+  onLoadPrintAreas,
+  onUploadPreview,
 }: ImprinterProviderProps) {
   // Product state (legacy support for hardcoded models)
   const [productModel, setProductModel] = useState<ProductModel>("");
@@ -159,12 +186,19 @@ export function ImprinterProvider({
   // Dynamic product state
   const [selectedProduct, setSelectedProduct] = useState<SelectedProduct>(null);
   const [availableProducts, setAvailableProducts] = useState<ProductResponse[]>([]);
+  const [productsLoaded, setProductsLoaded] = useState(false);
+
+  // Print areas state (loaded from API or fallback)
+  const [loadedPrintAreas, setLoadedPrintAreas] = useState<PrintAreaConfig[] | null>(null);
+  const [printAreasLoading, setPrintAreasLoading] = useState(false);
 
   // UI state
   const [activeTool, setActiveTool] = useState<Tool>("select");
   const [activePrintArea, setActivePrintArea] = useState<PrintArea>("front");
-  const [leftPanelView, setLeftPanelView] = useState<LeftPanelView>("designs");
+  const [leftPanelView, setLeftPanelView] = useState<LeftPanelView>(needsProductSelection ? "products" : "designs");
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
+  const [showProductDialog, setShowProductDialog] = useState(needsProductSelection);
+  const [pendingDesignId, setPendingDesignId] = useState<string | null>(initialDesignId);
 
   // Camera state
   const [cameraState, setCameraState] = useState<CameraState>({
@@ -172,9 +206,31 @@ export function ImprinterProvider({
     target: [0, 0, 0],
   });
 
+  // Screenshot capture function ref
+  const captureFunctionRef = useRef<(() => Promise<Blob | null>) | null>(null);
+
+  const registerCaptureFunction = useCallback((fn: () => Promise<Blob | null>) => {
+    captureFunctionRef.current = fn;
+  }, []);
+
   // Design persistence state
   const [imprintName, setImprintNameState] = useState(initialImprintName);
   const [imprintId, setImprintId] = useState<string | null>(initialImprintId);
+
+  // Compute available print areas with fallback logic:
+  // 1. Use API-loaded print areas if available
+  // 2. Fall back to name-based detection (apparel vs default)
+  // 3. Fall back to default front/back areas
+  const availablePrintAreas = useMemo<PrintAreaConfig[]>(() => {
+    if (loadedPrintAreas && loadedPrintAreas.length > 0) {
+      return loadedPrintAreas;
+    }
+    // Fallback: use name-based detection
+    if (selectedProduct?.product) {
+      return getPrintAreasForProduct(selectedProduct.product);
+    }
+    return DEFAULT_PRINT_AREAS;
+  }, [loadedPrintAreas, selectedProduct]);
 
   // Compute model config from selected product
   const modelConfig = useMemo<ModelConfig | null>(() => {
@@ -183,14 +239,43 @@ export function ImprinterProvider({
       id: selectedProduct.product.id,
       name: selectedProduct.product.name,
       modelUrl: `/assets/${selectedProduct.product.modelId}/view`,
-      printAreas: getPrintAreasForProduct(selectedProduct.product),
+      printAreas: availablePrintAreas,
     };
-  }, [selectedProduct]);
+  }, [selectedProduct, availablePrintAreas]);
 
-  // Compute available print areas from model config
-  const availablePrintAreas = useMemo<PrintAreaConfig[]>(() => {
-    return modelConfig?.printAreas || DEFAULT_PRINT_AREAS;
-  }, [modelConfig]);
+  // Load print areas when product changes
+  useEffect(() => {
+    if (!selectedProduct?.product.id) {
+      setLoadedPrintAreas(null);
+      return;
+    }
+
+    if (!onLoadPrintAreas) {
+      // No API handler, use fallback
+      setLoadedPrintAreas(null);
+      return;
+    }
+
+    const productId = selectedProduct.product.id;
+    setPrintAreasLoading(true);
+
+    onLoadPrintAreas(productId)
+      .then((areas) => {
+        if (areas.length > 0) {
+          setLoadedPrintAreas(areas.map(toPrintAreaConfig));
+        } else {
+          // No configured areas, use fallback
+          setLoadedPrintAreas(null);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load print areas:", error);
+        setLoadedPrintAreas(null);
+      })
+      .finally(() => {
+        setPrintAreasLoading(false);
+      });
+  }, [selectedProduct?.product.id, onLoadPrintAreas]);
 
   // Serialize function for auto-save
   const serializeImprint = useCallback(() => {
@@ -218,12 +303,38 @@ export function ImprinterProvider({
     return imprintData;
   }, [appliedDesigns, cameraState, productColor, selectedProduct, productModel]);
 
+  // Wrap onSave to capture and upload preview before saving
+  const onSaveWithPreview = useCallback(
+    async (data: { name: string; data: string; currentId: string | null } & Partial<ImprinterData>) => {
+      if (!onSave) {
+        throw new Error("No save handler provided");
+      }
+
+      let previewId: string | null = null;
+
+      // Capture and upload preview if we have a capture function and upload handler
+      if (captureFunctionRef.current && onUploadPreview) {
+        try {
+          const blob = await captureFunctionRef.current();
+          if (blob) {
+            previewId = await onUploadPreview(blob);
+          }
+        } catch (error) {
+          console.error("Failed to capture/upload preview:", error);
+        }
+      }
+
+      return onSave({ ...data, previewId });
+    },
+    [onSave, onUploadPreview],
+  );
+
   // Use shared auto-save hook
   const { saveStatus, lastSavedAt, isDirty, triggerAutoSave, saveNow } = useAutoSave({
     id: imprintId,
     name: imprintName,
     serialize: serializeImprint,
-    onSave,
+    onSave: onSave ? onSaveWithPreview : undefined,
     onIdChange: (id) => {
       setImprintId(id);
       hasLoadedInitialImprint.current = true;
@@ -258,7 +369,7 @@ export function ImprinterProvider({
   );
 
   const selectProduct = useCallback(
-    (product: ProductResponse, variant?: ProductVariantResponse | null) => {
+    async (product: ProductResponse, variant?: ProductVariantResponse | null) => {
       setSelectedProduct({ product, variant: variant || null });
       setProductModel(product.id);
 
@@ -271,9 +382,37 @@ export function ImprinterProvider({
       // Reset print area to front when switching products
       setActivePrintArea("front");
 
+      // If there's a pending design to load, load it now
+      if (pendingDesignId && onLoadDesign) {
+        try {
+          const design = await onLoadDesign(pendingDesignId);
+          const newDesign: AppliedDesign = {
+            id: crypto.randomUUID(),
+            designId: design.id,
+            designData: design,
+            printArea: "front",
+            transform: {
+              position: [0, 0, 0],
+              rotation: [0, 0, 0],
+              scale: [1, 1, 1],
+            },
+            opacity: 1,
+          };
+          setAppliedDesigns([newDesign]);
+          setSelectedDesignId(newDesign.id);
+          setPendingDesignId(null);
+        } catch (error) {
+          console.error("Failed to load initial design:", error);
+        }
+      }
+
+      // Close product dialog and notify parent
+      setShowProductDialog(false);
+      onProductSelected?.();
+
       triggerAutoSave();
     },
-    [triggerAutoSave],
+    [triggerAutoSave, pendingDesignId, onLoadDesign, onProductSelected],
   );
 
   const handleSetAvailableProducts = useCallback((products: ProductResponse[]) => {
@@ -343,6 +482,18 @@ export function ImprinterProvider({
     [triggerAutoSave],
   );
 
+  const updateDesignPrintArea = useCallback(
+    (id: string, printArea: PrintArea) => {
+      setAppliedDesigns((prev) =>
+        prev.map((design) =>
+          design.id === id ? { ...design, printArea, transform: { ...design.transform, position: [0, 0, 0] } } : design,
+        ),
+      );
+      triggerAutoSave();
+    },
+    [triggerAutoSave],
+  );
+
   const removeDesign = useCallback(
     (id: string) => {
       setAppliedDesigns((prev) => prev.filter((design) => design.id !== id));
@@ -376,7 +527,7 @@ export function ImprinterProvider({
   const saveImprint = saveNow;
 
   const loadImprint = useCallback(
-    async (id: string) => {
+    async (id: string, products?: ProductResponse[]) => {
       if (!onLoad) return;
 
       try {
@@ -388,9 +539,12 @@ export function ImprinterProvider({
         setProductColor(data.productColor);
         setCameraState(data.cameraState);
 
+        // Use provided products or fall back to state
+        const productsToSearch = products || availableProducts;
+
         // Handle legacy productModel or new productId format
-        if (data.productId && availableProducts.length > 0) {
-          const product = availableProducts.find((p) => p.id === data.productId);
+        if (data.productId && productsToSearch.length > 0) {
+          const product = productsToSearch.find((p) => p.id === data.productId);
           if (product) {
             const variant = data.variantId ? product.variants.find((v) => v.id === data.variantId) || null : null;
             setSelectedProduct({ product, variant });
@@ -405,24 +559,34 @@ export function ImprinterProvider({
         if (onLoadDesign && data.appliedDesigns.length > 0) {
           const designsWithFullData = await Promise.all(
             data.appliedDesigns.map(async (appliedDesign) => {
+              const designId = appliedDesign.designData?.id || appliedDesign.designId;
+              if (!designId) {
+                console.warn("Applied design missing designId, skipping");
+                return null;
+              }
+
               try {
-                // Fetch full design data
-                const fullDesign = await onLoadDesign(appliedDesign.designData.id);
+                const fullDesign = await onLoadDesign(designId);
                 return {
                   ...appliedDesign,
                   designData: fullDesign,
                 };
               } catch (error) {
-                console.error(`Failed to load design ${appliedDesign.designData.id}:`, error);
-                // Return with partial data if load fails
-                return appliedDesign;
+                console.error(`Failed to load design ${designId}:`, error);
+                return null;
               }
             }),
           );
-          setAppliedDesigns(designsWithFullData);
+
+          // Filter out failed designs
+          const validDesigns = designsWithFullData.filter(
+            (d): d is NonNullable<typeof d> => d !== null && d.designData !== null,
+          );
+          setAppliedDesigns(validDesigns);
         } else {
-          // Fallback if no onLoadDesign provided
-          setAppliedDesigns(data.appliedDesigns);
+          // Fallback if no onLoadDesign provided - filter designs without valid designData
+          const validDesigns = data.appliedDesigns.filter((d) => d.designData?.coverId);
+          setAppliedDesigns(validDesigns);
         }
       } catch (error) {
         console.error("Failed to load imprint:", error);
@@ -442,6 +606,7 @@ export function ImprinterProvider({
   // ============================================================================
 
   const hasLoadedInitialProduct = useRef(false);
+  const hasLoadedInitialImprint = useRef(false);
 
   useEffect(() => {
     // Load products and set initial product/variant if provided
@@ -449,13 +614,22 @@ export function ImprinterProvider({
       hasLoadedInitialProduct.current = true;
 
       onLoadProducts()
-        .then((products) => {
+        .then(async (products) => {
           // Filter to only products with models (using modelId, not modelUrl)
           const productsWithModels = products.filter((p) => p.modelId);
           setAvailableProducts(productsWithModels);
+          setProductsLoaded(true);
 
-          // If initial product ID is provided, select it
-          if (initialProductId) {
+          // If we have an imprint to load, load it now with products context
+          if (initialImprintId && onLoad && !hasLoadedInitialImprint.current) {
+            hasLoadedInitialImprint.current = true;
+            try {
+              await loadImprint(initialImprintId, productsWithModels);
+            } catch (error) {
+              console.error("Failed to load initial imprint:", error);
+            }
+          } else if (initialProductId) {
+            // If no imprint but initial product ID is provided, select it
             const product = productsWithModels.find((p) => p.id === initialProductId);
             if (product) {
               const variant = initialVariantId ? product.variants.find((v) => v.id === initialVariantId) || null : null;
@@ -471,26 +645,10 @@ export function ImprinterProvider({
         })
         .catch((error) => {
           console.error("Failed to load products:", error);
+          setProductsLoaded(true); // Set to true even on error to unblock UI
         });
     }
-  }, [onLoadProducts, initialProductId, initialVariantId]);
-
-  // ============================================================================
-  // Initial imprint loading
-  // ============================================================================
-
-  const hasLoadedInitialImprint = useRef(false);
-
-  useEffect(() => {
-    // Load the imprint data when we have an initial imprint ID
-    if (initialImprintId && onLoad && !hasLoadedInitialImprint.current) {
-      hasLoadedInitialImprint.current = true;
-
-      loadImprint(initialImprintId).catch((error) => {
-        console.error("Failed to load initial imprint:", error);
-      });
-    }
-  }, [initialImprintId, onLoad, loadImprint]);
+  }, [onLoadProducts, initialProductId, initialVariantId, initialImprintId, onLoad, loadImprint]);
 
   // ============================================================================
   // Context value
@@ -515,6 +673,8 @@ export function ImprinterProvider({
       activePrintArea,
       leftPanelView,
       rightPanelOpen,
+      showProductDialog,
+      pendingDesignId,
 
       // Camera state
       cameraState,
@@ -537,6 +697,7 @@ export function ImprinterProvider({
       addDesignToProduct,
       updateDesignTransform,
       updateDesignOpacity,
+      updateDesignPrintArea,
       removeDesign,
       selectDesign,
 
@@ -553,6 +714,7 @@ export function ImprinterProvider({
       saveImprint,
       loadImprint,
       exportRender,
+      registerCaptureFunction,
     }),
     [
       productModel,
@@ -564,6 +726,11 @@ export function ImprinterProvider({
       modelConfig,
       availablePrintAreas,
       activeTool,
+      activePrintArea,
+      leftPanelView,
+      rightPanelOpen,
+      showProductDialog,
+      pendingDesignId,
       activePrintArea,
       leftPanelView,
       rightPanelOpen,
@@ -580,6 +747,7 @@ export function ImprinterProvider({
       addDesignToProduct,
       updateDesignTransform,
       updateDesignOpacity,
+      updateDesignPrintArea,
       removeDesign,
       selectDesign,
       resetCamera,
@@ -587,6 +755,7 @@ export function ImprinterProvider({
       loadImprint,
       exportRender,
       handleSetImprintName,
+      registerCaptureFunction,
     ],
   );
 

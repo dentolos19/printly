@@ -1,5 +1,6 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Label } from "@/components/ui/label";
@@ -8,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
-import { ChevronDown, ChevronRight, Eye, Layers, MapPin, RotateCcw, Settings, Shirt, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Eye, Layers, MapPin, RotateCcw, Settings, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PrintArea } from "../../types";
 import { useImprinter } from "../hooks/use-imprinter";
@@ -18,7 +19,6 @@ type RightPanelProps = {
 };
 
 export function RightPanel({ className }: RightPanelProps) {
-  const [productOpen, setProductOpen] = useState(true);
   const [printAreaOpen, setPrintAreaOpen] = useState(true);
   const [designsOpen, setDesignsOpen] = useState(true);
   const [transformOpen, setTransformOpen] = useState(true);
@@ -81,8 +81,6 @@ export function RightPanel({ className }: RightPanelProps) {
 
       <ScrollArea className="flex-1">
         <div className="space-y-1 p-2">
-          <ProductSection open={productOpen} onOpenChange={setProductOpen} />
-          <Separator className="my-2" />
           <PrintAreaSection open={printAreaOpen} onOpenChange={setPrintAreaOpen} />
           <Separator className="my-2" />
           <AppliedDesignsSection open={designsOpen} onOpenChange={setDesignsOpen} />
@@ -110,106 +108,6 @@ function PanelHeader() {
 }
 
 // ============================================================================
-// Product Section
-// ============================================================================
-
-type ProductSectionProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-};
-
-function ProductSection({ open, onOpenChange }: ProductSectionProps) {
-  const { selectedProduct, availableProducts, productColor, selectProduct, changeProductColor } = useImprinter();
-
-  // Get available colors from the selected product's variants
-  const availableColors =
-    selectedProduct?.product.variants
-      .map((v) => v.color)
-      .filter((color, index, self) => self.indexOf(color) === index) || [];
-
-  const handleProductChange = (productId: string) => {
-    const product = availableProducts.find((p) => p.id === productId);
-    if (product) {
-      // Auto-select first variant if available
-      const firstVariant = product.variants[0] || null;
-      selectProduct(product, firstVariant);
-    }
-  };
-
-  const handleColorChange = (color: string) => {
-    if (selectedProduct) {
-      // Find a variant with this color
-      const variant = selectedProduct.product.variants.find((v) => v.color === color);
-      if (variant) {
-        selectProduct(selectedProduct.product, variant);
-      }
-    }
-  };
-
-  return (
-    <Collapsible open={open} onOpenChange={onOpenChange}>
-      <CollapsibleTrigger className="hover:bg-accent flex w-full items-center justify-between rounded-md p-2">
-        <div className="flex items-center gap-2">
-          <Shirt className="h-4 w-4" />
-          <span className="text-sm font-medium">Product</span>
-        </div>
-        {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-      </CollapsibleTrigger>
-      <CollapsibleContent className="space-y-3 px-2 pt-3 pb-2">
-        <div className="space-y-2">
-          <Label className="text-xs">Model</Label>
-          {availableProducts.length === 0 ? (
-            <p className="text-muted-foreground text-xs">No products with 3D models available</p>
-          ) : (
-            <Select value={selectedProduct?.product.id || ""} onValueChange={handleProductChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a product" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableProducts.map((product) => (
-                  <SelectItem key={product.id} value={product.id}>
-                    {product.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
-
-        {selectedProduct && availableColors.length > 0 && (
-          <div className="space-y-2">
-            <Label className="text-xs">Variant Color</Label>
-            <Select value={selectedProduct.variant?.color || ""} onValueChange={handleColorChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select color" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableColors.map((color) => (
-                  <SelectItem key={color} value={color}>
-                    {color}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        <div className="space-y-2">
-          <Label className="text-xs">Model Color</Label>
-          <div className="flex gap-2">
-            <input
-              type="color"
-              value={productColor}
-              onChange={(e) => changeProductColor(e.target.value)}
-              className="h-9 w-full cursor-pointer rounded-md border"
-            />
-          </div>
-        </div>
-      </CollapsibleContent>
-    </Collapsible>
-  );
-}
-
 // ============================================================================
 // Print Area Section
 // ============================================================================
@@ -271,7 +169,12 @@ type AppliedDesignsSectionProps = {
 };
 
 function AppliedDesignsSection({ open, onOpenChange }: AppliedDesignsSectionProps) {
-  const { appliedDesigns, selectedDesignId, selectDesign, removeDesign } = useImprinter();
+  const { appliedDesigns, selectedDesignId, selectDesign, removeDesign, availablePrintAreas } = useImprinter();
+
+  const getPrintAreaName = (areaId: string) => {
+    const area = availablePrintAreas.find((a) => a.id === areaId);
+    return area?.name || areaId;
+  };
 
   return (
     <Collapsible open={open} onOpenChange={onOpenChange}>
@@ -302,7 +205,12 @@ function AppliedDesignsSection({ open, onOpenChange }: AppliedDesignsSectionProp
                 onClick={() => selectDesign(design.id)}
               >
                 <Eye className="h-3 w-3 shrink-0" />
-                <span className="truncate text-xs">{design.designData.name}</span>
+                <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
+                  <span className="w-full truncate text-left text-xs">{design.designData.name}</span>
+                  <Badge variant="secondary" className="h-4 px-1 text-[10px]">
+                    {getPrintAreaName(design.printArea)}
+                  </Badge>
+                </div>
               </button>
               <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => removeDesign(design.id)}>
                 <Trash2 className="h-3 w-3" />
@@ -325,9 +233,15 @@ type TransformSectionProps = {
 };
 
 function TransformSection({ open, onOpenChange }: TransformSectionProps) {
-  const { selectedDesignId, appliedDesigns, updateDesignTransform, updateDesignOpacity } = useImprinter();
+  const { selectedDesignId, appliedDesigns, updateDesignTransform, updateDesignOpacity, availablePrintAreas } =
+    useImprinter();
 
   const selectedDesign = appliedDesigns.find((d) => d.id === selectedDesignId);
+
+  const getPrintAreaName = (areaId: string) => {
+    const area = availablePrintAreas.find((a) => a.id === areaId);
+    return area?.name || areaId;
+  };
 
   if (!selectedDesign) {
     return (
@@ -357,33 +271,11 @@ function TransformSection({ open, onOpenChange }: TransformSectionProps) {
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-4 px-2 pt-3 pb-2">
         <div className="space-y-2">
-          <Label className="text-xs">Position X</Label>
-          <Slider
-            value={[selectedDesign.transform.position[0]]}
-            onValueChange={([x]) =>
-              updateDesignTransform(selectedDesign.id, {
-                position: [x, selectedDesign.transform.position[1], selectedDesign.transform.position[2]],
-              })
-            }
-            min={-5}
-            max={5}
-            step={0.1}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-xs">Position Y</Label>
-          <Slider
-            value={[selectedDesign.transform.position[1]]}
-            onValueChange={([y]) =>
-              updateDesignTransform(selectedDesign.id, {
-                position: [selectedDesign.transform.position[0], y, selectedDesign.transform.position[2]],
-              })
-            }
-            min={-5}
-            max={5}
-            step={0.1}
-          />
+          <Label className="text-xs">Print Area</Label>
+          <div className="flex items-center gap-2">
+            <MapPin className="text-muted-foreground h-3 w-3" />
+            <span className="text-sm">{getPrintAreaName(selectedDesign.printArea)}</span>
+          </div>
         </div>
 
         <div className="space-y-2">

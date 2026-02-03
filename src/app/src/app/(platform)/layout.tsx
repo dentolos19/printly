@@ -12,6 +12,9 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -37,12 +40,17 @@ import {
   LayoutDashboardIcon,
   LogOutIcon,
   MessageCircleIcon,
+  MonitorIcon,
+  MoonIcon,
   MoreVerticalIcon,
   PackageIcon,
+  PaletteIcon,
   ShieldIcon,
+  SunIcon,
   UserIcon,
   UsersIcon,
 } from "lucide-react";
+import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ReactNode } from "react";
@@ -51,6 +59,7 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { isMobile, state } = useSidebar();
   const { claims, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
 
   const handleLogout = () => {
     logout();
@@ -185,6 +194,32 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                         </Link>
                       </DropdownMenuItem>
                     )}
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <PaletteIcon />
+                        <span>Theme</span>
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent>
+                        <DropdownMenuItem onClick={() => setTheme("light")}>
+                          <SunIcon />
+                          <span>Light</span>
+                          {theme === "light" && <span className="ml-auto">✓</span>}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setTheme("dark")}>
+                          <MoonIcon />
+                          <span>Dark</span>
+                          {theme === "dark" && <span className="ml-auto">✓</span>}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setTheme("system")}>
+                          <MonitorIcon />
+                          <span>System</span>
+                          {theme === "system" && <span className="ml-auto">✓</span>}
+                        </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   {/* {process.env.NODE_ENV !== "production" && (

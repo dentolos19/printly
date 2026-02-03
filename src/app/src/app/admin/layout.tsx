@@ -10,6 +10,9 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -32,16 +35,22 @@ import { useAuth } from "@/lib/providers/auth";
 import {
   BellIcon,
   Box,
+  Flag,
   Home,
   LayoutDashboardIcon,
   LogOutIcon,
   MessageCircleIcon,
+  MonitorIcon,
+  MoonIcon,
   MoreVerticalIcon,
   Package,
+  PaletteIcon,
   RefreshCcw,
   ShoppingCart,
+  SunIcon,
   UserIcon,
 } from "lucide-react";
+import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ReactNode } from "react";
@@ -52,6 +61,7 @@ const navItems = [
   { href: "/admin/inventory", label: "Inventory", icon: Box },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
   { href: "/admin/refunds", label: "Refunds", icon: RefreshCcw },
+  { href: "/admin/reports", label: "Reports", icon: Flag },
   { href: "/admin/chat", label: "Chat", icon: MessageCircleIcon },
 ];
 
@@ -59,6 +69,7 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { isMobile } = useSidebar();
   const { claims, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
 
   const handleLogout = () => {
     logout();
@@ -161,6 +172,32 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                         <span>Dashboard</span>
                       </Link>
                     </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <PaletteIcon />
+                        <span>Theme</span>
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent>
+                        <DropdownMenuItem onClick={() => setTheme("light")}>
+                          <SunIcon />
+                          <span>Light</span>
+                          {theme === "light" && <span className="ml-auto">✓</span>}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setTheme("dark")}>
+                          <MoonIcon />
+                          <span>Dark</span>
+                          {theme === "dark" && <span className="ml-auto">✓</span>}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setTheme("system")}>
+                          <MonitorIcon />
+                          <span>System</span>
+                          {theme === "system" && <span className="ml-auto">✓</span>}
+                        </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>

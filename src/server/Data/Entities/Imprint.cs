@@ -24,4 +24,8 @@ public class Imprint : BaseEntity
     // Optional: Link imprint to a specific product
     public Guid? ProductId { get; set; }
     public Product? Product { get; set; }
+
+    // Optional: Preview image for the imprint
+    public Guid? PreviewId { get; set; }
+    public Asset? Preview { get; set; }
 }

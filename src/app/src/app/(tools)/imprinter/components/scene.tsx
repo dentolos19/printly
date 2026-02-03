@@ -2,10 +2,21 @@
 
 import { Decal, Environment, OrbitControls, PerspectiveCamera, useGLTF, useTexture } from "@react-three/drei";
 import { Canvas, createPortal, useFrame, useThree } from "@react-three/fiber";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import type { AppliedDesign } from "../types";
+import type { AppliedDesign, PrintAreaConfig } from "../types";
 import { useImprinter } from "./hooks/use-imprinter";
+
+// Screenshot capture context
+type ScreenshotContextValue = {
+  captureScreenshot: () => Promise<Blob | null>;
+};
+
+const ScreenshotContext = createContext<ScreenshotContextValue | null>(null);
+
+export function useScreenshot() {
+  return useContext(ScreenshotContext);
+}
 
 // ============================================================================
 // Math & Transform Logic
@@ -13,7 +24,7 @@ import { useImprinter } from "./hooks/use-imprinter";
 
 function calculateDecalTransform(
   targetMesh: THREE.Mesh,
-  printArea: string,
+  rayDir: [number, number, number],
   offsetPosition: THREE.Vector3,
 ): { position: THREE.Vector3; orientation: THREE.Euler } {
   const raycaster = new THREE.Raycaster();
@@ -23,22 +34,8 @@ function calculateDecalTransform(
   const meshSize = box.getSize(new THREE.Vector3());
   const maxDimension = Math.max(meshSize.x, meshSize.y, meshSize.z);
 
-  let rayDirection: THREE.Vector3;
-  switch (printArea) {
-    case "back":
-      rayDirection = new THREE.Vector3(0, 0, -1);
-      break;
-    case "left-sleeve":
-      rayDirection = new THREE.Vector3(-1, 0, 0);
-      break;
-    case "right-sleeve":
-      rayDirection = new THREE.Vector3(1, 0, 0);
-      break;
-    case "front":
-    default:
-      rayDirection = new THREE.Vector3(0, 0, 1);
-      break;
-  }
+  // Use provided ray direction
+  const rayDirection = new THREE.Vector3(rayDir[0], rayDir[1], rayDir[2]).normalize();
 
   const rayOrigin = meshCenter
     .clone()
@@ -92,25 +89,58 @@ function layerZOnBox(mesh: THREE.Mesh, offset: number) {
 function DesignDecal({
   design,
   targetMesh,
+  printAreaConfig,
   maxAnisotropy,
 }: {
   design: AppliedDesign;
   targetMesh: THREE.Mesh;
+  printAreaConfig: PrintAreaConfig | undefined;
   maxAnisotropy: number;
 }) {
-  const textureUrl = design.designData.coverId ? `/assets/${design.designData.coverId}/view` : null;
-  // We use useTexture from drei which suspends, but we need to handle key change or null
-  // Ideally we put this in a Suspense, but for simplicity we can use straight texture loader if we want manual control
-  // Or just use useTexture safely.
+  if (!design.designData) return null;
 
-  // Note: useTexture throws if url is null/empty.
+  const textureUrl = design.designData.coverId ? `/assets/${design.designData.coverId}/view` : null;
+
   if (!textureUrl) return null;
 
-  return <DecalMesh design={design} url={textureUrl} targetMesh={targetMesh} />;
+  return (
+    <Suspense fallback={null}>
+      <DecalMesh design={design} url={textureUrl} targetMesh={targetMesh} printAreaConfig={printAreaConfig} />
+    </Suspense>
+  );
 }
 
-function DecalMesh({ design, url, targetMesh }: { design: AppliedDesign; url: string; targetMesh: THREE.Mesh }) {
+function DecalMesh({
+  design,
+  url,
+  targetMesh,
+  printAreaConfig,
+}: {
+  design: AppliedDesign;
+  url: string;
+  targetMesh: THREE.Mesh;
+  printAreaConfig: PrintAreaConfig | undefined;
+}) {
   const texture = useTexture(url);
+
+  // Get ray direction from config or use default based on area ID
+  const rayDirection = useMemo<[number, number, number]>(() => {
+    if (printAreaConfig?.rayDirection) {
+      return printAreaConfig.rayDirection;
+    }
+    // Fallback based on print area ID
+    switch (design.printArea) {
+      case "back":
+        return [0, 0, -1];
+      case "left-sleeve":
+        return [-1, 0, 0];
+      case "right-sleeve":
+        return [1, 0, 0];
+      case "front":
+      default:
+        return [0, 0, 1];
+    }
+  }, [printAreaConfig, design.printArea]);
 
   // Configuration
   const { position, orientation } = useMemo(() => {
@@ -119,8 +149,8 @@ function DecalMesh({ design, url, targetMesh }: { design: AppliedDesign; url: st
       design.transform.position[1],
       design.transform.position[2],
     );
-    return calculateDecalTransform(targetMesh, design.printArea, offset);
-  }, [targetMesh, design.printArea, design.transform.position]);
+    return calculateDecalTransform(targetMesh, rayDirection, offset);
+  }, [targetMesh, rayDirection, design.transform.position]);
 
   // Apply rotation offset
   const finalOrientation = useMemo(() => {
@@ -207,14 +237,28 @@ function NoModelPlaceholder() {
 }
 
 function CanvasModel() {
-  const { productColor, appliedDesigns, modelConfig, selectedProduct } = useImprinter();
+  const { productColor, appliedDesigns, modelConfig, selectedProduct, availablePrintAreas } = useImprinter();
   const { gl } = useThree();
   const modelRef = useRef<THREE.Group>(null);
   const [meshes, setMeshes] = useState<MeshMap>({ body: null, leftSleeve: null, rightSleeve: null });
   const maxAnisotropy = useMemo(() => gl.capabilities.getMaxAnisotropy(), [gl]);
 
+  // Create a map of print area ID to config for quick lookup
+  const printAreaConfigMap = useMemo(() => {
+    const map = new Map<string, PrintAreaConfig>();
+    availablePrintAreas.forEach((config) => {
+      map.set(config.id, config);
+    });
+    return map;
+  }, [availablePrintAreas]);
+
   // Get model URL from selected product - use proxied URL to avoid CORS issues
   const modelUrl = selectedProduct?.product.modelId ? `/assets/${selectedProduct.product.modelId}/view` : null;
+
+  // Safety check: don't render if no model URL
+  if (!modelUrl) {
+    return <NoModelPlaceholder />;
+  }
 
   // Find and categorize meshes by position and material
   useEffect(() => {
@@ -302,33 +346,53 @@ function CanvasModel() {
   });
 
   // Helper function to get the appropriate mesh for a print area
-  const getMeshForPrintArea = (printArea: string): THREE.Mesh | null => {
-    switch (printArea) {
-      case "left-sleeve":
-        return meshes.leftSleeve || meshes.body;
-      case "right-sleeve":
-        return meshes.rightSleeve || meshes.body;
-      case "front":
-      case "back":
-      default:
-        return meshes.body;
-    }
-  };
+  const getMeshForPrintArea = useCallback(
+    (printArea: string): THREE.Mesh | null => {
+      // First, try to find mesh by name from print area config
+      const config = printAreaConfigMap.get(printArea);
+      if (config?.meshName && modelRef.current) {
+        let foundMesh: THREE.Mesh | null = null;
+        modelRef.current.traverse((child) => {
+          if (child instanceof THREE.Mesh && child.name === config.meshName) {
+            foundMesh = child;
+          }
+        });
+        if (foundMesh) return foundMesh;
+      }
+
+      // Fallback to hardcoded logic
+      switch (printArea) {
+        case "left-sleeve":
+          return meshes.leftSleeve || meshes.body;
+        case "right-sleeve":
+          return meshes.rightSleeve || meshes.body;
+        case "front":
+        case "back":
+        default:
+          return meshes.body;
+      }
+    },
+    [meshes, printAreaConfigMap],
+  );
 
   // Group designs by their target mesh
   const designsByMesh = useMemo(() => {
     const grouped = new Map<THREE.Mesh, AppliedDesign[]>();
 
     appliedDesigns.forEach((design) => {
+      // Skip designs without valid designData
+      if (!design.designData?.coverId) return;
+
       const targetMesh = getMeshForPrintArea(design.printArea);
-      if (targetMesh) {
+      // Ensure mesh is valid and attached to the scene
+      if (targetMesh && targetMesh.parent) {
         const existing = grouped.get(targetMesh) || [];
         grouped.set(targetMesh, [...existing, design]);
       }
     });
 
     return grouped;
-  }, [appliedDesigns, meshes]);
+  }, [appliedDesigns, getMeshForPrintArea]);
 
   return (
     <group ref={modelRef}>
@@ -341,42 +405,102 @@ function CanvasModel() {
       )}
 
       {/* Render decals for each mesh */}
-      {Array.from(designsByMesh.entries()).map(([mesh, designs]) =>
-        createPortal(
-          <>
-            {designs.map((design) => (
-              <DesignDecal key={design.id} design={design} targetMesh={mesh} maxAnisotropy={maxAnisotropy} />
-            ))}
-          </>,
-          mesh,
-        ),
-      )}
+      {Array.from(designsByMesh.entries()).map(([mesh, designs]) => {
+        // Double-check mesh is still attached to scene
+        if (!mesh.parent) return null;
+
+        return (
+          <group key={mesh.uuid}>
+            {createPortal(
+              <>
+                {designs.map((design) => (
+                  <DesignDecal
+                    key={design.id}
+                    design={design}
+                    targetMesh={mesh}
+                    printAreaConfig={printAreaConfigMap.get(design.printArea)}
+                    maxAnisotropy={maxAnisotropy}
+                  />
+                ))}
+              </>,
+              mesh,
+            )}
+          </group>
+        );
+      })}
     </group>
   );
 }
 
+// Screenshot capture component that registers the GL context
+function ScreenshotCapture({ onRegister }: { onRegister: (capture: () => Promise<Blob | null>) => void }) {
+  const { gl, scene, camera } = useThree();
+  const { registerCaptureFunction } = useImprinter();
+
+  useEffect(() => {
+    const captureFunction = async (): Promise<Blob | null> => {
+      return new Promise((resolve) => {
+        // Render the scene
+        gl.render(scene, camera);
+
+        // Convert canvas to blob
+        gl.domElement.toBlob(
+          (blob) => {
+            resolve(blob);
+          },
+          "image/png",
+          1.0,
+        );
+      });
+    };
+
+    onRegister(captureFunction);
+    registerCaptureFunction(captureFunction);
+  }, [gl, scene, camera, onRegister, registerCaptureFunction]);
+
+  return null;
+}
+
 export function ImprinterScene() {
+  const captureRef = useRef<(() => Promise<Blob | null>) | null>(null);
+
+  const handleRegisterCapture = useCallback((capture: () => Promise<Blob | null>) => {
+    captureRef.current = capture;
+  }, []);
+
+  const captureScreenshot = useCallback(async (): Promise<Blob | null> => {
+    if (captureRef.current) {
+      return captureRef.current();
+    }
+    return null;
+  }, []);
+
+  const contextValue = useMemo(() => ({ captureScreenshot }), [captureScreenshot]);
+
   return (
-    <div className="h-full w-full">
-      <Canvas shadows gl={{ antialias: true, preserveDrawingBuffer: true }}>
-        <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={50} />
-        <ambientLight intensity={0.6} />
-        <spotLight position={[5, 5, 5]} angle={0.3} penumbra={1} intensity={1} castShadow />
-        <spotLight position={[-5, 5, 5]} angle={0.3} penumbra={1} intensity={0.5} />
-        <directionalLight position={[0, 5, 0]} intensity={0.3} />
-        <Environment preset="studio" />
-        <Suspense fallback={null}>
-          <CanvasModel />
-        </Suspense>
-        <OrbitControls
-          enablePan={true}
-          enableZoom={true}
-          enableRotate={true}
-          minDistance={0.5}
-          maxDistance={50}
-          target={[0, 0, 0]}
-        />
-      </Canvas>
-    </div>
+    <ScreenshotContext.Provider value={contextValue}>
+      <div className="h-full w-full">
+        <Canvas shadows gl={{ antialias: true, preserveDrawingBuffer: true }}>
+          <ScreenshotCapture onRegister={handleRegisterCapture} />
+          <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={50} />
+          <ambientLight intensity={0.6} />
+          <spotLight position={[5, 5, 5]} angle={0.3} penumbra={1} intensity={1} castShadow />
+          <spotLight position={[-5, 5, 5]} angle={0.3} penumbra={1} intensity={0.5} />
+          <directionalLight position={[0, 5, 0]} intensity={0.3} />
+          <Environment preset="studio" />
+          <Suspense fallback={null}>
+            <CanvasModel />
+          </Suspense>
+          <OrbitControls
+            enablePan={true}
+            enableZoom={true}
+            enableRotate={true}
+            minDistance={0.5}
+            maxDistance={50}
+            target={[0, 0, 0]}
+          />
+        </Canvas>
+      </div>
+    </ScreenshotContext.Provider>
   );
 }
