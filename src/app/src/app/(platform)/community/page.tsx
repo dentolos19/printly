@@ -8,7 +8,10 @@ import {
   BookmarkedPostResponse,
   CommunityStatsResponse,
   PostSummaryResponse,
+  PostStatus,
   ReactionType,
+  ReportReason,
+  ReportType,
 } from "@/lib/server/community";
 import { BookmarkIcon, PlusIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -138,6 +141,31 @@ export default function CommunityPage() {
     }
   };
 
+  const handleArchive = async (postId: string, newStatus: PostStatus) => {
+    try {
+      await api.community.updatePost(postId, { postStatus: newStatus });
+      toast.success(newStatus === PostStatus.Archived ? "Post archived" : "Post published");
+      loadPosts();
+      loadMyPosts();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update post");
+    }
+  };
+
+  const handleReport = async (postId: string, reason: ReportReason, description?: string) => {
+    try {
+      await api.community.createReport({
+        reportType: ReportType.Post,
+        postId,
+        reason,
+        description,
+      });
+      toast.success("Report submitted. Thank you for helping keep our community safe.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to submit report");
+    }
+  };
+
   const handleComment = (postId: string) => {
     setSelectedPostId(postId);
     setPostDetailOpen(true);
@@ -180,9 +208,7 @@ export default function CommunityPage() {
               </TabsList>
 
               <div className="w-full sm:w-64">
-                {activeTab === "feed" && (
-                  <SearchBar placeholder="Search posts..." onSearch={handleSearch} />
-                )}
+                {activeTab === "feed" && <SearchBar placeholder="Search posts..." onSearch={handleSearch} />}
               </div>
             </div>
 
@@ -194,6 +220,8 @@ export default function CommunityPage() {
                 onReact={handleReact}
                 onBookmark={handleBookmark}
                 onComment={handleComment}
+                onArchive={handleArchive}
+                onReport={handleReport}
                 emptyTitle={searchTerm ? "No posts found" : "No posts yet"}
                 emptyDescription={searchTerm ? "Try a different search term" : undefined}
                 emptyActionLabel={searchTerm ? undefined : "Create your first post"}
@@ -210,6 +238,8 @@ export default function CommunityPage() {
                 onBookmark={handleBookmark}
                 onComment={handleComment}
                 onDelete={handleDelete}
+                onArchive={handleArchive}
+                onReport={handleReport}
                 emptyTitle="No posts yet"
                 emptyActionLabel="Create your first post"
                 onEmptyAction={() => setCreateDialogOpen(true)}
@@ -232,6 +262,8 @@ export default function CommunityPage() {
                       onReact={handleReact}
                       onBookmark={handleBookmark}
                       onComment={handleComment}
+                      onArchive={handleArchive}
+                      onReport={handleReport}
                       isOwner={claims?.id === bookmark.post.authorId}
                     />
                   ))}

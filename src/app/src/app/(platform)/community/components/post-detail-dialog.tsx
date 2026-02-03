@@ -5,12 +5,24 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/providers/auth";
 import { useServer } from "@/lib/providers/server";
-import { PostCommentResponse, PostDetailResponse, ReactionType, ReactionTypeEmojis } from "@/lib/server/community";
+import {
+  PostCommentResponse,
+  PostDetailResponse,
+  PostStatus,
+  ReactionType,
+  ReactionTypeEmojis,
+} from "@/lib/server/community";
 import { cn } from "@/lib/utils";
-import { BookmarkIcon, Loader2, SendIcon, TrashIcon } from "lucide-react";
+import { BookmarkIcon, Loader2, SendIcon, TrashIcon, MoreHorizontalIcon, ArchiveIcon } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -106,16 +118,42 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated }: 
     }
   };
 
+  const handleToggleArchive = async () => {
+    if (!postId || !post) return;
+    try {
+      const newStatus = post.postStatus === PostStatus.Archived ? PostStatus.Published : PostStatus.Archived;
+      await api.community.updatePost(postId, { postStatus: newStatus });
+      toast.success(newStatus === PostStatus.Archived ? "Post archived" : "Post published");
+      onOpenChange(false);
+      onPostUpdated();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update post");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!postId) return;
+    try {
+      await api.community.deletePost(postId);
+      toast.success("Post deleted");
+      onOpenChange(false);
+      onPostUpdated();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete post");
+    }
+  };
+
+  const truncateUsername = (name: string) => {
+    // If it looks like an email, take the part before @
+    if (name.includes("@")) {
+      return name.split("@")[0];
+    }
+    return name;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
-        {/* Hidden title for accessibility when loading or no post */}
-        {(!post || loading) && (
-          <VisuallyHidden>
-            <DialogTitle>{loading ? "Loading post..." : "Post not found"}</DialogTitle>
-          </VisuallyHidden>
-        )}
-
         {loading ? (
           <div className="flex h-64 items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin" />
@@ -124,11 +162,17 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated }: 
           <>
             <DialogHeader>
               <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback>{post.authorName.charAt(0).toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <DialogTitle>{post.authorName}</DialogTitle>
+                <Link href={`/user/${post.authorId}`}>
+                  <Avatar className="h-10 w-10 cursor-pointer transition-opacity hover:opacity-80">
+                    <AvatarFallback>{post.authorName.charAt(0).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                </Link>
+                <div className="flex-1">
+                  <Link href={`/user/${post.authorId}`}>
+                    <DialogTitle className="cursor-pointer hover:underline">
+                      {truncateUsername(post.authorName)}
+                    </DialogTitle>
+                  </Link>
                   <DialogDescription>
                     {new Date(post.createdAt).toLocaleDateString("en-US", {
                       month: "long",
@@ -137,106 +181,131 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated }: 
                     })}
                   </DialogDescription>
                 </div>
+                {claims?.id === post.authorId && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontalIcon className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={handleToggleArchive}>
+                        <ArchiveIcon className="mr-2 h-4 w-4" />
+                        {post.postStatus === PostStatus.Archived ? "Publish" : "Archive"}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+                        <TrashIcon className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
             </DialogHeader>
 
             <div className="space-y-4">
-            {post.photoUrl && (
-              <div className="relative aspect-square w-full overflow-hidden rounded-lg">
-                <img src={post.photoUrl} alt="Post" className="h-full w-full object-cover" />
-              </div>
-            )}
+              {post.photoUrl && (
+                <div className="relative aspect-square w-full overflow-hidden rounded-lg">
+                  <img src={post.photoUrl} alt="Post" className="h-full w-full object-cover" />
+                </div>
+              )}
 
-            <p>{post.caption}</p>
+              <p>{post.caption}</p>
 
-            {/* Reactions */}
-            <div className="flex items-center gap-2 border-y py-3">
-              <div className="flex gap-1">
-                {Object.entries(ReactionTypeEmojis).map(([type, emoji]) => (
-                  <button
-                    key={type}
-                    className={cn(
-                      "rounded-full p-2 text-xl transition-transform hover:scale-110",
-                      post.userReaction === Number(type) && "bg-muted ring-primary ring-2",
-                    )}
-                    onClick={() =>
-                      handleReact(post.userReaction === Number(type) ? null : (Number(type) as ReactionType))
-                    }
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-              <div className="flex-1" />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleBookmark}
-                className={cn(post.isBookmarked && "text-yellow-500")}
-              >
-                <BookmarkIcon className={cn("h-5 w-5", post.isBookmarked && "fill-current")} />
-              </Button>
-            </div>
-
-            {/* Reaction summary */}
-            {post.reactionSummaries && post.reactionSummaries.length > 0 && (
-              <div className="flex gap-2">
-                {post.reactionSummaries.map((summary) => (
-                  <Badge key={summary.reactionType} variant="secondary">
-                    {ReactionTypeEmojis[summary.reactionType]} {summary.count}
-                  </Badge>
-                ))}
-              </div>
-            )}
-
-            {/* Comments */}
-            <div className="space-y-3">
-              <h4 className="font-semibold">Comments ({comments.length})</h4>
-
-              {/* Add comment */}
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Add a comment..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleAddComment()}
-                />
-                <Button onClick={handleAddComment} disabled={submitting || !newComment.trim()}>
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendIcon className="h-4 w-4" />}
+              {/* Reactions */}
+              <div className="flex items-center gap-2 border-y py-3">
+                <div className="flex gap-1">
+                  {Object.entries(ReactionTypeEmojis).map(([type, emoji]) => (
+                    <button
+                      key={type}
+                      className={cn(
+                        "rounded-full p-2 text-xl transition-transform hover:scale-110",
+                        post.userReaction === Number(type) && "bg-muted ring-primary ring-2",
+                      )}
+                      onClick={() =>
+                        handleReact(post.userReaction === Number(type) ? null : (Number(type) as ReactionType))
+                      }
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex-1" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleBookmark}
+                  className={cn(post.isBookmarked && "text-yellow-500")}
+                >
+                  <BookmarkIcon className={cn("h-5 w-5", post.isBookmarked && "fill-current")} />
                 </Button>
               </div>
 
-              {/* Comments list */}
+              {/* Reaction summary */}
+              {post.reactionSummaries && post.reactionSummaries.length > 0 && (
+                <div className="flex gap-2">
+                  {post.reactionSummaries.map((summary) => (
+                    <Badge key={summary.reactionType} variant="secondary">
+                      {ReactionTypeEmojis[summary.reactionType]} {summary.count}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              {/* Comments */}
               <div className="space-y-3">
-                {comments.map((comment) => (
-                  <div key={comment.id} className="bg-muted flex gap-3 rounded-lg p-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback>{comment.authorName.charAt(0).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold">{comment.authorName}</span>
-                        <span className="text-muted-foreground text-xs">
-                          {new Date(comment.createdAt).toLocaleDateString()}
-                        </span>
+                <h4 className="font-semibold">Comments ({comments.length})</h4>
+
+                {/* Add comment */}
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Add a comment..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleAddComment()}
+                  />
+                  <Button onClick={handleAddComment} disabled={submitting || !newComment.trim()}>
+                    {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendIcon className="h-4 w-4" />}
+                  </Button>
+                </div>
+
+                {/* Comments list */}
+                <div className="space-y-3">
+                  {comments.map((comment) => (
+                    <div key={comment.id} className="bg-muted flex gap-3 rounded-lg p-3">
+                      <Link href={`/user/${comment.authorId}`}>
+                        <Avatar className="h-8 w-8 cursor-pointer transition-opacity hover:opacity-80">
+                          <AvatarFallback>{comment.authorName.charAt(0).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                      </Link>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <Link href={`/user/${comment.authorId}`}>
+                            <span className="cursor-pointer text-sm font-semibold hover:underline">
+                              {comment.authorName}
+                            </span>
+                          </Link>
+                          <span className="text-muted-foreground text-xs">
+                            {new Date(comment.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="text-sm">{comment.content}</p>
                       </div>
-                      <p className="text-sm">{comment.content}</p>
+                      {claims?.id === comment.authorId && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleDeleteComment(comment.id)}
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
-                    {claims?.id === comment.authorId && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => handleDeleteComment(comment.id)}
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
           </>
         ) : null}
       </DialogContent>

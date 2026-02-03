@@ -45,6 +45,7 @@ public record PostSummaryResponse(
     string Caption,
     Guid PhotoId,
     string PhotoUrl,
+    PostStatus PostStatus,
     int CommentCount,
     int ReactionCount,
     bool IsBookmarked,

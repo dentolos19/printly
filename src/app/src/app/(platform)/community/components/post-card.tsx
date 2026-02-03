@@ -4,15 +4,45 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PostSummaryResponse, ReactionType, ReactionTypeEmojis } from "@/lib/server/community";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  PostSummaryResponse,
+  PostStatus,
+  ReactionType,
+  ReactionTypeEmojis,
+  ReportReason,
+  ReportReasonLabels,
+} from "@/lib/server/community";
 import { cn } from "@/lib/utils";
-import { BookmarkIcon, HeartIcon, MessageCircleIcon, MoreHorizontalIcon, TrashIcon } from "lucide-react";
-import { useRef, useState } from "react";
+import {
+  ArchiveIcon,
+  BookmarkIcon,
+  FlagIcon,
+  HeartIcon,
+  Loader2,
+  MessageCircleIcon,
+  MoreHorizontalIcon,
+  TrashIcon,
+  UndoIcon,
+} from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 
 interface PostCardProps {
   post: PostSummaryResponse;
@@ -20,35 +50,60 @@ interface PostCardProps {
   onBookmark: (postId: string) => void;
   onComment: (postId: string) => void;
   onDelete?: (postId: string) => void;
+  onArchive?: (postId: string, newStatus: PostStatus) => void;
+  onReport?: (postId: string, reason: ReportReason, description?: string) => Promise<void>;
   isOwner: boolean;
 }
 
-export function PostCard({ post, onReact, onBookmark, onComment, onDelete, isOwner }: PostCardProps) {
+export function PostCard({
+  post,
+  onReact,
+  onBookmark,
+  onComment,
+  onDelete,
+  onArchive,
+  onReport,
+  isOwner,
+}: PostCardProps) {
   const [showReactions, setShowReactions] = useState(false);
-  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [reportReason, setReportReason] = useState<ReportReason | null>(null);
+  const [reportDescription, setReportDescription] = useState("");
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 
-  const handleMouseEnter = () => {
-    if (hideTimeoutRef.current) {
-      clearTimeout(hideTimeoutRef.current);
-      hideTimeoutRef.current = null;
+  const truncateUsername = (name: string) => {
+    // If it looks like an email, take the part before @
+    if (name.includes("@")) {
+      return name.split("@")[0];
     }
-    setShowReactions(true);
+    return name;
   };
 
-  const handleMouseLeave = () => {
-    hideTimeoutRef.current = setTimeout(() => {
-      setShowReactions(false);
-    }, 300); // 300ms delay before hiding
+  const handleSubmitReport = async () => {
+    if (reportReason === null || !onReport) return;
+    setIsSubmittingReport(true);
+    try {
+      await onReport(post.id, reportReason, reportDescription || undefined);
+      setReportDialogOpen(false);
+      setReportReason(null);
+      setReportDescription("");
+    } finally {
+      setIsSubmittingReport(false);
+    }
   };
 
   return (
     <Card className="overflow-hidden">
       <CardHeader className="flex flex-row items-center gap-3 pb-2">
-        <Avatar className="h-10 w-10">
-          <AvatarFallback>{post.authorName.charAt(0).toUpperCase()}</AvatarFallback>
-        </Avatar>
+        <Link href={`/user/${post.authorId}`}>
+          <Avatar className="h-10 w-10 cursor-pointer transition-opacity hover:opacity-80">
+            <AvatarFallback>{post.authorName.charAt(0).toUpperCase()}</AvatarFallback>
+          </Avatar>
+        </Link>
         <div className="flex-1">
-          <p className="font-semibold">{post.authorName}</p>
+          <Link href={`/user/${post.authorId}`}>
+            <p className="cursor-pointer font-semibold hover:underline">{truncateUsername(post.authorName)}</p>
+          </Link>
           <p className="text-muted-foreground text-xs">
             {new Date(post.createdAt).toLocaleDateString("en-US", {
               month: "short",
@@ -57,7 +112,7 @@ export function PostCard({ post, onReact, onBookmark, onComment, onDelete, isOwn
             })}
           </p>
         </div>
-        {isOwner && onDelete && (
+        {isOwner && (onDelete || onArchive) && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -65,9 +120,48 @@ export function PostCard({ post, onReact, onBookmark, onComment, onDelete, isOwn
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onDelete(post.id)} className="text-destructive">
-                <TrashIcon className="mr-2 h-4 w-4" />
-                Delete
+              {onArchive && (
+                <DropdownMenuItem
+                  onClick={() =>
+                    onArchive(
+                      post.id,
+                      post.postStatus === PostStatus.Published ? PostStatus.Archived : PostStatus.Published,
+                    )
+                  }
+                >
+                  {post.postStatus === PostStatus.Published ? (
+                    <>
+                      <ArchiveIcon className="mr-2 h-4 w-4" />
+                      Archive
+                    </>
+                  ) : (
+                    <>
+                      <UndoIcon className="mr-2 h-4 w-4" />
+                      Publish
+                    </>
+                  )}
+                </DropdownMenuItem>
+              )}
+              {onDelete && (
+                <DropdownMenuItem onClick={() => onDelete(post.id)} className="text-destructive">
+                  <TrashIcon className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        {!isOwner && onReport && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreHorizontalIcon className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setReportDialogOpen(true)} className="text-destructive">
+                <FlagIcon className="mr-2 h-4 w-4" />
+                Report
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -83,24 +177,22 @@ export function PostCard({ post, onReact, onBookmark, onComment, onDelete, isOwn
       </CardContent>
       <CardFooter className="flex items-center justify-between border-t pt-3">
         <div className="flex items-center gap-1">
-          <div className="relative">
+          <div
+            className="relative"
+            onMouseEnter={() => setShowReactions(true)}
+            onMouseLeave={() => setShowReactions(false)}
+          >
             <Button
               variant="ghost"
               size="sm"
               className={cn("gap-1", post.userReaction !== null && "text-red-500")}
-              onClick={() => setShowReactions(!showReactions)}
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
+              onClick={() => onReact(post.id, post.userReaction === ReactionType.Like ? null : ReactionType.Like)}
             >
-              <HeartIcon className={cn("h-4 w-4", post.userReaction !== null && "fill-current")} />
+              <HeartIcon className={cn("h-4 w-4", post.userReaction === ReactionType.Like && "fill-current")} />
               {post.reactionCount}
             </Button>
             {showReactions && (
-              <div
-                className="bg-popover absolute bottom-full left-0 mb-2 flex gap-1 rounded-full border p-1 shadow-lg"
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-              >
+              <div className="bg-popover absolute bottom-full left-0 mb-2 flex gap-1 rounded-full border p-1 shadow-lg">
                 {Object.entries(ReactionTypeEmojis).map(([type, emoji]) => (
                   <button
                     key={type}
@@ -133,7 +225,59 @@ export function PostCard({ post, onReact, onBookmark, onComment, onDelete, isOwn
           <BookmarkIcon className={cn("h-4 w-4", post.isBookmarked && "fill-current")} />
         </Button>
       </CardFooter>
+
+      {/* Report Dialog */}
+      <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Report Post</DialogTitle>
+            <DialogDescription>
+              Please select a reason for reporting this post. Our team will review your report.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Reason for reporting</Label>
+              <RadioGroup
+                value={reportReason?.toString() ?? ""}
+                onValueChange={(value) => setReportReason(Number(value) as ReportReason)}
+              >
+                {Object.entries(ReportReasonLabels).map(([value, label]) => (
+                  <div key={value} className="flex items-center space-x-2">
+                    <RadioGroupItem value={value} id={`reason-${value}`} />
+                    <Label htmlFor={`reason-${value}`} className="cursor-pointer font-normal">
+                      {label}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="report-description">Additional details (optional)</Label>
+              <Textarea
+                id="report-description"
+                placeholder="Provide any additional context about why you're reporting this post..."
+                value={reportDescription}
+                onChange={(e) => setReportDescription(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReportDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmitReport}
+              disabled={reportReason === null || isSubmittingReport}
+              variant="destructive"
+            >
+              {isSubmittingReport && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Submit Report
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
-

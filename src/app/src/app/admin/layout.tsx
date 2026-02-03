@@ -35,6 +35,7 @@ import { useAuth } from "@/lib/providers/auth";
 import {
   BellIcon,
   Box,
+  Flag,
   Home,
   LayoutDashboardIcon,
   LogOutIcon,
@@ -60,6 +61,7 @@ const navItems = [
   { href: "/admin/inventory", label: "Inventory", icon: Box },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
   { href: "/admin/refunds", label: "Refunds", icon: RefreshCcw },
+  { href: "/admin/reports", label: "Reports", icon: Flag },
   { href: "/admin/chat", label: "Chat", icon: MessageCircleIcon },
 ];
 

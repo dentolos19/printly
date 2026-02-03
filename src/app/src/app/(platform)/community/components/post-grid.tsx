@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { PostSummaryResponse, ReactionType } from "@/lib/server/community";
+import { PostSummaryResponse, PostStatus, ReactionType, ReportReason } from "@/lib/server/community";
 import { PostCard } from "./post-card";
 import { PostCardSkeleton } from "./post-card-skeleton";
 import { EmptyState } from "./empty-state";
@@ -13,6 +13,8 @@ interface PostGridProps {
   onBookmark: (postId: string) => void;
   onComment: (postId: string) => void;
   onDelete?: (postId: string) => void;
+  onArchive?: (postId: string, newStatus: PostStatus) => void;
+  onReport?: (postId: string, reason: ReportReason, description?: string) => Promise<void>;
   emptyTitle?: string;
   emptyDescription?: string;
   emptyActionLabel?: string;
@@ -27,6 +29,8 @@ export function PostGrid({
   onBookmark,
   onComment,
   onDelete,
+  onArchive,
+  onReport,
   emptyTitle = "No posts yet",
   emptyDescription,
   emptyActionLabel,
@@ -57,7 +61,9 @@ export function PostGrid({
           onBookmark={onBookmark}
           onComment={onComment}
           onDelete={onDelete}
-          isOwner={currentUserId === post.authorId}
+          onArchive={onArchive}
+          onReport={onReport}
+          isOwner={currentUserId?.toLowerCase() === post.authorId?.toLowerCase()}
         />
       ))}
     </div>

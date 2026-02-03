@@ -8,8 +8,8 @@ export enum PostVisibility {
 }
 
 export enum PostStatus {
-  Draft = 0,
-  Published = 1,
+  Published = 0,
+  Draft = 1,
   Archived = 2,
 }
 
@@ -113,6 +113,7 @@ export type PostSummaryResponse = {
   caption: string;
   photoId: string;
   photoUrl: string;
+  postStatus: PostStatus;
   commentCount: number;
   reactionCount: number;
   isBookmarked: boolean;
@@ -433,7 +434,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to fetch posts"
+            : "Failed to fetch posts",
         );
       }
 
@@ -449,7 +450,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to fetch post"
+            : "Failed to fetch post",
         );
       }
 
@@ -469,7 +470,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to fetch your posts"
+            : "Failed to fetch your posts",
         );
       }
 
@@ -489,7 +490,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to create post"
+            : "Failed to create post",
         );
       }
 
@@ -509,7 +510,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to update post"
+            : "Failed to update post",
         );
       }
 
@@ -527,7 +528,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to delete post"
+            : "Failed to delete post",
         );
       }
     },
@@ -541,7 +542,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to fetch user posts"
+            : "Failed to fetch user posts",
         );
       }
 
@@ -557,7 +558,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to fetch stats"
+            : "Failed to fetch stats",
         );
       }
 
@@ -579,7 +580,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to generate caption"
+            : "Failed to generate caption",
         );
       }
 
@@ -597,7 +598,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to fetch comments"
+            : "Failed to fetch comments",
         );
       }
 
@@ -613,7 +614,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to fetch replies"
+            : "Failed to fetch replies",
         );
       }
 
@@ -633,7 +634,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to create comment"
+            : "Failed to create comment",
         );
       }
 
@@ -653,7 +654,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to update comment"
+            : "Failed to update comment",
         );
       }
 
@@ -671,7 +672,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to delete comment"
+            : "Failed to delete comment",
         );
       }
     },
@@ -687,7 +688,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to fetch reactions"
+            : "Failed to fetch reactions",
         );
       }
 
@@ -707,7 +708,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to add reaction"
+            : "Failed to add reaction",
         );
       }
 
@@ -725,7 +726,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to remove reaction"
+            : "Failed to remove reaction",
         );
       }
     },
@@ -741,7 +742,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to fetch bookmarks"
+            : "Failed to fetch bookmarks",
         );
       }
 
@@ -761,7 +762,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to create bookmark"
+            : "Failed to create bookmark",
         );
       }
 
@@ -779,7 +780,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to toggle bookmark"
+            : "Failed to toggle bookmark",
         );
       }
 
@@ -797,7 +798,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to remove bookmark"
+            : "Failed to remove bookmark",
         );
       }
     },
@@ -805,9 +806,7 @@ export default function initCommunityController(fetch: ServerFetch) {
     // ==================== Admin ====================
 
     // [Admin] Get all posts including deleted
-    getAdminPosts: async (
-      query?: PostFeedQuery & { visibility?: PostVisibility }
-    ): Promise<PostFeedResponse> => {
+    getAdminPosts: async (query?: PostFeedQuery & { visibility?: PostVisibility }): Promise<PostFeedResponse> => {
       const params = new URLSearchParams();
       if (query?.page) params.append("page", String(query.page));
       if (query?.pageSize) params.append("pageSize", String(query.pageSize));
@@ -824,7 +823,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to fetch posts"
+            : "Failed to fetch posts",
         );
       }
 
@@ -842,7 +841,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to permanently delete post"
+            : "Failed to permanently delete post",
         );
       }
     },
@@ -858,7 +857,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to restore post"
+            : "Failed to restore post",
         );
       }
     },
@@ -874,7 +873,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to delete comment"
+            : "Failed to delete comment",
         );
       }
     },
@@ -892,7 +891,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to follow user"
+            : "Failed to follow user",
         );
       }
     },
@@ -908,7 +907,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to unfollow user"
+            : "Failed to unfollow user",
         );
       }
     },
@@ -922,7 +921,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to get follow status"
+            : "Failed to get follow status",
         );
       }
 
@@ -943,7 +942,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to fetch followers"
+            : "Failed to fetch followers",
         );
       }
 
@@ -964,7 +963,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to fetch following"
+            : "Failed to fetch following",
         );
       }
 
@@ -980,7 +979,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to fetch follow counts"
+            : "Failed to fetch follow counts",
         );
       }
 
@@ -1004,7 +1003,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to fetch notifications"
+            : "Failed to fetch notifications",
         );
       }
 
@@ -1020,7 +1019,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to fetch notification count"
+            : "Failed to fetch notification count",
         );
       }
 
@@ -1038,7 +1037,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to mark notification as read"
+            : "Failed to mark notification as read",
         );
       }
     },
@@ -1054,7 +1053,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to mark all notifications as read"
+            : "Failed to mark all notifications as read",
         );
       }
     },
@@ -1070,7 +1069,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to delete notification"
+            : "Failed to delete notification",
         );
       }
     },
@@ -1086,7 +1085,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to delete all notifications"
+            : "Failed to delete all notifications",
         );
       }
     },
@@ -1106,7 +1105,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to create report"
+            : "Failed to create report",
         );
       }
 
@@ -1122,7 +1121,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to fetch your reports"
+            : "Failed to fetch your reports",
         );
       }
 
@@ -1145,7 +1144,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to fetch reports"
+            : "Failed to fetch reports",
         );
       }
 
@@ -1165,7 +1164,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to update report status"
+            : "Failed to update report status",
         );
       }
 
@@ -1185,7 +1184,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to block user"
+            : "Failed to block user",
         );
       }
     },
@@ -1201,7 +1200,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to unblock user"
+            : "Failed to unblock user",
         );
       }
     },
@@ -1215,7 +1214,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to get block status"
+            : "Failed to get block status",
         );
       }
 
@@ -1236,7 +1235,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to fetch blocked users"
+            : "Failed to fetch blocked users",
         );
       }
 
@@ -1244,4 +1243,3 @@ export default function initCommunityController(fetch: ServerFetch) {
     },
   };
 }
-
