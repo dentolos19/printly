@@ -2,7 +2,7 @@
   "name": "printly-server",
   "private": true,
   "scripts": {
-    "postinstall": "node --run types",
+    "postinstall": "npm run types",
     "dev": "wrangler dev",
     "types": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
