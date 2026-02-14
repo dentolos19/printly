@@ -1,22 +1,20 @@
-# IDE configurations
+# Editor configurations
 .vs/
 .idea/
 
-# Environment files
+# Project files
 node_modules/
+*.d*
 
-# Output files
-build/
-dist/
-out/
-
-# Output files
-.wrangler/
-*.d.ts
-
-# User-specific files
+# User files
 .env*
 !.env*.template
+
+# Other files
+.vercel/
+.next/
+.open-next/
+.wrangler/
 
 # Miscellaneous files
 .DS_Store

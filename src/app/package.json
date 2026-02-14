@@ -3,11 +3,11 @@
   "private": true,
   "packageManager": "pnpm@10.10.0+sha512.d615db246fe70f25dcfea6d8d73dee782ce23e2245e3c4f6f888249fb568149318637dca73c2c5c8ef2a4ca0d5657fb9567188bfab47f566d1ee6ce987815c39",
   "scripts": {
+    "postinstall": "node --run types",
     "dev": "next dev",
     "build": "next build",
-    "format": "prettier . --write",
-    "cf:types": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
-    "cf:build": "opennextjs-cloudflare build"
+    "types": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "format": "prettier . --write"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
