@@ -36,7 +36,7 @@ jobs:
 
       - name: Build App
         working-directory: src/app
-        run: pnpm run opennextjs-cloudflare build
+        run: pnpm opennextjs-cloudflare build
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
