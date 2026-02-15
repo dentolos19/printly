@@ -125,14 +125,21 @@ public class ConversationHub(
         if (isAdmin && conversation.SupportMode)
             return true;
 
-        // Check if user is the customer
+        // Check if user is the customer (owner) of this conversation
         if (conversation.CustomerId == userId)
             return true;
 
-        // Check if user is a participant
-        return await _context.ConversationParticipants.AnyAsync(p =>
-            p.ConversationId == conversationId && p.UserId == userId
-        );
+        // For peer-to-peer conversations, check participant membership
+        if (!conversation.SupportMode)
+        {
+            return await _context.ConversationParticipants.AnyAsync(p =>
+                p.ConversationId == conversationId && p.UserId == userId
+            );
+        }
+
+        // For support conversations, only the customer (checked above) and admins have access.
+        // Regular users who are somehow participants but not the customer are denied.
+        return false;
     }
 
     private async Task<string> GetUserDisplayNameAsync(string userId)
