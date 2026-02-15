@@ -1,19 +1,11 @@
 {
   "compilerOptions": {
     "target": "es2021",
-    "lib": ["es2021"],
-    "jsx": "react-jsx",
     "module": "es2022",
     "moduleResolution": "bundler",
-    "types": ["./cloudflare-env.d.ts", "node"],
-    "resolveJsonModule": true,
-    "allowJs": true,
-    "checkJs": false,
-    "noEmit": true,
-    "isolatedModules": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
+    "types": ["node"],
     "strict": true,
+    "noEmit": true,
     "skipLibCheck": true
   },
   "include": ["cloudflare-env.d.ts", "index.ts"]

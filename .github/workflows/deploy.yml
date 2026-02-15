@@ -34,17 +34,9 @@ jobs:
         working-directory: src/server-worker
         run: pnpm install --frozen-lockfile
 
-      - name: Generate Types for App
-        working-directory: src/app
-        run: pnpm run cf:types
-
-      - name: Generate Types for Server
-        working-directory: src/server-worker
-        run: pnpm run cf:types
-
       - name: Build App
         working-directory: src/app
-        run: pnpm run cf:build
+        run: pnpm opennextjs-cloudflare build
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
