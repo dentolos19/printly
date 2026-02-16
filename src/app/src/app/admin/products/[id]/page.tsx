@@ -531,6 +531,7 @@ export default function ProductDetailPage() {
       setProductModelDialogOpen(false);
       setSelectedProductModel(null);
       loadProduct();
+      loadPrintAreas();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to upload 3D model");
     } finally {

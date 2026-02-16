@@ -10,7 +10,11 @@ namespace PrintlyServer.Controllers;
 
 [Route("products")]
 [Authorize]
-public class ProductController(DatabaseContext context, StorageService storageService) : BaseController(context)
+public class ProductController(
+    DatabaseContext context,
+    StorageService storageService,
+    ModelDetectionService modelDetectionService
+) : BaseController(context)
 {
     /// <summary>
     /// Gets all products with full details (variants and inventory).
@@ -560,6 +564,9 @@ public class ProductController(DatabaseContext context, StorageService storageSe
 
         await Context.SaveChangesAsync();
 
+        // Auto-detect print areas from the uploaded model
+        await AutoDetectPrintAreas(product.Id, file, product.Name);
+
         return await GetProduct(id);
     }
 
@@ -585,5 +592,104 @@ public class ProductController(DatabaseContext context, StorageService storageSe
         await Context.SaveChangesAsync();
 
         return await GetProduct(id);
+    }
+
+    /// <summary>
+    /// Auto-detects print areas from an uploaded GLB model.
+    /// If detection finds areas, replaces only auto-detected areas (preserving manual ones).
+    /// If detection finds nothing, keeps existing areas unchanged.
+    /// If detection fails, applies default areas only when the product has no areas at all.
+    /// </summary>
+    private async Task AutoDetectPrintAreas(Guid productId, IFormFile modelFile, string productName)
+    {
+        try
+        {
+            List<DetectedArea> detected;
+
+            using (var detectStream = modelFile.OpenReadStream())
+            {
+                detected = modelDetectionService.DetectFromStream(detectStream);
+            }
+
+            if (detected.Count == 0)
+            {
+                // No zones detected: keep existing print areas as-is
+                return;
+            }
+
+            // Remove only previously auto-detected areas (preserve manually created ones)
+            var existingAutoAreas = await Context
+                .PrintAreas.Where(pa => pa.ProductId == productId && pa.IsAutoDetected)
+                .ToListAsync();
+
+            Context.PrintAreas.RemoveRange(existingAutoAreas);
+
+            // Get max display order from remaining manual areas
+            var maxOrder =
+                await Context
+                    .PrintAreas.Where(pa => pa.ProductId == productId && !pa.IsAutoDetected)
+                    .MaxAsync(pa => (int?)pa.DisplayOrder)
+                ?? -1;
+
+            // Check existing manual area IDs to avoid conflicts
+            var manualAreaIds = await Context
+                .PrintAreas.Where(pa => pa.ProductId == productId && !pa.IsAutoDetected)
+                .Select(pa => pa.AreaId)
+                .ToListAsync();
+
+            var manualAreaIdSet = new HashSet<string>(manualAreaIds, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var area in detected)
+            {
+                // Skip if a manual area with the same ID already exists
+                if (manualAreaIdSet.Contains(area.AreaId))
+                    continue;
+
+                Context.PrintAreas.Add(
+                    new PrintArea
+                    {
+                        ProductId = productId,
+                        AreaId = area.AreaId,
+                        Name = area.Name,
+                        MeshName = area.MeshName,
+                        RayDirectionX = area.RayDirectionX,
+                        RayDirectionY = area.RayDirectionY,
+                        RayDirectionZ = area.RayDirectionZ,
+                        DisplayOrder = ++maxOrder,
+                        IsAutoDetected = true,
+                    }
+                );
+            }
+
+            await Context.SaveChangesAsync();
+        }
+        catch (Exception)
+        {
+            // Detection failed: apply defaults only when the product has no print areas at all
+            var hasAnyAreas = await Context.PrintAreas.AnyAsync(pa => pa.ProductId == productId);
+            if (hasAnyAreas)
+                return;
+
+            var defaults = ModelDetectionService.GetDefaultAreas(productName);
+            foreach (var area in defaults)
+            {
+                Context.PrintAreas.Add(
+                    new PrintArea
+                    {
+                        ProductId = productId,
+                        AreaId = area.AreaId,
+                        Name = area.Name,
+                        MeshName = area.MeshName,
+                        RayDirectionX = area.RayDirectionX,
+                        RayDirectionY = area.RayDirectionY,
+                        RayDirectionZ = area.RayDirectionZ,
+                        DisplayOrder = area.DisplayOrder,
+                        IsAutoDetected = true,
+                    }
+                );
+            }
+
+            await Context.SaveChangesAsync();
+        }
     }
 }

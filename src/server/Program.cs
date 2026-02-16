@@ -16,6 +16,7 @@ builder.Services.SetupDocumentation();
 
 builder.Services.AddScoped<IdentityService>();
 builder.Services.AddScoped<StorageService>();
+builder.Services.AddScoped<ModelDetectionService>();
 builder.Services.AddScoped<GenerativeService>();
 builder.Services.AddScoped<ChatService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
