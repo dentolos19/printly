@@ -246,31 +246,31 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
     return (
       <div className="bg-background flex h-full flex-col border-r">
         {showHeader && (
-          <div className="border-b p-4">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Messages</h2>
+          <div className="border-b px-3 py-2">
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-sm font-semibold">Messages</h2>
               {onCreateNew && (
-                <Button size="icon" variant="default" className="h-8 w-8 rounded-full" onClick={onCreateNew}>
-                  <Plus className="h-4 w-4" />
+                <Button size="icon" variant="default" className="h-7 w-7 rounded-full" onClick={onCreateNew}>
+                  <Plus className="h-3 w-3" />
                 </Button>
               )}
             </div>
 
             {showSearch && (
-              <div className="relative mb-3">
-                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+              <div className="relative mb-2">
+                <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
                 <Input
-                  placeholder="Search conversations..."
+                  placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
+                  className="h-8 pl-8 text-xs"
                 />
               </div>
             )}
 
             {showFilter && (
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="h-8 w-full text-xs">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>

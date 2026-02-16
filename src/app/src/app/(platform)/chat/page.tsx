@@ -1124,9 +1124,9 @@ export default function ChatPage() {
               isLoading={isLoadingConversations}
               showStatus
               showPriority
-              showHeader={false}
-              showSearch={false}
-              showFilter={false}
+              showHeader={true}
+              showSearch={true}
+              showFilter={true}
               emptyMessage="No conversations yet. Start one!"
             />
           </ScrollArea>
