@@ -421,6 +421,7 @@ namespace PrintlyServer.Migrations
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     ImageId = table.Column<Guid>(type: "uuid", nullable: true),
                     ModelId = table.Column<Guid>(type: "uuid", nullable: true),
+                    ModelPreviewId = table.Column<Guid>(type: "uuid", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
@@ -435,6 +436,11 @@ namespace PrintlyServer.Migrations
                     table.ForeignKey(
                         name: "FK_Products_Assets_ModelId",
                         column: x => x.ModelId,
+                        principalTable: "Assets",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Products_Assets_ModelPreviewId",
+                        column: x => x.ModelPreviewId,
                         principalTable: "Assets",
                         principalColumn: "Id");
                 });
@@ -1296,6 +1302,11 @@ namespace PrintlyServer.Migrations
                 name: "IX_Products_ModelId",
                 table: "Products",
                 column: "ModelId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_ModelPreviewId",
+                table: "Products",
+                column: "ModelPreviewId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ProductVariants_ImageId",

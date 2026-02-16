@@ -12,7 +12,7 @@ using PrintlyServer.Data;
 namespace PrintlyServer.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20260216123924_Initial")]
+    [Migration("20260216131052_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -1054,6 +1054,9 @@ namespace PrintlyServer.Migrations
                     b.Property<Guid?>("ModelId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("ModelPreviewId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -1069,6 +1072,8 @@ namespace PrintlyServer.Migrations
                     b.HasIndex("IsActive");
 
                     b.HasIndex("ModelId");
+
+                    b.HasIndex("ModelPreviewId");
 
                     b.ToTable("Products");
                 });
@@ -1848,9 +1853,15 @@ namespace PrintlyServer.Migrations
                         .WithMany()
                         .HasForeignKey("ModelId");
 
+                    b.HasOne("PrintlyServer.Data.Entities.Asset", "ModelPreview")
+                        .WithMany()
+                        .HasForeignKey("ModelPreviewId");
+
                     b.Navigation("Image");
 
                     b.Navigation("Model");
+
+                    b.Navigation("ModelPreview");
                 });
 
             modelBuilder.Entity("PrintlyServer.Data.Entities.ProductVariant", b =>
