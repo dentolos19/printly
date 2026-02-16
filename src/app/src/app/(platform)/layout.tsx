@@ -17,7 +17,6 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sidebar,
   SidebarContent,
@@ -248,9 +247,7 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
         <div className="flex flex-1 flex-col overflow-hidden">
-          <ScrollArea className="h-full">
-            <main className="bg-background flex-1 p-4">{children}</main>
-          </ScrollArea>
+          <main className="bg-background flex-1 overflow-auto p-4">{children}</main>
         </div>
       </SidebarInset>
       <ChatbotWidget />

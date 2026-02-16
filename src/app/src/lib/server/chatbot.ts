@@ -5,8 +5,15 @@ export interface ChatMessage {
   content: string;
 }
 
+export interface ToolAction {
+  type: string;
+  conversationId?: string;
+  subject?: string;
+}
+
 export interface ChatbotResponse {
   message: string;
+  actions?: ToolAction[];
 }
 
 export interface ChatbotStatus {

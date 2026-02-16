@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/providers/auth";
 import * as signalR from "@microsoft/signalr";
 import { ArrowLeft, Circle, Loader2, Send, Users, Wifi, WifiOff } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { formatMessageTime } from "@/lib/utils";
 
 interface Message {
   id: string;
@@ -278,11 +279,11 @@ export default function ChatInterface() {
                 return (
                   <div key={message.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                     <div
-                      className={`max-w-[70%] rounded-lg px-4 py-2 ${isMe ? "bg-blue-500 text-white" : "bg-gray-200"}`}
+                      className={`max-w-[70%] rounded-2xl px-4 py-2.5 shadow-sm ${isMe ? "bg-primary text-primary-foreground" : "bg-muted"}`}
                     >
                       <p className="text-sm">{message.content}</p>
-                      <p className={`text-xs ${isMe ? "text-blue-100" : "text-gray-500"}`}>
-                        {new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      <p className={`text-xs ${isMe ? "opacity-70" : "text-muted-foreground"}`}>
+                        {formatMessageTime(message.createdAt)}
                       </p>
                     </div>
                   </div>

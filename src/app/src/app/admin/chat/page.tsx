@@ -1028,7 +1028,7 @@ export default function AdminChatPage() {
   }, [conversations]);
 
   return (
-    <main className="flex h-[calc(100vh-4rem)] w-full flex-col gap-2 p-2">
+    <main className="flex h-full w-full flex-col gap-2 overflow-hidden p-2">
       {/* Header Bar - Compact */}
       <div className="bg-card flex shrink-0 items-center justify-between rounded-lg border px-3 py-2 shadow-sm">
         <div className="flex items-center gap-3">

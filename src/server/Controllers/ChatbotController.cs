@@ -76,7 +76,7 @@ public class ChatbotController(DatabaseContext context, ChatService chatbotServi
         Context.ChatbotMessages.Add(assistantMessage);
         await Context.SaveChangesAsync();
 
-        return Ok(new { message = response.Message });
+        return Ok(new { message = response.Message, actions = response.Actions });
     }
 
     /// <summary>

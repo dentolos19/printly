@@ -3,21 +3,33 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/providers/auth";
 import { API_URL } from "@/environment";
-import { MessageCircle, X, Send, Bot, User, Loader2, AlertCircle, Minimize2 } from "lucide-react";
+import {
+  MessageCircle,
+  X,
+  Send,
+  Bot,
+  User,
+  Loader2,
+  AlertCircle,
+  Minimize2,
+  TicketCheck,
+  ExternalLink,
+  Cpu,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
+import { cn, formatMessageTime } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ModelSelector } from "@/components/chatbot/model-selector";
-import type { AIModel } from "@/lib/server/chatbot";
+import type { AIModel, ToolAction } from "@/lib/server/chatbot";
 
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
   error?: boolean;
+  actions?: ToolAction[];
 }
 
 export function ChatbotWidget() {
@@ -32,7 +44,9 @@ export function ChatbotWidget() {
   const [models, setModels] = useState<AIModel[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>("google/gemini-2.5-flash");
   const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Load chat history from database on mount
@@ -147,12 +161,7 @@ export function ChatbotWidget() {
 
   // Scroll to bottom when messages change
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector("[data-radix-scroll-area-viewport]");
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
-      }
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   // Focus textarea when chat opens
@@ -161,6 +170,21 @@ export function ChatbotWidget() {
       textareaRef.current.focus();
     }
   }, [isOpen, isMinimized]);
+
+  // Close model menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (isModelMenuOpen && !target.closest(".model-dropdown-container")) {
+        setIsModelMenuOpen(false);
+      }
+    };
+
+    if (isModelMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [isModelMenuOpen]);
 
   const sendMessage = useCallback(async () => {
     if (!inputValue.trim() || isLoading || !tokens?.accessToken) return;
@@ -205,7 +229,7 @@ export function ChatbotWidget() {
         throw new Error(errorData.error || `Request failed with status ${response.status}`);
       }
 
-      const data = (await response.json()) as { message: string };
+      const data = (await response.json()) as { message: string; actions?: ToolAction[] };
 
       // Add assistant response
       setMessages((prev) => [
@@ -214,6 +238,7 @@ export function ChatbotWidget() {
           role: "assistant",
           content: data.message,
           timestamp: new Date(),
+          actions: data.actions,
         },
       ]);
     } catch (err) {
@@ -245,7 +270,7 @@ export function ChatbotWidget() {
 
   // Format timestamp
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return formatMessageTime(date);
   };
 
   // Don't render if not authenticated
@@ -272,7 +297,7 @@ export function ChatbotWidget() {
         <div
           className={cn(
             "bg-background fixed right-6 bottom-6 z-50 flex flex-col rounded-lg border shadow-2xl transition-all duration-200",
-            isMinimized ? "h-14 w-80" : "h-[600px] max-h-[85vh] w-[420px]",
+            isMinimized ? "h-14 w-80" : "h-[600px] max-h-[85vh] w-[420px] max-w-[calc(100vw-2rem)]",
           )}
         >
           {/* Header */}
@@ -328,7 +353,7 @@ export function ChatbotWidget() {
                       )}
                       <div
                         className={cn(
-                          "max-w-[75%] rounded-lg px-3 py-2 text-sm",
+                          "max-w-[70%] rounded-2xl px-4 py-2.5 text-sm shadow-sm",
                           message.role === "user"
                             ? "bg-primary text-primary-foreground"
                             : message.error
@@ -386,6 +411,36 @@ export function ChatbotWidget() {
                             </ReactMarkdown>
                           </div>
                         )}
+                        {/* Render action cards for tool executions */}
+                        {message.actions && message.actions.length > 0 && (
+                          <div className="mt-2 space-y-2">
+                            {message.actions.map((action, actionIdx) => (
+                              <div
+                                key={actionIdx}
+                                className="bg-primary/5 border-primary/20 flex items-center gap-2 rounded-lg border p-2"
+                              >
+                                {action.type === "create_support_ticket" && (
+                                  <>
+                                    <TicketCheck className="text-primary h-4 w-4 shrink-0" />
+                                    <div className="min-w-0 flex-1">
+                                      <p className="text-xs font-medium">Support ticket created</p>
+                                      {action.subject && (
+                                        <p className="text-muted-foreground truncate text-xs">{action.subject}</p>
+                                      )}
+                                    </div>
+                                    <a
+                                      href="/chat"
+                                      className="text-primary hover:text-primary/80 shrink-0"
+                                      title="Open Chat"
+                                    >
+                                      <ExternalLink className="h-3.5 w-3.5" />
+                                    </a>
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                         <p
                           className={cn(
                             "mt-1 text-xs opacity-70",
@@ -409,7 +464,7 @@ export function ChatbotWidget() {
                       <div className="bg-primary/10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
                         <Bot className="text-primary h-4 w-4" />
                       </div>
-                      <div className="bg-muted rounded-lg px-3 py-2">
+                      <div className="bg-muted rounded-2xl px-4 py-2.5">
                         <div className="flex items-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin" />
                           <span className="text-muted-foreground text-sm">Thinking...</span>
@@ -417,6 +472,7 @@ export function ChatbotWidget() {
                       </div>
                     </div>
                   )}
+                  <div ref={messagesEndRef} />
                 </div>
               </ScrollArea>
 
@@ -429,19 +485,7 @@ export function ChatbotWidget() {
 
               {/* Input */}
               <div className="border-t p-4">
-                {/* Model selector */}
-                {models.length > 0 && (
-                  <div className="mb-3">
-                    <ModelSelector
-                      selectedModel={selectedModel}
-                      onModelChange={setSelectedModel}
-                      models={models}
-                      isLoading={isLoadingModels}
-                    />
-                  </div>
-                )}
-
-                <div className="flex gap-2">
+                <div className="flex items-end gap-2">
                   <Textarea
                     ref={textareaRef}
                     value={inputValue}
@@ -452,6 +496,47 @@ export function ChatbotWidget() {
                     rows={1}
                     disabled={isLoading}
                   />
+                  {models.length > 0 && (
+                    <div className="model-dropdown-container relative">
+                      <Button
+                        onClick={() => setIsModelMenuOpen(!isModelMenuOpen)}
+                        disabled={isLoading || isLoadingModels}
+                        size="icon"
+                        variant="outline"
+                        className="shrink-0"
+                        title="Change AI Model"
+                      >
+                        <Cpu className="h-4 w-4" />
+                      </Button>
+                      {isModelMenuOpen && (
+                        <div className="border-input bg-popover absolute right-0 bottom-full z-50 mb-2 w-56 rounded-lg border shadow-lg">
+                          <div className="p-3">
+                            <p className="text-muted-foreground mb-2 text-xs font-semibold">AI Model</p>
+                            <div className="max-h-64 space-y-1 overflow-y-auto">
+                              {models.map((model) => (
+                                <button
+                                  key={model.id}
+                                  onClick={() => {
+                                    setSelectedModel(model.id);
+                                    setIsModelMenuOpen(false);
+                                  }}
+                                  className={cn(
+                                    "w-full rounded-md px-3 py-2 text-left text-sm transition-colors",
+                                    selectedModel === model.id
+                                      ? "bg-primary text-primary-foreground"
+                                      : "hover:bg-muted text-foreground",
+                                  )}
+                                >
+                                  <div className="font-medium">{model.displayName}</div>
+                                  <div className="line-clamp-2 text-xs opacity-70">{model.description}</div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <Button
                     onClick={sendMessage}
                     disabled={!inputValue.trim() || isLoading}
