@@ -11,6 +11,7 @@ import { useKeyboardShortcuts } from "./hooks/use-keyboard";
 import { IconToolbar } from "./icon-toolbar";
 import { LeftPanel } from "./panels/left-panel";
 import { RightPanel } from "./panels/right-panel";
+import { TextPanel } from "./panels/text-panel";
 import { ImprinterScene } from "./scene";
 import { ToolbarHeader } from "./toolbar-header";
 import { Imprinter2DView } from "./view-2d";
@@ -25,6 +26,7 @@ export function ImprinterContent() {
     availableProducts,
     selectedProduct,
     selectProduct,
+    activeTool,
   } = useImprinter();
   useKeyboardShortcuts();
 
@@ -35,6 +37,7 @@ export function ImprinterContent() {
         <div className="relative flex flex-1 overflow-hidden">
           <IconToolbar />
           {leftPanelView && <LeftPanel />}
+          {activeTool === "text" && <TextPanel />}
           <div className="relative flex flex-1 flex-col">
             {selectedProduct ? (
               <Tabs

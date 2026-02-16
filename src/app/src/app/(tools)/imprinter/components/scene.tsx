@@ -99,7 +99,11 @@ function DesignDecal({
 }) {
   if (!design.designData) return null;
 
-  const textureUrl = design.designData.coverId ? `/assets/${design.designData.coverId}/view` : null;
+  const textureUrl = design.designData.coverId
+    ? design.designData.coverId.startsWith("blob:") || design.designData.coverId.startsWith("data:")
+      ? design.designData.coverId
+      : `/assets/${design.designData.coverId}/view`
+    : null;
 
   if (!textureUrl) return null;
 
@@ -237,11 +241,23 @@ function NoModelPlaceholder() {
 }
 
 function CanvasModel() {
-  const { productColor, appliedDesigns, modelConfig, selectedProduct, availablePrintAreas } = useImprinter();
+  const {
+    productColor,
+    appliedDesigns,
+    modelConfig,
+    selectedProduct,
+    availablePrintAreas,
+    activeTool,
+    addImageToProduct,
+    activePrintArea,
+  } = useImprinter();
   const { gl } = useThree();
   const modelRef = useRef<THREE.Group>(null);
   const [meshes, setMeshes] = useState<MeshMap>({ body: null, leftSleeve: null, rightSleeve: null });
   const maxAnisotropy = useMemo(() => gl.capabilities.getMaxAnisotropy(), [gl]);
+
+  // Only render visible designs
+  const visibleDesigns = useMemo(() => appliedDesigns.filter((d) => d.visible !== false), [appliedDesigns]);
 
   // Create a map of print area ID to config for quick lookup
   const printAreaConfigMap = useMemo(() => {
@@ -379,12 +395,10 @@ function CanvasModel() {
   const designsByMesh = useMemo(() => {
     const grouped = new Map<THREE.Mesh, AppliedDesign[]>();
 
-    appliedDesigns.forEach((design) => {
-      // Skip designs without valid designData
+    visibleDesigns.forEach((design) => {
       if (!design.designData?.coverId) return;
 
       const targetMesh = getMeshForPrintArea(design.printArea);
-      // Ensure mesh is valid and attached to the scene
       if (targetMesh && targetMesh.parent) {
         const existing = grouped.get(targetMesh) || [];
         grouped.set(targetMesh, [...existing, design]);
@@ -392,7 +406,7 @@ function CanvasModel() {
     });
 
     return grouped;
-  }, [appliedDesigns, getMeshForPrintArea]);
+  }, [visibleDesigns, getMeshForPrintArea]);
 
   return (
     <group ref={modelRef}>
@@ -435,15 +449,12 @@ function CanvasModel() {
 // Screenshot capture component that registers the GL context
 function ScreenshotCapture({ onRegister }: { onRegister: (capture: () => Promise<Blob | null>) => void }) {
   const { gl, scene, camera } = useThree();
-  const { registerCaptureFunction } = useImprinter();
+  const { registerCaptureFunction, registerHighResCaptureFunction } = useImprinter();
 
   useEffect(() => {
     const captureFunction = async (): Promise<Blob | null> => {
       return new Promise((resolve) => {
-        // Render the scene
         gl.render(scene, camera);
-
-        // Convert canvas to blob
         gl.domElement.toBlob(
           (blob) => {
             resolve(blob);
@@ -458,11 +469,35 @@ function ScreenshotCapture({ onRegister }: { onRegister: (capture: () => Promise
     registerCaptureFunction(captureFunction);
   }, [gl, scene, camera, onRegister, registerCaptureFunction]);
 
+  useEffect(() => {
+    const highResCapture = async (width: number, height: number): Promise<Blob | null> => {
+      const originalSize = gl.getSize(new THREE.Vector2());
+      const originalPixelRatio = gl.getPixelRatio();
+
+      try {
+        gl.setSize(width, height, false);
+        gl.setPixelRatio(1);
+        gl.render(scene, camera);
+
+        return new Promise((resolve) => {
+          gl.domElement.toBlob((blob) => resolve(blob), "image/png", 1.0);
+        });
+      } finally {
+        gl.setSize(originalSize.x, originalSize.y, false);
+        gl.setPixelRatio(originalPixelRatio);
+      }
+    };
+
+    registerHighResCaptureFunction(highResCapture);
+  }, [gl, scene, camera, registerHighResCaptureFunction]);
+
   return null;
 }
 
 export function ImprinterScene() {
   const captureRef = useRef<(() => Promise<Blob | null>) | null>(null);
+  const { addImageToProduct, activePrintArea, activeTool } = useImprinter();
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleRegisterCapture = useCallback((capture: () => Promise<Blob | null>) => {
     captureRef.current = capture;
@@ -477,9 +512,52 @@ export function ImprinterScene() {
 
   const contextValue = useMemo(() => ({ captureScreenshot }), [captureScreenshot]);
 
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+
+      const files = Array.from(e.dataTransfer.files);
+      const imageFiles = files.filter((f) => f.type.startsWith("image/"));
+
+      for (const file of imageFiles) {
+        addImageToProduct(file, activePrintArea);
+      }
+    },
+    [addImageToProduct, activePrintArea],
+  );
+
   return (
     <ScreenshotContext.Provider value={contextValue}>
-      <div className="h-full w-full">
+      <div
+        className="relative h-full w-full"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {isDragging && (
+          <div className="border-primary bg-primary/10 pointer-events-none absolute inset-0 z-50 flex items-center justify-center rounded-lg border-2 border-dashed">
+            <p className="text-primary text-lg font-medium">Drop image to apply as decal</p>
+          </div>
+        )}
+        {activeTool === "place" && (
+          <div className="pointer-events-none absolute top-3 left-1/2 z-40 -translate-x-1/2 rounded-md bg-black/70 px-3 py-1.5 text-sm text-white">
+            Click on the model to place a decal
+          </div>
+        )}
         <Canvas shadows gl={{ antialias: true, preserveDrawingBuffer: true }}>
           <ScreenshotCapture onRegister={handleRegisterCapture} />
           <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={50} />

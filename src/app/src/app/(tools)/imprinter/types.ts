@@ -46,6 +46,12 @@ export type Transform3D = {
   scale: [number, number, number];
 };
 
+// Decal source can be an uploaded image, a design from the library, or generated text
+export type DecalSource =
+  | { type: "design"; designId: string; designData: Design }
+  | { type: "image"; assetId: string; name: string }
+  | { type: "text"; text: string; fontFamily: string; fontSize: number; color: string };
+
 export type AppliedDesign = {
   id: string;
   designId: string;
@@ -53,7 +59,17 @@ export type AppliedDesign = {
   printArea: PrintArea;
   transform: Transform3D;
   opacity: number;
+  // Layer system
+  zIndex: number;
+  visible: boolean;
+  locked: boolean;
+  // Placement mode used when this decal was created
+  placementMode: PlacementMode;
+  // Optional source info for non-design decals
+  source?: DecalSource;
 };
+
+export type PlacementMode = "zone" | "free";
 
 export type CameraState = {
   position: [number, number, number];
@@ -73,6 +89,29 @@ export type ImprinterData = {
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
 
-export type Tool = "select" | "move" | "rotate" | "scale" | "color-picker";
+export type Tool = "select" | "move" | "rotate" | "scale" | "color-picker" | "place" | "text";
 
 export type LeftPanelView = "designs" | "assets" | "templates" | "products" | null;
+
+// Export resolution presets
+export type ExportPreset = {
+  label: string;
+  width: number;
+  height: number;
+};
+
+export const EXPORT_PRESETS: ExportPreset[] = [
+  { label: "Standard (1080p)", width: 1920, height: 1080 },
+  { label: "High (2K)", width: 2560, height: 1440 },
+  { label: "Ultra (4K)", width: 3840, height: 2160 },
+  { label: "Square (1080)", width: 1080, height: 1080 },
+  { label: "Square (2160)", width: 2160, height: 2160 },
+];
+
+// Undo/redo action
+export type HistoryAction = {
+  type: "add" | "remove" | "update" | "reorder";
+  designId: string;
+  before: AppliedDesign | null;
+  after: AppliedDesign | null;
+};

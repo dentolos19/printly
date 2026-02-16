@@ -9,9 +9,12 @@ import { useAutoSave } from "../../../shared/hooks/use-auto-save";
 import type {
   AppliedDesign,
   CameraState,
+  ExportPreset,
+  HistoryAction,
   ImprinterData,
   LeftPanelView,
   ModelConfig,
+  PlacementMode,
   PrintArea,
   PrintAreaConfig,
   ProductModel,
@@ -67,6 +70,7 @@ type ImprinterContextValue = {
   rightPanelOpen: boolean;
   showProductDialog: boolean;
   pendingDesignId: string | null;
+  placementMode: PlacementMode;
 
   // Camera state
   cameraState: CameraState;
@@ -87,17 +91,33 @@ type ImprinterContextValue = {
 
   // Design actions
   addDesignToProduct: (design: Design, printArea: PrintArea) => void;
+  addImageToProduct: (file: File, printArea: PrintArea) => Promise<void>;
+  addTextToProduct: (text: string, fontFamily: string, fontSize: number, color: string, printArea: PrintArea) => void;
   updateDesignTransform: (id: string, transform: Partial<Transform3D>) => void;
   updateDesignOpacity: (id: string, opacity: number) => void;
   updateDesignPrintArea: (id: string, printArea: PrintArea) => void;
   removeDesign: (id: string) => void;
   selectDesign: (id: string | null) => void;
+  duplicateDesign: (id: string) => void;
+
+  // Layer actions
+  moveDesignUp: (id: string) => void;
+  moveDesignDown: (id: string) => void;
+  toggleDesignVisibility: (id: string) => void;
+  toggleDesignLock: (id: string) => void;
+
+  // Undo/redo
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 
   // UI actions
   setActiveTool: (tool: Tool) => void;
   setActivePrintArea: (area: PrintArea) => void;
   setLeftPanelView: (view: LeftPanelView) => void;
   setRightPanelOpen: (open: boolean) => void;
+  setPlacementMode: (mode: PlacementMode) => void;
 
   // Camera actions
   resetCamera: () => void;
@@ -106,7 +126,9 @@ type ImprinterContextValue = {
   saveImprint: () => Promise<string | null>;
   loadImprint: (id: string) => Promise<void>;
   exportRender: (resolution: number) => void;
+  exportHighRes: (preset: ExportPreset) => Promise<void>;
   registerCaptureFunction: (fn: () => Promise<Blob | null>) => void;
+  registerHighResCaptureFunction: (fn: (width: number, height: number) => Promise<Blob | null>) => void;
 };
 
 const ImprinterContext = createContext<ImprinterContextValue | null>(null);
@@ -182,6 +204,26 @@ export function ImprinterProvider({
   const [productColor, setProductColor] = useState("#ffffff");
   const [appliedDesigns, setAppliedDesigns] = useState<AppliedDesign[]>([]);
   const [selectedDesignId, setSelectedDesignId] = useState<string | null>(null);
+
+  // Placement mode
+  const [placementMode, setPlacementMode] = useState<PlacementMode>("zone");
+
+  // Undo/redo history
+  const [undoStack, setUndoStack] = useState<HistoryAction[]>([]);
+  const [redoStack, setRedoStack] = useState<HistoryAction[]>([]);
+
+  // High-res capture function ref
+  const highResCaptureFunctionRef = useRef<((width: number, height: number) => Promise<Blob | null>) | null>(null);
+
+  const registerHighResCaptureFunction = useCallback((fn: (width: number, height: number) => Promise<Blob | null>) => {
+    highResCaptureFunctionRef.current = fn;
+  }, []);
+
+  // Helper to push to undo stack
+  const pushUndo = useCallback((action: HistoryAction) => {
+    setUndoStack((prev) => [...prev.slice(-49), action]);
+    setRedoStack([]);
+  }, []);
 
   // Dynamic product state
   const [selectedProduct, setSelectedProduct] = useState<SelectedProduct>(null);
@@ -397,6 +439,10 @@ export function ImprinterProvider({
               scale: [1, 1, 1],
             },
             opacity: 1,
+            zIndex: 0,
+            visible: true,
+            locked: false,
+            placementMode: "zone",
           };
           setAppliedDesigns([newDesign]);
           setSelectedDesignId(newDesign.id);
@@ -444,13 +490,103 @@ export function ImprinterProvider({
           scale: [1, 1, 1],
         },
         opacity: 1,
+        zIndex: appliedDesigns.length,
+        visible: true,
+        locked: false,
+        placementMode,
+        source: { type: "design", designId: design.id, designData: design },
       };
 
+      pushUndo({ type: "add", designId: newDesign.id, before: null, after: newDesign });
       setAppliedDesigns((prev) => [...prev, newDesign]);
       setSelectedDesignId(newDesign.id);
       triggerAutoSave();
     },
-    [triggerAutoSave],
+    [triggerAutoSave, appliedDesigns.length, placementMode, pushUndo],
+  );
+
+  const addImageToProduct = useCallback(
+    async (file: File, printArea: PrintArea) => {
+      if (!onUploadPreview) return;
+      try {
+        const asset = await onUploadPreview(new Blob([file], { type: file.type }));
+        const mockDesign: Design = {
+          id: asset,
+          name: file.name.replace(/\.[^.]+$/, ""),
+          data: JSON.stringify({ version: "1.0", objects: [] }),
+          coverId: asset,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        const newDesign: AppliedDesign = {
+          id: crypto.randomUUID(),
+          designId: asset,
+          designData: mockDesign,
+          printArea,
+          transform: { position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1] },
+          opacity: 1,
+          zIndex: appliedDesigns.length,
+          visible: true,
+          locked: false,
+          placementMode,
+          source: { type: "image", assetId: asset, name: file.name },
+        };
+        pushUndo({ type: "add", designId: newDesign.id, before: null, after: newDesign });
+        setAppliedDesigns((prev) => [...prev, newDesign]);
+        setSelectedDesignId(newDesign.id);
+        triggerAutoSave();
+      } catch (error) {
+        console.error("Failed to upload image:", error);
+      }
+    },
+    [triggerAutoSave, onUploadPreview, appliedDesigns.length, placementMode, pushUndo],
+  );
+
+  const addTextToProduct = useCallback(
+    (text: string, fontFamily: string, fontSize: number, color: string, printArea: PrintArea) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 512;
+      canvas.height = 256;
+      const ctx = canvas.getContext("2d")!;
+      ctx.fillStyle = "transparent";
+      ctx.clearRect(0, 0, 512, 256);
+      ctx.fillStyle = color;
+      ctx.font = `${fontSize}px ${fontFamily}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(text, 256, 128);
+
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const mockDesign: Design = {
+          id: `text-${crypto.randomUUID()}`,
+          name: text.slice(0, 30),
+          data: JSON.stringify({ version: "1.0", objects: [] }),
+          coverId: undefined,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        const newDesign: AppliedDesign = {
+          id: crypto.randomUUID(),
+          designId: mockDesign.id,
+          designData: { ...mockDesign, coverId: url },
+          printArea,
+          transform: { position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1] },
+          opacity: 1,
+          zIndex: appliedDesigns.length,
+          visible: true,
+          locked: false,
+          placementMode,
+          source: { type: "text", text, fontFamily, fontSize, color },
+        };
+        pushUndo({ type: "add", designId: newDesign.id, before: null, after: newDesign });
+        setAppliedDesigns((prev) => [...prev, newDesign]);
+        setSelectedDesignId(newDesign.id);
+        triggerAutoSave();
+      }, "image/png");
+    },
+    [triggerAutoSave, appliedDesigns.length, placementMode, pushUndo],
   );
 
   const updateDesignTransform = useCallback(
@@ -496,18 +632,140 @@ export function ImprinterProvider({
 
   const removeDesign = useCallback(
     (id: string) => {
+      const removed = appliedDesigns.find((d) => d.id === id);
+      if (removed) {
+        pushUndo({ type: "remove", designId: id, before: removed, after: null });
+      }
       setAppliedDesigns((prev) => prev.filter((design) => design.id !== id));
       if (selectedDesignId === id) {
         setSelectedDesignId(null);
       }
       triggerAutoSave();
     },
-    [selectedDesignId, triggerAutoSave],
+    [selectedDesignId, triggerAutoSave, appliedDesigns, pushUndo],
   );
 
   const selectDesign = useCallback((id: string | null) => {
     setSelectedDesignId(id);
   }, []);
+
+  const duplicateDesign = useCallback(
+    (id: string) => {
+      const original = appliedDesigns.find((d) => d.id === id);
+      if (!original) return;
+      const copy: AppliedDesign = {
+        ...original,
+        id: crypto.randomUUID(),
+        zIndex: appliedDesigns.length,
+        transform: {
+          ...original.transform,
+          position: [
+            original.transform.position[0] + 0.05,
+            original.transform.position[1] - 0.05,
+            original.transform.position[2],
+          ],
+        },
+      };
+      pushUndo({ type: "add", designId: copy.id, before: null, after: copy });
+      setAppliedDesigns((prev) => [...prev, copy]);
+      setSelectedDesignId(copy.id);
+      triggerAutoSave();
+    },
+    [appliedDesigns, triggerAutoSave, pushUndo],
+  );
+
+  // ============================================================================
+  // Layer actions
+  // ============================================================================
+
+  const moveDesignUp = useCallback(
+    (id: string) => {
+      setAppliedDesigns((prev) => {
+        const idx = prev.findIndex((d) => d.id === id);
+        if (idx < 0 || idx >= prev.length - 1) return prev;
+        const next = [...prev];
+        [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+        return next.map((d, i) => ({ ...d, zIndex: i }));
+      });
+      triggerAutoSave();
+    },
+    [triggerAutoSave],
+  );
+
+  const moveDesignDown = useCallback(
+    (id: string) => {
+      setAppliedDesigns((prev) => {
+        const idx = prev.findIndex((d) => d.id === id);
+        if (idx <= 0) return prev;
+        const next = [...prev];
+        [next[idx], next[idx - 1]] = [next[idx - 1], next[idx]];
+        return next.map((d, i) => ({ ...d, zIndex: i }));
+      });
+      triggerAutoSave();
+    },
+    [triggerAutoSave],
+  );
+
+  const toggleDesignVisibility = useCallback(
+    (id: string) => {
+      setAppliedDesigns((prev) => prev.map((d) => (d.id === id ? { ...d, visible: !d.visible } : d)));
+      triggerAutoSave();
+    },
+    [triggerAutoSave],
+  );
+
+  const toggleDesignLock = useCallback(
+    (id: string) => {
+      setAppliedDesigns((prev) => prev.map((d) => (d.id === id ? { ...d, locked: !d.locked } : d)));
+      triggerAutoSave();
+    },
+    [triggerAutoSave],
+  );
+
+  // ============================================================================
+  // Undo / Redo
+  // ============================================================================
+
+  const undo = useCallback(() => {
+    setUndoStack((prev) => {
+      if (prev.length === 0) return prev;
+      const action = prev[prev.length - 1];
+      setRedoStack((r) => [...r, action]);
+
+      if (action.type === "add" && action.after) {
+        setAppliedDesigns((d) => d.filter((x) => x.id !== action.designId));
+      } else if (action.type === "remove" && action.before) {
+        setAppliedDesigns((d) => [...d, action.before!]);
+      } else if (action.type === "update" && action.before) {
+        setAppliedDesigns((d) => d.map((x) => (x.id === action.designId ? action.before! : x)));
+      }
+
+      triggerAutoSave();
+      return prev.slice(0, -1);
+    });
+  }, [triggerAutoSave]);
+
+  const redo = useCallback(() => {
+    setRedoStack((prev) => {
+      if (prev.length === 0) return prev;
+      const action = prev[prev.length - 1];
+      setUndoStack((u) => [...u, action]);
+
+      if (action.type === "add" && action.after) {
+        setAppliedDesigns((d) => [...d, action.after!]);
+      } else if (action.type === "remove") {
+        setAppliedDesigns((d) => d.filter((x) => x.id !== action.designId));
+      } else if (action.type === "update" && action.after) {
+        setAppliedDesigns((d) => d.map((x) => (x.id === action.designId ? action.after! : x)));
+      }
+
+      triggerAutoSave();
+      return prev.slice(0, -1);
+    });
+  }, [triggerAutoSave]);
+
+  const canUndo = undoStack.length > 0;
+  const canRedo = redoStack.length > 0;
 
   // ============================================================================
   // Camera actions
@@ -596,10 +854,57 @@ export function ImprinterProvider({
     [onLoad, onLoadDesign, availableProducts],
   );
 
-  const exportRender = useCallback((resolution: number) => {
-    // TODO: Implement 3D render export using Three.js render to canvas
-    console.log("Export render at resolution:", resolution);
-  }, []);
+  const exportRender = useCallback(
+    async (resolution: number) => {
+      const capture = highResCaptureFunctionRef.current || captureFunctionRef.current;
+      if (!capture) {
+        console.warn("No capture function registered");
+        return;
+      }
+      try {
+        const blob = highResCaptureFunctionRef.current
+          ? await highResCaptureFunctionRef.current(resolution, resolution)
+          : await captureFunctionRef.current!();
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${imprintName || "render"}-${resolution}px.png`;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+      } catch (error) {
+        console.error("Export render failed:", error);
+      }
+    },
+    [imprintName],
+  );
+
+  const exportHighRes = useCallback(
+    async (preset: ExportPreset) => {
+      const capture = highResCaptureFunctionRef.current || captureFunctionRef.current;
+      if (!capture) {
+        console.warn("No capture function registered");
+        return;
+      }
+      try {
+        const blob = highResCaptureFunctionRef.current
+          ? await highResCaptureFunctionRef.current(preset.width, preset.height)
+          : await captureFunctionRef.current!();
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${imprintName || "render"}-${preset.width}x${preset.height}.png`;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+      } catch (error) {
+        console.error("High-res export failed:", error);
+      }
+    },
+    [imprintName],
+  );
 
   // ============================================================================
   // Initial product loading
@@ -675,6 +980,7 @@ export function ImprinterProvider({
       rightPanelOpen,
       showProductDialog,
       pendingDesignId,
+      placementMode,
 
       // Camera state
       cameraState,
@@ -695,17 +1001,33 @@ export function ImprinterProvider({
 
       // Design actions
       addDesignToProduct,
+      addImageToProduct,
+      addTextToProduct,
       updateDesignTransform,
       updateDesignOpacity,
       updateDesignPrintArea,
       removeDesign,
       selectDesign,
+      duplicateDesign,
+
+      // Layer actions
+      moveDesignUp,
+      moveDesignDown,
+      toggleDesignVisibility,
+      toggleDesignLock,
+
+      // Undo/redo
+      undo,
+      redo,
+      canUndo,
+      canRedo,
 
       // UI actions
       setActiveTool,
       setActivePrintArea,
       setLeftPanelView,
       setRightPanelOpen,
+      setPlacementMode,
 
       // Camera actions
       resetCamera,
@@ -714,7 +1036,9 @@ export function ImprinterProvider({
       saveImprint,
       loadImprint,
       exportRender,
+      exportHighRes,
       registerCaptureFunction,
+      registerHighResCaptureFunction,
     }),
     [
       productModel,
@@ -731,9 +1055,7 @@ export function ImprinterProvider({
       rightPanelOpen,
       showProductDialog,
       pendingDesignId,
-      activePrintArea,
-      leftPanelView,
-      rightPanelOpen,
+      placementMode,
       cameraState,
       imprintId,
       imprintName,
@@ -745,17 +1067,31 @@ export function ImprinterProvider({
       selectProduct,
       handleSetAvailableProducts,
       addDesignToProduct,
+      addImageToProduct,
+      addTextToProduct,
       updateDesignTransform,
       updateDesignOpacity,
       updateDesignPrintArea,
       removeDesign,
       selectDesign,
+      duplicateDesign,
+      moveDesignUp,
+      moveDesignDown,
+      toggleDesignVisibility,
+      toggleDesignLock,
+      undo,
+      redo,
+      canUndo,
+      canRedo,
       resetCamera,
       saveImprint,
       loadImprint,
       exportRender,
+      exportHighRes,
       handleSetImprintName,
       registerCaptureFunction,
+      registerHighResCaptureFunction,
+      setPlacementMode,
     ],
   );
 

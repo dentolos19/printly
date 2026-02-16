@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,11 +13,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { useCart } from "@/lib/providers/cart";
 import { cn } from "@/lib/utils";
-import { ChevronDown, FileDown, Home, RotateCcw, Save, ShoppingCart } from "lucide-react";
+import { ChevronDown, Download, FileDown, Home, Redo2, RotateCcw, Save, ShoppingCart, Undo2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { SaveIndicator } from "../../shared/components/save-indicator";
+import { EXPORT_PRESETS } from "../types";
 import { useImprinter } from "./hooks/use-imprinter";
 
 type ToolbarHeaderProps = {
@@ -36,13 +38,19 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
     lastSavedAt,
     saveImprint,
     exportRender,
+    exportHighRes,
     resetCamera,
     selectedProduct,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useImprinter();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   const handleAddToCart = async () => {
-    // Validate product and variant are selected
     if (!selectedProduct?.product || !selectedProduct?.variant) {
       toast.error("No product selected", {
         description: "Please select a product and variant before adding to cart.",
@@ -53,7 +61,6 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
     setIsAddingToCart(true);
 
     try {
-      // Save imprint first if there are unsaved changes or if it's new
       let currentImprintId = imprintId;
       if (isDirty || !imprintId) {
         currentImprintId = await saveImprint();
@@ -69,11 +76,10 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
 
       const { product, variant } = selectedProduct;
 
-      // Add to cart with imprint
       addItemWithImprint(product, variant, 1, {
         id: currentImprintId,
         name: imprintName || "Custom Design",
-        customizationPrice: 5.0, // Default customization price - could be fetched from backend
+        customizationPrice: 5.0,
       });
 
       toast.success("Added to cart!", {
@@ -90,6 +96,21 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
       });
     } finally {
       setIsAddingToCart(false);
+    }
+  };
+
+  const handleExport = async (preset: (typeof EXPORT_PRESETS)[number]) => {
+    setIsExporting(true);
+    try {
+      await exportHighRes(preset);
+      toast.success("Export complete", {
+        description: `Rendered at ${preset.width}x${preset.height}`,
+      });
+    } catch {
+      toast.error("Export failed");
+    } finally {
+      setIsExporting(false);
+      setExportDialogOpen(false);
     }
   };
 
@@ -114,9 +135,34 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
               <DropdownMenuShortcut>Ctrl+S</DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => exportRender(1920)}>
+            <DropdownMenuItem onClick={() => setExportDialogOpen(true)}>
               <FileDown className="mr-2 h-4 w-4" />
-              Export Render
+              Export Render...
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => exportRender(1920)}>
+              <Download className="mr-2 h-4 w-4" />
+              Quick Export (1080p)
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 gap-1">
+              Edit
+              <ChevronDown className="h-3 w-3 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={undo} disabled={!canUndo}>
+              <Undo2 className="mr-2 h-4 w-4" />
+              Undo
+              <DropdownMenuShortcut>Ctrl+Z</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={redo} disabled={!canRedo}>
+              <Redo2 className="mr-2 h-4 w-4" />
+              Redo
+              <DropdownMenuShortcut>Ctrl+Y</DropdownMenuShortcut>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -135,6 +181,15 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <div className="bg-border mx-1 h-5 w-px" />
+
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={undo} disabled={!canUndo} title="Undo">
+          <Undo2 className="h-4 w-4" />
+        </Button>
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={redo} disabled={!canRedo} title="Redo">
+          <Redo2 className="h-4 w-4" />
+        </Button>
       </div>
 
       <div className="flex flex-1 items-center justify-end gap-2">
@@ -158,6 +213,32 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
           {isAddingToCart ? "Adding..." : "Add to Cart"}
         </Button>
       </div>
+
+      {/* Export Dialog */}
+      <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Export Render</DialogTitle>
+            <DialogDescription>Choose a resolution to export your design as a PNG image.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2">
+            {EXPORT_PRESETS.map((preset) => (
+              <Button
+                key={preset.label}
+                variant="outline"
+                className="justify-between"
+                onClick={() => handleExport(preset)}
+                disabled={isExporting}
+              >
+                <span>{preset.label}</span>
+                <span className="text-muted-foreground text-xs">
+                  {preset.width}&times;{preset.height}
+                </span>
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }
