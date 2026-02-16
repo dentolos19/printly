@@ -20,7 +20,7 @@ public class StorageService
 
         // Load environment variables
         var bucketEndpointUrl = configuration["BUCKET_ENDPOINT_URL"]!;
-        var bucketAccessId = configuration["BUCKET_ACCESS_ID"]!;
+        var bucketAccessId = configuration["BUCKET_ACCESS_KEY"]!;
         var bucketSecretKey = configuration["BUCKET_SECRET_KEY"]!;
         var bucketName = configuration["BUCKET_NAME"]!;
         var bucketPrefix = configuration["BUCKET_PREFIX"]!;
