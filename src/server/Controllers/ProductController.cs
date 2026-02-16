@@ -31,6 +31,7 @@ public class ProductController(
         var products = await query
             .Include(p => p.Image)
             .Include(p => p.Model)
+            .Include(p => p.ModelPreview)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.Inventory)
             .Include(p => p.Variants)
@@ -51,6 +52,12 @@ public class ProductController(
             if (p.Model != null)
             {
                 productModelUrl = await storageService.DownloadFileAsync(p.Model);
+            }
+
+            string? productModelPreviewUrl = null;
+            if (p.ModelPreview != null)
+            {
+                productModelPreviewUrl = await storageService.DownloadFileAsync(p.ModelPreview);
             }
 
             var variantResponses = new List<ProductVariantResponse>();
@@ -95,6 +102,8 @@ public class ProductController(
                     productImageUrl,
                     p.ModelId,
                     productModelUrl,
+                    p.ModelPreviewId,
+                    productModelPreviewUrl,
                     p.CreatedAt,
                     p.UpdatedAt,
                     variantResponses
@@ -122,6 +131,7 @@ public class ProductController(
         var products = await query
             .Include(p => p.Image)
             .Include(p => p.Model)
+            .Include(p => p.ModelPreview)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.Inventory)
             .OrderBy(p => p.Name)
@@ -142,6 +152,12 @@ public class ProductController(
                 modelUrl = await storageService.DownloadFileAsync(p.Model);
             }
 
+            string? modelPreviewUrl = null;
+            if (p.ModelPreview != null)
+            {
+                modelPreviewUrl = await storageService.DownloadFileAsync(p.ModelPreview);
+            }
+
             responses.Add(
                 new ProductSummaryResponse(
                     p.Id,
@@ -152,6 +168,8 @@ public class ProductController(
                     imageUrl,
                     p.ModelId,
                     modelUrl,
+                    p.ModelPreviewId,
+                    modelPreviewUrl,
                     p.CreatedAt,
                     p.UpdatedAt,
                     p.Variants.Count,
@@ -173,6 +191,7 @@ public class ProductController(
         var product = await Context
             .Products.Include(p => p.Image)
             .Include(p => p.Model)
+            .Include(p => p.ModelPreview)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.Inventory)
             .Include(p => p.Variants)
@@ -193,6 +212,12 @@ public class ProductController(
         if (product.Model != null)
         {
             productModelUrl = await storageService.DownloadFileAsync(product.Model);
+        }
+
+        string? productModelPreviewUrl = null;
+        if (product.ModelPreview != null)
+        {
+            productModelPreviewUrl = await storageService.DownloadFileAsync(product.ModelPreview);
         }
 
         var variantResponses = new List<ProductVariantResponse>();
@@ -236,6 +261,8 @@ public class ProductController(
             productImageUrl,
             product.ModelId,
             productModelUrl,
+            product.ModelPreviewId,
+            productModelPreviewUrl,
             product.CreatedAt,
             product.UpdatedAt,
             variantResponses
@@ -266,6 +293,8 @@ public class ProductController(
             product.Name,
             product.BasePrice,
             product.IsActive,
+            null,
+            null,
             null,
             null,
             null,
@@ -536,9 +565,16 @@ public class ProductController(
     /// </summary>
     [HttpPost("{id:guid}/model")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<ProductResponse>> UploadProductModel(Guid id, IFormFile file)
+    public async Task<ActionResult<ProductResponse>> UploadProductModel(
+        Guid id,
+        IFormFile file,
+        IFormFile? modelPreview = null
+    )
     {
-        var product = await Context.Products.Include(p => p.Model).FirstOrDefaultAsync(p => p.Id == id);
+        var product = await Context
+            .Products.Include(p => p.Model)
+            .Include(p => p.ModelPreview)
+            .FirstOrDefaultAsync(p => p.Id == id);
 
         if (product is null)
             return NotFound(new { message = "Product not found" });
@@ -557,10 +593,31 @@ public class ProductController(
             Context.Assets.Remove(product.Model);
         }
 
-        // Upload new model (StorageService already saves the asset to database)
+        // Delete old model preview if exists
+        if (product.ModelPreview != null)
+        {
+            await storageService.DeleteFileAsync(product.ModelPreview);
+            Context.Assets.Remove(product.ModelPreview);
+        }
+
+        // Upload new model
         using var stream = file.OpenReadStream();
         var asset = await storageService.UploadFileAsync(stream, file.FileName);
         product.ModelId = asset.Id;
+
+        // Upload model preview if provided
+        if (modelPreview != null)
+        {
+            var previewAllowedTypes = new[] { "image/jpeg", "image/png", "image/webp" };
+            if (!previewAllowedTypes.Contains(modelPreview.ContentType.ToLower()))
+            {
+                return BadRequest(new { message = "Invalid preview file type. Only JPEG, PNG, and WebP are allowed." });
+            }
+
+            using var previewStream = modelPreview.OpenReadStream();
+            var previewAsset = await storageService.UploadFileAsync(previewStream, modelPreview.FileName);
+            product.ModelPreviewId = previewAsset.Id;
+        }
 
         await Context.SaveChangesAsync();
 
@@ -577,7 +634,10 @@ public class ProductController(
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ProductResponse>> DeleteProductModel(Guid id)
     {
-        var product = await Context.Products.Include(p => p.Model).FirstOrDefaultAsync(p => p.Id == id);
+        var product = await Context
+            .Products.Include(p => p.Model)
+            .Include(p => p.ModelPreview)
+            .FirstOrDefaultAsync(p => p.Id == id);
 
         if (product is null)
             return NotFound(new { message = "Product not found" });
@@ -588,6 +648,14 @@ public class ProductController(
         await storageService.DeleteFileAsync(product.Model);
         Context.Assets.Remove(product.Model);
         product.ModelId = null;
+
+        // Also delete model preview if exists
+        if (product.ModelPreview != null)
+        {
+            await storageService.DeleteFileAsync(product.ModelPreview);
+            Context.Assets.Remove(product.ModelPreview);
+            product.ModelPreviewId = null;
+        }
 
         await Context.SaveChangesAsync();
 

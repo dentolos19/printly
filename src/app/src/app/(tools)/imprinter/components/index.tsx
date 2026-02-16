@@ -115,9 +115,9 @@ export function ImprinterContent() {
                     selectProduct(product, firstVariant);
                   }}
                 >
-                  {product.imageId ? (
+                  {product.modelPreviewId || product.imageId ? (
                     <FallbackImage
-                      src={`/assets/${product.imageId}/view`}
+                      src={`/assets/${product.modelPreviewId ?? product.imageId}/view`}
                       alt={product.name}
                       className="h-full w-full object-cover"
                     />

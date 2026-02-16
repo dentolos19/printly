@@ -12,6 +12,8 @@ public record ProductResponse(
     string? ImageUrl,
     Guid? ModelId,
     string? ModelUrl,
+    Guid? ModelPreviewId,
+    string? ModelPreviewUrl,
     DateTime CreatedAt,
     DateTime UpdatedAt,
     List<ProductVariantResponse> Variants
@@ -26,6 +28,8 @@ public record ProductSummaryResponse(
     string? ImageUrl,
     Guid? ModelId,
     string? ModelUrl,
+    Guid? ModelPreviewId,
+    string? ModelPreviewUrl,
     DateTime CreatedAt,
     DateTime UpdatedAt,
     int VariantCount,
