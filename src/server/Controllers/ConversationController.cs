@@ -196,9 +196,10 @@ public class ConversationController(
         }
         else
         {
-            // Users see only their own conversations (where they are the customer or participant)
+            // Users see conversations they created OR non-support conversations they participate in.
+            // For support conversations, only the customer (creator) can see them — not other participants.
             query = query.Where(c =>
-                c.CustomerId == currentUserId || c.Participants.Any(p => p.UserId == currentUserId)
+                c.CustomerId == currentUserId || (!c.SupportMode && c.Participants.Any(p => p.UserId == currentUserId))
             );
         }
 
@@ -670,10 +671,22 @@ public class ConversationController(
             return Unauthorized();
 
         var isAdmin = User.IsInRole(Roles.Admin);
+
+        var conversation = await Context.Conversations.FindAsync(conversationId);
+        if (conversation is null)
+            return NotFound();
+
+        // Admins can access all conversations.
+        // For support conversations, only the customer (creator) can access — not other participants.
+        // For peer-to-peer conversations, any participant can access.
         var hasAccess =
             isAdmin
-            || await Context.ConversationParticipants.AnyAsync(p =>
-                p.ConversationId == conversationId && p.UserId == currentUserId
+            || conversation.CustomerId == currentUserId
+            || (
+                !conversation.SupportMode
+                && await Context.ConversationParticipants.AnyAsync(p =>
+                    p.ConversationId == conversationId && p.UserId == currentUserId
+                )
             );
         if (!hasAccess)
         {
@@ -735,10 +748,20 @@ public class ConversationController(
             return Unauthorized();
 
         var isAdmin = User.IsInRole(Roles.Admin);
+
+        var conversation = await Context.Conversations.FindAsync(conversationId);
+        if (conversation is null)
+            return NotFound();
+
+        // Same authorization as GetMessages: admins, customer owner, or p2p participant
         var hasAccess =
             isAdmin
-            || await Context.ConversationParticipants.AnyAsync(p =>
-                p.ConversationId == conversationId && p.UserId == currentUserId
+            || conversation.CustomerId == currentUserId
+            || (
+                !conversation.SupportMode
+                && await Context.ConversationParticipants.AnyAsync(p =>
+                    p.ConversationId == conversationId && p.UserId == currentUserId
+                )
             );
         if (!hasAccess)
         {
