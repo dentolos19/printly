@@ -311,7 +311,7 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                     key={conversation.id}
                     onClick={() => onSelect(conversation.id)}
                     className={cn(
-                      "hover:bg-accent/50 flex w-full items-start gap-3 border-b px-4 py-3.5 text-left transition-all duration-200",
+                      "hover:bg-accent/50 flex w-full items-start gap-2.5 border-b px-3 py-3.5 text-left transition-all duration-200",
                       "border-l-4 hover:shadow-sm",
                       showPriority ? getPriorityCardBorder(conversation.priority) : "border-l-transparent",
                       isSelected && "bg-accent shadow-sm",
@@ -385,18 +385,18 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                           {conversation.lastMessage ? (
                             <>
                               <span
-                                className="text-foreground/70 font-medium"
+                                className="text-foreground/70 truncate font-medium"
                                 title={conversation.lastMessage.senderName}
                               >
                                 {conversation.lastMessage.senderName}
                               </span>
                               <span className="mx-1">·</span>
-                              <span className="truncate" title={lastMessageContent}>
+                              <span className="line-clamp-1" title={lastMessageContent}>
                                 {lastMessageContent}
                               </span>
                             </>
                           ) : (
-                            <span className="truncate italic" title={lastMessageContent}>
+                            <span className="line-clamp-1 italic" title={lastMessageContent}>
                               {lastMessageContent}
                             </span>
                           )}
