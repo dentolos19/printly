@@ -13,12 +13,6 @@
       "enabled": true,
     },
   },
-  "services": [
-    {
-      "binding": "APP",
-      "service": "printly",
-    },
-  ],
   "containers": [
     {
       "class_name": "Container",
