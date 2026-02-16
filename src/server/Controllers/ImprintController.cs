@@ -87,8 +87,11 @@ public class ImprintController(DatabaseContext context) : BaseController(context
         if (userId is null)
             return Unauthorized();
 
+        if (!Guid.TryParse(id, out var imprintId))
+            return BadRequest(new { message = "Invalid imprint ID format" });
+
         var imprint = await Context
-            .Imprints.Where(i => i.Id == Guid.Parse(id) && i.UserId == userId)
+            .Imprints.Where(i => i.Id == imprintId && i.UserId == userId)
             .Include(i => i.Product)
             .Select(i => new ImprintResponse(
                 i.Id,
@@ -177,9 +180,12 @@ public class ImprintController(DatabaseContext context) : BaseController(context
         if (userId is null)
             return Unauthorized();
 
+        if (!Guid.TryParse(id, out var imprintId))
+            return BadRequest(new { message = "Invalid imprint ID format" });
+
         var imprint = await Context
             .Imprints.Include(i => i.Product)
-            .FirstOrDefaultAsync(i => i.Id == Guid.Parse(id) && i.UserId == userId);
+            .FirstOrDefaultAsync(i => i.Id == imprintId && i.UserId == userId);
 
         if (imprint is null)
             return NotFound();
@@ -279,7 +285,10 @@ public class ImprintController(DatabaseContext context) : BaseController(context
         if (userId is null)
             return Unauthorized();
 
-        var imprint = await Context.Imprints.FirstOrDefaultAsync(i => i.Id == Guid.Parse(id) && i.UserId == userId);
+        if (!Guid.TryParse(id, out var imprintId))
+            return BadRequest(new { message = "Invalid imprint ID format" });
+
+        var imprint = await Context.Imprints.FirstOrDefaultAsync(i => i.Id == imprintId && i.UserId == userId);
 
         if (imprint is null)
             return NotFound();

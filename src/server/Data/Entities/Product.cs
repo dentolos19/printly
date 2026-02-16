@@ -24,6 +24,10 @@ public class Product : BaseEntity
     public Guid? ModelId { get; set; }
     public Asset? Model { get; set; }
 
+    // 3D Model preview image (screenshot of the model)
+    public Guid? ModelPreviewId { get; set; }
+    public Asset? ModelPreview { get; set; }
+
     // Navigation properties
     public ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
     public ICollection<PrintArea> PrintAreas { get; set; } = new List<PrintArea>();

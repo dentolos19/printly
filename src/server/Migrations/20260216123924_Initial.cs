@@ -178,6 +178,8 @@ namespace PrintlyServer.Migrations
                     Category = table.Column<string>(type: "text", nullable: false),
                     IsGenerated = table.Column<bool>(type: "boolean", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
+                    ThumbnailData = table.Column<byte[]>(type: "bytea", nullable: true),
+                    ThumbnailType = table.Column<string>(type: "text", nullable: true),
                     UserId = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)

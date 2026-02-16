@@ -31,11 +31,14 @@ import type { PrintAreaResponse } from "@/lib/server/print-area";
 import type { ProductResponse, ProductVariantResponse } from "@/lib/server/product";
 import { CommonColors, ProductSize, ProductSizeLabels } from "@/lib/server/product";
 import { ArrowLeft, Box, Edit, ImageIcon, MapPin, Package, Plus, Trash2 } from "lucide-react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+
+const ModelPreview = dynamic(() => import("./model-preview"), { ssr: false });
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -73,6 +76,8 @@ export default function ProductDetailPage() {
   const [selectedProductImage, setSelectedProductImage] = useState<File | null>(null);
   const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
   const [selectedProductModel, setSelectedProductModel] = useState<File | null>(null);
+  const [modelPreviewScreenshot, setModelPreviewScreenshot] = useState<File | null>(null);
+  const [modelPreviewImageUrl, setModelPreviewImageUrl] = useState<string | null>(null);
   const [uploadingProductMedia, setUploadingProductMedia] = useState(false);
   const productImageInputRef = useRef<HTMLInputElement>(null);
   const productModelInputRef = useRef<HTMLInputElement>(null);
@@ -515,6 +520,11 @@ export default function ProductDetailPage() {
         return;
       }
       setSelectedProductModel(file);
+      setModelPreviewScreenshot(null);
+      if (modelPreviewImageUrl) {
+        URL.revokeObjectURL(modelPreviewImageUrl);
+        setModelPreviewImageUrl(null);
+      }
     }
   };
 
@@ -526,10 +536,15 @@ export default function ProductDetailPage() {
 
     setUploadingProductMedia(true);
     try {
-      await api.product.uploadProductModel(productId, selectedProductModel);
+      await api.product.uploadProductModel(productId, selectedProductModel, modelPreviewScreenshot ?? undefined);
       toast.success("3D model uploaded successfully");
       setProductModelDialogOpen(false);
       setSelectedProductModel(null);
+      setModelPreviewScreenshot(null);
+      if (modelPreviewImageUrl) {
+        URL.revokeObjectURL(modelPreviewImageUrl);
+        setModelPreviewImageUrl(null);
+      }
       loadProduct();
       loadPrintAreas();
     } catch (error) {
@@ -670,15 +685,17 @@ export default function ProductDetailPage() {
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="bg-muted flex aspect-square w-full max-w-[200px] flex-col items-center justify-center rounded-lg border">
-              {product.modelUrl ? (
-                <div className="text-center">
+            <div className="bg-muted relative aspect-square w-full max-w-[200px] overflow-hidden rounded-lg border">
+              {product.modelPreviewUrl ? (
+                <Image src={product.modelPreviewUrl} alt={`${product.name} 3D preview`} fill className="object-cover" />
+              ) : product.modelUrl ? (
+                <div className="flex h-full flex-col items-center justify-center text-center">
                   <Box className="text-primary mx-auto mb-2 size-12" />
                   <span className="text-sm font-medium">3D Model uploaded</span>
-                  <p className="text-muted-foreground mt-1 text-xs">Click &quot;Change&quot; to update</p>
+                  <p className="text-muted-foreground mt-1 text-xs">No preview available</p>
                 </div>
               ) : (
-                <div className="text-muted-foreground text-center">
+                <div className="text-muted-foreground flex h-full flex-col items-center justify-center text-center">
                   <Box className="mx-auto mb-2 size-8" />
                   <span className="text-sm">No 3D model</span>
                 </div>
@@ -1228,21 +1245,25 @@ export default function ProductDetailPage() {
 
       {/* Product 3D Model Upload Dialog */}
       <Dialog open={productModelDialogOpen} onOpenChange={setProductModelDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>3D Model</DialogTitle>
             <DialogDescription>Upload a .glb file for 3D product preview in the design tool.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             {/* Current Model Status */}
-            {product?.modelUrl && (
+            {product?.modelUrl && !selectedProductModel && (
               <div className="space-y-2">
                 <Label>Current 3D Model</Label>
-                <div className="bg-muted flex aspect-video w-full items-center justify-center rounded-lg border">
-                  <div className="text-center">
-                    <Box className="text-primary mx-auto mb-2 size-12" />
-                    <span className="text-sm font-medium">3D Model uploaded</span>
-                  </div>
+                <div className="bg-muted relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg border">
+                  {product.modelPreviewUrl ? (
+                    <Image src={product.modelPreviewUrl} alt="Current model preview" fill className="object-cover" />
+                  ) : (
+                    <div className="text-center">
+                      <Box className="text-primary mx-auto mb-2 size-12" />
+                      <span className="text-sm font-medium">3D Model uploaded</span>
+                    </div>
+                  )}
                 </div>
                 <Button
                   variant="destructive"
@@ -1253,6 +1274,29 @@ export default function ProductDetailPage() {
                 >
                   {uploadingProductMedia ? "Removing..." : "Remove 3D Model"}
                 </Button>
+              </div>
+            )}
+
+            {/* 3D Preview of selected file */}
+            {selectedProductModel && (
+              <div className="space-y-2">
+                <Label>3D Preview</Label>
+                <ModelPreview
+                  file={selectedProductModel}
+                  onScreenshotReady={(file) => {
+                    setModelPreviewScreenshot(file);
+                    setModelPreviewImageUrl(URL.createObjectURL(file));
+                  }}
+                  onError={(msg) => toast.error(msg)}
+                />
+                {modelPreviewImageUrl && (
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground text-xs">Auto-captured preview</Label>
+                    <div className="relative aspect-video w-full overflow-hidden rounded-md border">
+                      <Image src={modelPreviewImageUrl} alt="Model screenshot" fill className="object-contain" />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1277,8 +1321,15 @@ export default function ProductDetailPage() {
                   Choose File
                 </Button>
                 {selectedProductModel && (
-                  <Button onClick={handleProductModelUpload} disabled={uploadingProductMedia}>
-                    {uploadingProductMedia ? "Uploading..." : "Upload"}
+                  <Button
+                    onClick={handleProductModelUpload}
+                    disabled={uploadingProductMedia || !modelPreviewScreenshot}
+                  >
+                    {uploadingProductMedia
+                      ? "Uploading..."
+                      : !modelPreviewScreenshot
+                        ? "Generating preview..."
+                        : "Upload"}
                   </Button>
                 )}
               </div>

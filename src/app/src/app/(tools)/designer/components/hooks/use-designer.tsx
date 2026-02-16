@@ -81,14 +81,21 @@ export function DesignerProvider({
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
 
+  // Throttle cover generation to reduce autosave payload size.
+  // Cover is only regenerated every 15 seconds at most, or on explicit save.
+  const lastCoverRef = useRef<{ data: string; time: number } | null>(null);
+  const COVER_THROTTLE_MS = 15_000;
+
   // Serialize function for auto-save
   const serializeDesign = useCallback(() => {
     if (!canvas) return {};
 
-    const cover = canvas.toDataURL({
-      format: "png",
-      multiplier: 2,
-    });
+    const now = Date.now();
+    let cover: string | undefined;
+    if (!lastCoverRef.current || now - lastCoverRef.current.time >= COVER_THROTTLE_MS) {
+      cover = canvas.toDataURL({ format: "png", multiplier: 2 });
+      lastCoverRef.current = { data: cover, time: now };
+    }
 
     return {
       cover,
@@ -354,27 +361,31 @@ export function DesignerProvider({
     (url: string) => {
       if (!canvas) return;
 
-      FabricImage.fromURL(url, { crossOrigin: "anonymous" }).then((img) => {
-        const maxWidth = canvasSize.width * 0.8;
-        const maxHeight = canvasSize.height * 0.8;
-        const scale = Math.min(maxWidth / (img.width || 1), maxHeight / (img.height || 1), 1);
+      FabricImage.fromURL(url, { crossOrigin: "anonymous" })
+        .then((img) => {
+          const maxWidth = canvasSize.width * 0.8;
+          const maxHeight = canvasSize.height * 0.8;
+          const scale = Math.min(maxWidth / (img.width || 1), maxHeight / (img.height || 1), 1);
 
-        img.set({
-          left: canvasSize.width / 2 - ((img.width || 0) * scale) / 2,
-          top: canvasSize.height / 2 - ((img.height || 0) * scale) / 2,
-          scaleX: scale,
-          scaleY: scale,
+          img.set({
+            left: canvasSize.width / 2 - ((img.width || 0) * scale) / 2,
+            top: canvasSize.height / 2 - ((img.height || 0) * scale) / 2,
+            scaleX: scale,
+            scaleY: scale,
+          });
+
+          (img as unknown as { id: string }).id = `image-${Date.now()}`;
+          (img as unknown as { name: string }).name = "Image";
+
+          canvas.add(img);
+          canvas.setActiveObject(img);
+          canvas.renderAll();
+          updateLayers();
+          saveHistory();
+        })
+        .catch((error) => {
+          console.error("Failed to load image into canvas:", error);
         });
-
-        (img as unknown as { id: string }).id = `image-${Date.now()}`;
-        (img as unknown as { name: string }).name = "Image";
-
-        canvas.add(img);
-        canvas.setActiveObject(img);
-        canvas.renderAll();
-        updateLayers();
-        saveHistory();
-      });
     },
     [canvas, canvasSize, updateLayers, saveHistory],
   );
@@ -973,6 +984,7 @@ export function DesignerProvider({
       isDirty,
       saveDesign,
       loadDesign,
+      triggerAutoSave,
       addText,
       addRectangle,
       addCircle,
@@ -1029,6 +1041,7 @@ export function DesignerProvider({
       isDirty,
       saveDesign,
       loadDesign,
+      triggerAutoSave,
       addText,
       addRectangle,
       addCircle,

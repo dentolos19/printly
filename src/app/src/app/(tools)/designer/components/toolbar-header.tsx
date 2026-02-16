@@ -47,7 +47,7 @@ import {
   ZoomOut,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { SaveIndicator } from "../../shared/components/save-indicator";
 import { useDesigner } from "./hooks";
 import { ResizeDesignDialog } from "./resize-design-dialog";
@@ -58,6 +58,8 @@ type ToolbarHeaderProps = {
   problemCount?: number;
 };
 
+const NAME_DEBOUNCE_MS = 800;
+
 export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }: ToolbarHeaderProps) {
   const router = useRouter();
   const [resizeDialogOpen, setResizeDialogOpen] = useState(false);
@@ -65,6 +67,7 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
     designId,
     designName,
     setDesignName,
+    triggerAutoSave,
     saveStatus,
     isDirty,
     lastSavedAt,
@@ -354,12 +357,15 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
       {/* Save status */}
       <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} isDirty={isDirty} />
 
-      {/* Design name */}
+      {/* Design name (debounced) */}
       <div className={"flex items-center gap-2 pl-4"}>
-        <Input
+        <DebouncedNameInput
           value={designName}
-          onChange={(e) => setDesignName(e.target.value)}
-          className={"h-7 w-48 border-none bg-transparent px-1 text-sm font-medium shadow-none focus-visible:ring-1"}
+          onChange={(name) => {
+            setDesignName(name);
+            triggerAutoSave();
+          }}
+          placeholder="Untitled Design"
         />
       </div>
 
@@ -396,5 +402,49 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
         onResize={resizeDesign}
       />
     </div>
+  );
+}
+
+function DebouncedNameInput({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (name: string) => void;
+  placeholder?: string;
+}) {
+  const [localValue, setLocalValue] = useState(value);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const next = e.target.value;
+    setLocalValue(next);
+
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      onChangeRef.current(next);
+    }, NAME_DEBOUNCE_MS);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
+  return (
+    <Input
+      value={localValue}
+      onChange={handleChange}
+      className={"h-7 w-48 border-none bg-transparent px-1 text-sm font-medium shadow-none focus-visible:ring-1"}
+      placeholder={placeholder}
+    />
   );
 }

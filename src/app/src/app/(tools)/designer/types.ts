@@ -187,6 +187,7 @@ export type DesignerContextValue = {
   isDirty: boolean;
   saveDesign: () => Promise<string | null>;
   loadDesign: (id: string) => Promise<void>;
+  triggerAutoSave: () => void;
 
   // Object actions
   addText: (text?: string) => void;

@@ -13,12 +13,6 @@
       "enabled": true,
     },
   },
-  "services": [
-    {
-      "binding": "SERVER",
-      "service": "printly-server",
-    },
-  ],
   "assets": {
     "binding": "ASSETS",
     "directory": ".open-next/assets",

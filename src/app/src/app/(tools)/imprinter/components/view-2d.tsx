@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { PLACEHOLDER_SVG } from "../../shared/components/fallback-image";
 import type { AppliedDesign, PrintAreaConfig } from "../types";
 import { useImprinter } from "./hooks/use-imprinter";
 
@@ -58,6 +59,7 @@ function DesignItem({
   const coverId = design.designData?.coverId;
   if (!coverId) return null;
   const imageHref = coverId.startsWith("blob:") || coverId.startsWith("data:") ? coverId : `/assets/${coverId}/view`;
+  const [imgFailed, setImgFailed] = useState(false);
 
   return (
     <g
@@ -68,7 +70,8 @@ function DesignItem({
       }}
     >
       <image
-        href={imageHref}
+        href={imgFailed ? PLACEHOLDER_SVG : imageHref}
+        onError={() => setImgFailed(true)}
         x={x}
         y={y}
         width={designSize}

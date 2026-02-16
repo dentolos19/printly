@@ -59,8 +59,11 @@ public class DesignController(DatabaseContext context, StorageService storageSer
         if (userId is null)
             return Unauthorized();
 
+        if (!Guid.TryParse(id, out var designId))
+            return BadRequest(new { message = "Invalid design ID format" });
+
         var design = await Context
-            .Designs.Where(d => d.Id == Guid.Parse(id) && d.UserId == userId)
+            .Designs.Where(d => d.Id == designId && d.UserId == userId)
             .Select(d => new DesignResponse(d.Id, d.Name, d.Description, d.Data, d.CoverId, d.CreatedAt, d.UpdatedAt))
             .FirstOrDefaultAsync();
 
@@ -132,7 +135,10 @@ public class DesignController(DatabaseContext context, StorageService storageSer
         if (userId is null)
             return Unauthorized();
 
-        var design = await Context.Designs.FirstOrDefaultAsync(d => d.Id == Guid.Parse(id) && d.UserId == userId);
+        if (!Guid.TryParse(id, out var designId))
+            return BadRequest(new { message = "Invalid design ID format" });
+
+        var design = await Context.Designs.FirstOrDefaultAsync(d => d.Id == designId && d.UserId == userId);
 
         if (design is null)
             return NotFound();
@@ -182,7 +188,10 @@ public class DesignController(DatabaseContext context, StorageService storageSer
     [AllowAnonymous]
     public async Task<IActionResult> GetDesignCover(string id)
     {
-        var design = await Context.Designs.Include(d => d.Cover).FirstOrDefaultAsync(d => d.Id == Guid.Parse(id));
+        if (!Guid.TryParse(id, out var designId))
+            return BadRequest(new { message = "Invalid design ID format" });
+
+        var design = await Context.Designs.Include(d => d.Cover).FirstOrDefaultAsync(d => d.Id == designId);
 
         if (design?.Cover is null)
             return NotFound();
@@ -203,7 +212,10 @@ public class DesignController(DatabaseContext context, StorageService storageSer
         if (userId is null)
             return Unauthorized();
 
-        var design = await Context.Designs.FirstOrDefaultAsync(d => d.Id == Guid.Parse(id) && d.UserId == userId);
+        if (!Guid.TryParse(id, out var designId))
+            return BadRequest(new { message = "Invalid design ID format" });
+
+        var design = await Context.Designs.FirstOrDefaultAsync(d => d.Id == designId && d.UserId == userId);
 
         if (design is null)
             return NotFound();

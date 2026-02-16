@@ -60,6 +60,8 @@ export type ProductResponse = {
   imageUrl: string | null;
   modelId: string | null;
   modelUrl: string | null;
+  modelPreviewId: string | null;
+  modelPreviewUrl: string | null;
   createdAt: string;
   updatedAt: string;
   variants: ProductVariantResponse[];
@@ -74,6 +76,8 @@ export type ProductSummaryResponse = {
   imageUrl: string | null;
   modelId: string | null;
   modelUrl: string | null;
+  modelPreviewId: string | null;
+  modelPreviewUrl: string | null;
   createdAt: string;
   updatedAt: string;
   variantCount: number;
@@ -325,9 +329,12 @@ export default function initProductController(fetch: ServerFetch) {
     },
 
     // Upload product 3D model
-    uploadProductModel: async (id: string, file: File): Promise<ProductResponse> => {
+    uploadProductModel: async (id: string, file: File, modelPreview?: File): Promise<ProductResponse> => {
       const formData = new FormData();
       formData.append("file", file);
+      if (modelPreview) {
+        formData.append("modelPreview", modelPreview);
+      }
 
       const response = await fetch(`/products/${id}/model`, {
         method: "POST",
