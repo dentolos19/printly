@@ -1,21 +1,22 @@
-# IDE configurations
+# Editor configurations
 .vs/
 .idea/
 
-# Output files
+# Environment files
 bin/
 obj/
-
-# User-specific files
-.env*
-!.env*.template
 *.user
 *.suo
 
-# Project-specific files
+# User files
+.env*
+!.env*.template
+
+# Project files
 *.db*
 
 # Miscellaneous files
 .DS_Store
 Desktop.ini
 Thumbs.db
+!.gitkeep
