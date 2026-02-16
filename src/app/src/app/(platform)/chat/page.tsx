@@ -386,34 +386,67 @@ export default function ChatPage() {
 
       connection.on("UserJoinedCall", (data: { callId: string; userId: string; userName: string }) => {
         console.log("[Chat] User joined call:", data);
+
+        // Update call message status to Ongoing (1) when someone joins
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.callLogId === data.callId && m.callStatus === 0 ? { ...m, callStatus: 1 as 0 | 1 | 2 | 3 | 4 | 5 } : m,
+          ),
+        );
       });
 
       connection.on("UserLeftCall", (data: { callId: string; userId: string; userName: string }) => {
         console.log("[Chat] User left call:", data);
       });
 
-      connection.on("CallEnded", (data: { callId: string; reason: string }) => {
+      connection.on("CallEnded", (data: { callId: string; duration: number | null; status: number }) => {
         console.log("[Chat] Call ended:", data);
+
+        // Clean up active call UI state
         if (data.callId === activeCallId || currentCall?.callId === data.callId) {
           setIsInCall(false);
           setCurrentCall(null);
           setIncomingCall(null);
           setActiveCallId(null);
         }
+
+        // Update the call message card in the messages list so it shows
+        // the new status and duration without needing a page refresh
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.callLogId === data.callId
+              ? {
+                  ...m,
+                  callStatus: data.status as 0 | 1 | 2 | 3 | 4 | 5,
+                  callDurationSeconds: data.duration,
+                }
+              : m,
+          ),
+        );
       });
 
-      connection.on(
-        "CallDeclined",
-        (data: { callId: string; declinedByUserId: string; declinedByUserName: string }) => {
-          console.log("[Chat] Call declined:", data);
-          if (data.callId === activeCallId || currentCall?.callId === data.callId) {
-            setIsInCall(false);
-            setCurrentCall(null);
-            setIncomingCall(null);
-            setActiveCallId(null);
-          }
-        },
-      );
+      connection.on("CallDeclined", (data: { callId: string; userId: string; status: number }) => {
+        console.log("[Chat] Call declined:", data);
+
+        if (data.callId === activeCallId || currentCall?.callId === data.callId) {
+          setIsInCall(false);
+          setCurrentCall(null);
+          setIncomingCall(null);
+          setActiveCallId(null);
+        }
+
+        // Update the call message card to show declined status
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.callLogId === data.callId
+              ? {
+                  ...m,
+                  callStatus: data.status as 0 | 1 | 2 | 3 | 4 | 5,
+                }
+              : m,
+          ),
+        );
+      });
 
       await connection.start();
       connectionRef.current = connection;
@@ -1072,11 +1105,11 @@ export default function ChatPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex min-h-0 flex-1 gap-3">
+      <div className="flex min-h-0 flex-1 gap-3 overflow-hidden">
         {/* Conversation List - Collapsible */}
         <Card
           className={cn(
-            "flex shrink-0 flex-col transition-all duration-300 ease-in-out",
+            "flex shrink-0 flex-col overflow-hidden transition-all duration-300 ease-in-out",
             sidebarCollapsed ? "w-0 overflow-hidden border-0 opacity-0" : "w-80 lg:w-80",
           )}
         >
@@ -1091,13 +1124,16 @@ export default function ChatPage() {
               isLoading={isLoadingConversations}
               showStatus
               showPriority
+              showHeader={false}
+              showSearch={false}
+              showFilter={false}
               emptyMessage="No conversations yet. Start one!"
             />
           </ScrollArea>
         </Card>
 
         {/* Chat Area - Expands when sidebar collapses */}
-        <Card className="flex min-w-0 flex-1 flex-col">
+        <Card className="flex min-w-0 flex-1 flex-col overflow-hidden">
           {selectedConversation ? (
             <>
               <CardHeader className="shrink-0 gap-0 space-y-0 border-b px-3 py-2">
@@ -1127,7 +1163,7 @@ export default function ChatPage() {
                       <p className="text-muted-foreground truncate text-sm">Printly Customer Support 😊</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex shrink-0 items-center gap-1.5">
                     <Badge
                       variant="outline"
                       className={cn("gap-1 border px-2 py-0.5 text-xs", STATUS_COLORS[selectedConversation.status])}

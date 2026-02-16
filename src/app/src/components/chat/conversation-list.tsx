@@ -325,8 +325,8 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                       </AvatarFallback>
                     </Avatar>
 
-                    <div className="min-w-0 flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
+                    <div className="min-w-0 flex-1 space-y-1 overflow-hidden">
+                      <div className="flex min-w-0 items-center gap-2 overflow-hidden">
                         <span
                           className={cn(
                             "min-w-0 flex-1 truncate text-sm font-semibold",
@@ -342,7 +342,7 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                       </div>
 
                       {(showStatus || showPriority || showAssignment) && (
-                        <div className="flex flex-wrap items-center gap-1.5">
+                        <div className="flex w-full flex-wrap items-center gap-1.5">
                           {showStatus && (
                             <Badge
                               variant="outline"
@@ -380,7 +380,7 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                         </div>
                       )}
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex min-w-0 items-center gap-2">
                         <div className="text-muted-foreground min-w-0 flex-1 text-xs leading-relaxed">
                           {conversation.lastMessage ? (
                             <>

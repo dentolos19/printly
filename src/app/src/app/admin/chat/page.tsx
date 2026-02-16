@@ -503,6 +503,13 @@ export default function AdminChatPage() {
 
       connection.on("UserJoinedCall", (data: { callId: string; userId: string; userName: string }) => {
         console.log("[Admin Chat] User joined call:", data);
+
+        // Update call message status to Ongoing (1) when someone joins
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.callLogId === data.callId && m.callStatus === 0 ? { ...m, callStatus: 1 as 0 | 1 | 2 | 3 | 4 | 5 } : m,
+          ),
+        );
       });
 
       connection.on("UserLeftCall", (data: { callId: string; userId: string; userName: string }) => {
@@ -517,6 +524,19 @@ export default function AdminChatPage() {
           setCurrentCall(null);
           setActiveCallId(null);
         }
+
+        // Update the call message card in real-time
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.callLogId === data.callId
+              ? {
+                  ...m,
+                  callStatus: data.status as 0 | 1 | 2 | 3 | 4 | 5,
+                  callDurationSeconds: data.duration,
+                }
+              : m,
+          ),
+        );
       });
 
       connection.on("CallDeclined", (data: { callId: string; userId: string; status: number }) => {
@@ -531,6 +551,18 @@ export default function AdminChatPage() {
           setCurrentCall(null);
           setActiveCallId(null);
         }
+
+        // Update the call message card to show declined status
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.callLogId === data.callId
+              ? {
+                  ...m,
+                  callStatus: data.status as 0 | 1 | 2 | 3 | 4 | 5,
+                }
+              : m,
+          ),
+        );
       });
 
       await connection.start();
@@ -1028,7 +1060,7 @@ export default function AdminChatPage() {
   }, [conversations]);
 
   return (
-    <main className="flex h-full w-full flex-col gap-2 overflow-hidden p-2">
+    <main className="flex h-full w-full flex-col gap-3 overflow-hidden p-3">
       {/* Header Bar - Compact */}
       <div className="bg-card flex shrink-0 items-center justify-between rounded-lg border px-3 py-2 shadow-sm">
         <div className="flex items-center gap-3">
@@ -1069,18 +1101,18 @@ export default function AdminChatPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex min-h-0 flex-1 gap-2">
+      <div className="flex min-h-0 flex-1 gap-3 overflow-hidden">
         {/* Conversation List - Collapsible */}
         <Card
           className={cn(
-            "flex shrink-0 flex-col shadow-sm transition-all duration-300 ease-in-out",
-            sidebarCollapsed ? "w-0 overflow-hidden border-0 opacity-0" : "w-80 lg:w-96",
+            "flex shrink-0 flex-col overflow-hidden shadow-sm transition-all duration-300 ease-in-out",
+            sidebarCollapsed ? "w-0 overflow-hidden border-0 opacity-0" : "w-80 lg:w-80",
           )}
         >
-          <CardHeader className="bg-muted/30 border-b px-3 py-2">
+          <CardHeader className="border-b px-3 py-2">
             <CardTitle className="text-sm font-semibold">Conversations</CardTitle>
           </CardHeader>
-          <div className="border-b p-2">
+          <div className="shrink-0 border-b p-3">
             <Tabs value={statusFilter} onValueChange={setStatusFilter}>
               <TabsList className="grid h-8 w-full grid-cols-5">
                 <TabsTrigger value="all" className="px-1.5 text-[11px] font-medium">
@@ -1101,7 +1133,7 @@ export default function AdminChatPage() {
               </TabsList>
             </Tabs>
           </div>
-          <ScrollArea className="flex-1">
+          <ScrollArea className="min-h-0 flex-1">
             <ConversationList
               conversations={filteredConversations}
               selectedId={selectedConversationId}
@@ -1111,13 +1143,14 @@ export default function AdminChatPage() {
               showPriority
               showAssignment
               showCustomerName
+              showHeader={false}
               emptyMessage="No support conversations found"
             />
           </ScrollArea>
         </Card>
 
         {/* Chat Area - Expands when sidebar collapses */}
-        <Card className="flex min-w-0 flex-1 flex-col shadow-sm">
+        <Card className="flex min-w-0 flex-1 flex-col overflow-hidden shadow-sm">
           {selectedConversation ? (
             <>
               <CardHeader className="bg-muted/30 shrink-0 gap-0 space-y-0 border-b px-3 py-1.5">

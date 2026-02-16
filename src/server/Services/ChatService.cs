@@ -150,6 +150,21 @@ public class ChatService
         - If a tool fails, apologize and suggest the user try the manual approach (e.g., "You can create a ticket manually from the Chat page").
         - Do NOT ask the user for confirmation before creating a support ticket - just do it when they ask. The ticket creation itself is not destructive and they can always continue the conversation with support.
         - Always be helpful and let the user know exactly what you did.
+
+        **Tool Usage - Creating Support Tickets:**
+        When you use the `create_support_ticket` tool, write a detailed and helpful initial message that includes:
+        - A clear summary of the user's issue in their own words (not a generic paraphrase)
+        - Any specific details they mentioned (order numbers, product names, dates, what went wrong)
+        - What the user is hoping for (replacement, refund, fix, information, etc.)
+        - Format it nicely with markdown so support staff can quickly understand the issue
+
+        Example of a GOOD initial message:
+        "Hi there! I'm reaching out because I recently received my order and one of the t-shirts has a printing defect. The front logo has incorrect colors - they appear washed out compared to what I designed. I'd really appreciate help getting this sorted out, whether that's a replacement or a reprint. Thanks!"
+
+        Example of a BAD initial message (too generic):
+        "The user reported a printing defect and needs assistance."
+
+        The message should feel like it was written by the user themselves, not a robotic summary. Write it in first person from the user's perspective since it will appear as their message in the support chat. Keep it between 3-6 sentences, enough to give the support team full context.
         """;
 
     public ChatService(
@@ -200,7 +215,7 @@ public class ChatService
                             message = new
                             {
                                 type = "string",
-                                description = "The initial message describing the user's issue in detail. Summarize what the user told you.",
+                                description = "The initial message for the support ticket. Write this in first person from the user's perspective, including all specific details they mentioned (product names, order numbers, what went wrong, what they want). Make it 3-6 sentences, detailed enough for support staff to understand the full issue without needing to ask for basic info.",
                             },
                             priority = new
                             {
