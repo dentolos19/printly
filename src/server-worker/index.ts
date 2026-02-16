@@ -9,7 +9,7 @@ export class Container extends CloudflareContainer<CloudflareEnv> {
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
 app.all("*", async (c) => {
-  const instance = c.env.CONTAINER.getByName("instance");
+  const instance = c.env.CONTAINER.getByName("singleton");
   const variables = Object.fromEntries(Object.entries(process.env)) as Record<string, string>;
 
   await instance.startAndWaitForPorts({
