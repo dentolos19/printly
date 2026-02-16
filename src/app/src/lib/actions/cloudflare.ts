@@ -43,7 +43,7 @@ export async function fetchServer(endpoint: string, init?: ServerRequest): Promi
     const { env } = getCloudflareContext();
 
     if (env.SERVER) {
-      response = await env.SERVER.fetch(`${normalizedEndpoint}`, requestInit);
+      response = await env.SERVER.fetch(`${API_URL}${normalizedEndpoint}`, requestInit);
     } else {
       response = await fetch(`${API_URL}${normalizedEndpoint}`, requestInit);
     }
