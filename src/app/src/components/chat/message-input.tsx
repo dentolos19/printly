@@ -312,19 +312,43 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
         {recordingError && <div className="text-destructive mb-3 text-sm">{recordingError}</div>}
 
         {isRecording ? (
-          <div className="flex items-center gap-3">
-            <div className="flex flex-1 items-center gap-2">
-              <div className="h-3 w-3 animate-pulse rounded-full bg-red-500" />
-              <span className="text-sm font-medium tabular-nums">
-                Recording... {formatRecordingTime(recordingDuration)}
+          <div className="flex w-full items-center justify-between gap-3 rounded-xl bg-red-50 px-4 py-3 dark:bg-red-950/30">
+            {/* Recording indicator */}
+            <div className="flex items-center gap-2">
+              <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
+              <span className="text-sm font-medium text-red-600 dark:text-red-400">
+                {formatRecordingTime(recordingDuration)}
               </span>
             </div>
-            <Button variant="ghost" size="icon" onClick={cancelRecording} className="h-10 w-10">
-              <X className="h-5 w-5" />
-            </Button>
-            <Button size="icon" onClick={stopRecording} className="h-10 w-10 bg-red-500 hover:bg-red-600">
-              <Square className="h-5 w-5" />
-            </Button>
+
+            <div className="flex items-center gap-2">
+              {/* Cancel - discard the recording */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 text-red-500 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30"
+                      onClick={cancelRecording}
+                    >
+                      <X className="h-5 w-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Cancel recording</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              {/* Send - stop recording and send it */}
+              <Button
+                size="sm"
+                onClick={stopRecording}
+                className="gap-1.5 rounded-full bg-blue-600 px-4 hover:bg-blue-700"
+              >
+                <Send className="h-4 w-4" />
+                Send
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="flex items-end gap-2">

@@ -372,7 +372,25 @@ export default function AdminChatPage() {
           setMessages((prev) => {
             // Remove any optimistic messages and add the real one
             const withoutOptimistic = prev.filter((m) => {
-              if (m.id.startsWith("optimistic-") && m.senderId === message.senderId && m.content === message.content) {
+              // Only check optimistic messages from the same sender
+              if (!m.id.startsWith("optimistic-") || m.senderId !== message.senderId) {
+                return true;
+              }
+
+              // Match text messages by content
+              const contentMatch = m.content === message.content;
+
+              // Match file messages by filename (content might differ between optimistic and real)
+              const fileMatch =
+                m.id.startsWith("optimistic-file-") &&
+                m.fileName != null &&
+                message.fileName != null &&
+                m.fileName === message.fileName;
+
+              // Match voice messages by the optimistic prefix
+              const voiceMatch = m.id.startsWith("optimistic-voice-") && message.voiceMessageUrl != null;
+
+              if (contentMatch || fileMatch || voiceMatch) {
                 // Clean up pending optimistic message tracking
                 setPendingOptimisticMessages((pendingPrev) => {
                   const next = new Set(pendingPrev);
@@ -381,10 +399,11 @@ export default function AdminChatPage() {
                 });
                 return false;
               }
+
               return true;
             });
             // Check if message already exists (avoid duplicates)
-            if (withoutOptimistic.some((m) => m.id === message.id)) {
+            if (withoutOptimistic.some((existing) => existing.id === message.id)) {
               return withoutOptimistic;
             }
             return [...withoutOptimistic, message];
