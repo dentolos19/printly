@@ -1,11 +1,11 @@
-name: Deployment
+name: Web Deployment
 on:
   push:
     branches:
       - main
   workflow_dispatch:
     inputs:
-      allow_reset:
+      reset:
         description: Reset Database
         type: boolean
         default: false
@@ -47,7 +47,7 @@ jobs:
 
       - name: Run Migrations
         id: migrations
-        continue-on-error: ${{ github.event.inputs.allow_reset == 'true' }}
+        continue-on-error: ${{ github.event.inputs.reset == 'true' }}
         working-directory: src/server
         run: |
           dotnet tool restore
@@ -55,8 +55,8 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Reset Database (optional)
-        if: steps.migrations.outcome == 'failure' && github.event.inputs.allow_reset == 'true'
+      - name: Reset Database
+        if: steps.migrations.outcome == 'failure' && github.event.inputs.reset == 'true'
         working-directory: src/server
         run: |
           echo "Migration failed. Dropping all tables..."
@@ -68,7 +68,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Post-Run Migrations
-        if: steps.migrations.outcome == 'failure' && github.event.inputs.allow_reset != 'true'
+        if: steps.migrations.outcome == 'failure' && github.event.inputs.reset != 'true'
         run: exit 1
 
       - name: Deploy Server to Cloudflare

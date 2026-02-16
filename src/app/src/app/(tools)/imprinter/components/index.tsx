@@ -6,11 +6,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { Box, Columns2, Grid3X3 } from "lucide-react";
 import { useState } from "react";
+import { FallbackImage } from "../../shared/components/fallback-image";
 import { useImprinter } from "./hooks/use-imprinter";
 import { useKeyboardShortcuts } from "./hooks/use-keyboard";
 import { IconToolbar } from "./icon-toolbar";
 import { LeftPanel } from "./panels/left-panel";
 import { RightPanel } from "./panels/right-panel";
+import { TextPanel } from "./panels/text-panel";
 import { ImprinterScene } from "./scene";
 import { ToolbarHeader } from "./toolbar-header";
 import { Imprinter2DView } from "./view-2d";
@@ -25,6 +27,7 @@ export function ImprinterContent() {
     availableProducts,
     selectedProduct,
     selectProduct,
+    activeTool,
   } = useImprinter();
   useKeyboardShortcuts();
 
@@ -35,6 +38,7 @@ export function ImprinterContent() {
         <div className="relative flex flex-1 overflow-hidden">
           <IconToolbar />
           {leftPanelView && <LeftPanel />}
+          {activeTool === "text" && <TextPanel />}
           <div className="relative flex flex-1 flex-col">
             {selectedProduct ? (
               <Tabs
@@ -111,9 +115,9 @@ export function ImprinterContent() {
                     selectProduct(product, firstVariant);
                   }}
                 >
-                  {product.imageId ? (
-                    <img
-                      src={`/assets/${product.imageId}/view`}
+                  {product.modelPreviewId || product.imageId ? (
+                    <FallbackImage
+                      src={`/assets/${product.modelPreviewId ?? product.imageId}/view`}
                       alt={product.name}
                       className="h-full w-full object-cover"
                     />

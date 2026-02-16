@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { PLACEHOLDER_SVG } from "../../shared/components/fallback-image";
 import type { AppliedDesign, PrintAreaConfig } from "../types";
 import { useImprinter } from "./hooks/use-imprinter";
 
@@ -55,6 +56,11 @@ function DesignItem({
   const x = printAreaPosition.x + PRINT_AREA_SIZE / 2 + offsetX - designSize / 2;
   const y = printAreaPosition.y + PRINT_AREA_SIZE / 2 + offsetY - designSize / 2;
 
+  const coverId = design.designData?.coverId;
+  if (!coverId) return null;
+  const imageHref = coverId.startsWith("blob:") || coverId.startsWith("data:") ? coverId : `/assets/${coverId}/view`;
+  const [imgFailed, setImgFailed] = useState(false);
+
   return (
     <g
       className="cursor-move"
@@ -64,7 +70,8 @@ function DesignItem({
       }}
     >
       <image
-        href={`/assets/${design.designData.coverId}/view`}
+        href={imgFailed ? PLACEHOLDER_SVG : imageHref}
+        onError={() => setImgFailed(true)}
         x={x}
         y={y}
         width={designSize}
@@ -157,11 +164,13 @@ export function Imprinter2DView() {
   availablePrintAreas.forEach((pa) => printAreaMap.set(pa.id, pa));
 
   const designsByPrintArea = new Map<string, AppliedDesign[]>();
-  appliedDesigns.forEach((design) => {
-    const list = designsByPrintArea.get(design.printArea) || [];
-    list.push(design);
-    designsByPrintArea.set(design.printArea, list);
-  });
+  appliedDesigns
+    .filter((d) => d.visible !== false)
+    .forEach((design) => {
+      const list = designsByPrintArea.get(design.printArea) || [];
+      list.push(design);
+      designsByPrintArea.set(design.printArea, list);
+    });
 
   const printAreaPositions = availablePrintAreas.map((pa, index) => ({
     id: pa.id,

@@ -23,13 +23,29 @@ export default function ServerProvider({ children }: { children: React.ReactNode
   const isRefreshing = useRef(false);
   const refreshPromise = useRef<Promise<void> | null>(null);
 
+  const normalizeHeaders = (headers?: HeadersInit): [string, string][] => {
+    if (!headers) {
+      return [];
+    }
+
+    if (headers instanceof Headers) {
+      return Array.from(headers.entries());
+    }
+
+    if (Array.isArray(headers)) {
+      return headers;
+    }
+
+    return Object.entries(headers);
+  };
+
   const fetch = async (endpoint: string, init?: RequestInit, retry = true): Promise<Response> => {
-    const response = await globalThis.fetch(`${API_URL}${endpoint}`, {
+    const headers = normalizeHeaders(init?.headers);
+    const authHeaders = tokens ? [["Authorization", `Bearer ${tokens.accessToken}`] as [string, string]] : [];
+
+    const response: Response = await globalThis.fetch(`${API_URL}${endpoint}`, {
       ...init,
-      headers: {
-        ...init?.headers,
-        ...(tokens && { Authorization: `Bearer ${tokens.accessToken}` }),
-      },
+      headers: [...headers, ...authHeaders],
     });
 
     // Handle 401 Unauthorized - attempt token refresh and retry

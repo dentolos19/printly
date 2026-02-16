@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "App",
-      "type": "node-terminal",
       "request": "launch",
+      "type": "node-terminal",
       "cwd": "${workspaceFolder}/src/app",
       "command": "npm run dev",
       "serverReadyAction": {
@@ -15,32 +15,17 @@
     },
     {
       "name": "Server",
-      "type": "coreclr",
       "request": "launch",
-      "cwd": "${workspaceFolder}/src/server",
-      "program": "${workspaceFolder}/src/server/bin/Debug/net10.0/PrintlyServer.dll",
-      "preLaunchTask": "Build Server"
-    },
-    {
-      "name": "Server (Hot Reload)",
       "type": "coreclr",
-      "request": "launch",
       "cwd": "${workspaceFolder}/src/server",
       "program": "dotnet",
-      "args": ["watch", "run"],
-      "env": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+      "args": ["watch", "run"]
     }
   ],
   "compounds": [
     {
       "name": "App + Server",
-      "configurations": ["Server", "App"]
-    },
-    {
-      "name": "App + Server (Hot Reload)",
-      "configurations": ["Server (Hot Reload)", "App"]
+      "configurations": ["App", "Server"]
     }
   ]
 }

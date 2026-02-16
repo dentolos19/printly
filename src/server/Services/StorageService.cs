@@ -20,7 +20,7 @@ public class StorageService
 
         // Load environment variables
         var bucketEndpointUrl = configuration["BUCKET_ENDPOINT_URL"]!;
-        var bucketAccessId = configuration["BUCKET_ACCESS_ID"]!;
+        var bucketAccessId = configuration["BUCKET_ACCESS_KEY"]!;
         var bucketSecretKey = configuration["BUCKET_SECRET_KEY"]!;
         var bucketName = configuration["BUCKET_NAME"]!;
         var bucketPrefix = configuration["BUCKET_PREFIX"]!;
@@ -30,9 +30,11 @@ public class StorageService
             new BasicAWSCredentials(bucketAccessId, bucketSecretKey),
             new AmazonS3Config
             {
-                RegionEndpoint = Amazon.RegionEndpoint.USEast1,
                 ServiceURL = bucketEndpointUrl,
+                AuthenticationRegion = "auto",
                 ForcePathStyle = true,
+                RequestChecksumCalculation = RequestChecksumCalculation.WHEN_REQUIRED,
+                ResponseChecksumValidation = ResponseChecksumValidation.WHEN_REQUIRED,
             }
         );
 
@@ -48,6 +50,8 @@ public class StorageService
         var fileHash = Utilities.ComputeHash(file);
         var fileSize = file.Length;
 
+        file.Seek(0, SeekOrigin.Begin);
+
         var request = new PutObjectRequest
         {
             BucketName = _bucketName,
@@ -55,6 +59,7 @@ public class StorageService
             InputStream = file,
             ContentType = fileType,
             DisablePayloadSigning = true,
+            DisableDefaultChecksumValidation = true,
             UseChunkEncoding = false,
         };
 

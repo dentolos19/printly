@@ -17,7 +17,7 @@ namespace PrintlyServer.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.2")
+                .HasAnnotation("ProductVersion", "10.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -186,6 +186,12 @@ namespace PrintlyServer.Migrations
 
                     b.Property<long>("Size")
                         .HasColumnType("bigint");
+
+                    b.Property<byte[]>("ThumbnailData")
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("ThumbnailType")
+                        .HasColumnType("text");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -1045,6 +1051,9 @@ namespace PrintlyServer.Migrations
                     b.Property<Guid?>("ModelId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("ModelPreviewId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -1060,6 +1069,8 @@ namespace PrintlyServer.Migrations
                     b.HasIndex("IsActive");
 
                     b.HasIndex("ModelId");
+
+                    b.HasIndex("ModelPreviewId");
 
                     b.ToTable("Products");
                 });
@@ -1839,9 +1850,15 @@ namespace PrintlyServer.Migrations
                         .WithMany()
                         .HasForeignKey("ModelId");
 
+                    b.HasOne("PrintlyServer.Data.Entities.Asset", "ModelPreview")
+                        .WithMany()
+                        .HasForeignKey("ModelPreviewId");
+
                     b.Navigation("Image");
 
                     b.Navigation("Model");
+
+                    b.Navigation("ModelPreview");
                 });
 
             modelBuilder.Entity("PrintlyServer.Data.Entities.ProductVariant", b =>

@@ -71,8 +71,11 @@ public class GenerateController(
         if (userId is null)
             return Unauthorized();
 
+        if (!Guid.TryParse(id, out var assetId))
+            return BadRequest(new { message = "Invalid asset ID format" });
+
         var asset = await Context.Assets.FirstOrDefaultAsync(a =>
-            a.Id == Guid.Parse(id) && a.UserId == userId && a.IsGenerated && !a.IsDeleted
+            a.Id == assetId && a.UserId == userId && a.IsGenerated && !a.IsDeleted
         );
 
         if (asset is null)

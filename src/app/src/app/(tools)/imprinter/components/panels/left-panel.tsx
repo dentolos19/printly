@@ -11,6 +11,7 @@ import { ProductVariantResponse } from "@/lib/server/product";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, Loader2, Upload } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { FallbackImage } from "../../../shared/components/fallback-image";
 import { useImprinter } from "../hooks/use-imprinter";
 
 type LeftPanelProps = {
@@ -171,9 +172,9 @@ function ProductsPanel() {
               )}
               onClick={() => handleProductClick(product)}
             >
-              {product.imageId ? (
-                <img
-                  src={`/assets/${product.imageId}/view`}
+              {product.modelPreviewId || product.imageId ? (
+                <FallbackImage
+                  src={`/assets/${product.modelPreviewId ?? product.imageId}/view`}
                   alt={product.name}
                   className="h-full w-full object-cover"
                 />
@@ -287,7 +288,11 @@ function DesignsPanel() {
           onClick={() => handleDesignClick(design)}
         >
           {design.coverId ? (
-            <img src={`/assets/${design.coverId}/view`} alt={design.name} className="h-full w-full object-cover" />
+            <FallbackImage
+              src={`/assets/${design.coverId}/view`}
+              alt={design.name}
+              className="h-full w-full object-cover"
+            />
           ) : (
             <div className="text-muted-foreground flex h-full w-full items-center justify-center text-xs">
               No preview
@@ -387,7 +392,11 @@ function AssetsPanel() {
                 className="group bg-muted hover:border-primary relative aspect-square w-full overflow-hidden rounded-md border transition-colors"
                 onClick={() => handleAssetClick(asset)}
               >
-                <img src={`/assets/${asset.id}/view`} alt={asset.name} className="h-full w-full object-cover" />
+                <FallbackImage
+                  src={`/assets/${asset.id}/view`}
+                  alt={asset.name}
+                  className="h-full w-full object-cover"
+                />
                 <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/60 to-transparent p-2">
                   <p className="truncate text-xs font-medium text-white">{asset.name}</p>
                 </div>

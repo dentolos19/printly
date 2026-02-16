@@ -10,7 +10,11 @@ namespace PrintlyServer.Controllers;
 
 [Route("products")]
 [Authorize]
-public class ProductController(DatabaseContext context, StorageService storageService) : BaseController(context)
+public class ProductController(
+    DatabaseContext context,
+    StorageService storageService,
+    ModelDetectionService modelDetectionService
+) : BaseController(context)
 {
     /// <summary>
     /// Gets all products with full details (variants and inventory).
@@ -27,6 +31,7 @@ public class ProductController(DatabaseContext context, StorageService storageSe
         var products = await query
             .Include(p => p.Image)
             .Include(p => p.Model)
+            .Include(p => p.ModelPreview)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.Inventory)
             .Include(p => p.Variants)
@@ -47,6 +52,12 @@ public class ProductController(DatabaseContext context, StorageService storageSe
             if (p.Model != null)
             {
                 productModelUrl = await storageService.DownloadFileAsync(p.Model);
+            }
+
+            string? productModelPreviewUrl = null;
+            if (p.ModelPreview != null)
+            {
+                productModelPreviewUrl = await storageService.DownloadFileAsync(p.ModelPreview);
             }
 
             var variantResponses = new List<ProductVariantResponse>();
@@ -91,6 +102,8 @@ public class ProductController(DatabaseContext context, StorageService storageSe
                     productImageUrl,
                     p.ModelId,
                     productModelUrl,
+                    p.ModelPreviewId,
+                    productModelPreviewUrl,
                     p.CreatedAt,
                     p.UpdatedAt,
                     variantResponses
@@ -118,6 +131,7 @@ public class ProductController(DatabaseContext context, StorageService storageSe
         var products = await query
             .Include(p => p.Image)
             .Include(p => p.Model)
+            .Include(p => p.ModelPreview)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.Inventory)
             .OrderBy(p => p.Name)
@@ -138,6 +152,12 @@ public class ProductController(DatabaseContext context, StorageService storageSe
                 modelUrl = await storageService.DownloadFileAsync(p.Model);
             }
 
+            string? modelPreviewUrl = null;
+            if (p.ModelPreview != null)
+            {
+                modelPreviewUrl = await storageService.DownloadFileAsync(p.ModelPreview);
+            }
+
             responses.Add(
                 new ProductSummaryResponse(
                     p.Id,
@@ -148,6 +168,8 @@ public class ProductController(DatabaseContext context, StorageService storageSe
                     imageUrl,
                     p.ModelId,
                     modelUrl,
+                    p.ModelPreviewId,
+                    modelPreviewUrl,
                     p.CreatedAt,
                     p.UpdatedAt,
                     p.Variants.Count,
@@ -169,6 +191,7 @@ public class ProductController(DatabaseContext context, StorageService storageSe
         var product = await Context
             .Products.Include(p => p.Image)
             .Include(p => p.Model)
+            .Include(p => p.ModelPreview)
             .Include(p => p.Variants)
                 .ThenInclude(v => v.Inventory)
             .Include(p => p.Variants)
@@ -189,6 +212,12 @@ public class ProductController(DatabaseContext context, StorageService storageSe
         if (product.Model != null)
         {
             productModelUrl = await storageService.DownloadFileAsync(product.Model);
+        }
+
+        string? productModelPreviewUrl = null;
+        if (product.ModelPreview != null)
+        {
+            productModelPreviewUrl = await storageService.DownloadFileAsync(product.ModelPreview);
         }
 
         var variantResponses = new List<ProductVariantResponse>();
@@ -232,6 +261,8 @@ public class ProductController(DatabaseContext context, StorageService storageSe
             productImageUrl,
             product.ModelId,
             productModelUrl,
+            product.ModelPreviewId,
+            productModelPreviewUrl,
             product.CreatedAt,
             product.UpdatedAt,
             variantResponses
@@ -262,6 +293,8 @@ public class ProductController(DatabaseContext context, StorageService storageSe
             product.Name,
             product.BasePrice,
             product.IsActive,
+            null,
+            null,
             null,
             null,
             null,
@@ -532,9 +565,16 @@ public class ProductController(DatabaseContext context, StorageService storageSe
     /// </summary>
     [HttpPost("{id:guid}/model")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<ProductResponse>> UploadProductModel(Guid id, IFormFile file)
+    public async Task<ActionResult<ProductResponse>> UploadProductModel(
+        Guid id,
+        IFormFile file,
+        IFormFile? modelPreview = null
+    )
     {
-        var product = await Context.Products.Include(p => p.Model).FirstOrDefaultAsync(p => p.Id == id);
+        var product = await Context
+            .Products.Include(p => p.Model)
+            .Include(p => p.ModelPreview)
+            .FirstOrDefaultAsync(p => p.Id == id);
 
         if (product is null)
             return NotFound(new { message = "Product not found" });
@@ -553,12 +593,36 @@ public class ProductController(DatabaseContext context, StorageService storageSe
             Context.Assets.Remove(product.Model);
         }
 
-        // Upload new model (StorageService already saves the asset to database)
+        // Delete old model preview if exists
+        if (product.ModelPreview != null)
+        {
+            await storageService.DeleteFileAsync(product.ModelPreview);
+            Context.Assets.Remove(product.ModelPreview);
+        }
+
+        // Upload new model
         using var stream = file.OpenReadStream();
         var asset = await storageService.UploadFileAsync(stream, file.FileName);
         product.ModelId = asset.Id;
 
+        // Upload model preview if provided
+        if (modelPreview != null)
+        {
+            var previewAllowedTypes = new[] { "image/jpeg", "image/png", "image/webp" };
+            if (!previewAllowedTypes.Contains(modelPreview.ContentType.ToLower()))
+            {
+                return BadRequest(new { message = "Invalid preview file type. Only JPEG, PNG, and WebP are allowed." });
+            }
+
+            using var previewStream = modelPreview.OpenReadStream();
+            var previewAsset = await storageService.UploadFileAsync(previewStream, modelPreview.FileName);
+            product.ModelPreviewId = previewAsset.Id;
+        }
+
         await Context.SaveChangesAsync();
+
+        // Auto-detect print areas from the uploaded model
+        await AutoDetectPrintAreas(product.Id, file, product.Name);
 
         return await GetProduct(id);
     }
@@ -570,7 +634,10 @@ public class ProductController(DatabaseContext context, StorageService storageSe
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ProductResponse>> DeleteProductModel(Guid id)
     {
-        var product = await Context.Products.Include(p => p.Model).FirstOrDefaultAsync(p => p.Id == id);
+        var product = await Context
+            .Products.Include(p => p.Model)
+            .Include(p => p.ModelPreview)
+            .FirstOrDefaultAsync(p => p.Id == id);
 
         if (product is null)
             return NotFound(new { message = "Product not found" });
@@ -582,8 +649,115 @@ public class ProductController(DatabaseContext context, StorageService storageSe
         Context.Assets.Remove(product.Model);
         product.ModelId = null;
 
+        // Also delete model preview if exists
+        if (product.ModelPreview != null)
+        {
+            await storageService.DeleteFileAsync(product.ModelPreview);
+            Context.Assets.Remove(product.ModelPreview);
+            product.ModelPreviewId = null;
+        }
+
         await Context.SaveChangesAsync();
 
         return await GetProduct(id);
+    }
+
+    /// <summary>
+    /// Auto-detects print areas from an uploaded GLB model.
+    /// If detection finds areas, replaces only auto-detected areas (preserving manual ones).
+    /// If detection finds nothing, keeps existing areas unchanged.
+    /// If detection fails, applies default areas only when the product has no areas at all.
+    /// </summary>
+    private async Task AutoDetectPrintAreas(Guid productId, IFormFile modelFile, string productName)
+    {
+        try
+        {
+            List<DetectedArea> detected;
+
+            using (var detectStream = modelFile.OpenReadStream())
+            {
+                detected = modelDetectionService.DetectFromStream(detectStream);
+            }
+
+            if (detected.Count == 0)
+            {
+                // No zones detected: keep existing print areas as-is
+                return;
+            }
+
+            // Remove only previously auto-detected areas (preserve manually created ones)
+            var existingAutoAreas = await Context
+                .PrintAreas.Where(pa => pa.ProductId == productId && pa.IsAutoDetected)
+                .ToListAsync();
+
+            Context.PrintAreas.RemoveRange(existingAutoAreas);
+
+            // Get max display order from remaining manual areas
+            var maxOrder =
+                await Context
+                    .PrintAreas.Where(pa => pa.ProductId == productId && !pa.IsAutoDetected)
+                    .MaxAsync(pa => (int?)pa.DisplayOrder)
+                ?? -1;
+
+            // Check existing manual area IDs to avoid conflicts
+            var manualAreaIds = await Context
+                .PrintAreas.Where(pa => pa.ProductId == productId && !pa.IsAutoDetected)
+                .Select(pa => pa.AreaId)
+                .ToListAsync();
+
+            var manualAreaIdSet = new HashSet<string>(manualAreaIds, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var area in detected)
+            {
+                // Skip if a manual area with the same ID already exists
+                if (manualAreaIdSet.Contains(area.AreaId))
+                    continue;
+
+                Context.PrintAreas.Add(
+                    new PrintArea
+                    {
+                        ProductId = productId,
+                        AreaId = area.AreaId,
+                        Name = area.Name,
+                        MeshName = area.MeshName,
+                        RayDirectionX = area.RayDirectionX,
+                        RayDirectionY = area.RayDirectionY,
+                        RayDirectionZ = area.RayDirectionZ,
+                        DisplayOrder = ++maxOrder,
+                        IsAutoDetected = true,
+                    }
+                );
+            }
+
+            await Context.SaveChangesAsync();
+        }
+        catch (Exception)
+        {
+            // Detection failed: apply defaults only when the product has no print areas at all
+            var hasAnyAreas = await Context.PrintAreas.AnyAsync(pa => pa.ProductId == productId);
+            if (hasAnyAreas)
+                return;
+
+            var defaults = ModelDetectionService.GetDefaultAreas(productName);
+            foreach (var area in defaults)
+            {
+                Context.PrintAreas.Add(
+                    new PrintArea
+                    {
+                        ProductId = productId,
+                        AreaId = area.AreaId,
+                        Name = area.Name,
+                        MeshName = area.MeshName,
+                        RayDirectionX = area.RayDirectionX,
+                        RayDirectionY = area.RayDirectionY,
+                        RayDirectionZ = area.RayDirectionZ,
+                        DisplayOrder = area.DisplayOrder,
+                        IsAutoDetected = true,
+                    }
+                );
+            }
+
+            await Context.SaveChangesAsync();
+        }
     }
 }

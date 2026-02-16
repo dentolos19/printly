@@ -16,6 +16,8 @@ export function useKeyboardShortcuts() {
     setActivePrintArea,
     rightPanelOpen,
     leftPanelView,
+    undo,
+    redo,
   } = useImprinter();
 
   useEffect(() => {
@@ -131,6 +133,20 @@ export function useKeyboardShortcuts() {
         return;
       }
 
+      // Undo: Ctrl+Z
+      if (isCtrlOrMeta && !isShift && e.key === "z") {
+        e.preventDefault();
+        undo();
+        return;
+      }
+
+      // Redo: Ctrl+Y or Ctrl+Shift+Z
+      if (isCtrlOrMeta && (e.key === "y" || (isShift && e.key === "z") || (isShift && e.key === "Z"))) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
       // Delete: Delete or Backspace
       if (e.key === "Delete" || e.key === "Backspace") {
         if (selectedDesignId) {
@@ -178,5 +194,7 @@ export function useKeyboardShortcuts() {
     setActivePrintArea,
     rightPanelOpen,
     leftPanelView,
+    undo,
+    redo,
   ]);
 }
