@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { Box, Columns2, Grid3X3 } from "lucide-react";
 import { useState } from "react";
+import { FallbackImage } from "../../shared/components/fallback-image";
 import { useImprinter } from "./hooks/use-imprinter";
 import { useKeyboardShortcuts } from "./hooks/use-keyboard";
 import { IconToolbar } from "./icon-toolbar";
@@ -115,7 +116,7 @@ export function ImprinterContent() {
                   }}
                 >
                   {product.imageId ? (
-                    <img
+                    <FallbackImage
                       src={`/assets/${product.imageId}/view`}
                       alt={product.name}
                       className="h-full w-full object-cover"

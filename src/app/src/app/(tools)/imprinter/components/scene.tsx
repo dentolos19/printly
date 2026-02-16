@@ -2,7 +2,18 @@
 
 import { Decal, Environment, OrbitControls, PerspectiveCamera, useGLTF, useTexture } from "@react-three/drei";
 import { Canvas, createPortal, useFrame, useThree } from "@react-three/fiber";
-import { createContext, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import type { ErrorInfo, ReactNode } from "react";
+import {
+  Component,
+  createContext,
+  Suspense,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import * as THREE from "three";
 import type { AppliedDesign, PrintAreaConfig } from "../types";
 import { useImprinter } from "./hooks/use-imprinter";
@@ -82,6 +93,24 @@ function layerZOnBox(mesh: THREE.Mesh, offset: number) {
   return new THREE.Vector3(center.x, center.y, bbox.max.z + offset);
 }
 
+// Error boundary for Three.js components that may fail to load textures/models
+class AssetErrorBoundary extends Component<{ children: ReactNode; fallback?: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("Asset loading error:", error, info);
+  }
+
+  render() {
+    if (this.state.hasError) return this.props.fallback ?? null;
+    return this.props.children;
+  }
+}
+
 // ============================================================================
 // Components
 // ============================================================================
@@ -108,9 +137,11 @@ function DesignDecal({
   if (!textureUrl) return null;
 
   return (
-    <Suspense fallback={null}>
-      <DecalMesh design={design} url={textureUrl} targetMesh={targetMesh} printAreaConfig={printAreaConfig} />
-    </Suspense>
+    <AssetErrorBoundary>
+      <Suspense fallback={null}>
+        <DecalMesh design={design} url={textureUrl} targetMesh={targetMesh} printAreaConfig={printAreaConfig} />
+      </Suspense>
+    </AssetErrorBoundary>
   );
 }
 

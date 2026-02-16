@@ -26,6 +26,7 @@ import {
   Unlock,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { FallbackImage } from "../../../shared/components/fallback-image";
 import type { PrintArea } from "../../types";
 import { useImprinter } from "../hooks/use-imprinter";
 
@@ -256,14 +257,15 @@ function AppliedDesignsSection({ open, onOpenChange }: AppliedDesignsSectionProp
                   onClick={() => selectDesign(design.id)}
                 >
                   {design.designData.coverId && (
-                    <img
+                    <FallbackImage
                       src={
-                        design.designData.coverId.startsWith("blob:")
+                        design.designData.coverId.startsWith("blob:") || design.designData.coverId.startsWith("data:")
                           ? design.designData.coverId
                           : `/assets/${design.designData.coverId}/view`
                       }
                       alt=""
                       className="h-7 w-7 shrink-0 rounded border object-cover"
+                      showBadge={false}
                     />
                   )}
                   <div className="flex min-w-0 flex-1 flex-col items-start">

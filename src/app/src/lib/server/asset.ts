@@ -106,5 +106,18 @@ export default function initAssetController(fetch: ServerFetch) {
         throw new Error("Failed to delete asset");
       }
     },
+
+    getThumbnail: async (id: string): Promise<Blob | null> => {
+      try {
+        const response = await fetch(`/asset/${id}/thumbnail`, {
+          method: "GET",
+        });
+
+        if (!response.ok) return null;
+        return response.blob();
+      } catch {
+        return null;
+      }
+    },
   };
 }

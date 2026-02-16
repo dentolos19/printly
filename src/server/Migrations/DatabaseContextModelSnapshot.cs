@@ -17,7 +17,7 @@ namespace PrintlyServer.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.2")
+                .HasAnnotation("ProductVersion", "10.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -186,6 +186,12 @@ namespace PrintlyServer.Migrations
 
                     b.Property<long>("Size")
                         .HasColumnType("bigint");
+
+                    b.Property<byte[]>("ThumbnailData")
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("ThumbnailType")
+                        .HasColumnType("text");
 
                     b.Property<string>("Type")
                         .IsRequired()

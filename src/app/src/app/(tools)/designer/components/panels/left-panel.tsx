@@ -14,6 +14,7 @@ import { Asset } from "@/lib/server/asset";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, Image as ImageIcon, Loader2, Sparkles, Upload } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { FallbackImage } from "../../../shared/components/fallback-image";
 
 type LeftPanelProps = {
   className?: string;
@@ -512,7 +513,7 @@ function AssetsPanel() {
                     )}
                     onClick={() => handleAssetClick(asset.id)}
                   >
-                    <img
+                    <FallbackImage
                       src={`/assets/${asset.id}/view`}
                       alt={asset.name}
                       className={"h-full w-full object-cover transition-transform group-hover:scale-105"}

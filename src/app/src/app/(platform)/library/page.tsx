@@ -1,5 +1,6 @@
 "use client";
 
+import { FallbackImage } from "@/app/(tools)/shared/components/fallback-image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -156,6 +157,13 @@ export default function LibraryPage() {
     loadDesigns();
     loadImprints();
     loadAssets();
+
+    // Cleanup object URLs on unmount to prevent memory leaks
+    return () => {
+      designs.forEach((d) => {
+        if (d.preview?.startsWith("blob:")) URL.revokeObjectURL(d.preview);
+      });
+    };
   }, [loadDesigns, loadImprints, loadAssets]);
 
   // Filter items by search query
@@ -540,7 +548,7 @@ export default function LibraryPage() {
                 >
                   <div className="bg-muted relative aspect-square overflow-hidden">
                     {imprint.previewId ? (
-                      <img
+                      <FallbackImage
                         src={`/assets/${imprint.previewId}/view`}
                         alt={imprint.name}
                         className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
@@ -649,7 +657,7 @@ export default function LibraryPage() {
                 >
                   <div className="bg-muted relative aspect-square overflow-hidden">
                     {imageUrls[asset.id] ? (
-                      <img
+                      <FallbackImage
                         src={imageUrls[asset.id]}
                         alt={asset.name}
                         className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
@@ -818,7 +826,7 @@ export default function LibraryPage() {
             <div className="space-y-4">
               <div className="bg-muted relative aspect-video overflow-hidden rounded-lg">
                 {imageUrls[selectedAsset.id] && (
-                  <img
+                  <FallbackImage
                     src={imageUrls[selectedAsset.id]}
                     alt={selectedAsset.name}
                     className="size-full object-contain"

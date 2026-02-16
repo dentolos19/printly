@@ -12,7 +12,7 @@ using PrintlyServer.Data;
 namespace PrintlyServer.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20260203040349_Initial")]
+    [Migration("20260216123924_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -20,7 +20,7 @@ namespace PrintlyServer.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.2")
+                .HasAnnotation("ProductVersion", "10.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -189,6 +189,12 @@ namespace PrintlyServer.Migrations
 
                     b.Property<long>("Size")
                         .HasColumnType("bigint");
+
+                    b.Property<byte[]>("ThumbnailData")
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("ThumbnailType")
+                        .HasColumnType("text");
 
                     b.Property<string>("Type")
                         .IsRequired()

@@ -15,7 +15,7 @@ import { useCart } from "@/lib/providers/cart";
 import { cn } from "@/lib/utils";
 import { ChevronDown, Download, FileDown, Home, Redo2, RotateCcw, Save, ShoppingCart, Undo2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { SaveIndicator } from "../../shared/components/save-indicator";
 import { EXPORT_PRESETS } from "../types";
@@ -25,6 +25,8 @@ type ToolbarHeaderProps = {
   className?: string;
   title?: string;
 };
+
+const NAME_DEBOUNCE_MS = 800;
 
 export function ToolbarHeader({ className, title = "Printly Imprinter" }: ToolbarHeaderProps) {
   const router = useRouter();
@@ -195,12 +197,7 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
       <div className="flex flex-1 items-center justify-end gap-2">
         <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} isDirty={isDirty} />
         <div className="flex items-center justify-end pl-4">
-          <Input
-            value={imprintName}
-            onChange={(e) => setImprintName(e.target.value)}
-            className={"h-7 w-48 border-none bg-transparent px-1 text-sm font-medium shadow-none focus-visible:ring-1"}
-            placeholder="Untitled Imprint"
-          />
+          <DebouncedNameInput value={imprintName} onChange={setImprintName} placeholder="Untitled Imprint" />
         </div>
         <Button
           variant="default"
@@ -240,5 +237,49 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
         </DialogContent>
       </Dialog>
     </header>
+  );
+}
+
+function DebouncedNameInput({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (name: string) => void;
+  placeholder?: string;
+}) {
+  const [localValue, setLocalValue] = useState(value);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const next = e.target.value;
+    setLocalValue(next);
+
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      onChangeRef.current(next);
+    }, NAME_DEBOUNCE_MS);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
+  return (
+    <Input
+      value={localValue}
+      onChange={handleChange}
+      className={"h-7 w-48 border-none bg-transparent px-1 text-sm font-medium shadow-none focus-visible:ring-1"}
+      placeholder={placeholder}
+    />
   );
 }

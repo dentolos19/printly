@@ -329,6 +329,8 @@ export function ImprinterProvider({
         name: design.designData.name,
         coverId: design.designData.coverId,
       },
+      // Preserve source for reliable rehydration of non-design decals
+      source: design.source,
     }));
 
     const imprintData: ImprinterData = {
@@ -813,38 +815,90 @@ export function ImprinterProvider({
           setProductModel(data.productModel);
         }
 
-        // Restore full design data for each applied design
-        if (onLoadDesign && data.appliedDesigns.length > 0) {
+        // Restore full design data for each applied design using source-type-aware loading
+        if (data.appliedDesigns.length > 0) {
           const designsWithFullData = await Promise.all(
             data.appliedDesigns.map(async (appliedDesign) => {
-              const designId = appliedDesign.designData?.id || appliedDesign.designId;
-              if (!designId) {
-                console.warn("Applied design missing designId, skipping");
-                return null;
+              const source = appliedDesign.source;
+
+              // Source-aware rehydration: only call onLoadDesign for actual designs
+              if (source?.type === "image") {
+                // Uploaded image decals: reconstruct from asset ID
+                const mockDesign: Design = {
+                  id: source.assetId,
+                  name: source.name,
+                  data: JSON.stringify({ version: "1.0", objects: [] }),
+                  coverId: source.assetId,
+                  createdAt: appliedDesign.designData?.createdAt || new Date().toISOString(),
+                  updatedAt: appliedDesign.designData?.updatedAt || new Date().toISOString(),
+                };
+                return { ...appliedDesign, designId: source.assetId, designData: mockDesign };
               }
 
-              try {
-                const fullDesign = await onLoadDesign(designId);
-                return {
-                  ...appliedDesign,
-                  designData: fullDesign,
+              if (source?.type === "text") {
+                // Text decals: regenerate bitmap from source parameters
+                const bitmap = await new Promise<string>((resolve) => {
+                  const canvas = document.createElement("canvas");
+                  canvas.width = 512;
+                  canvas.height = 256;
+                  const ctx = canvas.getContext("2d")!;
+                  ctx.clearRect(0, 0, 512, 256);
+                  ctx.fillStyle = source.color;
+                  ctx.font = `${source.fontSize}px ${source.fontFamily}`;
+                  ctx.textAlign = "center";
+                  ctx.textBaseline = "middle";
+                  ctx.fillText(source.text, 256, 128);
+                  resolve(canvas.toDataURL("image/png"));
+                });
+                const mockDesign: Design = {
+                  id: appliedDesign.designId,
+                  name: source.text.slice(0, 30),
+                  data: JSON.stringify({ version: "1.0", objects: [] }),
+                  coverId: bitmap,
+                  createdAt: appliedDesign.designData?.createdAt || new Date().toISOString(),
+                  updatedAt: appliedDesign.designData?.updatedAt || new Date().toISOString(),
                 };
-              } catch (error) {
-                console.error(`Failed to load design ${designId}:`, error);
-                return null;
+                return { ...appliedDesign, designData: mockDesign };
               }
+
+              // Design type (or legacy without source): load from API
+              if (onLoadDesign) {
+                const designId = appliedDesign.designData?.id || appliedDesign.designId;
+                if (!designId) {
+                  console.warn("Applied design missing designId, skipping");
+                  return null;
+                }
+                try {
+                  const fullDesign = await onLoadDesign(designId);
+                  return {
+                    ...appliedDesign,
+                    designData: fullDesign,
+                    source: source || { type: "design" as const, designId, designData: fullDesign },
+                  };
+                } catch (error) {
+                  console.error(`Failed to load design ${designId}:`, error);
+                  // Return with existing partial data instead of dropping entirely
+                  if (appliedDesign.designData?.coverId) {
+                    return appliedDesign;
+                  }
+                  return null;
+                }
+              }
+
+              // No loader available: keep existing data if it has a coverId
+              if (appliedDesign.designData?.coverId) {
+                return appliedDesign;
+              }
+              return null;
             }),
           );
 
-          // Filter out failed designs
           const validDesigns = designsWithFullData.filter(
             (d): d is NonNullable<typeof d> => d !== null && d.designData !== null,
           );
           setAppliedDesigns(validDesigns);
         } else {
-          // Fallback if no onLoadDesign provided - filter designs without valid designData
-          const validDesigns = data.appliedDesigns.filter((d) => d.designData?.coverId);
-          setAppliedDesigns(validDesigns);
+          setAppliedDesigns([]);
         }
       } catch (error) {
         console.error("Failed to load imprint:", error);
