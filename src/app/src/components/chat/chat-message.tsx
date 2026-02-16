@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
+import { cn, formatMessageTime } from "@/lib/utils";
 import { Check, CheckCheck, CornerUpLeft, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { forwardRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -52,11 +52,6 @@ export interface ChatMessageProps {
   onReply?: () => void;
   onEdit?: (newContent: string) => void;
   onDelete?: () => void;
-}
-
-function formatTime(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
 function formatDate(dateString: string): string {
@@ -191,29 +186,31 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                     {(!hasVoice || !content.startsWith("🎤")) && (!hasFile || !content.startsWith("📎")) && (
                       <div
                         className={cn(
-                          "rounded-2xl px-4 py-2.5 shadow-sm text-sm prose prose-sm max-w-none dark:prose-invert",
+                          "prose prose-sm dark:prose-invert max-w-none rounded-2xl px-4 py-2.5 text-sm shadow-sm",
                           isDeleted
                             ? "bg-muted text-muted-foreground italic"
                             : isCurrentUser
-                              ? "bg-blue-600 text-white"
+                              ? "bg-primary text-primary-foreground"
                               : "bg-muted",
                         )}
                       >
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
-                            p: ({ children }) => <p className="mb-1 last:mb-0 wrap-break-word whitespace-pre-wrap">{children}</p>,
+                            p: ({ children }) => (
+                              <p className="mb-1 wrap-break-word whitespace-pre-wrap last:mb-0">{children}</p>
+                            ),
                             strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
                             em: ({ children }) => <em className="italic">{children}</em>,
-                            ul: ({ children }) => <ul className="list-disc pl-4 my-1 space-y-0.5">{children}</ul>,
-                            ol: ({ children }) => <ol className="list-decimal pl-4 my-1 space-y-0.5">{children}</ol>,
+                            ul: ({ children }) => <ul className="my-1 list-disc space-y-0.5 pl-4">{children}</ul>,
+                            ol: ({ children }) => <ol className="my-1 list-decimal space-y-0.5 pl-4">{children}</ol>,
                             li: ({ children }) => <li className="text-sm">{children}</li>,
                             a: ({ href, children }) => (
                               <a
                                 href={href}
                                 className={cn(
                                   "underline hover:no-underline",
-                                  isCurrentUser ? "text-blue-100" : "text-primary",
+                                  isCurrentUser ? "text-primary-foreground/80" : "text-primary",
                                 )}
                                 target="_blank"
                                 rel="noopener noreferrer"
@@ -226,8 +223,8 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                               return isInline ? (
                                 <code
                                   className={cn(
-                                    "rounded px-1 py-0.5 text-xs font-mono",
-                                    isCurrentUser ? "bg-blue-700" : "bg-muted-foreground/10",
+                                    "rounded px-1 py-0.5 font-mono text-xs",
+                                    isCurrentUser ? "bg-primary-foreground/20" : "bg-muted-foreground/10",
                                   )}
                                 >
                                   {children}
@@ -235,8 +232,8 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                               ) : (
                                 <code
                                   className={cn(
-                                    "block rounded p-2 text-xs font-mono overflow-x-auto",
-                                    isCurrentUser ? "bg-blue-700" : "bg-muted-foreground/10",
+                                    "block overflow-x-auto rounded p-2 font-mono text-xs",
+                                    isCurrentUser ? "bg-primary-foreground/20" : "bg-muted-foreground/10",
                                   )}
                                 >
                                   {children}
@@ -292,7 +289,7 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
             </div>
 
             <div className="flex items-center gap-1.5">
-              <span className="text-muted-foreground text-xs">{formatTime(createdAt)}</span>
+              <span className="text-muted-foreground text-xs">{formatMessageTime(createdAt)}</span>
               {isEdited && !isDeleted && <span className="text-muted-foreground/60 text-xs">• edited</span>}
               {isCurrentUser && !isDeleted && (
                 <span className="text-muted-foreground">

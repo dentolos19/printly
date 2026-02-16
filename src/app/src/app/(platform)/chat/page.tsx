@@ -989,7 +989,7 @@ export default function ChatPage() {
   }, []);
 
   return (
-    <main className="flex h-[calc(100vh-4rem)] w-full flex-col gap-3 p-3">
+    <main className="flex h-full w-full flex-col gap-3 overflow-hidden p-3">
       {/* Header Bar - Compact */}
       <div className="flex shrink-0 items-center justify-between">
         <div className="flex items-center gap-3">
@@ -1077,7 +1077,7 @@ export default function ChatPage() {
         <Card
           className={cn(
             "flex shrink-0 flex-col transition-all duration-300 ease-in-out",
-            sidebarCollapsed ? "w-0 overflow-hidden border-0 opacity-0" : "w-72 lg:w-80",
+            sidebarCollapsed ? "w-0 overflow-hidden border-0 opacity-0" : "w-80 lg:w-80",
           )}
         >
           <CardHeader className="border-b px-3 py-2">
@@ -1100,7 +1100,7 @@ export default function ChatPage() {
         <Card className="flex min-w-0 flex-1 flex-col">
           {selectedConversation ? (
             <>
-              <CardHeader className="shrink-0 gap-0 space-y-0 border-b px-2 py-0.5">
+              <CardHeader className="shrink-0 gap-0 space-y-0 border-b px-3 py-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {(() => {

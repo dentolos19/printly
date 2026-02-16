@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/providers/auth";
 import * as signalR from "@microsoft/signalr";
 import { Loader2, MessageCircle, RefreshCw, Send, Wifi, WifiOff } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { formatMessageTime } from "@/lib/utils";
 
 interface Participant {
   id: string;
@@ -476,12 +477,12 @@ export default function StaffInbox() {
                       return (
                         <div key={message.id} className={`flex ${fromMe ? "justify-end" : "justify-start"}`}>
                           <div
-                            className={`max-w-[70%] rounded-lg px-3 py-2 text-sm shadow-sm ${fromMe ? "bg-primary text-primary-foreground" : "bg-muted"}`}
+                            className={`max-w-[70%] rounded-2xl px-4 py-2.5 text-sm shadow-sm ${fromMe ? "bg-primary text-primary-foreground" : "bg-muted"}`}
                           >
                             <div className="text-xs opacity-80">{fromMe ? "You" : message.senderName}</div>
                             <div className={`${message.isDeleted ? "italic opacity-70" : ""}`}>{message.content}</div>
                             <div className="mt-1 text-[11px] opacity-70">
-                              {formatTime(message.createdAt)}
+                              {formatMessageTime(message.createdAt)}
                               {message.isEdited ? " · edited" : ""}
                             </div>
                           </div>
@@ -524,11 +525,6 @@ export default function StaffInbox() {
       </Card>
     </div>
   );
-}
-
-function formatTime(value: string) {
-  const date = new Date(value);
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
 function renderConnectionStatus(state: "disconnected" | "connecting" | "connected" | "error", reconnect: () => void) {
