@@ -18,13 +18,15 @@ public class ConversationController(
     INotificationService notificationService,
     StorageService storageService,
     IHubContext<ConversationHub> hubContext,
-    ChatService chatService
+    ChatService chatService,
+    ILogger<ConversationController> logger
 ) : BaseController(context)
 {
     private readonly INotificationService _notificationService = notificationService;
     private readonly StorageService _storageService = storageService;
     private readonly IHubContext<ConversationHub> _hubContext = hubContext;
     private readonly ChatService _chatService = chatService;
+    private readonly ILogger<ConversationController> _logger = logger;
 
     public record ContactResponse(string Id, string Name, string Email, string Role);
 
@@ -827,7 +829,7 @@ public class ConversationController(
         if (file.Length > MaxFileSize)
             return BadRequest($"File too large. Maximum size is {MaxFileSize / (1024 * 1024)}MB");
 
-        var contentType = file.ContentType.ToLowerInvariant();
+        var contentType = file.ContentType.ToLowerInvariant().Split(';')[0].Trim();
         var isAllowed =
             AllowedImageTypes.Contains(contentType)
             || AllowedDocumentTypes.Contains(contentType)
@@ -852,7 +854,19 @@ public class ConversationController(
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Failed to upload file: {ex.Message}");
+            // Log the full exception including inner exceptions to help diagnose
+            var fullError = ex.ToString();
+            _logger.LogError(
+                ex,
+                "Failed to upload file in conversation {ConversationId}. Full error: {Error}",
+                conversationId,
+                fullError
+            );
+            Console.WriteLine($"[UploadFile ERROR] {fullError}");
+
+            // Return the innermost exception message for debugging
+            var innerMessage = ex.InnerException?.InnerException?.Message ?? ex.InnerException?.Message ?? ex.Message;
+            return StatusCode(500, $"Failed to upload file: {innerMessage}");
         }
     }
 
@@ -893,7 +907,8 @@ public class ConversationController(
         if (audioFile.Length > MaxVoiceSize)
             return BadRequest($"Voice message too large. Maximum size is {MaxVoiceSize / (1024 * 1024)}MB");
 
-        var contentType = audioFile.ContentType.ToLowerInvariant();
+        var rawContentType = audioFile.ContentType.ToLowerInvariant();
+        var contentType = rawContentType.Split(';')[0].Trim();
         if (!AllowedAudioTypes.Contains(contentType))
             return BadRequest("Invalid audio format. Allowed formats: mp3, wav, m4a, webm");
 
@@ -917,7 +932,17 @@ public class ConversationController(
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Failed to upload voice message: {ex.Message}");
+            var fullError = ex.ToString();
+            _logger.LogError(
+                ex,
+                "Failed to upload voice message in conversation {ConversationId}. Full error: {Error}",
+                conversationId,
+                fullError
+            );
+            Console.WriteLine($"[UploadVoice ERROR] {fullError}");
+
+            var innerMessage = ex.InnerException?.InnerException?.Message ?? ex.InnerException?.Message ?? ex.Message;
+            return StatusCode(500, $"Failed to upload voice message: {innerMessage}");
         }
     }
 

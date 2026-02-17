@@ -81,6 +81,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
     const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const recordingDurationRef = useRef(0);
 
     const handleTyping = useCallback(() => {
       if (!isTyping) {
@@ -200,13 +201,15 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
           // Stop all tracks
           stream.getTracks().forEach((track) => track.stop());
 
-          // Send voice message
-          if (onSendVoice && audioBlob.size > 0 && recordingDuration > 0) {
-            onSendVoice(audioBlob, recordingDuration, replyTo?.messageId);
+          // Use the ref for duration since state may be stale in this closure
+          const finalDuration = recordingDurationRef.current;
+          if (onSendVoice && audioBlob.size > 0 && finalDuration > 0) {
+            onSendVoice(audioBlob, finalDuration, replyTo?.messageId);
             onCancelReply?.();
           }
 
           setRecordingDuration(0);
+          recordingDurationRef.current = 0;
         };
 
         mediaRecorder.start(100);
@@ -216,11 +219,12 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
         // Start duration counter
         recordingIntervalRef.current = setInterval(() => {
           setRecordingDuration((prev) => {
+            const next = prev >= MAX_RECORDING_SECONDS ? prev : prev + 1;
+            recordingDurationRef.current = next;
             if (prev >= MAX_RECORDING_SECONDS) {
               stopRecording();
-              return prev;
             }
-            return prev + 1;
+            return next;
           });
         }, 1000);
       } catch (err) {
@@ -246,6 +250,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
         // Clear chunks before stopping so onstop doesn't send
         audioChunksRef.current = [];
         setRecordingDuration(0);
+        recordingDurationRef.current = 0;
         mediaRecorderRef.current.stop();
         setIsRecording(false);
 

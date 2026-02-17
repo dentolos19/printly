@@ -646,7 +646,7 @@ export default function ChatPage() {
       setIsUploading(true);
       try {
         const formData = new FormData();
-        formData.append("file", blob, "voice-message.webm");
+        formData.append("audioFile", blob, "voice-message.webm");
         formData.append("duration", duration.toString());
         const response = await authorizedFetch(`${API_URL}/conversation/${conversationId}/upload-voice`, {
           method: "POST",
