@@ -311,7 +311,7 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                     key={conversation.id}
                     onClick={() => onSelect(conversation.id)}
                     className={cn(
-                      "hover:bg-accent/50 flex w-full items-start gap-2.5 border-b px-3 py-3.5 text-left transition-all duration-200",
+                      "hover:bg-accent/50 flex w-full items-start gap-2.5 border-b py-3.5 pr-6 pl-3 text-left transition-all duration-200",
                       "border-l-4 hover:shadow-sm",
                       showPriority ? getPriorityCardBorder(conversation.priority) : "border-l-transparent",
                       isSelected && "bg-accent shadow-sm",
@@ -325,7 +325,7 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                       </AvatarFallback>
                     </Avatar>
 
-                    <div className="min-w-0 flex-1 space-y-1 overflow-hidden">
+                    <div className="max-w-sm min-w-0 flex-1 space-y-1 overflow-hidden">
                       <div className="flex min-w-0 items-center gap-2 overflow-hidden">
                         <span
                           className={cn(
