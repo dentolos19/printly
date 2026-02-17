@@ -22,6 +22,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { API_URL } from "@/environment";
 import { useAuth } from "@/lib/providers/auth";
 import { useState, useRef, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
 
 // Call status enum matching backend
 export enum CallStatus {
@@ -239,7 +240,7 @@ function AiCallNotesDialog({
 
               {/* Transcript collapsible */}
               {transcript && (
-                <div className="border-t pt-3">
+                <div className="border-t pt-4 pb-4">
                   <button
                     onClick={() => setShowTranscript(!showTranscript)}
                     className="text-muted-foreground hover:text-foreground flex w-full items-center justify-between text-sm font-semibold tracking-wide uppercase transition-colors"
@@ -248,8 +249,16 @@ function AiCallNotesDialog({
                     {showTranscript ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </button>
                   {showTranscript && (
-                    <div className="text-muted-foreground mt-2 text-sm leading-relaxed whitespace-pre-wrap">
-                      {transcript}
+                    <div className="text-muted-foreground prose prose-sm max-w-none dark:prose-invert mt-3 text-sm leading-relaxed">
+                      <ReactMarkdown
+                        components={{
+                          p: ({ node, ...props }) => <p className="mb-2" {...props} />,
+                          strong: ({ node, ...props }) => <strong className="font-semibold text-foreground" {...props} />,
+                          em: ({ node, ...props }) => <em className="italic" {...props} />,
+                        }}
+                      >
+                        {transcript}
+                      </ReactMarkdown>
                     </div>
                   )}
                 </div>
