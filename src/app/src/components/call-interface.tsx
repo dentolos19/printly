@@ -2,19 +2,22 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { CallType } from "@/lib/types/call";
+import { cn } from "@/lib/utils";
 import {
   ControlBar,
   GridLayout,
   LiveKitRoom,
   ParticipantTile,
   RoomAudioRenderer,
+  useRoomContext,
   useTracks,
 } from "@livekit/components-react";
 import "@livekit/components-styles";
-import { Track } from "livekit-client";
-import { Phone, PhoneOff, Video } from "lucide-react";
-import { useState } from "react";
+import { RoomEvent, Track } from "livekit-client";
+import { MessageSquare, Phone, PhoneOff, Send, Video, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface CallInterfaceProps {
   token: string;
@@ -24,7 +27,13 @@ interface CallInterfaceProps {
   participantName: string;
 }
 
-function AudioCallLayout() {
+interface AudioCallLayoutProps {
+  isChatOpen: boolean;
+  onChatToggle: () => void;
+  unreadCount: number;
+}
+
+function AudioCallLayout({ isChatOpen, onChatToggle, unreadCount }: AudioCallLayoutProps) {
   const tracks = useTracks([Track.Source.Microphone], { onlySubscribed: false });
 
   return (
@@ -37,12 +46,34 @@ function AudioCallLayout() {
         </p>
       </div>
       <RoomAudioRenderer />
-      <ControlBar variation="minimal" controls={{ camera: false, screenShare: false }} />
+      <div className="flex gap-2">
+        <ControlBar variation="minimal" controls={{ camera: false, screenShare: false }} />
+        <Button
+          variant="secondary"
+          size="icon"
+          className="relative"
+          onClick={onChatToggle}
+          title={isChatOpen ? "Close chat" : "Open chat"}
+        >
+          <MessageSquare className="h-5 w-5" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </Button>
+      </div>
     </div>
   );
 }
 
-function VideoCallLayout() {
+interface VideoCallLayoutProps {
+  isChatOpen: boolean;
+  onChatToggle: () => void;
+  unreadCount: number;
+}
+
+function VideoCallLayout({ isChatOpen, onChatToggle, unreadCount }: VideoCallLayoutProps) {
   const tracks = useTracks(
     [
       { source: Track.Source.Camera, withPlaceholder: true },
@@ -66,14 +97,210 @@ function VideoCallLayout() {
       </div>
       <RoomAudioRenderer />
       <div className="absolute right-0 bottom-0 left-0 bg-linear-to-t from-black/80 to-transparent p-4">
-        <ControlBar variation="minimal" />
+        <div className="flex items-center justify-center gap-2">
+          <ControlBar variation="minimal" />
+          <Button
+            variant="secondary"
+            size="icon"
+            className="relative"
+            onClick={onChatToggle}
+            title={isChatOpen ? "Close chat" : "Open chat"}
+          >
+            <MessageSquare className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );
 }
 
+interface ChatMessage {
+  id: string;
+  sender: string;
+  text: string;
+  timestamp: number;
+}
+
+interface CallChatProps {
+  participantName: string;
+  isOpen: boolean;
+  onClose: () => void;
+  onUnreadChange?: (count: number) => void;
+}
+
+function CallChat({ participantName, isOpen, onClose, onUnreadChange }: CallChatProps) {
+  const room = useRoomContext();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [unreadCount, setUnreadCount] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const encoder = useRef(new TextEncoder());
+  const decoder = useRef(new TextDecoder());
+  const isOpenRef = useRef(isOpen);
+
+  useEffect(() => {
+    isOpenRef.current = isOpen;
+    if (isOpen) {
+      setUnreadCount(0);
+      onUnreadChange?.(0);
+    }
+  }, [isOpen, onUnreadChange]);
+
+  // Listen for incoming data messages
+  useEffect(() => {
+    if (!room) return;
+
+    const handleDataReceived = (payload: Uint8Array, participant: any, kind: any, topic: string | undefined) => {
+      if (topic !== "chat") return;
+
+      try {
+        const data = JSON.parse(decoder.current.decode(payload));
+        const msg: ChatMessage = {
+          id: `${Date.now()}-${Math.random()}`,
+          sender: data.sender || participant?.name || "Unknown",
+          text: data.text,
+          timestamp: data.timestamp || Date.now(),
+        };
+        setMessages((prev) => [...prev, msg]);
+
+        if (!isOpenRef.current) {
+          setUnreadCount((prev) => {
+            const newCount = prev + 1;
+            onUnreadChange?.(newCount);
+            return newCount;
+          });
+        }
+      } catch (e) {
+        console.error("[CallChat] Failed to parse message:", e);
+      }
+    };
+
+    room.on(RoomEvent.DataReceived, handleDataReceived);
+    return () => {
+      room.off(RoomEvent.DataReceived, handleDataReceived);
+    };
+  }, [room]);
+
+  // Auto-scroll when new messages arrive
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const sendMessage = useCallback(async () => {
+    if (!input.trim() || !room) return;
+
+    const data = {
+      sender: participantName,
+      text: input.trim(),
+      timestamp: Date.now(),
+    };
+
+    try {
+      const encoded = encoder.current.encode(JSON.stringify(data));
+      await room.localParticipant.publishData(encoded, {
+        reliable: true,
+        topic: "chat",
+      });
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `${Date.now()}-local`,
+          sender: "You",
+          text: input.trim(),
+          timestamp: Date.now(),
+        },
+      ]);
+      setInput("");
+    } catch (e) {
+      console.error("[CallChat] Failed to send message:", e);
+    }
+  }, [input, room, participantName]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    },
+    [sendMessage],
+  );
+
+  return (
+    <>
+      {/* Chat panel */}
+      {isOpen && (
+        <div className="bg-card text-card-foreground border-border fixed top-0 right-0 bottom-0 z-[60] flex w-80 flex-col overflow-hidden border-l shadow-xl">
+          {/* Header */}
+          <div className="border-border flex shrink-0 items-center justify-between border-b px-4 py-3">
+            <h3 className="text-sm font-semibold">In-Call Chat</h3>
+            <Button variant="ghost" size="icon" className="hover:bg-muted h-7 w-7" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Messages - Scrollable */}
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="p-3">
+              {messages.length === 0 ? (
+                <div className="text-muted-foreground flex h-full items-center justify-center text-center">
+                  <p className="text-sm">Send a message while on the call</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {messages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={cn(
+                        "rounded-lg px-3 py-2 text-sm",
+                        msg.sender === "You"
+                          ? "bg-primary text-primary-foreground ml-8"
+                          : "bg-muted text-foreground mr-8",
+                      )}
+                    >
+                      {msg.sender !== "You" && (
+                        <p className="text-muted-foreground mb-0.5 text-[10px] font-semibold">{msg.sender}</p>
+                      )}
+                      <p className="break-words">{msg.text}</p>
+                    </div>
+                  ))}
+                  <div ref={scrollRef} />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Input */}
+          <div className="border-border shrink-0 border-t p-3">
+            <div className="flex gap-2">
+              <Input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Type a message..."
+                className="text-sm"
+              />
+              <Button size="icon" onClick={sendMessage} disabled={!input.trim()} className="shrink-0">
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 export function CallInterface({ token, serverUrl, callType, onLeave, participantName }: CallInterfaceProps) {
   const [isConnected, setIsConnected] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   return (
     <div className="bg-background fixed inset-0 z-50 flex flex-col">
@@ -103,8 +330,27 @@ export function CallInterface({ token, serverUrl, callType, onLeave, participant
         </div>
 
         <div className="relative min-h-0 flex-1 overflow-hidden">
-          {callType === CallType.Video ? <VideoCallLayout /> : <AudioCallLayout />}
+          {callType === CallType.Video ? (
+            <VideoCallLayout
+              isChatOpen={isChatOpen}
+              onChatToggle={() => setIsChatOpen(!isChatOpen)}
+              unreadCount={unreadCount}
+            />
+          ) : (
+            <AudioCallLayout
+              isChatOpen={isChatOpen}
+              onChatToggle={() => setIsChatOpen(!isChatOpen)}
+              unreadCount={unreadCount}
+            />
+          )}
         </div>
+
+        <CallChat
+          participantName={participantName}
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          onUnreadChange={setUnreadCount}
+        />
       </LiveKitRoom>
     </div>
   );
