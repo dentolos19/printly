@@ -1111,7 +1111,9 @@ public class ConversationController(
         int? DurationSeconds,
         string LiveKitRoomName,
         CallParticipantResponse Initiator,
-        List<CallParticipantResponse> Participants
+        List<CallParticipantResponse> Participants,
+        bool HasRecording,
+        bool HasAiNotes
     );
 
     /// <summary>
@@ -1162,9 +1164,136 @@ public class ConversationController(
                         p.JoinedAt,
                         p.LeftAt
                     ))
-                    .ToList()
+                    .ToList(),
+                callLog.RecordingAssetId != null,
+                !string.IsNullOrEmpty(callLog.AiCallNotes)
             )
         );
+    }
+
+    public record UploadRecordingResponse(Guid AssetId);
+
+    /// <summary>
+    /// Upload a call recording audio file. Called automatically when a call ends.
+    /// </summary>
+    [HttpPost("call/{callId:guid}/upload-recording")]
+    public async Task<ActionResult<UploadRecordingResponse>> UploadCallRecording(Guid callId, IFormFile audioFile)
+    {
+        var currentUserId = User.GetUserId();
+        if (currentUserId is null)
+            return Unauthorized();
+
+        var callLog = await Context.CallLogs.Include(c => c.Participants).FirstOrDefaultAsync(c => c.Id == callId);
+
+        if (callLog is null)
+            return NotFound("Call not found");
+
+        // Verify user was a participant
+        var isParticipant = callLog.Participants.Any(p => p.UserId == currentUserId);
+        if (!isParticipant)
+            return Forbid();
+
+        // Don't overwrite if recording already exists
+        if (callLog.RecordingAssetId is not null)
+            return Ok(new UploadRecordingResponse(callLog.RecordingAssetId.Value));
+
+        if (audioFile is null || audioFile.Length == 0)
+            return BadRequest("No audio file provided");
+
+        // Max 50MB for call recordings
+        if (audioFile.Length > 50 * 1024 * 1024)
+            return BadRequest("Recording too large. Maximum size is 50MB.");
+
+        try
+        {
+            await using var stream = audioFile.OpenReadStream();
+            // Determine file extension from content type
+            var ext =
+                audioFile.ContentType.Contains("ogg") ? "ogg"
+                : audioFile.ContentType.Contains("wav") ? "wav"
+                : audioFile.ContentType.Contains("mp3") ? "mp3"
+                : "ogg";
+            var asset = await _storageService.UploadFileAsync(
+                stream,
+                $"call-recording-{callId}.{ext}",
+                $"call-recording-{callId}"
+            );
+
+            callLog.RecordingAssetId = asset.Id;
+            await Context.SaveChangesAsync();
+
+            return Ok(new UploadRecordingResponse(asset.Id));
+        }
+        catch (Exception ex)
+        {
+            var innerMessage = ex.InnerException?.InnerException?.Message ?? ex.InnerException?.Message ?? ex.Message;
+            return StatusCode(500, $"Failed to upload recording: {innerMessage}");
+        }
+    }
+
+    public record CallNotesResponse(string Notes, string Transcript, bool WasGenerated);
+
+    /// <summary>
+    /// Get AI-generated call notes. First request triggers generation, subsequent requests return cached result.
+    /// </summary>
+    [HttpPost("call/{callId:guid}/notes")]
+    public async Task<ActionResult<CallNotesResponse>> GetOrGenerateCallNotes(
+        Guid callId,
+        [FromServices] GenerativeService generativeService,
+        [FromServices] StorageService storageService
+    )
+    {
+        var currentUserId = User.GetUserId();
+        if (currentUserId is null)
+            return Unauthorized();
+
+        var callLog = await Context
+            .CallLogs.Include(c => c.Participants)
+            .Include(c => c.RecordingAsset)
+            .FirstOrDefaultAsync(c => c.Id == callId);
+
+        if (callLog is null)
+            return NotFound("Call not found");
+
+        var isParticipant = callLog.Participants.Any(p => p.UserId == currentUserId);
+        var isAdmin = User.IsInRole(Roles.Admin);
+        if (!isParticipant && !isAdmin)
+            return Forbid();
+
+        // If notes already exist, return them immediately (cached in DB)
+        if (!string.IsNullOrEmpty(callLog.AiCallNotes))
+        {
+            return Ok(new CallNotesResponse(callLog.AiCallNotes, callLog.Transcript ?? "", false));
+        }
+
+        // No notes yet, so we need to generate them from the recording
+        if (callLog.RecordingAssetId is null || callLog.RecordingAsset is null)
+            return BadRequest("No recording available for this call. AI Call Notes require a call recording.");
+
+        try
+        {
+            // Fetch the audio bytes from R2 storage
+            using var audioStream = await storageService.StreamFileAsync(callLog.RecordingAsset);
+            using var memoryStream = new MemoryStream();
+            await audioStream.CopyToAsync(memoryStream);
+            var audioBytes = memoryStream.ToArray();
+
+            var mimeType = callLog.RecordingAsset.Type ?? "audio/webm";
+
+            // Send to Gemini for transcription and note generation
+            var (transcript, notes) = await generativeService.GenerateCallNotesAsync(audioBytes, mimeType);
+
+            // Save to database so we never have to generate again
+            callLog.Transcript = transcript;
+            callLog.AiCallNotes = notes;
+            await Context.SaveChangesAsync();
+
+            return Ok(new CallNotesResponse(notes, transcript, true));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Failed to generate call notes: {ex.Message}");
+        }
     }
 
     #endregion

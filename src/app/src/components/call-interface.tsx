@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { CallType } from "@/lib/types/call";
+import { API_URL } from "@/environment";
 import { cn } from "@/lib/utils";
 import {
   ControlBar,
@@ -25,6 +26,8 @@ interface CallInterfaceProps {
   callType: CallType;
   onLeave: () => void;
   participantName: string;
+  callId: string;
+  accessToken: string;
 }
 
 interface AudioCallLayoutProps {
@@ -67,16 +70,10 @@ function AudioCallLayout({ isChatOpen, onChatToggle, unreadCount }: AudioCallLay
   );
 }
 
-interface VideoCallLayoutProps {
-  isChatOpen: boolean;
-  onChatToggle: () => void;
-  unreadCount: number;
-}
-
-function VideoCallLayout({ isChatOpen, onChatToggle, unreadCount }: VideoCallLayoutProps) {
+function VideoCallLayout() {
   const tracks = useTracks(
     [
-      { source: Track.Source.Camera, withPlaceholder: true },
+      { source: Track.Source.Camera, withPlaceholder: false },
       { source: Track.Source.ScreenShare, withPlaceholder: false },
     ],
     { onlySubscribed: false },
@@ -97,23 +94,7 @@ function VideoCallLayout({ isChatOpen, onChatToggle, unreadCount }: VideoCallLay
       </div>
       <RoomAudioRenderer />
       <div className="absolute right-0 bottom-0 left-0 bg-linear-to-t from-black/80 to-transparent p-4">
-        <div className="flex items-center justify-center gap-2">
-          <ControlBar variation="minimal" />
-          <Button
-            variant="secondary"
-            size="icon"
-            className="relative"
-            onClick={onChatToggle}
-            title={isChatOpen ? "Close chat" : "Open chat"}
-          >
-            <MessageSquare className="h-5 w-5" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </span>
-            )}
-          </Button>
-        </div>
+        <ControlBar variation="minimal" />
       </div>
     </div>
   );
@@ -166,15 +147,18 @@ function CallChat({ participantName, isOpen, onClose, onUnreadChange }: CallChat
           text: data.text,
           timestamp: data.timestamp || Date.now(),
         };
-        setMessages((prev) => [...prev, msg]);
+        // Defer state updates to avoid setState-during-render error
+        setTimeout(() => {
+          setMessages((prev) => [...prev, msg]);
 
-        if (!isOpenRef.current) {
-          setUnreadCount((prev) => {
-            const newCount = prev + 1;
-            onUnreadChange?.(newCount);
-            return newCount;
-          });
-        }
+          if (!isOpenRef.current) {
+            setUnreadCount((prev) => {
+              const newCount = prev + 1;
+              onUnreadChange?.(newCount);
+              return newCount;
+            });
+          }
+        }, 0);
       } catch (e) {
         console.error("[CallChat] Failed to parse message:", e);
       }
@@ -297,7 +281,144 @@ function CallChat({ participantName, isOpen, onClose, onUnreadChange }: CallChat
   );
 }
 
-export function CallInterface({ token, serverUrl, callType, onLeave, participantName }: CallInterfaceProps) {
+// Records audio from LiveKit's own mic track (no separate getUserMedia needed).
+// Waits for the local mic track to be published, then records it directly.
+function CallAudioRecorder({ callId, accessToken }: { callId: string; accessToken: string }) {
+  const room = useRoomContext();
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const isUploadingRef = useRef(false);
+  const hasStartedRef = useRef(false);
+
+  const uploadRecording = useCallback(
+    async (blob: Blob) => {
+      if (isUploadingRef.current || blob.size < 5000) {
+        console.log("[CallRecorder] Skipping upload, blob size:", blob.size);
+        return;
+      }
+      isUploadingRef.current = true;
+
+      try {
+        const formData = new FormData();
+        const ext = blob.type.includes("ogg") ? "ogg" : "webm";
+        formData.append("audioFile", blob, `call-recording.${ext}`);
+
+        const response = await fetch(`${API_URL}/conversation/call/${callId}/upload-recording`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${accessToken}` },
+          body: formData,
+        });
+
+        if (response.ok) {
+          console.log("[CallRecorder] Recording uploaded successfully");
+        } else {
+          console.error("[CallRecorder] Upload failed:", await response.text());
+        }
+      } catch (e) {
+        console.error("[CallRecorder] Upload error:", e);
+      } finally {
+        isUploadingRef.current = false;
+      }
+    },
+    [callId, accessToken],
+  );
+
+  // Function to start recording from a given MediaStreamTrack
+  const startRecording = useCallback(
+    (track: MediaStreamTrack) => {
+      if (hasStartedRef.current) return;
+      hasStartedRef.current = true;
+
+      try {
+        const stream = new MediaStream([track]);
+
+        const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+          ? "audio/webm;codecs=opus"
+          : "audio/webm";
+
+        console.log(
+          "[CallRecorder] Starting with track:",
+          track.label,
+          "enabled:",
+          track.enabled,
+          "readyState:",
+          track.readyState,
+          "mimeType:",
+          mimeType,
+        );
+
+        const recorder = new MediaRecorder(stream, {
+          mimeType,
+          audioBitsPerSecond: 64000,
+        });
+
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) chunksRef.current.push(e.data);
+        };
+
+        recorder.onstop = () => {
+          const blob = new Blob(chunksRef.current, { type: mimeType });
+          console.log(
+            "[CallRecorder] Stopped, size:",
+            (blob.size / 1024).toFixed(1),
+            "KB, chunks:",
+            chunksRef.current.length,
+          );
+          uploadRecording(blob);
+        };
+
+        recorderRef.current = recorder;
+        recorder.start(3000);
+        console.log("[CallRecorder] Recording started from LiveKit mic track");
+      } catch (e) {
+        console.error("[CallRecorder] Failed to start:", e);
+        hasStartedRef.current = false;
+      }
+    },
+    [uploadRecording],
+  );
+
+  useEffect(() => {
+    if (!room) return;
+
+    // Check if the mic track is already published
+    const existingPub = room.localParticipant.getTrackPublication(Track.Source.Microphone);
+    if (existingPub?.track?.mediaStreamTrack) {
+      console.log("[CallRecorder] Mic track already available");
+      startRecording(existingPub.track.mediaStreamTrack);
+    }
+
+    // Also listen for when the track gets published (covers the case where it's not ready yet)
+    const handleLocalTrackPublished = (publication: any) => {
+      if (publication.source === Track.Source.Microphone && publication.track?.mediaStreamTrack) {
+        console.log("[CallRecorder] Mic track just published");
+        startRecording(publication.track.mediaStreamTrack);
+      }
+    };
+
+    room.localParticipant.on("localTrackPublished", handleLocalTrackPublished);
+
+    return () => {
+      room.localParticipant.off("localTrackPublished", handleLocalTrackPublished);
+      if (recorderRef.current && recorderRef.current.state !== "inactive") {
+        recorderRef.current.stop();
+      }
+      chunksRef.current = [];
+    };
+  }, [room, startRecording]);
+
+  return null;
+}
+
+export function CallInterface({
+  token,
+  serverUrl,
+  callType,
+  onLeave,
+  participantName,
+  callId,
+  accessToken,
+}: CallInterfaceProps) {
   const [isConnected, setIsConnected] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -331,11 +452,7 @@ export function CallInterface({ token, serverUrl, callType, onLeave, participant
 
         <div className="relative min-h-0 flex-1 overflow-hidden">
           {callType === CallType.Video ? (
-            <VideoCallLayout
-              isChatOpen={isChatOpen}
-              onChatToggle={() => setIsChatOpen(!isChatOpen)}
-              unreadCount={unreadCount}
-            />
+            <VideoCallLayout />
           ) : (
             <AudioCallLayout
               isChatOpen={isChatOpen}
@@ -351,6 +468,7 @@ export function CallInterface({ token, serverUrl, callType, onLeave, participant
           onClose={() => setIsChatOpen(false)}
           onUnreadChange={setUnreadCount}
         />
+        <CallAudioRecorder callId={callId} accessToken={accessToken} />
       </LiveKitRoom>
     </div>
   );

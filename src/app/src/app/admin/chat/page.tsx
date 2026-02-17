@@ -1340,6 +1340,7 @@ export default function AdminChatPage() {
                                   !isInCall && activeCallId === message.callLogId && message.senderId !== currentUserId
                                 }
                                 isInCall={isInCall && currentCall?.callId === message.callLogId}
+                                showAiCallNotes={true}
                               />
                             ) : (
                               <ChatMessage
@@ -1448,6 +1449,8 @@ export default function AdminChatPage() {
           callType={currentCall.callType}
           onLeave={handleLeaveCall}
           participantName={auth.claims?.email || "Admin"}
+          callId={currentCall.callId}
+          accessToken={auth.tokens?.accessToken || ""}
         />
       )}
 

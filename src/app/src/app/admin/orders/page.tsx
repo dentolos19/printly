@@ -326,7 +326,7 @@ export default function AdminOrdersPage() {
   const [filteredOrders, setFilteredOrders] = useState<OrderSummaryResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("0");
 
   // Dialog states
   const [selectedOrder, setSelectedOrder] = useState<OrderSummaryResponse | null>(null);
@@ -496,11 +496,14 @@ export default function AdminOrdersPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
-                {Object.entries(OrderStatusLabels).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
+                <SelectItem value="0">Pending Payment</SelectItem>
+                {Object.entries(OrderStatusLabels)
+                  .filter(([value]) => value !== "0")
+                  .map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
