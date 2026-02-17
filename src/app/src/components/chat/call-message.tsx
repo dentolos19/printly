@@ -249,11 +249,13 @@ function AiCallNotesDialog({
                     {showTranscript ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </button>
                   {showTranscript && (
-                    <div className="text-muted-foreground prose prose-sm max-w-none dark:prose-invert mt-3 text-sm leading-relaxed">
+                    <div className="text-muted-foreground prose prose-sm dark:prose-invert mt-3 max-w-none text-sm leading-relaxed">
                       <ReactMarkdown
                         components={{
                           p: ({ node, ...props }) => <p className="mb-2" {...props} />,
-                          strong: ({ node, ...props }) => <strong className="font-semibold text-foreground" {...props} />,
+                          strong: ({ node, ...props }) => (
+                            <strong className="text-foreground font-semibold" {...props} />
+                          ),
                           em: ({ node, ...props }) => <em className="italic" {...props} />,
                         }}
                       >
