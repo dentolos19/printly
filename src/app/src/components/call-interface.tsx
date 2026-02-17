@@ -70,7 +70,15 @@ function AudioCallLayout({ isChatOpen, onChatToggle, unreadCount }: AudioCallLay
   );
 }
 
-function VideoCallLayout({ isChatOpen, onChatToggle, unreadCount }: { isChatOpen: boolean; onChatToggle: () => void; unreadCount: number }) {
+function VideoCallLayout({
+  isChatOpen,
+  onChatToggle,
+  unreadCount,
+}: {
+  isChatOpen: boolean;
+  onChatToggle: () => void;
+  unreadCount: number;
+}) {
   const tracks = useTracks(
     [
       { source: Track.Source.Camera, withPlaceholder: false },
