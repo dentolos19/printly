@@ -568,7 +568,7 @@ public class ChatService
     /// <summary>
     /// Make a request to the OpenRouter API and return the parsed response
     /// </summary>
-    private async Task<JsonElement> CallOpenRouterAsync(object requestBody)
+    internal async Task<JsonElement> CallOpenRouterAsync(object requestBody)
     {
         var response = await _http.PostAsync(
             "https://openrouter.ai/api/v1/chat/completions",
@@ -808,6 +808,146 @@ public class ChatService
             };
         }
     }
+
+    /// <summary>
+    /// Generate an AI summary of a conversation's messages
+    /// </summary>
+    public async Task<ConversationSummaryResult> GenerateConversationSummaryAsync(
+        string? conversationSubject,
+        string conversationStatus,
+        string conversationPriority,
+        DateTime conversationCreatedAt,
+        List<SummaryMessage> messages
+    )
+    {
+        var transcript = string.Join(
+            "\n",
+            messages.Select(m => $"[{m.Timestamp:yyyy-MM-dd HH:mm}] {m.SenderName} ({m.Role}): {m.Content}")
+        );
+
+        var messageCount = messages.Count;
+        var duration = messages.Count >= 2 ? (messages.Last().Timestamp - messages.First().Timestamp) : TimeSpan.Zero;
+
+        var systemPrompt = $$"""
+            You are an AI assistant that generates concise conversation summaries for a customer support platform called Printly.
+
+            Analyze the conversation transcript below and return a JSON response with the following structure:
+            {
+                "summary": "A 2-3 sentence overview of what this conversation is about",
+                "keyPoints": ["point 1", "point 2", "point 3"],
+                "sentiment": "positive" | "neutral" | "negative",
+                "resolved": true | false,
+                "actionItems": ["any pending actions or follow-ups needed"]
+            }
+
+            Guidelines:
+            - Keep the summary concise but informative
+            - Key points should capture the main topics discussed
+            - Sentiment classification:
+              * "positive": Customer expresses satisfaction, gratitude, or is happy with the resolution. Uses positive language, exclamation marks, compliments support.
+              * "negative": Customer expresses frustration, anger, disappointment, or dissatisfaction. Contains complaints, criticisms, or unhappy tone.
+              * "neutral": Customer is professional/factual, no clear emotional tone. Low emotion engagement, straightforward inquiry, or mixed sentiments that balance out.
+            - Analyze the customer's messages primarily, including their tone, word choices, and reactions to support responses
+            - Resolved should be true only if the issue appears fully addressed
+            - Action items should list anything that still needs to be done
+            - Return ONLY valid JSON, no markdown backticks, no preamble
+            """;
+
+        var userPrompt = $"""
+            Conversation Subject: {conversationSubject ?? "No subject"}
+            Status: {conversationStatus}
+            Priority: {conversationPriority}
+            Started: {conversationCreatedAt:yyyy-MM-dd HH:mm}
+            Total Messages: {messageCount}
+            Duration: {(duration.TotalMinutes < 1 ? "Less than a minute" : $"{(int)duration.TotalMinutes} minutes")}
+
+            --- Transcript ---
+            {transcript}
+            --- End Transcript ---
+
+            Generate the conversation summary as JSON.
+            """;
+
+        var requestBody = new
+        {
+            model = "google/gemini-2.5-flash",
+            messages = new[]
+            {
+                new { role = "system", content = systemPrompt },
+                new { role = "user", content = userPrompt },
+            },
+            max_tokens = 500,
+            temperature = 0.3,
+        };
+
+        var responseJson = await CallOpenRouterAsync(requestBody);
+
+        var content =
+            responseJson.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "{}";
+
+        // Clean potential markdown fences from the response
+        content = content.Trim();
+        if (content.StartsWith("```json"))
+            content = content[7..];
+        if (content.StartsWith("```"))
+            content = content[3..];
+        if (content.EndsWith("```"))
+            content = content[..^3];
+        content = content.Trim();
+
+        try
+        {
+            var parsed = JsonSerializer.Deserialize<JsonElement>(content);
+            return new ConversationSummaryResult
+            {
+                Summary = parsed.TryGetProperty("summary", out var s) ? s.GetString() ?? "" : "",
+                KeyPoints = parsed.TryGetProperty("keyPoints", out var kp)
+                    ? kp.EnumerateArray().Select(x => x.GetString() ?? "").ToList()
+                    : [],
+                Sentiment = parsed.TryGetProperty("sentiment", out var sent)
+                    ? sent.GetString() ?? "neutral"
+                    : "neutral",
+                Resolved = parsed.TryGetProperty("resolved", out var res) && res.GetBoolean(),
+                ActionItems = parsed.TryGetProperty("actionItems", out var ai)
+                    ? ai.EnumerateArray().Select(x => x.GetString() ?? "").ToList()
+                    : [],
+                MessageCount = messageCount,
+                Duration = duration,
+            };
+        }
+        catch
+        {
+            return new ConversationSummaryResult
+            {
+                Summary = content,
+                KeyPoints = [],
+                Sentiment = "neutral",
+                Resolved = false,
+                ActionItems = [],
+                MessageCount = messageCount,
+                Duration = duration,
+            };
+        }
+    }
+}
+
+public class SummaryMessage
+{
+    public string SenderName { get; set; } = "";
+    public string Role { get; set; } = "";
+    public string Content { get; set; } = "";
+    public DateTime Timestamp { get; set; }
+}
+
+public class ConversationSummaryResult
+{
+    public string Summary { get; set; } = "";
+    public List<string> KeyPoints { get; set; } = [];
+    public string Sentiment { get; set; } = "neutral";
+    public bool Resolved { get; set; }
+    public List<string> ActionItems { get; set; } = [];
+    public int MessageCount { get; set; }
+    public TimeSpan Duration { get; set; }
 }
 
 /// <summary>

@@ -6,6 +6,7 @@ import {
   ChatDateSeparator,
   ChatMessage,
   ConversationList,
+  ConversationSummary as ConversationSummaryDialog,
   MessageInput,
   TypingIndicator,
   type ReplyInfo,
@@ -43,6 +44,7 @@ import {
   PanelLeftOpen,
   Phone,
   RefreshCw,
+  Sparkles,
   Video,
   Wifi,
   WifiOff,
@@ -114,6 +116,7 @@ export default function ChatPage() {
   const [lastError, setLastError] = useState<string | null>(null);
   const [pendingOptimisticMessages, setPendingOptimisticMessages] = useState<Set<string>>(new Set());
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   // Call state
   const [isInCall, setIsInCall] = useState(false);
@@ -1202,6 +1205,16 @@ export default function ChatPage() {
                         variant="outline"
                         size="icon"
                         className="h-7 w-7"
+                        onClick={() => setSummaryOpen(true)}
+                        disabled={messages.length === 0}
+                        title="AI Conversation Summary"
+                      >
+                        <Sparkles className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7"
                         onClick={() => handleInitiateCall(CallType.Audio)}
                         disabled={connectionState !== "connected" || isInCall || selectedConversation.status === 3}
                         title="Start voice call"
@@ -1364,6 +1377,16 @@ export default function ChatPage() {
           )}
         </Card>
       </div>
+
+      {/* AI Summary Dialog */}
+      {selectedConversationId && (
+        <ConversationSummaryDialog
+          conversationId={selectedConversationId}
+          isOpen={summaryOpen}
+          onClose={() => setSummaryOpen(false)}
+          authorizedFetch={authorizedFetch}
+        />
+      )}
 
       {/* Call Interface */}
       {isInCall && currentCall && (

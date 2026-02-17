@@ -17,12 +17,14 @@ public class ConversationController(
     DatabaseContext context,
     INotificationService notificationService,
     StorageService storageService,
-    IHubContext<ConversationHub> hubContext
+    IHubContext<ConversationHub> hubContext,
+    ChatService chatService
 ) : BaseController(context)
 {
     private readonly INotificationService _notificationService = notificationService;
     private readonly StorageService _storageService = storageService;
     private readonly IHubContext<ConversationHub> _hubContext = hubContext;
+    private readonly ChatService _chatService = chatService;
 
     public record ContactResponse(string Id, string Name, string Email, string Role);
 
@@ -1141,4 +1143,92 @@ public class ConversationController(
     }
 
     #endregion
+
+    /// <summary>
+    /// Generate an AI summary of a conversation
+    /// </summary>
+    [HttpPost("{conversationId:guid}/summary")]
+    public async Task<IActionResult> GetConversationSummary(Guid conversationId)
+    {
+        var currentUserId = User.GetUserId();
+        if (currentUserId is null)
+            return Unauthorized();
+
+        var isAdmin = User.IsInRole(Roles.Admin);
+
+        var conversation = await Context.Conversations.FirstOrDefaultAsync(c => c.Id == conversationId);
+
+        if (conversation is null)
+            return NotFound();
+
+        if (!isAdmin && conversation.CustomerId != currentUserId)
+            return Forbid();
+
+        var messages = await Context
+            .ConversationMessages.Where(m => m.ConversationId == conversationId && !m.IsDeleted)
+            .Include(m => m.Participant)
+                .ThenInclude(p => p.User)
+            .OrderBy(m => m.CreatedAt)
+            .Select(m => new SummaryMessage
+            {
+                SenderName = m.Participant.User.UserName ?? m.Participant.User.Email ?? "Unknown",
+                Role = m.Participant.Role == ConversationParticipantRole.Admin ? "admin/support" : "customer",
+                Content = m.IsCallMessage ? $"[Call: {m.Content}]" : m.Content,
+                Timestamp = m.CreatedAt,
+            })
+            .ToListAsync();
+
+        if (messages.Count == 0)
+            return Ok(
+                new
+                {
+                    summary = "No messages in this conversation yet.",
+                    keyPoints = Array.Empty<string>(),
+                    sentiment = "neutral",
+                    resolved = false,
+                    actionItems = Array.Empty<string>(),
+                    messageCount = 0,
+                    durationMinutes = 0,
+                }
+            );
+
+        var statusText = conversation.Status switch
+        {
+            ConversationStatus.Pending => "Pending",
+            ConversationStatus.Active => "Active",
+            ConversationStatus.Resolved => "Resolved",
+            ConversationStatus.Closed => "Closed",
+            _ => "Unknown",
+        };
+
+        var priorityText = conversation.Priority switch
+        {
+            ConversationPriority.Low => "Low",
+            ConversationPriority.Normal => "Normal",
+            ConversationPriority.High => "High",
+            ConversationPriority.Urgent => "Urgent",
+            _ => "Normal",
+        };
+
+        var result = await _chatService.GenerateConversationSummaryAsync(
+            conversation.Subject,
+            statusText,
+            priorityText,
+            conversation.CreatedAt,
+            messages
+        );
+
+        return Ok(
+            new
+            {
+                summary = result.Summary,
+                keyPoints = result.KeyPoints,
+                sentiment = result.Sentiment,
+                resolved = result.Resolved,
+                actionItems = result.ActionItems,
+                messageCount = result.MessageCount,
+                durationMinutes = (int)result.Duration.TotalMinutes,
+            }
+        );
+    }
 }

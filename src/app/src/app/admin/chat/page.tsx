@@ -6,6 +6,7 @@ import {
   ChatDateSeparator,
   ChatMessage,
   ConversationList,
+  ConversationSummary as ConversationSummaryDialog,
   MessageInput,
   TypingIndicator,
   type ReplyInfo,
@@ -37,6 +38,7 @@ import {
   PanelLeftOpen,
   Phone,
   RefreshCw,
+  Sparkles,
   User,
   Video,
   Wifi,
@@ -92,6 +94,7 @@ export default function AdminChatPage() {
   const [lastError, setLastError] = useState<string | null>(null);
   const [pendingOptimisticMessages, setPendingOptimisticMessages] = useState<Set<string>>(new Set());
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   // Call state
   const [isInCall, setIsInCall] = useState(false);
@@ -1237,6 +1240,16 @@ export default function AdminChatPage() {
                         variant="outline"
                         size="icon"
                         className="h-7 w-7"
+                        onClick={() => setSummaryOpen(true)}
+                        disabled={messages.length === 0}
+                        title="AI Conversation Summary"
+                      >
+                        <Sparkles className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7"
                         onClick={() => handleInitiateCall(CallType.Audio)}
                         disabled={connectionState !== "connected" || isInCall || selectedConversation.status === 3}
                         title={
@@ -1416,6 +1429,16 @@ export default function AdminChatPage() {
           )}
         </Card>
       </div>
+
+      {/* AI Summary Dialog */}
+      {selectedConversationId && (
+        <ConversationSummaryDialog
+          conversationId={selectedConversationId}
+          isOpen={summaryOpen}
+          onClose={() => setSummaryOpen(false)}
+          authorizedFetch={authorizedFetch}
+        />
+      )}
 
       {/* Call Interface */}
       {isInCall && currentCall && (
