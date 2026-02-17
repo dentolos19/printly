@@ -1,3 +1,4 @@
+export { AiMessageAssistant, type AiMessageAssistantProps } from "./ai-message-assistant";
 export { CallMessage, type CallMessageProps } from "./call-message";
 export { ChatDateSeparator, ChatMessage, type ChatDateSeparatorProps, type ChatMessageProps } from "./chat-message";
 export { ConversationList, type ConversationListProps } from "./conversation-list";

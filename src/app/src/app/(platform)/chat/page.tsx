@@ -2,6 +2,7 @@
 
 import { CallInterface, IncomingCallNotification } from "@/components/call-interface";
 import {
+  AiMessageAssistant,
   CallMessage,
   ChatDateSeparator,
   ChatMessage,
@@ -117,6 +118,7 @@ export default function ChatPage() {
   const [pendingOptimisticMessages, setPendingOptimisticMessages] = useState<Set<string>>(new Set());
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
 
   // Call state
   const [isInCall, setIsInCall] = useState(false);
@@ -1101,7 +1103,20 @@ export default function ChatPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="message">Message (optional)</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="message">Message (optional)</Label>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1.5 text-xs text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                      onClick={() => setAiAssistantOpen(true)}
+                      disabled={!newSubject.trim()}
+                      title={!newSubject.trim() ? "Enter a subject first" : "Get AI help drafting your message"}
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Ask AI
+                    </Button>
+                  </div>
                   <Textarea
                     id="message"
                     placeholder="Describe your issue or question..."
@@ -1122,6 +1137,16 @@ export default function ChatPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          <AiMessageAssistant
+            isOpen={aiAssistantOpen}
+            onClose={() => setAiAssistantOpen(false)}
+            onInsert={(text) => {
+              setNewMessage(text);
+              setAiAssistantOpen(false);
+            }}
+            subject={newSubject}
+            authorizedFetch={authorizedFetch}
+          />
         </div>
       </div>
 
