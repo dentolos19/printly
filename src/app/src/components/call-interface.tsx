@@ -70,7 +70,7 @@ function AudioCallLayout({ isChatOpen, onChatToggle, unreadCount }: AudioCallLay
   );
 }
 
-function VideoCallLayout() {
+function VideoCallLayout({ isChatOpen, onChatToggle, unreadCount }: { isChatOpen: boolean; onChatToggle: () => void; unreadCount: number }) {
   const tracks = useTracks(
     [
       { source: Track.Source.Camera, withPlaceholder: false },
@@ -94,7 +94,23 @@ function VideoCallLayout() {
       </div>
       <RoomAudioRenderer />
       <div className="absolute right-0 bottom-0 left-0 bg-linear-to-t from-black/80 to-transparent p-4">
-        <ControlBar variation="minimal" />
+        <div className="flex items-center justify-center gap-2">
+          <ControlBar variation="minimal" />
+          <Button
+            variant="secondary"
+            size="icon"
+            className="relative"
+            onClick={onChatToggle}
+            title={isChatOpen ? "Close chat" : "Open chat"}
+          >
+            <MessageSquare className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -110,11 +126,12 @@ interface ChatMessage {
 interface CallChatProps {
   participantName: string;
   isOpen: boolean;
+  onOpen: () => void;
   onClose: () => void;
   onUnreadChange?: (count: number) => void;
 }
 
-function CallChat({ participantName, isOpen, onClose, onUnreadChange }: CallChatProps) {
+function CallChat({ participantName, isOpen, onOpen, onClose, onUnreadChange }: CallChatProps) {
   const room = useRoomContext();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -154,7 +171,10 @@ function CallChat({ participantName, isOpen, onClose, onUnreadChange }: CallChat
           if (!isOpenRef.current) {
             setUnreadCount((prev) => {
               const newCount = prev + 1;
-              onUnreadChange?.(newCount);
+              // Defer parent callback to separate microtask to avoid parent update during child render
+              setTimeout(() => {
+                onUnreadChange?.(newCount);
+              }, 0);
               return newCount;
             });
           }
@@ -452,7 +472,11 @@ export function CallInterface({
 
         <div className="relative min-h-0 flex-1 overflow-hidden">
           {callType === CallType.Video ? (
-            <VideoCallLayout />
+            <VideoCallLayout
+              isChatOpen={isChatOpen}
+              onChatToggle={() => setIsChatOpen(!isChatOpen)}
+              unreadCount={unreadCount}
+            />
           ) : (
             <AudioCallLayout
               isChatOpen={isChatOpen}
@@ -465,6 +489,7 @@ export function CallInterface({
         <CallChat
           participantName={participantName}
           isOpen={isChatOpen}
+          onOpen={() => setIsChatOpen(true)}
           onClose={() => setIsChatOpen(false)}
           onUnreadChange={setUnreadCount}
         />
