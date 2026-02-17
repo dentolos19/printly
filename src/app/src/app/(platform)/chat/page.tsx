@@ -2,10 +2,12 @@
 
 import { CallInterface, IncomingCallNotification } from "@/components/call-interface";
 import {
+  AiMessageAssistant,
   CallMessage,
   ChatDateSeparator,
   ChatMessage,
   ConversationList,
+  ConversationSummary as ConversationSummaryDialog,
   MessageInput,
   TypingIndicator,
   type ReplyInfo,
@@ -43,6 +45,7 @@ import {
   PanelLeftOpen,
   Phone,
   RefreshCw,
+  Sparkles,
   Video,
   Wifi,
   WifiOff,
@@ -114,6 +117,8 @@ export default function ChatPage() {
   const [lastError, setLastError] = useState<string | null>(null);
   const [pendingOptimisticMessages, setPendingOptimisticMessages] = useState<Set<string>>(new Set());
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
 
   // Call state
   const [isInCall, setIsInCall] = useState(false);
@@ -254,8 +259,25 @@ export default function ChatPage() {
           setMessages((prev) => {
             // Remove any optimistic messages and add the real one
             const withoutOptimistic = prev.filter((m) => {
-              // Remove optimistic messages that match this real message
-              if (m.id.startsWith("optimistic-") && m.senderId === message.senderId && m.content === message.content) {
+              // Only check optimistic messages from the same sender
+              if (!m.id.startsWith("optimistic-") || m.senderId !== message.senderId) {
+                return true;
+              }
+
+              // Match text messages by content
+              const contentMatch = m.content === message.content;
+
+              // Match file messages by filename (content might differ between optimistic and real)
+              const fileMatch =
+                m.id.startsWith("optimistic-file-") &&
+                m.fileName != null &&
+                message.fileName != null &&
+                m.fileName === message.fileName;
+
+              // Match voice messages by the optimistic prefix
+              const voiceMatch = m.id.startsWith("optimistic-voice-") && message.voiceMessageUrl != null;
+
+              if (contentMatch || fileMatch || voiceMatch) {
                 // Clean up pending optimistic message tracking
                 setPendingOptimisticMessages((pendingPrev) => {
                   const next = new Set(pendingPrev);
@@ -264,10 +286,11 @@ export default function ChatPage() {
                 });
                 return false;
               }
+
               return true;
             });
             // Check if message already exists (avoid duplicates)
-            if (withoutOptimistic.some((m) => m.id === message.id)) {
+            if (withoutOptimistic.some((existing) => existing.id === message.id)) {
               return withoutOptimistic;
             }
             return [...withoutOptimistic, message];
@@ -386,34 +409,67 @@ export default function ChatPage() {
 
       connection.on("UserJoinedCall", (data: { callId: string; userId: string; userName: string }) => {
         console.log("[Chat] User joined call:", data);
+
+        // Update call message status to Ongoing (1) when someone joins
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.callLogId === data.callId && m.callStatus === 0 ? { ...m, callStatus: 1 as 0 | 1 | 2 | 3 | 4 | 5 } : m,
+          ),
+        );
       });
 
       connection.on("UserLeftCall", (data: { callId: string; userId: string; userName: string }) => {
         console.log("[Chat] User left call:", data);
       });
 
-      connection.on("CallEnded", (data: { callId: string; reason: string }) => {
+      connection.on("CallEnded", (data: { callId: string; duration: number | null; status: number }) => {
         console.log("[Chat] Call ended:", data);
+
+        // Clean up active call UI state
         if (data.callId === activeCallId || currentCall?.callId === data.callId) {
           setIsInCall(false);
           setCurrentCall(null);
           setIncomingCall(null);
           setActiveCallId(null);
         }
+
+        // Update the call message card in the messages list so it shows
+        // the new status and duration without needing a page refresh
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.callLogId === data.callId
+              ? {
+                  ...m,
+                  callStatus: data.status as 0 | 1 | 2 | 3 | 4 | 5,
+                  callDurationSeconds: data.duration,
+                }
+              : m,
+          ),
+        );
       });
 
-      connection.on(
-        "CallDeclined",
-        (data: { callId: string; declinedByUserId: string; declinedByUserName: string }) => {
-          console.log("[Chat] Call declined:", data);
-          if (data.callId === activeCallId || currentCall?.callId === data.callId) {
-            setIsInCall(false);
-            setCurrentCall(null);
-            setIncomingCall(null);
-            setActiveCallId(null);
-          }
-        },
-      );
+      connection.on("CallDeclined", (data: { callId: string; userId: string; status: number }) => {
+        console.log("[Chat] Call declined:", data);
+
+        if (data.callId === activeCallId || currentCall?.callId === data.callId) {
+          setIsInCall(false);
+          setCurrentCall(null);
+          setIncomingCall(null);
+          setActiveCallId(null);
+        }
+
+        // Update the call message card to show declined status
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.callLogId === data.callId
+              ? {
+                  ...m,
+                  callStatus: data.status as 0 | 1 | 2 | 3 | 4 | 5,
+                }
+              : m,
+          ),
+        );
+      });
 
       await connection.start();
       connectionRef.current = connection;
@@ -590,7 +646,7 @@ export default function ChatPage() {
       setIsUploading(true);
       try {
         const formData = new FormData();
-        formData.append("file", blob, "voice-message.webm");
+        formData.append("audioFile", blob, "voice-message.webm");
         formData.append("duration", duration.toString());
         const response = await authorizedFetch(`${API_URL}/conversation/${conversationId}/upload-voice`, {
           method: "POST",
@@ -1047,7 +1103,20 @@ export default function ChatPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="message">Message (optional)</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="message">Message (optional)</Label>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1.5 text-xs text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                      onClick={() => setAiAssistantOpen(true)}
+                      disabled={!newSubject.trim()}
+                      title={!newSubject.trim() ? "Enter a subject first" : "Get AI help drafting your message"}
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Ask AI
+                    </Button>
+                  </div>
                   <Textarea
                     id="message"
                     placeholder="Describe your issue or question..."
@@ -1068,22 +1137,32 @@ export default function ChatPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          <AiMessageAssistant
+            isOpen={aiAssistantOpen}
+            onClose={() => setAiAssistantOpen(false)}
+            onInsert={(text) => {
+              setNewMessage(text);
+              setAiAssistantOpen(false);
+            }}
+            subject={newSubject}
+            authorizedFetch={authorizedFetch}
+          />
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex min-h-0 flex-1 gap-3">
+      <div className="flex min-h-0 flex-1 gap-3 overflow-hidden">
         {/* Conversation List - Collapsible */}
         <Card
           className={cn(
-            "flex shrink-0 flex-col transition-all duration-300 ease-in-out",
+            "flex shrink-0 flex-col overflow-hidden transition-all duration-300 ease-in-out",
             sidebarCollapsed ? "w-0 overflow-hidden border-0 opacity-0" : "w-80 lg:w-80",
           )}
         >
           <CardHeader className="border-b px-3 py-2">
             <CardTitle className="text-sm font-medium">Conversations</CardTitle>
           </CardHeader>
-          <ScrollArea className="flex-1">
+          <ScrollArea className="min-h-0 flex-1">
             <ConversationList
               conversations={conversations}
               selectedId={selectedConversationId}
@@ -1091,13 +1170,16 @@ export default function ChatPage() {
               isLoading={isLoadingConversations}
               showStatus
               showPriority
+              showHeader={true}
+              showSearch={true}
+              showFilter={true}
               emptyMessage="No conversations yet. Start one!"
             />
           </ScrollArea>
         </Card>
 
         {/* Chat Area - Expands when sidebar collapses */}
-        <Card className="flex min-w-0 flex-1 flex-col">
+        <Card className="flex min-w-0 flex-1 flex-col overflow-hidden">
           {selectedConversation ? (
             <>
               <CardHeader className="shrink-0 gap-0 space-y-0 border-b px-3 py-2">
@@ -1127,7 +1209,7 @@ export default function ChatPage() {
                       <p className="text-muted-foreground truncate text-sm">Printly Customer Support 😊</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex shrink-0 items-center gap-1.5">
                     <Badge
                       variant="outline"
                       className={cn("gap-1 border px-2 py-0.5 text-xs", STATUS_COLORS[selectedConversation.status])}
@@ -1144,6 +1226,16 @@ export default function ChatPage() {
 
                     {/* Call buttons */}
                     <div className="ml-2 flex items-center gap-1 border-l pl-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => setSummaryOpen(true)}
+                        disabled={messages.length === 0}
+                        title="AI Conversation Summary"
+                      >
+                        <Sparkles className="h-3.5 w-3.5" />
+                      </Button>
                       <Button
                         variant="outline"
                         size="icon"
@@ -1222,6 +1314,7 @@ export default function ChatPage() {
                                   !isInCall && activeCallId === message.callLogId && message.senderId !== currentUserId
                                 }
                                 isInCall={isInCall && currentCall?.callId === message.callLogId}
+                                showAiCallNotes={true}
                               />
                             ) : (
                               <ChatMessage
@@ -1311,6 +1404,16 @@ export default function ChatPage() {
         </Card>
       </div>
 
+      {/* AI Summary Dialog */}
+      {selectedConversationId && (
+        <ConversationSummaryDialog
+          conversationId={selectedConversationId}
+          isOpen={summaryOpen}
+          onClose={() => setSummaryOpen(false)}
+          authorizedFetch={authorizedFetch}
+        />
+      )}
+
       {/* Call Interface */}
       {isInCall && currentCall && (
         <CallInterface
@@ -1319,6 +1422,8 @@ export default function ChatPage() {
           callType={currentCall.callType}
           onLeave={handleLeaveCall}
           participantName={auth.claims?.email || "Customer"}
+          callId={currentCall.callId}
+          accessToken={auth.tokens?.accessToken || ""}
         />
       )}
 

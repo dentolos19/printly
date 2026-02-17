@@ -6,6 +6,7 @@ import {
   ChatDateSeparator,
   ChatMessage,
   ConversationList,
+  ConversationSummary as ConversationSummaryDialog,
   MessageInput,
   TypingIndicator,
   type ReplyInfo,
@@ -37,6 +38,7 @@ import {
   PanelLeftOpen,
   Phone,
   RefreshCw,
+  Sparkles,
   User,
   Video,
   Wifi,
@@ -92,6 +94,7 @@ export default function AdminChatPage() {
   const [lastError, setLastError] = useState<string | null>(null);
   const [pendingOptimisticMessages, setPendingOptimisticMessages] = useState<Set<string>>(new Set());
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   // Call state
   const [isInCall, setIsInCall] = useState(false);
@@ -309,7 +312,7 @@ export default function AdminChatPage() {
       setIsUploading(true);
       try {
         const formData = new FormData();
-        formData.append("file", blob, "voice-message.webm");
+        formData.append("audioFile", blob, "voice-message.webm");
         formData.append("duration", duration.toString());
         const response = await authorizedFetch(`${API_URL}/conversation/${conversationId}/upload-voice`, {
           method: "POST",
@@ -372,7 +375,25 @@ export default function AdminChatPage() {
           setMessages((prev) => {
             // Remove any optimistic messages and add the real one
             const withoutOptimistic = prev.filter((m) => {
-              if (m.id.startsWith("optimistic-") && m.senderId === message.senderId && m.content === message.content) {
+              // Only check optimistic messages from the same sender
+              if (!m.id.startsWith("optimistic-") || m.senderId !== message.senderId) {
+                return true;
+              }
+
+              // Match text messages by content
+              const contentMatch = m.content === message.content;
+
+              // Match file messages by filename (content might differ between optimistic and real)
+              const fileMatch =
+                m.id.startsWith("optimistic-file-") &&
+                m.fileName != null &&
+                message.fileName != null &&
+                m.fileName === message.fileName;
+
+              // Match voice messages by the optimistic prefix
+              const voiceMatch = m.id.startsWith("optimistic-voice-") && message.voiceMessageUrl != null;
+
+              if (contentMatch || fileMatch || voiceMatch) {
                 // Clean up pending optimistic message tracking
                 setPendingOptimisticMessages((pendingPrev) => {
                   const next = new Set(pendingPrev);
@@ -381,10 +402,11 @@ export default function AdminChatPage() {
                 });
                 return false;
               }
+
               return true;
             });
             // Check if message already exists (avoid duplicates)
-            if (withoutOptimistic.some((m) => m.id === message.id)) {
+            if (withoutOptimistic.some((existing) => existing.id === message.id)) {
               return withoutOptimistic;
             }
             return [...withoutOptimistic, message];
@@ -503,6 +525,13 @@ export default function AdminChatPage() {
 
       connection.on("UserJoinedCall", (data: { callId: string; userId: string; userName: string }) => {
         console.log("[Admin Chat] User joined call:", data);
+
+        // Update call message status to Ongoing (1) when someone joins
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.callLogId === data.callId && m.callStatus === 0 ? { ...m, callStatus: 1 as 0 | 1 | 2 | 3 | 4 | 5 } : m,
+          ),
+        );
       });
 
       connection.on("UserLeftCall", (data: { callId: string; userId: string; userName: string }) => {
@@ -517,6 +546,19 @@ export default function AdminChatPage() {
           setCurrentCall(null);
           setActiveCallId(null);
         }
+
+        // Update the call message card in real-time
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.callLogId === data.callId
+              ? {
+                  ...m,
+                  callStatus: data.status as 0 | 1 | 2 | 3 | 4 | 5,
+                  callDurationSeconds: data.duration,
+                }
+              : m,
+          ),
+        );
       });
 
       connection.on("CallDeclined", (data: { callId: string; userId: string; status: number }) => {
@@ -531,6 +573,18 @@ export default function AdminChatPage() {
           setCurrentCall(null);
           setActiveCallId(null);
         }
+
+        // Update the call message card to show declined status
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.callLogId === data.callId
+              ? {
+                  ...m,
+                  callStatus: data.status as 0 | 1 | 2 | 3 | 4 | 5,
+                }
+              : m,
+          ),
+        );
       });
 
       await connection.start();
@@ -1028,7 +1082,7 @@ export default function AdminChatPage() {
   }, [conversations]);
 
   return (
-    <main className="flex h-full w-full flex-col gap-2 overflow-hidden p-2">
+    <main className="flex h-full w-full flex-col gap-3 overflow-hidden p-3">
       {/* Header Bar - Compact */}
       <div className="bg-card flex shrink-0 items-center justify-between rounded-lg border px-3 py-2 shadow-sm">
         <div className="flex items-center gap-3">
@@ -1069,18 +1123,18 @@ export default function AdminChatPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex min-h-0 flex-1 gap-2">
+      <div className="flex min-h-0 flex-1 gap-3 overflow-hidden">
         {/* Conversation List - Collapsible */}
         <Card
           className={cn(
-            "flex shrink-0 flex-col shadow-sm transition-all duration-300 ease-in-out",
-            sidebarCollapsed ? "w-0 overflow-hidden border-0 opacity-0" : "w-80 lg:w-96",
+            "flex shrink-0 flex-col overflow-hidden shadow-sm transition-all duration-300 ease-in-out",
+            sidebarCollapsed ? "w-0 overflow-hidden border-0 opacity-0" : "w-80 lg:w-80",
           )}
         >
-          <CardHeader className="bg-muted/30 border-b px-3 py-2">
+          <CardHeader className="border-b px-3 py-2">
             <CardTitle className="text-sm font-semibold">Conversations</CardTitle>
           </CardHeader>
-          <div className="border-b p-2">
+          <div className="shrink-0 border-b p-3">
             <Tabs value={statusFilter} onValueChange={setStatusFilter}>
               <TabsList className="grid h-8 w-full grid-cols-5">
                 <TabsTrigger value="all" className="px-1.5 text-[11px] font-medium">
@@ -1101,7 +1155,7 @@ export default function AdminChatPage() {
               </TabsList>
             </Tabs>
           </div>
-          <ScrollArea className="flex-1">
+          <ScrollArea className="min-h-0 flex-1">
             <ConversationList
               conversations={filteredConversations}
               selectedId={selectedConversationId}
@@ -1111,13 +1165,14 @@ export default function AdminChatPage() {
               showPriority
               showAssignment
               showCustomerName
+              showHeader={false}
               emptyMessage="No support conversations found"
             />
           </ScrollArea>
         </Card>
 
         {/* Chat Area - Expands when sidebar collapses */}
-        <Card className="flex min-w-0 flex-1 flex-col shadow-sm">
+        <Card className="flex min-w-0 flex-1 flex-col overflow-hidden shadow-sm">
           {selectedConversation ? (
             <>
               <CardHeader className="bg-muted/30 shrink-0 gap-0 space-y-0 border-b px-3 py-1.5">
@@ -1181,6 +1236,16 @@ export default function AdminChatPage() {
 
                     {/* Call buttons */}
                     <div className="ml-1.5 flex items-center gap-1 border-l pl-1.5">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => setSummaryOpen(true)}
+                        disabled={messages.length === 0}
+                        title="AI Conversation Summary"
+                      >
+                        <Sparkles className="h-3.5 w-3.5" />
+                      </Button>
                       <Button
                         variant="outline"
                         size="icon"
@@ -1275,6 +1340,7 @@ export default function AdminChatPage() {
                                   !isInCall && activeCallId === message.callLogId && message.senderId !== currentUserId
                                 }
                                 isInCall={isInCall && currentCall?.callId === message.callLogId}
+                                showAiCallNotes={true}
                               />
                             ) : (
                               <ChatMessage
@@ -1365,6 +1431,16 @@ export default function AdminChatPage() {
         </Card>
       </div>
 
+      {/* AI Summary Dialog */}
+      {selectedConversationId && (
+        <ConversationSummaryDialog
+          conversationId={selectedConversationId}
+          isOpen={summaryOpen}
+          onClose={() => setSummaryOpen(false)}
+          authorizedFetch={authorizedFetch}
+        />
+      )}
+
       {/* Call Interface */}
       {isInCall && currentCall && (
         <CallInterface
@@ -1373,6 +1449,8 @@ export default function AdminChatPage() {
           callType={currentCall.callType}
           onLeave={handleLeaveCall}
           participantName={auth.claims?.email || "Admin"}
+          callId={currentCall.callId}
+          accessToken={auth.tokens?.accessToken || ""}
         />
       )}
 

@@ -2,7 +2,27 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Clock, Phone, PhoneIncoming, PhoneMissed, PhoneOff, Video, X, AlertCircle, User } from "lucide-react";
+import {
+  Clock,
+  FileText,
+  Loader2,
+  Phone,
+  PhoneIncoming,
+  PhoneMissed,
+  PhoneOff,
+  Video,
+  X,
+  AlertCircle,
+  User,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { API_URL } from "@/environment";
+import { useAuth } from "@/lib/providers/auth";
+import { useState, useRef, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
 
 // Call status enum matching backend
 export enum CallStatus {
@@ -39,6 +59,8 @@ export interface CallMessageProps {
   canJoinCall?: boolean;
   isRinging?: boolean;
   isInCall?: boolean;
+  // AI Call Notes is only available on completed calls
+  showAiCallNotes?: boolean;
 }
 
 function formatTime(dateString: string): string {
@@ -130,6 +152,127 @@ function getStatusConfig(status: CallStatus | null | undefined) {
   }
 }
 
+// Dialog for displaying AI-generated call notes
+function AiCallNotesDialog({
+  callLogId,
+  isOpen,
+  onClose,
+}: {
+  callLogId: string;
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  const { tokens } = useAuth();
+  const [notes, setNotes] = useState<string>("");
+  const [transcript, setTranscript] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showTranscript, setShowTranscript] = useState(false);
+  const hasFetched = useRef(false);
+
+  useEffect(() => {
+    if (!isOpen || hasFetched.current || !tokens?.accessToken) return;
+
+    const fetchNotes = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch(`${API_URL}/conversation/call/${callLogId}/notes`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${tokens.accessToken}`,
+          },
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || "Failed to generate notes");
+        }
+
+        const data = (await response.json()) as {
+          notes: string;
+          transcript: string;
+          wasGenerated: boolean;
+        };
+
+        setNotes(data.notes);
+        setTranscript(data.transcript);
+        hasFetched.current = true;
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Something went wrong");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchNotes();
+  }, [isOpen, callLogId, tokens?.accessToken]);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            AI Call Notes
+          </DialogTitle>
+        </DialogHeader>
+
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center gap-3 py-12">
+            <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
+            <p className="text-muted-foreground text-sm">Generating call notes...</p>
+            <p className="text-muted-foreground text-xs">This may take a moment on first use</p>
+          </div>
+        ) : error ? (
+          <div className="py-8 text-center">
+            <p className="text-destructive text-sm">{error}</p>
+          </div>
+        ) : (
+          <ScrollArea className="max-h-[60vh]">
+            <div className="space-y-4 pr-4">
+              {/* Notes section */}
+              <div>
+                <h4 className="text-muted-foreground mb-2 text-sm font-semibold tracking-wide uppercase">Notes</h4>
+                <div className="text-sm leading-relaxed whitespace-pre-wrap">{notes}</div>
+              </div>
+
+              {/* Transcript collapsible */}
+              {transcript && (
+                <div className="border-t pt-4 pb-4">
+                  <button
+                    onClick={() => setShowTranscript(!showTranscript)}
+                    className="text-muted-foreground hover:text-foreground flex w-full items-center justify-between text-sm font-semibold tracking-wide uppercase transition-colors"
+                  >
+                    <span>Transcript</span>
+                    {showTranscript ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </button>
+                  {showTranscript && (
+                    <div className="text-muted-foreground prose prose-sm dark:prose-invert mt-3 max-w-none text-sm leading-relaxed">
+                      <ReactMarkdown
+                        components={{
+                          p: ({ node, ...props }) => <p className="mb-2" {...props} />,
+                          strong: ({ node, ...props }) => (
+                            <strong className="text-foreground font-semibold" {...props} />
+                          ),
+                          em: ({ node, ...props }) => <em className="italic" {...props} />,
+                        }}
+                      >
+                        {transcript}
+                      </ReactMarkdown>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function CallMessage({
   content,
   callLogId,
@@ -147,7 +290,9 @@ export function CallMessage({
   canJoinCall = false,
   isRinging = false,
   isInCall = false,
+  showAiCallNotes = false,
 }: CallMessageProps) {
+  const [notesDialogOpen, setNotesDialogOpen] = useState(false);
   const isVideo = callType === CallTypeEnum.Video;
   const statusConfig = getStatusConfig(callStatus);
   const StatusIcon = statusConfig.icon;
@@ -219,6 +364,26 @@ export function CallMessage({
             <Clock className="h-3 w-3" />
             <span>Duration: {duration}</span>
           </div>
+        )}
+
+        {/* AI Call Notes button - only for completed calls */}
+        {showAiCallNotes && callStatus === CallStatus.Completed && callLogId && (
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-1 gap-1.5 text-xs"
+              onClick={() => setNotesDialogOpen(true)}
+            >
+              <FileText className="h-3.5 w-3.5" />
+              AI Call Notes
+            </Button>
+            <AiCallNotesDialog
+              callLogId={callLogId}
+              isOpen={notesDialogOpen}
+              onClose={() => setNotesDialogOpen(false)}
+            />
+          </>
         )}
 
         {/* Action Buttons */}

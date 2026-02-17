@@ -21,6 +21,15 @@ public class CallLog : BaseEntity
     public int? DurationSeconds { get; set; }
     public string? LiveKitRoomName { get; set; }
 
+    // AI Call Notes fields
+    public Guid? RecordingAssetId { get; set; }
+
+    [ForeignKey(nameof(RecordingAssetId))]
+    public Asset? RecordingAsset { get; set; }
+
+    public string? Transcript { get; set; }
+    public string? AiCallNotes { get; set; }
+
     public ICollection<CallParticipant> Participants { get; set; } = new List<CallParticipant>();
 }
 

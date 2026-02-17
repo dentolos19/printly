@@ -253,6 +253,9 @@ namespace PrintlyServer.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AiCallNotes")
+                        .HasColumnType("text");
+
                     b.Property<Guid>("ConversationId")
                         .HasColumnType("uuid");
 
@@ -272,11 +275,17 @@ namespace PrintlyServer.Migrations
                     b.Property<string>("LiveKitRoomName")
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("RecordingAssetId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("StartedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Transcript")
+                        .HasColumnType("text");
 
                     b.Property<int>("Type")
                         .HasColumnType("integer");
@@ -289,6 +298,8 @@ namespace PrintlyServer.Migrations
                     b.HasIndex("ConversationId");
 
                     b.HasIndex("InitiatorId");
+
+                    b.HasIndex("RecordingAssetId");
 
                     b.ToTable("CallLogs");
                 });
@@ -1536,9 +1547,15 @@ namespace PrintlyServer.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("PrintlyServer.Data.Entities.Asset", "RecordingAsset")
+                        .WithMany()
+                        .HasForeignKey("RecordingAssetId");
+
                     b.Navigation("Conversation");
 
                     b.Navigation("Initiator");
+
+                    b.Navigation("RecordingAsset");
                 });
 
             modelBuilder.Entity("PrintlyServer.Data.Entities.CallParticipant", b =>

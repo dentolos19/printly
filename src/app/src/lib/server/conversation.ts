@@ -92,6 +92,16 @@ export type AssignConversationPayload = {
   adminId?: string | null;
 };
 
+export type ConversationSummaryResponse = {
+  summary: string;
+  keyPoints: string[];
+  sentiment: "positive" | "neutral" | "negative";
+  resolved: boolean;
+  actionItems: string[];
+  messageCount: number;
+  durationMinutes: number;
+};
+
 export type Contact = {
   id: string;
   name: string;
@@ -272,6 +282,17 @@ export default function initConversationController(fetch: ServerFetch) {
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to upload voice message" }));
         throw new Error((error as { message?: string }).message ?? "Failed to upload voice message");
+      }
+      return response.json();
+    },
+
+    getConversationSummary: async (conversationId: string): Promise<ConversationSummaryResponse> => {
+      const response = await fetch(`/conversation/${conversationId}/summary`, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: "Failed to generate summary" }));
+        throw new Error((error as { message?: string }).message ?? "Failed to generate summary");
       }
       return response.json();
     },

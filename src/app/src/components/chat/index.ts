@@ -1,6 +1,8 @@
+export { AiMessageAssistant, type AiMessageAssistantProps } from "./ai-message-assistant";
 export { CallMessage, type CallMessageProps } from "./call-message";
 export { ChatDateSeparator, ChatMessage, type ChatDateSeparatorProps, type ChatMessageProps } from "./chat-message";
 export { ConversationList, type ConversationListProps } from "./conversation-list";
+export { ConversationSummary, type ConversationSummaryProps } from "./conversation-summary";
 export { FileAttachment, type FileAttachmentProps } from "./file-attachment";
 export { MessageInput, type MessageInputProps, type ReplyInfo } from "./message-input";
 export { TypingIndicator, type TypingIndicatorProps } from "./typing-indicator";

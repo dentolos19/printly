@@ -458,6 +458,9 @@ namespace PrintlyServer.Migrations
                     EndedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     DurationSeconds = table.Column<int>(type: "integer", nullable: true),
                     LiveKitRoomName = table.Column<string>(type: "text", nullable: true),
+                    RecordingAssetId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Transcript = table.Column<string>(type: "text", nullable: true),
+                    AiCallNotes = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
@@ -470,6 +473,11 @@ namespace PrintlyServer.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CallLogs_Assets_RecordingAssetId",
+                        column: x => x.RecordingAssetId,
+                        principalTable: "Assets",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_CallLogs_Conversations_ConversationId",
                         column: x => x.ConversationId,
@@ -1070,6 +1078,11 @@ namespace PrintlyServer.Migrations
                 name: "IX_CallLogs_InitiatorId",
                 table: "CallLogs",
                 column: "InitiatorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CallLogs_RecordingAssetId",
+                table: "CallLogs",
+                column: "RecordingAssetId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CallParticipants_CallLogId",

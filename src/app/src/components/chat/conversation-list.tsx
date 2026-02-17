@@ -246,31 +246,31 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
     return (
       <div className="bg-background flex h-full flex-col border-r">
         {showHeader && (
-          <div className="border-b p-4">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Messages</h2>
+          <div className="border-b px-3 py-2">
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-sm font-semibold">Messages</h2>
               {onCreateNew && (
-                <Button size="icon" variant="default" className="h-8 w-8 rounded-full" onClick={onCreateNew}>
-                  <Plus className="h-4 w-4" />
+                <Button size="icon" variant="default" className="h-7 w-7 rounded-full" onClick={onCreateNew}>
+                  <Plus className="h-3 w-3" />
                 </Button>
               )}
             </div>
 
             {showSearch && (
-              <div className="relative mb-3">
-                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+              <div className="relative mb-2">
+                <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
                 <Input
-                  placeholder="Search conversations..."
+                  placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
+                  className="h-8 pl-8 text-xs"
                 />
               </div>
             )}
 
             {showFilter && (
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="h-8 w-full text-xs">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -311,7 +311,7 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                     key={conversation.id}
                     onClick={() => onSelect(conversation.id)}
                     className={cn(
-                      "hover:bg-accent/50 flex w-full items-start gap-3 border-b px-4 py-3.5 text-left transition-all duration-200",
+                      "hover:bg-accent/50 flex w-full items-start gap-2.5 border-b py-3.5 pr-6 pl-3 text-left transition-all duration-200",
                       "border-l-4 hover:shadow-sm",
                       showPriority ? getPriorityCardBorder(conversation.priority) : "border-l-transparent",
                       isSelected && "bg-accent shadow-sm",
@@ -325,8 +325,8 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                       </AvatarFallback>
                     </Avatar>
 
-                    <div className="min-w-0 flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
+                    <div className="max-w-sm min-w-0 flex-1 space-y-1 overflow-hidden">
+                      <div className="flex min-w-0 items-center gap-2 overflow-hidden">
                         <span
                           className={cn(
                             "min-w-0 flex-1 truncate text-sm font-semibold",
@@ -342,7 +342,7 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                       </div>
 
                       {(showStatus || showPriority || showAssignment) && (
-                        <div className="flex flex-wrap items-center gap-1.5">
+                        <div className="flex w-full flex-wrap items-center gap-1.5">
                           {showStatus && (
                             <Badge
                               variant="outline"
@@ -380,23 +380,23 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                         </div>
                       )}
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex min-w-0 items-center gap-2">
                         <div className="text-muted-foreground min-w-0 flex-1 text-xs leading-relaxed">
                           {conversation.lastMessage ? (
                             <>
                               <span
-                                className="text-foreground/70 font-medium"
+                                className="text-foreground/70 truncate font-medium"
                                 title={conversation.lastMessage.senderName}
                               >
                                 {conversation.lastMessage.senderName}
                               </span>
                               <span className="mx-1">·</span>
-                              <span className="truncate" title={lastMessageContent}>
+                              <span className="line-clamp-1" title={lastMessageContent}>
                                 {lastMessageContent}
                               </span>
                             </>
                           ) : (
-                            <span className="truncate italic" title={lastMessageContent}>
+                            <span className="line-clamp-1 italic" title={lastMessageContent}>
                               {lastMessageContent}
                             </span>
                           )}

@@ -78,6 +78,7 @@ public class StorageService
                 Category = category ?? AssetCategory.User,
             }
         );
+
         await _context.SaveChangesAsync();
 
         return asset.Entity;

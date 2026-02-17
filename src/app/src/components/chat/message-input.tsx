@@ -81,6 +81,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
     const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const recordingDurationRef = useRef(0);
 
     const handleTyping = useCallback(() => {
       if (!isTyping) {
@@ -200,13 +201,15 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
           // Stop all tracks
           stream.getTracks().forEach((track) => track.stop());
 
-          // Send voice message
-          if (onSendVoice && audioBlob.size > 0 && recordingDuration > 0) {
-            onSendVoice(audioBlob, recordingDuration, replyTo?.messageId);
+          // Use the ref for duration since state may be stale in this closure
+          const finalDuration = recordingDurationRef.current;
+          if (onSendVoice && audioBlob.size > 0 && finalDuration > 0) {
+            onSendVoice(audioBlob, finalDuration, replyTo?.messageId);
             onCancelReply?.();
           }
 
           setRecordingDuration(0);
+          recordingDurationRef.current = 0;
         };
 
         mediaRecorder.start(100);
@@ -216,11 +219,12 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
         // Start duration counter
         recordingIntervalRef.current = setInterval(() => {
           setRecordingDuration((prev) => {
+            const next = prev >= MAX_RECORDING_SECONDS ? prev : prev + 1;
+            recordingDurationRef.current = next;
             if (prev >= MAX_RECORDING_SECONDS) {
               stopRecording();
-              return prev;
             }
-            return prev + 1;
+            return next;
           });
         }, 1000);
       } catch (err) {
@@ -246,6 +250,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
         // Clear chunks before stopping so onstop doesn't send
         audioChunksRef.current = [];
         setRecordingDuration(0);
+        recordingDurationRef.current = 0;
         mediaRecorderRef.current.stop();
         setIsRecording(false);
 
@@ -312,19 +317,43 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
         {recordingError && <div className="text-destructive mb-3 text-sm">{recordingError}</div>}
 
         {isRecording ? (
-          <div className="flex items-center gap-3">
-            <div className="flex flex-1 items-center gap-2">
-              <div className="h-3 w-3 animate-pulse rounded-full bg-red-500" />
-              <span className="text-sm font-medium tabular-nums">
-                Recording... {formatRecordingTime(recordingDuration)}
+          <div className="flex w-full items-center justify-between gap-3 rounded-xl bg-red-50 px-4 py-3 dark:bg-red-950/30">
+            {/* Recording indicator */}
+            <div className="flex items-center gap-2">
+              <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
+              <span className="text-sm font-medium text-red-600 dark:text-red-400">
+                {formatRecordingTime(recordingDuration)}
               </span>
             </div>
-            <Button variant="ghost" size="icon" onClick={cancelRecording} className="h-10 w-10">
-              <X className="h-5 w-5" />
-            </Button>
-            <Button size="icon" onClick={stopRecording} className="h-10 w-10 bg-red-500 hover:bg-red-600">
-              <Square className="h-5 w-5" />
-            </Button>
+
+            <div className="flex items-center gap-2">
+              {/* Cancel - discard the recording */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 text-red-500 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30"
+                      onClick={cancelRecording}
+                    >
+                      <X className="h-5 w-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Cancel recording</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              {/* Send - stop recording and send it */}
+              <Button
+                size="sm"
+                onClick={stopRecording}
+                className="gap-1.5 rounded-full bg-blue-600 px-4 hover:bg-blue-700"
+              >
+                <Send className="h-4 w-4" />
+                Send
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="flex items-end gap-2">

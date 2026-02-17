@@ -17,12 +17,16 @@ public class ConversationController(
     DatabaseContext context,
     INotificationService notificationService,
     StorageService storageService,
-    IHubContext<ConversationHub> hubContext
+    IHubContext<ConversationHub> hubContext,
+    ChatService chatService,
+    ILogger<ConversationController> logger
 ) : BaseController(context)
 {
     private readonly INotificationService _notificationService = notificationService;
     private readonly StorageService _storageService = storageService;
     private readonly IHubContext<ConversationHub> _hubContext = hubContext;
+    private readonly ChatService _chatService = chatService;
+    private readonly ILogger<ConversationController> _logger = logger;
 
     public record ContactResponse(string Id, string Name, string Email, string Role);
 
@@ -825,7 +829,7 @@ public class ConversationController(
         if (file.Length > MaxFileSize)
             return BadRequest($"File too large. Maximum size is {MaxFileSize / (1024 * 1024)}MB");
 
-        var contentType = file.ContentType.ToLowerInvariant();
+        var contentType = file.ContentType.ToLowerInvariant().Split(';')[0].Trim();
         var isAllowed =
             AllowedImageTypes.Contains(contentType)
             || AllowedDocumentTypes.Contains(contentType)
@@ -850,7 +854,19 @@ public class ConversationController(
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Failed to upload file: {ex.Message}");
+            // Log the full exception including inner exceptions to help diagnose
+            var fullError = ex.ToString();
+            _logger.LogError(
+                ex,
+                "Failed to upload file in conversation {ConversationId}. Full error: {Error}",
+                conversationId,
+                fullError
+            );
+            Console.WriteLine($"[UploadFile ERROR] {fullError}");
+
+            // Return the innermost exception message for debugging
+            var innerMessage = ex.InnerException?.InnerException?.Message ?? ex.InnerException?.Message ?? ex.Message;
+            return StatusCode(500, $"Failed to upload file: {innerMessage}");
         }
     }
 
@@ -891,7 +907,8 @@ public class ConversationController(
         if (audioFile.Length > MaxVoiceSize)
             return BadRequest($"Voice message too large. Maximum size is {MaxVoiceSize / (1024 * 1024)}MB");
 
-        var contentType = audioFile.ContentType.ToLowerInvariant();
+        var rawContentType = audioFile.ContentType.ToLowerInvariant();
+        var contentType = rawContentType.Split(';')[0].Trim();
         if (!AllowedAudioTypes.Contains(contentType))
             return BadRequest("Invalid audio format. Allowed formats: mp3, wav, m4a, webm");
 
@@ -915,7 +932,17 @@ public class ConversationController(
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Failed to upload voice message: {ex.Message}");
+            var fullError = ex.ToString();
+            _logger.LogError(
+                ex,
+                "Failed to upload voice message in conversation {ConversationId}. Full error: {Error}",
+                conversationId,
+                fullError
+            );
+            Console.WriteLine($"[UploadVoice ERROR] {fullError}");
+
+            var innerMessage = ex.InnerException?.InnerException?.Message ?? ex.InnerException?.Message ?? ex.Message;
+            return StatusCode(500, $"Failed to upload voice message: {innerMessage}");
         }
     }
 
@@ -1084,7 +1111,9 @@ public class ConversationController(
         int? DurationSeconds,
         string LiveKitRoomName,
         CallParticipantResponse Initiator,
-        List<CallParticipantResponse> Participants
+        List<CallParticipantResponse> Participants,
+        bool HasRecording,
+        bool HasAiNotes
     );
 
     /// <summary>
@@ -1135,10 +1164,225 @@ public class ConversationController(
                         p.JoinedAt,
                         p.LeftAt
                     ))
-                    .ToList()
+                    .ToList(),
+                callLog.RecordingAssetId != null,
+                !string.IsNullOrEmpty(callLog.AiCallNotes)
             )
         );
     }
 
+    public record UploadRecordingResponse(Guid AssetId);
+
+    /// <summary>
+    /// Upload a call recording audio file. Called automatically when a call ends.
+    /// </summary>
+    [HttpPost("call/{callId:guid}/upload-recording")]
+    public async Task<ActionResult<UploadRecordingResponse>> UploadCallRecording(Guid callId, IFormFile audioFile)
+    {
+        var currentUserId = User.GetUserId();
+        if (currentUserId is null)
+            return Unauthorized();
+
+        var callLog = await Context.CallLogs.Include(c => c.Participants).FirstOrDefaultAsync(c => c.Id == callId);
+
+        if (callLog is null)
+            return NotFound("Call not found");
+
+        // Verify user was a participant
+        var isParticipant = callLog.Participants.Any(p => p.UserId == currentUserId);
+        if (!isParticipant)
+            return Forbid();
+
+        // Don't overwrite if recording already exists
+        if (callLog.RecordingAssetId is not null)
+            return Ok(new UploadRecordingResponse(callLog.RecordingAssetId.Value));
+
+        if (audioFile is null || audioFile.Length == 0)
+            return BadRequest("No audio file provided");
+
+        // Max 50MB for call recordings
+        if (audioFile.Length > 50 * 1024 * 1024)
+            return BadRequest("Recording too large. Maximum size is 50MB.");
+
+        try
+        {
+            await using var stream = audioFile.OpenReadStream();
+            // Determine file extension from content type
+            var ext =
+                audioFile.ContentType.Contains("ogg") ? "ogg"
+                : audioFile.ContentType.Contains("wav") ? "wav"
+                : audioFile.ContentType.Contains("mp3") ? "mp3"
+                : "ogg";
+            var asset = await _storageService.UploadFileAsync(
+                stream,
+                $"call-recording-{callId}.{ext}",
+                $"call-recording-{callId}"
+            );
+
+            callLog.RecordingAssetId = asset.Id;
+            await Context.SaveChangesAsync();
+
+            return Ok(new UploadRecordingResponse(asset.Id));
+        }
+        catch (Exception ex)
+        {
+            var innerMessage = ex.InnerException?.InnerException?.Message ?? ex.InnerException?.Message ?? ex.Message;
+            return StatusCode(500, $"Failed to upload recording: {innerMessage}");
+        }
+    }
+
+    public record CallNotesResponse(string Notes, string Transcript, bool WasGenerated);
+
+    /// <summary>
+    /// Get AI-generated call notes. First request triggers generation, subsequent requests return cached result.
+    /// </summary>
+    [HttpPost("call/{callId:guid}/notes")]
+    public async Task<ActionResult<CallNotesResponse>> GetOrGenerateCallNotes(
+        Guid callId,
+        [FromServices] GenerativeService generativeService,
+        [FromServices] StorageService storageService
+    )
+    {
+        var currentUserId = User.GetUserId();
+        if (currentUserId is null)
+            return Unauthorized();
+
+        var callLog = await Context
+            .CallLogs.Include(c => c.Participants)
+            .Include(c => c.RecordingAsset)
+            .FirstOrDefaultAsync(c => c.Id == callId);
+
+        if (callLog is null)
+            return NotFound("Call not found");
+
+        var isParticipant = callLog.Participants.Any(p => p.UserId == currentUserId);
+        var isAdmin = User.IsInRole(Roles.Admin);
+        if (!isParticipant && !isAdmin)
+            return Forbid();
+
+        // If notes already exist, return them immediately (cached in DB)
+        if (!string.IsNullOrEmpty(callLog.AiCallNotes))
+        {
+            return Ok(new CallNotesResponse(callLog.AiCallNotes, callLog.Transcript ?? "", false));
+        }
+
+        // No notes yet, so we need to generate them from the recording
+        if (callLog.RecordingAssetId is null || callLog.RecordingAsset is null)
+            return BadRequest("No recording available for this call. AI Call Notes require a call recording.");
+
+        try
+        {
+            // Fetch the audio bytes from R2 storage
+            using var audioStream = await storageService.StreamFileAsync(callLog.RecordingAsset);
+            using var memoryStream = new MemoryStream();
+            await audioStream.CopyToAsync(memoryStream);
+            var audioBytes = memoryStream.ToArray();
+
+            var mimeType = callLog.RecordingAsset.Type ?? "audio/webm";
+
+            // Send to Gemini for transcription and note generation
+            var (transcript, notes) = await generativeService.GenerateCallNotesAsync(audioBytes, mimeType);
+
+            // Save to database so we never have to generate again
+            callLog.Transcript = transcript;
+            callLog.AiCallNotes = notes;
+            await Context.SaveChangesAsync();
+
+            return Ok(new CallNotesResponse(notes, transcript, true));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Failed to generate call notes: {ex.Message}");
+        }
+    }
+
     #endregion
+
+    /// <summary>
+    /// Generate an AI summary of a conversation
+    /// </summary>
+    [HttpPost("{conversationId:guid}/summary")]
+    public async Task<IActionResult> GetConversationSummary(Guid conversationId)
+    {
+        var currentUserId = User.GetUserId();
+        if (currentUserId is null)
+            return Unauthorized();
+
+        var isAdmin = User.IsInRole(Roles.Admin);
+
+        var conversation = await Context.Conversations.FirstOrDefaultAsync(c => c.Id == conversationId);
+
+        if (conversation is null)
+            return NotFound();
+
+        if (!isAdmin && conversation.CustomerId != currentUserId)
+            return Forbid();
+
+        var messages = await Context
+            .ConversationMessages.Where(m => m.ConversationId == conversationId && !m.IsDeleted)
+            .Include(m => m.Participant)
+                .ThenInclude(p => p.User)
+            .OrderBy(m => m.CreatedAt)
+            .Select(m => new SummaryMessage
+            {
+                SenderName = m.Participant.User.UserName ?? m.Participant.User.Email ?? "Unknown",
+                Role = m.Participant.Role == ConversationParticipantRole.Admin ? "admin/support" : "customer",
+                Content = m.IsCallMessage ? $"[Call: {m.Content}]" : m.Content,
+                Timestamp = m.CreatedAt,
+            })
+            .ToListAsync();
+
+        if (messages.Count == 0)
+            return Ok(
+                new
+                {
+                    summary = "No messages in this conversation yet.",
+                    keyPoints = Array.Empty<string>(),
+                    sentiment = "neutral",
+                    resolved = false,
+                    actionItems = Array.Empty<string>(),
+                    messageCount = 0,
+                    durationMinutes = 0,
+                }
+            );
+
+        var statusText = conversation.Status switch
+        {
+            ConversationStatus.Pending => "Pending",
+            ConversationStatus.Active => "Active",
+            ConversationStatus.Resolved => "Resolved",
+            ConversationStatus.Closed => "Closed",
+            _ => "Unknown",
+        };
+
+        var priorityText = conversation.Priority switch
+        {
+            ConversationPriority.Low => "Low",
+            ConversationPriority.Normal => "Normal",
+            ConversationPriority.High => "High",
+            ConversationPriority.Urgent => "Urgent",
+            _ => "Normal",
+        };
+
+        var result = await _chatService.GenerateConversationSummaryAsync(
+            conversation.Subject,
+            statusText,
+            priorityText,
+            conversation.CreatedAt,
+            messages
+        );
+
+        return Ok(
+            new
+            {
+                summary = result.Summary,
+                keyPoints = result.KeyPoints,
+                sentiment = result.Sentiment,
+                resolved = result.Resolved,
+                actionItems = result.ActionItems,
+                messageCount = result.MessageCount,
+                durationMinutes = (int)result.Duration.TotalMinutes,
+            }
+        );
+    }
 }
