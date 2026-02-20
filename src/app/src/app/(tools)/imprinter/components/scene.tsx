@@ -139,7 +139,13 @@ function DesignDecal({
   return (
     <AssetErrorBoundary>
       <Suspense fallback={null}>
-        <DecalMesh design={design} url={textureUrl} targetMesh={targetMesh} printAreaConfig={printAreaConfig} />
+        <DecalMesh
+          design={design}
+          url={textureUrl}
+          targetMesh={targetMesh}
+          printAreaConfig={printAreaConfig}
+          maxAnisotropy={maxAnisotropy}
+        />
       </Suspense>
     </AssetErrorBoundary>
   );
@@ -150,13 +156,30 @@ function DecalMesh({
   url,
   targetMesh,
   printAreaConfig,
+  maxAnisotropy,
 }: {
   design: AppliedDesign;
   url: string;
   targetMesh: THREE.Mesh;
   printAreaConfig: PrintAreaConfig | undefined;
+  maxAnisotropy: number;
 }) {
   const texture = useTexture(url);
+  const decalTexture = useMemo(() => {
+    const next = texture.clone();
+    next.wrapS = THREE.RepeatWrapping;
+    next.repeat.set(-1, 1);
+    next.offset.set(1, 0);
+    next.anisotropy = maxAnisotropy;
+    next.needsUpdate = true;
+    return next;
+  }, [texture, maxAnisotropy]);
+
+  useEffect(() => {
+    return () => {
+      decalTexture.dispose();
+    };
+  }, [decalTexture]);
 
   // Get ray direction from config or use default based on area ID
   const rayDirection = useMemo<[number, number, number]>(() => {
@@ -209,7 +232,7 @@ function DecalMesh({
   return (
     <Decal position={position} rotation={finalOrientation} scale={scale}>
       <meshStandardMaterial
-        map={texture}
+        map={decalTexture}
         transparent
         opacity={design.opacity}
         depthTest={true}
