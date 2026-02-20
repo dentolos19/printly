@@ -15,7 +15,7 @@ import { useCart } from "@/lib/providers/cart";
 import { cn } from "@/lib/utils";
 import { ChevronDown, Download, FileDown, Home, Redo2, RotateCcw, Save, ShoppingCart, Undo2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { toast } from "sonner";
 import { SaveIndicator } from "../../shared/components/save-indicator";
 import { EXPORT_PRESETS } from "../types";
@@ -28,9 +28,14 @@ type ToolbarHeaderProps = {
 
 const NAME_DEBOUNCE_MS = 800;
 
+type DebouncedNameInputHandle = {
+  flush: () => string;
+};
+
 export function ToolbarHeader({ className, title = "Printly Imprinter" }: ToolbarHeaderProps) {
   const router = useRouter();
   const { addItemWithImprint } = useCart();
+  const nameInputRef = useRef<DebouncedNameInputHandle | null>(null);
   const {
     imprintId,
     imprintName,
@@ -52,6 +57,11 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
   const [isExporting, setIsExporting] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
+  const handleSaveImprint = useCallback(async () => {
+    const latestName = nameInputRef.current?.flush();
+    return saveImprint({ force: true, nameOverride: latestName });
+  }, [saveImprint]);
+
   const handleAddToCart = async () => {
     if (!selectedProduct?.product || !selectedProduct?.variant) {
       toast.error("No product selected", {
@@ -65,7 +75,7 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
     try {
       let currentImprintId = imprintId;
       if (isDirty || !imprintId) {
-        currentImprintId = await saveImprint();
+        currentImprintId = await handleSaveImprint();
       }
 
       if (!currentImprintId) {
@@ -131,7 +141,7 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={() => saveImprint()}>
+            <DropdownMenuItem onClick={() => void handleSaveImprint()}>
               <Save className="mr-2 h-4 w-4" />
               Save
               <DropdownMenuShortcut>Ctrl+S</DropdownMenuShortcut>
@@ -197,7 +207,15 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
       <div className="flex flex-1 items-center justify-end gap-2">
         <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} isDirty={isDirty} />
         <div className="flex items-center justify-end pl-4">
-          <DebouncedNameInput value={imprintName} onChange={setImprintName} placeholder="Untitled Imprint" />
+          <DebouncedNameInput
+            ref={nameInputRef}
+            value={imprintName}
+            onChange={setImprintName}
+            onCommit={(name) => {
+              void saveImprint({ force: true, nameOverride: name });
+            }}
+            placeholder="Untitled Imprint"
+          />
         </div>
         <Button
           variant="default"
@@ -240,31 +258,47 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
   );
 }
 
-function DebouncedNameInput({
-  value,
-  onChange,
-  placeholder,
-}: {
-  value: string;
-  onChange: (name: string) => void;
-  placeholder?: string;
-}) {
+const DebouncedNameInput = forwardRef<
+  DebouncedNameInputHandle,
+  {
+    value: string;
+    onChange: (name: string) => void;
+    onCommit?: (name: string) => void;
+    placeholder?: string;
+  }
+>(function DebouncedNameInput({ value, onChange, onCommit, placeholder }, ref) {
   const [localValue, setLocalValue] = useState(value);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const localValueRef = useRef(value);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
   useEffect(() => {
     setLocalValue(value);
+    localValueRef.current = value;
   }, [value]);
+
+  const flush = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    const latestValue = localValueRef.current;
+    onChangeRef.current(latestValue);
+    return latestValue;
+  }, []);
+
+  useImperativeHandle(ref, () => ({ flush }), [flush]);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const next = e.target.value;
     setLocalValue(next);
+    localValueRef.current = next;
 
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       onChangeRef.current(next);
+      timeoutRef.current = null;
     }, NAME_DEBOUNCE_MS);
   }, []);
 
@@ -278,8 +312,18 @@ function DebouncedNameInput({
     <Input
       value={localValue}
       onChange={handleChange}
+      onBlur={() => {
+        const latestValue = flush();
+        onCommit?.(latestValue);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          const latestValue = flush();
+          onCommit?.(latestValue);
+        }
+      }}
       className={"h-7 w-48 border-none bg-transparent px-1 text-sm font-medium shadow-none focus-visible:ring-1"}
       placeholder={placeholder}
     />
   );
-}
+});

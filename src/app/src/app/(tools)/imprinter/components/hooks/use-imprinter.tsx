@@ -123,7 +123,7 @@ type ImprinterContextValue = {
   resetCamera: () => void;
 
   // Persistence
-  saveImprint: () => Promise<string | null>;
+  saveImprint: (options?: { force?: boolean; nameOverride?: string }) => Promise<string | null>;
   loadImprint: (id: string) => Promise<void>;
   exportRender: (resolution: number) => void;
   exportHighRes: (preset: ExportPreset) => Promise<void>;

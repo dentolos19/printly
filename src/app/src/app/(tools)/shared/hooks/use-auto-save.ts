@@ -7,6 +7,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
 
+export type SaveNowOptions = {
+  force?: boolean;
+  nameOverride?: string;
+};
+
 type AutoSaveOptions<T> = {
   /**
    * ID of the current document (null for new documents)
@@ -44,7 +49,7 @@ type AutoSaveReturn = {
   lastSavedAt: Date | null;
   isDirty: boolean;
   triggerAutoSave: () => void;
-  saveNow: () => Promise<string | null>;
+  saveNow: (options?: SaveNowOptions) => Promise<string | null>;
   setId: (id: string | null) => void;
 };
 
@@ -63,7 +68,7 @@ export function useAutoSave<T extends Record<string, unknown>>({
 
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const savePromiseRef = useRef<Promise<string | null> | null>(null);
-  const lastSavedDataRef = useRef<string | null>(null);
+  const lastSavedFingerprintRef = useRef<string | null>(null);
 
   // Update ID when it changes externally
   useEffect(() => {
@@ -72,57 +77,63 @@ export function useAutoSave<T extends Record<string, unknown>>({
     }
   }, [initialId, id]);
 
-  const saveNow = useCallback(() => {
-    // Early return if no save function
-    if (!onSave) {
-      return Promise.resolve(id);
-    }
-
-    // Prevent duplicate saves by returning existing promise
-    if (savePromiseRef.current) {
-      return savePromiseRef.current;
-    }
-
-    const promise = (async () => {
-      try {
-        setSaveStatus("saving");
-
-        const serializedData = serialize();
-        const dataString = JSON.stringify(serializedData);
-
-        // Skip save if data hasn't changed (deduplication)
-        if (lastSavedDataRef.current === dataString && id) {
-          setSaveStatus("saved");
-          return id;
-        }
-
-        const result = await onSave({ name, data: dataString, currentId: id, ...serializedData });
-
-        lastSavedDataRef.current = dataString;
-
-        // Update ID if this was a new document
-        if (result.id && !id) {
-          setId(result.id);
-          onIdChange?.(result.id);
-        }
-
-        setSaveStatus("saved");
-        setLastSavedAt(new Date());
-        setIsDirty(false);
-
-        return result.id || id;
-      } catch (error) {
-        console.error("Save failed:", error);
-        setSaveStatus("error");
-        return null;
-      } finally {
-        savePromiseRef.current = null;
+  const saveNow = useCallback(
+    (options?: SaveNowOptions) => {
+      // Early return if no save function
+      if (!onSave) {
+        return Promise.resolve(id);
       }
-    })();
 
-    savePromiseRef.current = promise;
-    return promise;
-  }, [id, name, onSave, onIdChange, serialize]);
+      // Prevent duplicate saves by returning existing promise
+      if (savePromiseRef.current) {
+        return savePromiseRef.current;
+      }
+
+      const promise = (async () => {
+        try {
+          setSaveStatus("saving");
+
+          const serializedData = serialize();
+          const dataString = JSON.stringify(serializedData);
+          const resolvedName = options?.nameOverride ?? name;
+          const fingerprint = JSON.stringify({ name: resolvedName, data: dataString });
+
+          // Skip save if data hasn't changed (deduplication)
+          if (!options?.force && lastSavedFingerprintRef.current === fingerprint && id) {
+            setSaveStatus("saved");
+            setIsDirty(false);
+            return id;
+          }
+
+          const result = await onSave({ name: resolvedName, data: dataString, currentId: id, ...serializedData });
+
+          lastSavedFingerprintRef.current = fingerprint;
+
+          // Update ID if this was a new document
+          if (result.id && !id) {
+            setId(result.id);
+            onIdChange?.(result.id);
+          }
+
+          setSaveStatus("saved");
+          setLastSavedAt(new Date());
+          setIsDirty(false);
+
+          return result.id || id;
+        } catch (error) {
+          console.error("Save failed:", error);
+          setSaveStatus("error");
+          return null;
+        } finally {
+          savePromiseRef.current = null;
+        }
+      })();
+
+      savePromiseRef.current = promise;
+      return promise;
+    },
+    [id, name, onSave, onIdChange, serialize],
+  );
 
   const triggerAutoSave = useCallback(() => {
     if (autoSaveTimeoutRef.current) {

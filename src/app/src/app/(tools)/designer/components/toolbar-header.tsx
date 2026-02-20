@@ -47,7 +47,7 @@ import {
   ZoomOut,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { SaveIndicator } from "../../shared/components/save-indicator";
 import { useDesigner } from "./hooks";
 import { ResizeDesignDialog } from "./resize-design-dialog";
@@ -60,9 +60,14 @@ type ToolbarHeaderProps = {
 
 const NAME_DEBOUNCE_MS = 800;
 
+type DebouncedNameInputHandle = {
+  flush: () => string;
+};
+
 export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }: ToolbarHeaderProps) {
   const router = useRouter();
   const [resizeDialogOpen, setResizeDialogOpen] = useState(false);
+  const nameInputRef = useRef<DebouncedNameInputHandle | null>(null);
   const {
     designId,
     designName,
@@ -99,9 +104,14 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
     canvasSize,
   } = useDesigner();
 
+  const handleSaveDesign = useCallback(async () => {
+    const latestName = nameInputRef.current?.flush();
+    return saveDesign({ force: true, nameOverride: latestName });
+  }, [saveDesign]);
+
   async function handleImprint() {
     try {
-      const savedDesignId = await saveDesign();
+      const savedDesignId = await handleSaveDesign();
       const idToUse = savedDesignId || designId;
       if (idToUse) {
         router.push(`/imprinter/new?design=${idToUse}`);
@@ -146,7 +156,7 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
               <DropdownMenuShortcut>⌘N</DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => saveDesign()}>
+            <DropdownMenuItem onClick={() => void handleSaveDesign()}>
               <Save className={"mr-2 h-4 w-4"} />
               Save
               <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
@@ -360,10 +370,14 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
       {/* Design name (debounced) */}
       <div className={"flex items-center gap-2 pl-4"}>
         <DebouncedNameInput
+          ref={nameInputRef}
           value={designName}
           onChange={(name) => {
             setDesignName(name);
             triggerAutoSave();
+          }}
+          onCommit={(name) => {
+            void saveDesign({ force: true, nameOverride: name });
           }}
           placeholder="Untitled Design"
         />
@@ -405,31 +419,47 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
   );
 }
 
-function DebouncedNameInput({
-  value,
-  onChange,
-  placeholder,
-}: {
-  value: string;
-  onChange: (name: string) => void;
-  placeholder?: string;
-}) {
+const DebouncedNameInput = forwardRef<
+  DebouncedNameInputHandle,
+  {
+    value: string;
+    onChange: (name: string) => void;
+    onCommit?: (name: string) => void;
+    placeholder?: string;
+  }
+>(function DebouncedNameInput({ value, onChange, onCommit, placeholder }, ref) {
   const [localValue, setLocalValue] = useState(value);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const localValueRef = useRef(value);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
   useEffect(() => {
     setLocalValue(value);
+    localValueRef.current = value;
   }, [value]);
+
+  const flush = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    const latestValue = localValueRef.current;
+    onChangeRef.current(latestValue);
+    return latestValue;
+  }, []);
+
+  useImperativeHandle(ref, () => ({ flush }), [flush]);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const next = e.target.value;
     setLocalValue(next);
+    localValueRef.current = next;
 
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       onChangeRef.current(next);
+      timeoutRef.current = null;
     }, NAME_DEBOUNCE_MS);
   }, []);
 
@@ -443,8 +473,18 @@ function DebouncedNameInput({
     <Input
       value={localValue}
       onChange={handleChange}
+      onBlur={() => {
+        const latestValue = flush();
+        onCommit?.(latestValue);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          const latestValue = flush();
+          onCommit?.(latestValue);
+        }
+      }}
       className={"h-7 w-48 border-none bg-transparent px-1 text-sm font-medium shadow-none focus-visible:ring-1"}
       placeholder={placeholder}
     />
   );
-}
+});
