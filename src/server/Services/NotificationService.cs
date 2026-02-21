@@ -53,12 +53,14 @@ public interface INotificationService
 public class NotificationService(
     DatabaseContext context,
     IHubContext<ConversationHub> conversationHubContext,
-    ILogger<NotificationService> logger
+    ILogger<NotificationService> logger,
+    IEmailService emailService
 ) : INotificationService
 {
     private readonly DatabaseContext _context = context;
     private readonly IHubContext<ConversationHub> _conversationHubContext = conversationHubContext;
     private readonly ILogger<NotificationService> _logger = logger;
+    private readonly IEmailService _emailService = emailService;
 
     public async Task CreateNotificationAsync(
         string userId,
@@ -135,6 +137,43 @@ public class NotificationService(
                 "[NotificationService] Failed to send SignalR notification to UserId: {UserId}",
                 userId
             );
+        }
+
+        // Check if we should send a digest email
+        // Only fires when unread count hits exactly the threshold (10)
+        // and we haven't already sent an email for this batch
+        try
+        {
+            const int emailThreshold = 10;
+            var unreadCount = await _context.Notifications.CountAsync(n =>
+                n.UserId == userId && !n.IsRead && !n.IsDeleted && !n.IsArchived
+            );
+
+            if (unreadCount >= emailThreshold)
+            {
+                var user = await _context.Users.FindAsync(userId);
+                if (user != null && !user.UnreadEmailSent && !string.IsNullOrWhiteSpace(user.Email))
+                {
+                    // Mark that we sent the email BEFORE sending (prevent race conditions)
+                    user.UnreadEmailSent = true;
+                    await _context.SaveChangesAsync();
+
+                    // Fire and forget the email so it doesn't block notification creation
+                    _ = Task.Run(async () =>
+                    {
+                        await _emailService.SendUnreadDigestAsync(
+                            user.Email!,
+                            user.DisplayName ?? user.UserName ?? "",
+                            unreadCount
+                        );
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Never let email logic break notification creation
+            _logger.LogError(ex, "[NotificationService] Email threshold check failed for user {UserId}", userId);
         }
 
         _logger.LogInformation("Notification created for user {UserId}: {Type}", userId, type);
