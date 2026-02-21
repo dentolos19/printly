@@ -247,13 +247,13 @@ export function Imprinter2DView() {
   }
 
   return (
-    <div className="flex h-full w-full items-center justify-center bg-neutral-100 dark:bg-neutral-900">
+    <div className="flex h-full min-h-0 w-full min-w-0 items-center justify-center bg-neutral-100 p-4 dark:bg-neutral-900">
       <svg
         ref={svgRef}
-        width={CANVAS_SIZE}
-        height={CANVAS_SIZE}
+        width="100%"
+        height="100%"
         viewBox={`0 0 ${CANVAS_SIZE} ${CANVAS_SIZE}`}
-        className="rounded-lg bg-white shadow-lg dark:bg-neutral-800"
+        className="h-full max-h-[600px] w-full max-w-[600px] rounded-lg bg-white shadow-lg dark:bg-neutral-800"
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}

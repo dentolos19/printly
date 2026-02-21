@@ -5,7 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { Box, Columns2, Grid3X3 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FallbackImage } from "../../shared/components/fallback-image";
 import { useImprinter } from "./hooks/use-imprinter";
 import { useKeyboardShortcuts } from "./hooks/use-keyboard";
@@ -19,6 +19,9 @@ import { Imprinter2DView } from "./view-2d";
 
 export function ImprinterContent() {
   const [viewMode, setViewMode] = useState<"3d" | "2d" | "split">("3d");
+  const [splitRatio, setSplitRatio] = useState(0.5);
+  const [isSplitResizing, setIsSplitResizing] = useState(false);
+  const splitContainerRef = useRef<HTMLDivElement>(null);
   const {
     leftPanelView,
     rightPanelOpen,
@@ -29,22 +32,61 @@ export function ImprinterContent() {
     selectProduct,
     activeTool,
   } = useImprinter();
+
+  const handleSplitMouseDown = useCallback(() => {
+    setIsSplitResizing(true);
+  }, []);
+
+  const handleSplitMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isSplitResizing || !splitContainerRef.current) return;
+
+      const rect = splitContainerRef.current.getBoundingClientRect();
+      if (rect.width <= 0) return;
+
+      const ratio = (e.clientX - rect.left) / rect.width;
+      const clampedRatio = Math.min(0.75, Math.max(0.25, ratio));
+      setSplitRatio(clampedRatio);
+    },
+    [isSplitResizing],
+  );
+
+  const handleSplitMouseUp = useCallback(() => {
+    setIsSplitResizing(false);
+  }, []);
+
+  useEffect(() => {
+    if (isSplitResizing) {
+      document.addEventListener("mousemove", handleSplitMouseMove);
+      document.addEventListener("mouseup", handleSplitMouseUp);
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+
+      return () => {
+        document.removeEventListener("mousemove", handleSplitMouseMove);
+        document.removeEventListener("mouseup", handleSplitMouseUp);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      };
+    }
+  }, [isSplitResizing, handleSplitMouseMove, handleSplitMouseUp]);
+
   useKeyboardShortcuts();
 
   return (
     <>
       <div className="bg-background flex h-screen flex-col">
         <ToolbarHeader />
-        <div className="relative flex flex-1 overflow-hidden">
+        <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
           <IconToolbar />
           {leftPanelView && <LeftPanel />}
           {activeTool === "text" && <TextPanel />}
-          <div className="relative flex flex-1 flex-col">
+          <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
             {selectedProduct ? (
               <Tabs
                 value={viewMode}
                 onValueChange={(v) => setViewMode(v as "3d" | "2d" | "split")}
-                className="flex flex-1 flex-col"
+                className="flex min-h-0 min-w-0 flex-1 flex-col"
               >
                 <div className="absolute top-3 left-1/2 z-10 -translate-x-1/2">
                   <TabsList className="h-9">
@@ -62,18 +104,31 @@ export function ImprinterContent() {
                     </TabsTrigger>
                   </TabsList>
                 </div>
-                <TabsContent value="3d" className="mt-0 flex-1">
+                <TabsContent value="3d" className="mt-0 min-h-0 min-w-0 flex-1 overflow-hidden">
                   <ImprinterScene />
                 </TabsContent>
-                <TabsContent value="2d" className="mt-0 flex-1">
+                <TabsContent value="2d" className="mt-0 min-h-0 min-w-0 flex-1 overflow-hidden">
                   <Imprinter2DView />
                 </TabsContent>
-                <TabsContent value="split" className="mt-0 flex-1">
-                  <div className="flex h-full">
-                    <div className="h-full flex-1 border-r">
+                <TabsContent value="split" className="mt-0 min-h-0 min-w-0 flex-1 overflow-hidden">
+                  <div ref={splitContainerRef} className="flex h-full min-h-0 min-w-0 overflow-hidden">
+                    <div
+                      className="h-full min-h-0 min-w-0 shrink-0 overflow-hidden"
+                      style={{ flexBasis: `${splitRatio * 100}%` }}
+                    >
                       <ImprinterScene />
                     </div>
-                    <div className="h-full flex-1">
+                    <div
+                      className={cn(
+                        "bg-border hover:bg-primary relative w-1 shrink-0 cursor-col-resize transition-colors",
+                        isSplitResizing && "bg-primary",
+                      )}
+                      onMouseDown={handleSplitMouseDown}
+                    />
+                    <div
+                      className="h-full min-h-0 min-w-0 shrink-0 overflow-hidden"
+                      style={{ flexBasis: `${(1 - splitRatio) * 100}%` }}
+                    >
                       <Imprinter2DView />
                     </div>
                   </div>

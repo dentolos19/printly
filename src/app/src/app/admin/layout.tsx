@@ -1,6 +1,7 @@
 "use client";
 
 import AccessDenied from "@/components/access-denied";
+import DebugDialog from "@/components/debug-dialog";
 import { NotificationBell } from "@/components/notification-bell";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -152,6 +153,13 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard">
+                      <LayoutDashboardIcon />
+                      <span>Dashboard</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuGroup>
                     <DropdownMenuItem asChild>
                       <Link href="/account">
@@ -163,12 +171,6 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                       <Link href="/notifications">
                         <BellIcon />
                         <span>Notifications</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/dashboard">
-                        <LayoutDashboardIcon />
-                        <span>Dashboard</span>
                       </Link>
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
@@ -198,6 +200,7 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                       </DropdownMenuSubContent>
                     </DropdownMenuSub>
                   </DropdownMenuGroup>
+                  <DebugDialog />
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOutIcon />

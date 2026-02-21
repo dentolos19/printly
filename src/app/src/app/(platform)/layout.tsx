@@ -172,6 +172,17 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  {claims?.role.toLowerCase() === "admin" && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href={"/admin"}>
+                          <ShieldIcon />
+                          <span>Administration</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuGroup>
                     <DropdownMenuItem asChild>
                       <Link href={"/account"}>
@@ -185,14 +196,6 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                         <span>Notifications</span>
                       </Link>
                     </DropdownMenuItem>
-                    {claims?.role.toLowerCase() === "admin" && (
-                      <DropdownMenuItem asChild>
-                        <Link href={"/admin"}>
-                          <ShieldIcon />
-                          <span>Administration</span>
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
@@ -220,13 +223,6 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                       </DropdownMenuSubContent>
                     </DropdownMenuSub>
                   </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  {/* {process.env.NODE_ENV !== "production" && (
-                    <>
-                      <DebugDialog />
-                      <DropdownMenuSeparator />
-                    </>
-                  )} */}
                   <DebugDialog />
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>

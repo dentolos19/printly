@@ -41,17 +41,24 @@ export function RightPanel({ className }: RightPanelProps) {
   const [width, setWidth] = useState(288);
   const [isResizing, setIsResizing] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const startXRef = useRef(0);
+  const startWidthRef = useRef(0);
 
-  const handleMouseDown = useCallback(() => {
-    setIsResizing(true);
-  }, []);
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      setIsResizing(true);
+      startXRef.current = e.clientX;
+      startWidthRef.current = width;
+    },
+    [width],
+  );
 
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       if (!isResizing || !panelRef.current) return;
 
-      const rect = panelRef.current.getBoundingClientRect();
-      const newWidth = rect.right - e.clientX;
+      const deltaX = startXRef.current - e.clientX;
+      const newWidth = startWidthRef.current + deltaX;
       if (newWidth >= 200 && newWidth <= 500) {
         setWidth(newWidth);
       }
@@ -87,7 +94,7 @@ export function RightPanel({ className }: RightPanelProps) {
     >
       <div
         className={cn(
-          "hover:bg-primary absolute top-0 left-0 h-full w-1 cursor-ew-resize transition-colors",
+          "hover:bg-primary absolute top-0 left-0 z-10 h-full w-1.5 cursor-ew-resize transition-colors",
           isResizing && "bg-primary",
         )}
         onMouseDown={handleMouseDown}
@@ -95,7 +102,7 @@ export function RightPanel({ className }: RightPanelProps) {
 
       <PanelHeader />
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="h-0 flex-1">
         <div className="space-y-1 p-2">
           <PrintAreaSection open={printAreaOpen} onOpenChange={setPrintAreaOpen} />
           <Separator className="my-2" />
