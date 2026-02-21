@@ -8,9 +8,6 @@
       "problemMatcher": [],
       "options": {
         "cwd": "${workspaceFolder}/src/server"
-      },
-      "presentation": {
-        "clear": true
       }
     },
     {
@@ -20,9 +17,6 @@
       "problemMatcher": [],
       "options": {
         "cwd": "${workspaceFolder}/src/server"
-      },
-      "presentation": {
-        "clear": true
       }
     },
     {
@@ -32,9 +26,6 @@
       "problemMatcher": [],
       "options": {
         "cwd": "${workspaceFolder}/src/server"
-      },
-      "presentation": {
-        "clear": true
       }
     }
   ],

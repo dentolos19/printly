@@ -25,7 +25,8 @@
   "compounds": [
     {
       "name": "App + Server",
-      "configurations": ["App", "Server"]
+      "configurations": ["App", "Server"],
+      "stopAll": true
     }
   ]
 }

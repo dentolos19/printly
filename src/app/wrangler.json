@@ -7,20 +7,20 @@
   "keep_vars": true,
   "observability": {
     "logs": {
-      "enabled": true,
+      "enabled": true
     },
     "traces": {
-      "enabled": true,
-    },
+      "enabled": true
+    }
   },
   "assets": {
     "binding": "ASSETS",
-    "directory": ".open-next/assets",
+    "directory": ".open-next/assets"
   },
   "routes": [
     {
       "pattern": "printly.dennise.me",
-      "custom_domain": true,
-    },
-  ],
+      "custom_domain": true
+    }
+  ]
 }
