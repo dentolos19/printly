@@ -13,6 +13,7 @@ public record UserProfileResponse(
     DateOnly? DateOfBirth,
     string Role,
     bool HasPassword,
+    bool IsPrivate,
     int FollowersCount,
     int FollowingCount,
     DateTime CreatedAt,
@@ -26,6 +27,7 @@ public record PublicUserProfileResponse(
     Guid? AvatarId,
     string? Location,
     string? Website,
+    bool IsPrivate,
     int FollowersCount,
     int FollowingCount,
     bool IsFollowing,
@@ -38,7 +40,8 @@ public record UpdateProfileDto(
     Guid? AvatarId,
     [StringLength(100)] string? Location,
     [Url] string? Website,
-    DateOnly? DateOfBirth
+    DateOnly? DateOfBirth,
+    bool? IsPrivate
 );
 
 public record UpdateEmailDto([Required] [EmailAddress] string NewEmail, [Required] string Password);

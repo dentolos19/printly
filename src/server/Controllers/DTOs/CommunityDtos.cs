@@ -35,7 +35,12 @@ public record PostDetailResponse(
     bool IsBookmarked,
     PostReactionType? UserReaction,
     DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime UpdatedAt,
+    List<string> Tags,
+    int ShareCount,
+    int ViewCount,
+    bool IsNsfw,
+    string? ContentWarning
 );
 
 public record PostSummaryResponse(
@@ -50,19 +55,30 @@ public record PostSummaryResponse(
     int ReactionCount,
     bool IsBookmarked,
     PostReactionType? UserReaction,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    List<string> Tags,
+    int ShareCount,
+    int ViewCount,
+    bool IsNsfw,
+    string? ContentWarning
 );
 
 public record CreatePostDto(
     [Required] [StringLength(2000, MinimumLength = 1)] string Caption,
     [Required] Guid PhotoId,
-    PostStatus PostStatus = PostStatus.Published
+    PostStatus PostStatus = PostStatus.Published,
+    List<string>? Tags = null,
+    bool IsNsfw = false,
+    string? ContentWarning = null
 );
 
 public record UpdatePostDto(
     [StringLength(2000, MinimumLength = 1)] string? Caption,
     Guid? PhotoId,
-    PostStatus? PostStatus
+    PostStatus? PostStatus,
+    List<string>? Tags = null,
+    bool? IsNsfw = null,
+    string? ContentWarning = null
 );
 
 // ============ Comment DTOs ============
@@ -76,7 +92,9 @@ public record PostCommentResponse(
     Guid? ParentId,
     int ReplyCount,
     DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime UpdatedAt,
+    int ReactionCount = 0,
+    PostReactionType? UserReaction = null
 );
 
 public record PostCommentDetailResponse(
@@ -203,7 +221,7 @@ public record FollowListResponse(
     int TotalPages
 );
 
-public record FollowStatusResponse(bool IsFollowing, bool IsFollowedBy);
+public record FollowStatusResponse(bool IsFollowing, bool IsFollowedBy, bool HasPendingRequest, bool IsPrivate, Guid? IncomingRequestId);
 
 public record FollowCountsResponse(int FollowerCount, int FollowingCount);
 
@@ -311,3 +329,165 @@ public record BlockListResponse(
 );
 
 public record BlockStatusResponse(bool IsBlocked, bool IsBlockedBy);
+
+// ============ Tag DTOs ============
+
+public record TagSummaryResponse(string Name, int PostCount);
+
+// ============ Comment Reaction DTOs ============
+
+public record CreateCommentReactionDto(
+    [Required] PostReactionType ReactionType
+);
+
+// ============ Post Share DTOs ============
+
+public record CreateShareDto(
+    string? Caption
+);
+
+public record ShareCountResponse(int Count);
+
+// ============ Mute DTOs ============
+
+public record MutedUserResponse(string UserId, string UserName, DateTime MutedAt);
+
+public record MuteListQuery(int Page = 1, int PageSize = 20);
+
+public record MuteListResponse(
+    List<MutedUserResponse> Users,
+    int TotalCount,
+    int Page,
+    int PageSize,
+    int TotalPages
+);
+
+// ============ Content Flag DTOs ============
+
+public record FlagPostDto(bool IsNsfw, string? ContentWarning);
+
+// ============ Follow Request DTOs ============
+
+public record FollowRequestResponse(
+    Guid Id,
+    string RequesterId,
+    string RequesterName,
+    FollowRequestStatus Status,
+    DateTime CreatedAt
+);
+
+public record FollowRequestListResponse(
+    List<FollowRequestResponse> Requests,
+    int TotalCount,
+    int Page,
+    int PageSize,
+    int TotalPages
+);
+
+// ============ User Search DTOs ============
+
+public record UserSearchResult(
+    string Id,
+    string UserName,
+    int FollowerCount,
+    bool? IsFollowedByMe,
+    bool IsPrivate,
+    bool HasPendingRequest
+);
+
+public record UserSearchQuery(
+    string? Q = null,
+    int Page = 1,
+    int PageSize = 20
+);
+
+public record PagedResponse<T>(
+    List<T> Items,
+    int TotalCount,
+    int Page,
+    int PageSize,
+    int TotalPages
+);
+
+// ============ Push Token DTOs ============
+
+public record RegisterPushTokenDto(
+    [Required] string Token,
+    [Required] PushPlatform Platform
+);
+
+// ============ Notification Preference DTOs ============
+
+public record NotificationPreferenceDto(
+    NotificationType Type,
+    bool InAppEnabled,
+    bool PushEnabled
+);
+
+// ============ Post View DTOs ============
+
+// (no extra DTOs needed — upsert is server-side only)
+
+// ============ Analytics DTOs ============
+
+public record DailyCount(DateOnly Date, int Count);
+
+public record PostAnalyticsResponse(
+    int ViewCount,
+    int UniqueViewers,
+    List<ReactionSummary> ReactionBreakdown,
+    int CommentCount,
+    int ShareCount,
+    int BookmarkCount,
+    List<DailyCount> ViewsLast7Days
+);
+
+public record ProfileStatsResponse(
+    int TotalPosts,
+    int TotalLikesReceived,
+    int TotalCommentsReceived,
+    int TotalSharesReceived,
+    int FollowerCount,
+    int FollowingCount
+);
+
+// ============ Admin DTOs ============
+
+public record AdminStatsResponse(
+    int TotalUsers,
+    int TotalPosts,
+    int TotalComments,
+    int TotalReactions,
+    int TotalReports,
+    int PendingReports,
+    int PostsToday,
+    int NewUsersToday
+);
+
+public record AdminUserResponse(
+    string Id,
+    string UserName,
+    int FollowerCount,
+    int PostCount,
+    int ReportCount,
+    bool IsBanned,
+    DateTime CreatedAt
+);
+
+public record AdminUserListQuery(
+    string? Search = null,
+    int Page = 1,
+    int PageSize = 20
+);
+
+public record AdminUserListResponse(
+    List<AdminUserResponse> Users,
+    int TotalCount,
+    int Page,
+    int PageSize,
+    int TotalPages
+);
+
+public record BanUserDto(
+    [Required] string Reason
+);

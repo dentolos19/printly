@@ -56,6 +56,11 @@ public enum NotificationType
     PostLiked = 21,
     PostCommented = 22,
     CommentReplied = 23,
+    Mentioned = 24,
+    FollowRequested = 25,
+    FollowRequestApproved = 26,
+    CommentReacted = 27,
+    PostShared = 28,
 }
 
 public enum NotificationPriority

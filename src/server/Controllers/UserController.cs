@@ -42,6 +42,7 @@ public class UserController(DatabaseContext database, UserManager<User> userMana
                 user.DateOfBirth,
                 user.Role,
                 user.PasswordHash != null,
+                user.IsPrivate,
                 user.Followers.Count,
                 user.Following.Count,
                 user.CreatedAt,
@@ -68,6 +69,8 @@ public class UserController(DatabaseContext database, UserManager<User> userMana
         user.Location = dto.Location ?? user.Location;
         user.Website = dto.Website ?? user.Website;
         user.DateOfBirth = dto.DateOfBirth ?? user.DateOfBirth;
+        if (dto.IsPrivate.HasValue)
+            user.IsPrivate = dto.IsPrivate.Value;
         user.UpdatedAt = DateTime.UtcNow;
 
         await Context.SaveChangesAsync();
@@ -84,6 +87,7 @@ public class UserController(DatabaseContext database, UserManager<User> userMana
                 user.DateOfBirth,
                 user.Role,
                 user.PasswordHash != null,
+                user.IsPrivate,
                 0,
                 0,
                 user.CreatedAt,
@@ -170,6 +174,7 @@ public class UserController(DatabaseContext database, UserManager<User> userMana
                 user.AvatarId,
                 user.Location,
                 user.Website,
+                user.IsPrivate,
                 user.Followers.Count,
                 user.Following.Count,
                 isFollowing,
