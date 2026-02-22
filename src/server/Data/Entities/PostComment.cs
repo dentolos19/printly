@@ -15,4 +15,6 @@ public class PostComment : BaseEntity
 
     public string Content { get; set; } = string.Empty;
     public PostStatus PostStatus { get; set; } = PostStatus.Published;
+
+    public ICollection<CommentReaction> CommentReactions { get; set; } = new List<CommentReaction>();
 }

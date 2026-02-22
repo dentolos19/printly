@@ -19,6 +19,13 @@ public class User : IdentityUser
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+    // Privacy
+    public bool IsPrivate { get; set; } = false;
+
+    // Moderation
+    public bool IsBanned { get; set; } = false;
+    public string? BanReason { get; set; }
+
     public ICollection<UserFollower> Followers { get; set; } = new List<UserFollower>();
     public ICollection<UserFollower> Following { get; set; } = new List<UserFollower>();
 }
