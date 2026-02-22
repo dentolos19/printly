@@ -627,7 +627,10 @@ function PropertiesSection() {
       height: Math.round((obj.height || 0) * (obj.scaleY || 1)),
       opacity: Math.round((obj.opacity || 1) * 100),
       rotation: Math.round(obj.angle || 0),
-      blendMode: (obj.globalCompositeOperation as BlendMode) || "normal",
+      blendMode:
+        !obj.globalCompositeOperation || obj.globalCompositeOperation === "source-over"
+          ? "normal"
+          : (obj.globalCompositeOperation as BlendMode),
       flipX: obj.flipX || false,
       flipY: obj.flipY || false,
     };
@@ -688,7 +691,9 @@ function PropertiesSection() {
     } else if (key === "opacity") {
       selectedObject.set({ opacity: (value as number) / 100 });
     } else if (key === "blendMode") {
-      selectedObject.set({ globalCompositeOperation: value as string });
+      selectedObject.set({
+        globalCompositeOperation: value === "normal" ? "source-over" : (value as string),
+      });
     } else if (key === "rotation") {
       selectedObject.set({ angle: value as number });
     } else if (key.startsWith("shadow")) {

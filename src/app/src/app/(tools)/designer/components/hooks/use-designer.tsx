@@ -62,6 +62,7 @@ export function DesignerProvider({
   const [zoom, setZoom] = useState(0.25);
   const [gridEnabled, setGridEnabled] = useState(false);
   const [gridSize, setGridSize] = useState(20);
+  const [snappingEnabled, setSnappingEnabled] = useState(true);
 
   // History state
   const [history, setHistory] = useState<HistoryState[]>([]);
@@ -1000,6 +1001,8 @@ export function DesignerProvider({
       setGridEnabled,
       gridSize,
       setGridSize,
+      snappingEnabled,
+      setSnappingEnabled,
       history,
       historyIndex,
       canUndo,
@@ -1059,6 +1062,7 @@ export function DesignerProvider({
       zoom,
       gridEnabled,
       gridSize,
+      snappingEnabled,
       history,
       historyIndex,
       canUndo,

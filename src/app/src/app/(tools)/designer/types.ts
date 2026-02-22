@@ -174,6 +174,8 @@ export type DesignerContextValue = {
   setGridEnabled: (enabled: boolean) => void;
   gridSize: number;
   setGridSize: (size: number) => void;
+  snappingEnabled: boolean;
+  setSnappingEnabled: (enabled: boolean) => void;
 
   // History
   history: HistoryState[];

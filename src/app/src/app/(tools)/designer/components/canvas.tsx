@@ -15,8 +15,17 @@ export function DesignerCanvas({ className }: DesignerCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const fabricRef = useRef<Canvas | null>(null);
 
-  const { setCanvas, canvasSize, zoom, gridEnabled, gridSize, setSelectedObjects, saveHistory, setLayers } =
-    useDesigner();
+  const {
+    setCanvas,
+    canvasSize,
+    zoom,
+    gridEnabled,
+    gridSize,
+    snappingEnabled,
+    setSelectedObjects,
+    saveHistory,
+    setLayers,
+  } = useDesigner();
 
   const updateLayers = useCallback(() => {
     if (!fabricRef.current) return;
@@ -119,20 +128,97 @@ export function DesignerCanvas({ className }: DesignerCanvasProps) {
     if (!fabricRef.current) return;
 
     const canvas = fabricRef.current;
+    const SNAP_THRESHOLD = 8;
 
     function handleObjectMoving(e: {
-      target?: { left?: number; top?: number; set: (opts: { left?: number; top?: number }) => void };
+      target?: {
+        left?: number;
+        top?: number;
+        visible?: boolean;
+        set: (opts: { left?: number; top?: number }) => void;
+        setCoords: () => void;
+        getBoundingRect: () => {
+          left: number;
+          top: number;
+          width: number;
+          height: number;
+        };
+      };
     }) {
-      if (!gridEnabled || !e.target) return;
+      if (!e.target) return;
 
       const obj = e.target;
-      const left = Math.round((obj.left || 0) / gridSize) * gridSize;
-      const top = Math.round((obj.top || 0) / gridSize) * gridSize;
+      if (gridEnabled) {
+        const left = Math.round((obj.left || 0) / gridSize) * gridSize;
+        const top = Math.round((obj.top || 0) / gridSize) * gridSize;
 
-      obj.set({
-        left,
-        top,
-      });
+        obj.set({
+          left,
+          top,
+        });
+      }
+
+      if (!snappingEnabled) return;
+
+      const targetBounds = obj.getBoundingRect();
+      const targetAnchorsX = [
+        targetBounds.left,
+        targetBounds.left + targetBounds.width / 2,
+        targetBounds.left + targetBounds.width,
+      ];
+      const targetAnchorsY = [
+        targetBounds.top,
+        targetBounds.top + targetBounds.height / 2,
+        targetBounds.top + targetBounds.height,
+      ];
+
+      const snapAnchorsX = [0, canvas.getWidth() / 2, canvas.getWidth()];
+      const snapAnchorsY = [0, canvas.getHeight() / 2, canvas.getHeight()];
+
+      for (const other of canvas.getObjects()) {
+        if (other === obj || other.visible === false) continue;
+
+        const otherBounds = other.getBoundingRect();
+        snapAnchorsX.push(
+          otherBounds.left,
+          otherBounds.left + otherBounds.width / 2,
+          otherBounds.left + otherBounds.width,
+        );
+        snapAnchorsY.push(
+          otherBounds.top,
+          otherBounds.top + otherBounds.height / 2,
+          otherBounds.top + otherBounds.height,
+        );
+      }
+
+      let bestDx: number | null = null;
+      let bestDy: number | null = null;
+
+      for (const targetX of targetAnchorsX) {
+        for (const snapX of snapAnchorsX) {
+          const dx = snapX - targetX;
+          if (Math.abs(dx) <= SNAP_THRESHOLD && (bestDx === null || Math.abs(dx) < Math.abs(bestDx))) {
+            bestDx = dx;
+          }
+        }
+      }
+
+      for (const targetY of targetAnchorsY) {
+        for (const snapY of snapAnchorsY) {
+          const dy = snapY - targetY;
+          if (Math.abs(dy) <= SNAP_THRESHOLD && (bestDy === null || Math.abs(dy) < Math.abs(bestDy))) {
+            bestDy = dy;
+          }
+        }
+      }
+
+      if (bestDx !== null || bestDy !== null) {
+        obj.set({
+          left: (obj.left || 0) + (bestDx ?? 0),
+          top: (obj.top || 0) + (bestDy ?? 0),
+        });
+        obj.setCoords();
+      }
     }
 
     canvas.on("object:moving", handleObjectMoving);
@@ -140,7 +226,7 @@ export function DesignerCanvas({ className }: DesignerCanvasProps) {
     return () => {
       canvas.off("object:moving", handleObjectMoving);
     };
-  }, [gridEnabled, gridSize]);
+  }, [gridEnabled, gridSize, snappingEnabled]);
 
   const gridBackground = gridEnabled
     ? {

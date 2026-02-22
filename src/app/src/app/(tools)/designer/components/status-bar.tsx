@@ -5,7 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Redo2, RotateCcw, Undo2, ZoomIn, ZoomOut } from "lucide-react";
+import { Magnet, Redo2, RotateCcw, Undo2, ZoomIn, ZoomOut } from "lucide-react";
 import { useDesigner } from "./hooks";
 
 type StatusBarProps = {
@@ -13,7 +13,8 @@ type StatusBarProps = {
 };
 
 export function StatusBar({ className }: StatusBarProps) {
-  const { canvasSize, zoom, setZoom, canUndo, canRedo, undo, redo, clearCanvas } = useDesigner();
+  const { canvasSize, zoom, setZoom, canUndo, canRedo, undo, redo, snappingEnabled, setSnappingEnabled } =
+    useDesigner();
 
   function handleZoomIn() {
     setZoom(Math.min(zoom + 0.1, 3));
@@ -89,6 +90,24 @@ export function StatusBar({ className }: StatusBarProps) {
 
       {/* Right section - Undo/Redo/Reset */}
       <div className={"flex items-center gap-1"}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type={"button"}
+              variant={snappingEnabled ? "secondary" : "ghost"}
+              size={"sm"}
+              className={"h-6 gap-1.5 px-2"}
+              onClick={() => setSnappingEnabled(!snappingEnabled)}
+            >
+              <Magnet className={"h-3.5 w-3.5"} />
+              Snap
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Snap to canvas and nearby elements</TooltipContent>
+        </Tooltip>
+
+        <Separator orientation={"vertical"} className={"mx-1 h-4"} />
+
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
