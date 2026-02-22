@@ -1045,7 +1045,7 @@ export default function ChatPage() {
   }, []);
 
   return (
-    <main className="flex h-full w-full flex-col gap-3 overflow-hidden p-3">
+    <main className="flex h-full w-full flex-col gap-3 overflow-hidden p-4">
       {/* Header Bar - Compact */}
       <div className="flex shrink-0 items-center justify-between">
         <div className="flex items-center gap-3">
@@ -1381,14 +1381,12 @@ export default function ChatPage() {
                     <MessageInput
                       onSend={handleSendMessage}
                       onSendFile={handleSendFile}
-                      onSendVoice={handleSendVoice}
                       onTypingStart={handleTypingStart}
                       onTypingStop={handleTypingStop}
                       disabled={connectionState !== "connected" || isUploading}
                       replyTo={replyTo}
                       onCancelReply={() => setReplyTo(null)}
                       allowFileUpload
-                      allowVoiceMessage
                     />
                   </div>
                 )}

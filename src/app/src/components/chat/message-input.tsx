@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { CornerUpLeft, File, Mic, Paperclip, Send, Square, X } from "lucide-react";
+import { CornerUpLeft, File, Paperclip, Send, X } from "lucide-react";
 import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 
 export interface ReplyInfo {
@@ -17,15 +17,9 @@ export interface FileUploadInfo {
   preview?: string;
 }
 
-export interface VoiceRecordingInfo {
-  blob: Blob;
-  duration: number;
-}
-
 export interface MessageInputProps {
   onSend: (content: string, replyToMessageId?: string) => void;
   onSendFile?: (file: File, content: string, replyToMessageId?: string) => void;
-  onSendVoice?: (blob: Blob, duration: number, replyToMessageId?: string) => void;
   onTypingStart?: () => void;
   onTypingStop?: () => void;
   disabled?: boolean;
@@ -33,26 +27,17 @@ export interface MessageInputProps {
   replyTo?: ReplyInfo | null;
   onCancelReply?: () => void;
   allowFileUpload?: boolean;
-  allowVoiceMessage?: boolean;
   maxFileSizeMB?: number;
   acceptedFileTypes?: string;
 }
 
 const ACCEPTED_FILE_TYPES = "image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt";
-const MAX_RECORDING_SECONDS = 120;
-
-function formatRecordingTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
-}
 
 export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
   (
     {
       onSend,
       onSendFile,
-      onSendVoice,
       onTypingStart,
       onTypingStop,
       disabled,
@@ -60,7 +45,6 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
       replyTo,
       onCancelReply,
       allowFileUpload = true,
-      allowVoiceMessage = true,
       maxFileSizeMB = 50,
       acceptedFileTypes = ACCEPTED_FILE_TYPES,
     },
@@ -70,18 +54,11 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
     const [isTyping, setIsTyping] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [filePreview, setFilePreview] = useState<string | null>(null);
-    const [isRecording, setIsRecording] = useState(false);
-    const [recordingDuration, setRecordingDuration] = useState(0);
-    const [recordingError, setRecordingError] = useState<string | null>(null);
 
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const internalRef = useRef<HTMLTextAreaElement>(null);
     const textareaRef = (ref as React.RefObject<HTMLTextAreaElement>) || internalRef;
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-    const audioChunksRef = useRef<Blob[]>([]);
-    const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-    const recordingDurationRef = useRef(0);
 
     const handleTyping = useCallback(() => {
       if (!isTyping) {
@@ -175,99 +152,10 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
       setFilePreview(null);
     };
 
-    const startRecording = async () => {
-      try {
-        setRecordingError(null);
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-        const mediaRecorder = new MediaRecorder(stream, {
-          mimeType: MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4",
-        });
-
-        audioChunksRef.current = [];
-        mediaRecorderRef.current = mediaRecorder;
-
-        mediaRecorder.ondataavailable = (e) => {
-          if (e.data.size > 0) {
-            audioChunksRef.current.push(e.data);
-          }
-        };
-
-        mediaRecorder.onstop = () => {
-          const audioBlob = new Blob(audioChunksRef.current, {
-            type: mediaRecorder.mimeType,
-          });
-
-          // Stop all tracks
-          stream.getTracks().forEach((track) => track.stop());
-
-          // Use the ref for duration since state may be stale in this closure
-          const finalDuration = recordingDurationRef.current;
-          if (onSendVoice && audioBlob.size > 0 && finalDuration > 0) {
-            onSendVoice(audioBlob, finalDuration, replyTo?.messageId);
-            onCancelReply?.();
-          }
-
-          setRecordingDuration(0);
-          recordingDurationRef.current = 0;
-        };
-
-        mediaRecorder.start(100);
-        setIsRecording(true);
-        setRecordingDuration(0);
-
-        // Start duration counter
-        recordingIntervalRef.current = setInterval(() => {
-          setRecordingDuration((prev) => {
-            const next = prev >= MAX_RECORDING_SECONDS ? prev : prev + 1;
-            recordingDurationRef.current = next;
-            if (prev >= MAX_RECORDING_SECONDS) {
-              stopRecording();
-            }
-            return next;
-          });
-        }, 1000);
-      } catch (err) {
-        console.error("Failed to start recording:", err);
-        setRecordingError("Microphone access denied. Please allow microphone access.");
-      }
-    };
-
-    const stopRecording = useCallback(() => {
-      if (mediaRecorderRef.current && isRecording) {
-        mediaRecorderRef.current.stop();
-        setIsRecording(false);
-
-        if (recordingIntervalRef.current) {
-          clearInterval(recordingIntervalRef.current);
-          recordingIntervalRef.current = null;
-        }
-      }
-    }, [isRecording]);
-
-    const cancelRecording = useCallback(() => {
-      if (mediaRecorderRef.current && isRecording) {
-        // Clear chunks before stopping so onstop doesn't send
-        audioChunksRef.current = [];
-        setRecordingDuration(0);
-        recordingDurationRef.current = 0;
-        mediaRecorderRef.current.stop();
-        setIsRecording(false);
-
-        if (recordingIntervalRef.current) {
-          clearInterval(recordingIntervalRef.current);
-          recordingIntervalRef.current = null;
-        }
-      }
-    }, [isRecording]);
-
     useEffect(() => {
       return () => {
         if (typingTimeoutRef.current) {
           clearTimeout(typingTimeoutRef.current);
-        }
-        if (recordingIntervalRef.current) {
-          clearInterval(recordingIntervalRef.current);
         }
       };
     }, []);
@@ -314,118 +202,56 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
           </div>
         )}
 
-        {recordingError && <div className="text-destructive mb-3 text-sm">{recordingError}</div>}
+        <div className="flex items-end gap-2">
+          {allowFileUpload && onSendFile && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 shrink-0"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={disabled}
+                  >
+                    <Paperclip className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Attach file</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
 
-        {isRecording ? (
-          <div className="flex w-full items-center justify-between gap-3 rounded-xl bg-red-50 px-4 py-3 dark:bg-red-950/30">
-            {/* Recording indicator */}
-            <div className="flex items-center gap-2">
-              <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
-              <span className="text-sm font-medium text-red-600 dark:text-red-400">
-                {formatRecordingTime(recordingDuration)}
-              </span>
-            </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={acceptedFileTypes}
+            onChange={handleFileSelect}
+            className="hidden"
+          />
 
-            <div className="flex items-center gap-2">
-              {/* Cancel - discard the recording */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-9 w-9 text-red-500 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30"
-                      onClick={cancelRecording}
-                    >
-                      <X className="h-5 w-5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Cancel recording</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+          <Textarea
+            ref={textareaRef}
+            value={content}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            disabled={disabled}
+            className="max-h-[120px] min-h-[44px] resize-none rounded-xl"
+            rows={1}
+          />
 
-              {/* Send - stop recording and send it */}
-              <Button
-                size="sm"
-                onClick={stopRecording}
-                className="gap-1.5 rounded-full bg-blue-600 px-4 hover:bg-blue-700"
-              >
-                <Send className="h-4 w-4" />
-                Send
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-end gap-2">
-            {allowFileUpload && onSendFile && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-10 w-10 shrink-0"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={disabled}
-                    >
-                      <Paperclip className="h-5 w-5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Attach file</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept={acceptedFileTypes}
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-
-            <Textarea
-              ref={textareaRef}
-              value={content}
-              onChange={handleChange}
-              onKeyDown={handleKeyDown}
-              placeholder={placeholder}
+          {canSend && (
+            <Button
+              size="icon"
+              onClick={handleSend}
               disabled={disabled}
-              className="max-h-[120px] min-h-[44px] resize-none rounded-xl"
-              rows={1}
-            />
-
-            {allowVoiceMessage && onSendVoice && !canSend && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-10 w-10 shrink-0"
-                      onClick={startRecording}
-                      disabled={disabled}
-                    >
-                      <Mic className="h-5 w-5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Record voice message</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-
-            {canSend && (
-              <Button
-                size="icon"
-                onClick={handleSend}
-                disabled={disabled}
-                className="h-10 w-10 shrink-0 rounded-full bg-blue-600 hover:bg-blue-700"
-              >
-                <Send className="h-5 w-5" />
-              </Button>
-            )}
-          </div>
-        )}
+              className="h-10 w-10 shrink-0 rounded-full bg-blue-600 hover:bg-blue-700"
+            >
+              <Send className="h-5 w-5" />
+            </Button>
+          )}
+        </div>
       </div>
     );
   },
