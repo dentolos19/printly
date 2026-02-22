@@ -63,6 +63,7 @@ const navItems = [
   { href: "/admin/refunds", label: "Refunds", icon: RefreshCcw },
   { href: "/admin/reports", label: "Reports", icon: Flag },
   { href: "/admin/chat", label: "Chat", icon: MessageCircleIcon },
+  { href: "/admin/community", label: "Community", icon: UserIcon },
 ];
 
 function NestedLayout({ children }: { children: React.ReactNode }) {

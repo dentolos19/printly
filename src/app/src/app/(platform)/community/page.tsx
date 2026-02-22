@@ -13,7 +13,8 @@ import {
   ReportReason,
   ReportType,
 } from "@/lib/server/community";
-import { BookmarkIcon, PlusIcon } from "lucide-react";
+import { BookmarkIcon, PlusIcon, TrendingUpIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -31,17 +32,24 @@ import {
 export default function CommunityPage() {
   const { api } = useServer();
   const { claims } = useAuth();
+  const router = useRouter();
 
   const [activeTab, setActiveTab] = useState("feed");
   const [posts, setPosts] = useState<PostSummaryResponse[]>([]);
   const [myPosts, setMyPosts] = useState<PostSummaryResponse[]>([]);
   const [bookmarks, setBookmarks] = useState<BookmarkedPostResponse[]>([]);
+  const [trendingPosts, setTrendingPosts] = useState<PostSummaryResponse[]>([]);
+  const [explorePosts, setExplorePosts] = useState<PostSummaryResponse[]>([]);
   const [stats, setStats] = useState<CommunityStatsResponse | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [trendingPage, setTrendingPage] = useState(1);
+  const [trendingTotalPages, setTrendingTotalPages] = useState(1);
+  const [explorePage, setExplorePage] = useState(1);
+  const [exploreTotalPages, setExploreTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -79,6 +87,32 @@ export default function CommunityPage() {
     }
   }, [api.community]);
 
+  const loadTrending = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api.community.getTrendingPosts(trendingPage, 12);
+      setTrendingPosts(data.posts);
+      setTrendingTotalPages(data.totalPages);
+    } catch (error) {
+      console.error("Failed to load trending:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [api.community, trendingPage]);
+
+  const loadExplore = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api.community.getExploreFeed(explorePage, 12);
+      setExplorePosts(data.posts);
+      setExploreTotalPages(data.totalPages);
+    } catch (error) {
+      console.error("Failed to load explore:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [api.community, explorePage]);
+
   const loadStats = useCallback(async () => {
     setStatsLoading(true);
     try {
@@ -101,8 +135,12 @@ export default function CommunityPage() {
       loadMyPosts();
     } else if (activeTab === "bookmarks") {
       loadBookmarks();
+    } else if (activeTab === "trending") {
+      loadTrending();
+    } else if (activeTab === "explore") {
+      loadExplore();
     }
-  }, [activeTab, loadMyPosts, loadBookmarks]);
+  }, [activeTab, loadMyPosts, loadBookmarks, loadTrending, loadExplore]);
 
   const handleReact = async (postId: string, reaction: ReactionType | null) => {
     try {
@@ -114,6 +152,8 @@ export default function CommunityPage() {
       loadPosts();
       if (activeTab === "my-posts") loadMyPosts();
       if (activeTab === "bookmarks") loadBookmarks();
+      if (activeTab === "trending") loadTrending();
+      if (activeTab === "explore") loadExplore();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to update reaction");
     }
@@ -125,8 +165,22 @@ export default function CommunityPage() {
       loadPosts();
       if (activeTab === "my-posts") loadMyPosts();
       if (activeTab === "bookmarks") loadBookmarks();
+      if (activeTab === "trending") loadTrending();
+      if (activeTab === "explore") loadExplore();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to update bookmark");
+    }
+  };
+
+  const handleShare = async (postId: string) => {
+    try {
+      await api.community.sharePost(postId);
+      toast.success("Post shared!");
+      loadPosts();
+      if (activeTab === "trending") loadTrending();
+      if (activeTab === "explore") loadExplore();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to share post");
     }
   };
 
@@ -171,10 +225,16 @@ export default function CommunityPage() {
     setPostDetailOpen(true);
   };
 
+  const handleTagClick = (tag: string) => {
+    router.push(`/community/tags/${encodeURIComponent(tag)}`);
+  };
+
   const handlePostUpdated = () => {
     loadPosts();
     if (activeTab === "my-posts") loadMyPosts();
     if (activeTab === "bookmarks") loadBookmarks();
+    if (activeTab === "trending") loadTrending();
+    if (activeTab === "explore") loadExplore();
   };
 
   const handleSearch = useCallback((query: string) => {
@@ -203,6 +263,11 @@ export default function CommunityPage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <TabsList>
                 <TabsTrigger value="feed">Feed</TabsTrigger>
+                <TabsTrigger value="trending">
+                  <TrendingUpIcon className="mr-1.5 h-3.5 w-3.5" />
+                  Trending
+                </TabsTrigger>
+                <TabsTrigger value="explore">Explore</TabsTrigger>
                 <TabsTrigger value="my-posts">My Posts</TabsTrigger>
                 <TabsTrigger value="bookmarks">Bookmarks</TabsTrigger>
               </TabsList>
@@ -220,14 +285,50 @@ export default function CommunityPage() {
                 onReact={handleReact}
                 onBookmark={handleBookmark}
                 onComment={handleComment}
+                onShare={handleShare}
                 onArchive={handleArchive}
                 onReport={handleReport}
+                onTagClick={handleTagClick}
                 emptyTitle={searchTerm ? "No posts found" : "No posts yet"}
                 emptyDescription={searchTerm ? "Try a different search term" : undefined}
                 emptyActionLabel={searchTerm ? undefined : "Create your first post"}
                 onEmptyAction={searchTerm ? undefined : () => setCreateDialogOpen(true)}
               />
               <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+            </TabsContent>
+
+            <TabsContent value="trending" className="mt-6 space-y-6">
+              <PostGrid
+                posts={trendingPosts}
+                loading={loading}
+                currentUserId={claims?.id}
+                onReact={handleReact}
+                onBookmark={handleBookmark}
+                onComment={handleComment}
+                onShare={handleShare}
+                onReport={handleReport}
+                onTagClick={handleTagClick}
+                emptyTitle="No trending posts"
+                emptyDescription="Check back later for trending content"
+              />
+              <Pagination page={trendingPage} totalPages={trendingTotalPages} onPageChange={setTrendingPage} />
+            </TabsContent>
+
+            <TabsContent value="explore" className="mt-6 space-y-6">
+              <PostGrid
+                posts={explorePosts}
+                loading={loading}
+                currentUserId={claims?.id}
+                onReact={handleReact}
+                onBookmark={handleBookmark}
+                onComment={handleComment}
+                onShare={handleShare}
+                onReport={handleReport}
+                onTagClick={handleTagClick}
+                emptyTitle="Nothing to explore"
+                emptyDescription="Follow more people to see content here"
+              />
+              <Pagination page={explorePage} totalPages={exploreTotalPages} onPageChange={setExplorePage} />
             </TabsContent>
 
             <TabsContent value="my-posts" className="mt-6">
@@ -237,9 +338,11 @@ export default function CommunityPage() {
                 onReact={handleReact}
                 onBookmark={handleBookmark}
                 onComment={handleComment}
+                onShare={handleShare}
                 onDelete={handleDelete}
                 onArchive={handleArchive}
                 onReport={handleReport}
+                onTagClick={handleTagClick}
                 emptyTitle="No posts yet"
                 emptyActionLabel="Create your first post"
                 onEmptyAction={() => setCreateDialogOpen(true)}
@@ -262,8 +365,10 @@ export default function CommunityPage() {
                       onReact={handleReact}
                       onBookmark={handleBookmark}
                       onComment={handleComment}
+                      onShare={handleShare}
                       onArchive={handleArchive}
                       onReport={handleReport}
+                      onTagClick={handleTagClick}
                       isOwner={claims?.id === bookmark.post.authorId}
                     />
                   ))}
@@ -295,6 +400,7 @@ export default function CommunityPage() {
         open={postDetailOpen}
         onOpenChange={setPostDetailOpen}
         onPostUpdated={handlePostUpdated}
+        onTagClick={handleTagClick}
       />
     </div>
   );

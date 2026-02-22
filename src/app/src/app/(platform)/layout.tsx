@@ -44,6 +44,7 @@ import {
   MoreVerticalIcon,
   PackageIcon,
   PaletteIcon,
+  SearchIcon,
   ShieldIcon,
   SunIcon,
   UserIcon,
@@ -118,6 +119,14 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                     <Link href={"/community"}>
                       <UsersIcon />
                       <span>Community</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href={"/community/search"}>
+                      <SearchIcon />
+                      <span>Find Users</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

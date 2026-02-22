@@ -11,6 +11,7 @@ export type UserProfileResponse = {
   dateOfBirth: string | null;
   role: string;
   hasPassword: boolean;
+  isPrivate: boolean;
   followersCount: number;
   followingCount: number;
   createdAt: string;
@@ -24,6 +25,7 @@ export type PublicUserProfileResponse = {
   avatarId: string | null;
   location: string | null;
   website: string | null;
+  isPrivate: boolean;
   followersCount: number;
   followingCount: number;
   isFollowing: boolean;
@@ -37,6 +39,7 @@ export type UpdateProfileDto = {
   location?: string | null;
   website?: string | null;
   dateOfBirth?: string | null;
+  isPrivate?: boolean;
 };
 
 export type UpdateEmailDto = {

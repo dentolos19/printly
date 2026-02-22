@@ -12,9 +12,11 @@ interface PostGridProps {
   onReact: (postId: string, reaction: ReactionType | null) => void;
   onBookmark: (postId: string) => void;
   onComment: (postId: string) => void;
+  onShare?: (postId: string) => void;
   onDelete?: (postId: string) => void;
   onArchive?: (postId: string, newStatus: PostStatus) => void;
   onReport?: (postId: string, reason: ReportReason, description?: string) => Promise<void>;
+  onTagClick?: (tag: string) => void;
   emptyTitle?: string;
   emptyDescription?: string;
   emptyActionLabel?: string;
@@ -28,9 +30,11 @@ export function PostGrid({
   onReact,
   onBookmark,
   onComment,
+  onShare,
   onDelete,
   onArchive,
   onReport,
+  onTagClick,
   emptyTitle = "No posts yet",
   emptyDescription,
   emptyActionLabel,
@@ -60,9 +64,11 @@ export function PostGrid({
           onReact={onReact}
           onBookmark={onBookmark}
           onComment={onComment}
+          onShare={onShare}
           onDelete={onDelete}
           onArchive={onArchive}
           onReport={onReport}
+          onTagClick={onTagClick}
           isOwner={currentUserId?.toLowerCase() === post.authorId?.toLowerCase()}
         />
       ))}
