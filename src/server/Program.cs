@@ -22,6 +22,7 @@ builder.Services.AddScoped<ChatService>();
 builder.Services.AddScoped<ElevenLabsService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddSingleton<ILiveKitService, LiveKitService>();
+builder.Services.AddSingleton<IEmailService, EmailService>();
 builder.Services.AddHostedService<NotificationCleanupService>();
 
 var app = builder.Build();

@@ -130,6 +130,21 @@ public class NotificationController(DatabaseContext context) : BaseController(co
         {
             notification.IsRead = true;
             notification.ReadAt = DateTime.UtcNow;
+
+            // Check if we should reset the email flag
+            // If unread count drops below threshold, allow future digest emails
+            var remainingUnread = await Context.Notifications.CountAsync(n =>
+                n.UserId == userId && !n.IsRead && !n.IsDeleted && !n.IsArchived && n.Id != id
+            );
+            if (remainingUnread < 10)
+            {
+                var user = await Context.Users.FindAsync(userId);
+                if (user != null && user.UnreadEmailSent)
+                {
+                    user.UnreadEmailSent = false;
+                }
+            }
+
             await Context.SaveChangesAsync();
         }
 
@@ -155,6 +170,14 @@ public class NotificationController(DatabaseContext context) : BaseController(co
         {
             notification.IsRead = true;
             notification.ReadAt = now;
+        }
+
+        // Reset the email digest flag so user can receive another email
+        // next time their unread count crosses the threshold
+        var user = await Context.Users.FindAsync(userId);
+        if (user != null && user.UnreadEmailSent)
+        {
+            user.UnreadEmailSent = false;
         }
 
         await Context.SaveChangesAsync();
