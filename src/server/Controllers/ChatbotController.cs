@@ -11,9 +11,11 @@ namespace PrintlyServer.Controllers;
 /// <summary>
 /// Controller for AI-powered support chatbot
 /// </summary>
-public class ChatbotController(DatabaseContext context, ChatService chatbotService) : BaseController(context)
+public class ChatbotController(DatabaseContext context, ChatService chatbotService, ElevenLabsService elevenLabsService)
+    : BaseController(context)
 {
     private readonly ChatService _chatbotService = chatbotService;
+    private readonly ElevenLabsService _elevenLabsService = elevenLabsService;
 
     /// <summary>
     /// Send a message to the chatbot
@@ -167,6 +169,60 @@ public class ChatbotController(DatabaseContext context, ChatService chatbotServi
 
         return Ok(new { messages });
     }
+
+    /// <summary>
+    /// Get a signed URL for the ElevenLabs voice AI agent
+    /// </summary>
+    [Authorize]
+    [HttpGet("voice-agent")]
+    public async Task<IActionResult> GetVoiceAgent()
+    {
+        try
+        {
+            var signedUrl = await _elevenLabsService.GetSignedUrlAsync();
+            return Ok(new { signedUrl });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = "Failed to initialize voice agent: " + ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Save voice conversation transcript messages to the database
+    /// </summary>
+    [Authorize]
+    [HttpPost("voice-messages")]
+    public async Task<IActionResult> SaveVoiceMessages([FromBody] VoiceMessagesRequest request)
+    {
+        var userId = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized(new { error = "User not authenticated" });
+        }
+
+        if (request?.Messages == null || request.Messages.Count == 0)
+        {
+            return BadRequest(new { error = "No messages provided" });
+        }
+
+        foreach (var msg in request.Messages)
+        {
+            var chatbotMessage = new ChatbotMessage
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                Role = msg.Role,
+                Content = msg.Content,
+                Model = "elevenlabs-voice",
+                CreatedAt = DateTime.UtcNow,
+            };
+            Context.ChatbotMessages.Add(chatbotMessage);
+        }
+
+        await Context.SaveChangesAsync();
+        return Ok(new { saved = request.Messages.Count });
+    }
 }
 
 /// <summary>
@@ -177,4 +233,18 @@ public class ChatbotRequest
     public required string Message { get; set; }
     public List<ChatMessage>? History { get; set; }
     public string? Model { get; set; }
+}
+
+/// <summary>
+/// Request body for saving voice transcript messages
+/// </summary>
+public class VoiceMessagesRequest
+{
+    public required List<VoiceMessageItem> Messages { get; set; }
+}
+
+public class VoiceMessageItem
+{
+    public required string Role { get; set; }
+    public required string Content { get; set; }
 }

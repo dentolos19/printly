@@ -19,6 +19,7 @@ builder.Services.AddScoped<StorageService>();
 builder.Services.AddScoped<ModelDetectionService>();
 builder.Services.AddScoped<GenerativeService>();
 builder.Services.AddScoped<ChatService>();
+builder.Services.AddScoped<ElevenLabsService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddSingleton<ILiveKitService, LiveKitService>();
 builder.Services.AddHostedService<NotificationCleanupService>();
