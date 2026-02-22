@@ -54,6 +54,7 @@ export type DecalSource =
 
 export type AppliedDesign = {
   id: string;
+  name?: string;
   designId: string;
   designData: Design;
   printArea: PrintArea;

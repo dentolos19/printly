@@ -163,6 +163,7 @@ export type DesignerContextValue = {
   setSelectedObjects: (objects: FabricObject[]) => void;
   layers: LayerItem[];
   setLayers: (layers: LayerItem[]) => void;
+  renameLayer: (layerId: string, name: string) => void;
   activeTool: ToolType;
   setActiveTool: (tool: ToolType) => void;
   canvasSize: CanvasSize;

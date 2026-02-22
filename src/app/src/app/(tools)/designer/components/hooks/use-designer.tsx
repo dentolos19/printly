@@ -86,9 +86,18 @@ export function DesignerProvider({
   const lastCoverRef = useRef<{ data: string; time: number } | null>(null);
   const COVER_THROTTLE_MS = 15_000;
 
+  const toJSONWithCustomProps = useCallback((targetCanvas: Canvas) => {
+    const serializer = targetCanvas as unknown as {
+      toJSON: (propertiesToInclude?: string[]) => { objects: object[] };
+    };
+    return serializer.toJSON(["id", "name"]);
+  }, []);
+
   // Serialize function for auto-save
   const serializeDesign = useCallback(() => {
     if (!canvas) return {};
+
+    const serializedCanvas = toJSONWithCustomProps(canvas);
 
     const now = Date.now();
     let cover: string | undefined;
@@ -102,9 +111,9 @@ export function DesignerProvider({
       version: DESIGN_DATA_VERSION,
       canvasSize,
       backgroundColor: canvas.backgroundColor,
-      objects: canvas.toJSON().objects,
+      objects: serializedCanvas.objects,
     };
-  }, [canvas, canvasSize]);
+  }, [canvas, canvasSize, toJSONWithCustomProps]);
 
   // Use shared auto-save hook
   const {
@@ -132,7 +141,7 @@ export function DesignerProvider({
   const saveHistory = useCallback(() => {
     if (!canvas || isHistoryAction.current) return;
 
-    const json = JSON.stringify(canvas.toJSON());
+    const json = JSON.stringify(toJSONWithCustomProps(canvas));
     const newState: HistoryState = {
       json,
       timestamp: Date.now(),
@@ -147,7 +156,7 @@ export function DesignerProvider({
 
     setHistoryIndex((prev) => Math.min(prev + 1, MAX_HISTORY_SIZE - 1));
     triggerAutoSave();
-  }, [canvas, historyIndex, triggerAutoSave]);
+  }, [canvas, historyIndex, toJSONWithCustomProps, triggerAutoSave]);
 
   const undo = useCallback(() => {
     if (!canvas || !canUndo) return;
@@ -235,6 +244,25 @@ export function DesignerProvider({
 
     setLayers(newLayers.reverse());
   }, [canvas]);
+
+  const renameLayer = useCallback(
+    (layerId: string, name: string) => {
+      if (!canvas) return;
+
+      const trimmedName = name.trim();
+      if (!trimmedName) return;
+
+      const targetLayer = layers.find((layer) => layer.id === layerId);
+      if (!targetLayer) return;
+
+      (targetLayer.object as FabricObject & { name?: string }).name = trimmedName;
+
+      setLayers((prev) => prev.map((layer) => (layer.id === layerId ? { ...layer, name: trimmedName } : layer)));
+      canvas.renderAll();
+      saveHistory();
+    },
+    [canvas, layers, saveHistory],
+  );
 
   // ============================================================================
   // Object creation
@@ -777,7 +805,9 @@ export function DesignerProvider({
           filename = `${designName}-${Date.now()}.svg`;
           break;
         case "json":
-          data = `data:application/json;charset=utf-8,${encodeURIComponent(JSON.stringify(canvas.toJSON(), null, 2))}`;
+          data = `data:application/json;charset=utf-8,${encodeURIComponent(
+            JSON.stringify(toJSONWithCustomProps(canvas), null, 2),
+          )}`;
           filename = `${designName}-${Date.now()}.json`;
           break;
       }
@@ -789,7 +819,7 @@ export function DesignerProvider({
       link.click();
       document.body.removeChild(link);
     },
-    [canvas, designName],
+    [canvas, designName, toJSONWithCustomProps],
   );
 
   const clearCanvas = useCallback(() => {
@@ -959,6 +989,7 @@ export function DesignerProvider({
       setSelectedObjects,
       layers,
       setLayers,
+      renameLayer,
       activeTool,
       setActiveTool,
       canvasSize,
@@ -1022,6 +1053,7 @@ export function DesignerProvider({
       canvas,
       selectedObjects,
       layers,
+      renameLayer,
       activeTool,
       canvasSize,
       zoom,

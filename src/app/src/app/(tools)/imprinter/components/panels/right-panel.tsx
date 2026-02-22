@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -223,10 +224,35 @@ function AppliedDesignsSection({ open, onOpenChange }: AppliedDesignsSectionProp
     duplicateDesign,
     moveDesignUp,
     moveDesignDown,
+    renameDesign,
     toggleDesignVisibility,
     toggleDesignLock,
     availablePrintAreas,
   } = useImprinter();
+  const [editingDesignId, setEditingDesignId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+
+  const startRenaming = useCallback((designId: string, currentName: string) => {
+    setEditingDesignId(designId);
+    setEditingName(currentName);
+  }, []);
+
+  const commitRenaming = useCallback(
+    (designId: string, currentName: string) => {
+      const trimmedName = editingName.trim();
+      if (trimmedName && trimmedName !== currentName) {
+        renameDesign(designId, trimmedName);
+      }
+      setEditingDesignId(null);
+      setEditingName("");
+    },
+    [editingName, renameDesign],
+  );
+
+  const cancelRenaming = useCallback(() => {
+    setEditingDesignId(null);
+    setEditingName("");
+  }, []);
 
   const getPrintAreaName = (areaId: string) => {
     const area = availablePrintAreas.find((a) => a.id === areaId);
@@ -276,7 +302,36 @@ function AppliedDesignsSection({ open, onOpenChange }: AppliedDesignsSectionProp
                     />
                   )}
                   <div className="flex min-w-0 flex-1 flex-col items-start">
-                    <span className="w-full truncate text-left text-xs font-medium">{design.designData.name}</span>
+                    {editingDesignId === design.id ? (
+                      <Input
+                        autoFocus
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        onBlur={() => commitRenaming(design.id, design.name || design.designData.name)}
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => {
+                          e.stopPropagation();
+                          if (e.key === "Enter") {
+                            commitRenaming(design.id, design.name || design.designData.name);
+                          }
+                          if (e.key === "Escape") {
+                            cancelRenaming();
+                          }
+                        }}
+                        className="h-6 text-xs"
+                      />
+                    ) : (
+                      <span
+                        className="w-full truncate text-left text-xs font-medium"
+                        onDoubleClick={(e) => {
+                          e.stopPropagation();
+                          startRenaming(design.id, design.name || design.designData.name);
+                        }}
+                        title="Double-click to rename"
+                      >
+                        {design.name || design.designData.name}
+                      </span>
+                    )}
                     <Badge variant="secondary" className="h-4 px-1 text-[10px]">
                       {getPrintAreaName(design.printArea)}
                     </Badge>

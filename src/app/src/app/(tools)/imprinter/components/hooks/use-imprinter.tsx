@@ -103,6 +103,7 @@ type ImprinterContextValue = {
   // Layer actions
   moveDesignUp: (id: string) => void;
   moveDesignDown: (id: string) => void;
+  renameDesign: (id: string, name: string) => void;
   toggleDesignVisibility: (id: string) => void;
   toggleDesignLock: (id: string) => void;
 
@@ -483,6 +484,7 @@ export function ImprinterProvider({
     (design: Design, printArea: PrintArea) => {
       const newDesign: AppliedDesign = {
         id: crypto.randomUUID(),
+        name: design.name,
         designId: design.id,
         designData: design,
         printArea,
@@ -522,6 +524,7 @@ export function ImprinterProvider({
         };
         const newDesign: AppliedDesign = {
           id: crypto.randomUUID(),
+          name: file.name.replace(/\.[^.]+$/, ""),
           designId: asset,
           designData: mockDesign,
           printArea,
@@ -571,6 +574,7 @@ export function ImprinterProvider({
         };
         const newDesign: AppliedDesign = {
           id: crypto.randomUUID(),
+          name: text.slice(0, 30),
           designId: mockDesign.id,
           designData: { ...mockDesign, coverId: url },
           printArea,
@@ -703,6 +707,17 @@ export function ImprinterProvider({
         [next[idx], next[idx - 1]] = [next[idx - 1], next[idx]];
         return next.map((d, i) => ({ ...d, zIndex: i }));
       });
+      triggerAutoSave();
+    },
+    [triggerAutoSave],
+  );
+
+  const renameDesign = useCallback(
+    (id: string, name: string) => {
+      const trimmedName = name.trim();
+      if (!trimmedName) return;
+
+      setAppliedDesigns((prev) => prev.map((design) => (design.id === id ? { ...design, name: trimmedName } : design)));
       triggerAutoSave();
     },
     [triggerAutoSave],
@@ -1067,6 +1082,7 @@ export function ImprinterProvider({
       // Layer actions
       moveDesignUp,
       moveDesignDown,
+      renameDesign,
       toggleDesignVisibility,
       toggleDesignLock,
 
@@ -1131,6 +1147,7 @@ export function ImprinterProvider({
       duplicateDesign,
       moveDesignUp,
       moveDesignDown,
+      renameDesign,
       toggleDesignVisibility,
       toggleDesignLock,
       undo,

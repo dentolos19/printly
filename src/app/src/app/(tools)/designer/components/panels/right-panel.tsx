@@ -33,7 +33,7 @@ import {
   Layers,
   Lock,
   Minus,
-  Plus,
+  PenSquare,
   RotateCcw,
   Settings,
   Sliders,
@@ -257,9 +257,30 @@ export function RightPanel({ className }: RightPanelProps) {
 // ============================================================================
 
 function LayersSection() {
-  const { canvas, layers, selectedObjects, saveHistory, setLayers, deleteSelected } = useDesigner();
+  const { canvas, layers, selectedObjects, saveHistory, setLayers, renameLayer, deleteSelected } = useDesigner();
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [editingLayerId, setEditingLayerId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+
+  function startRenaming(layer: LayerItem) {
+    setEditingLayerId(layer.id);
+    setEditingName(layer.name);
+  }
+
+  function commitRenaming(layer: LayerItem) {
+    const trimmedName = editingName.trim();
+    if (trimmedName && trimmedName !== layer.name) {
+      renameLayer(layer.id, trimmedName);
+    }
+    setEditingLayerId(null);
+    setEditingName("");
+  }
+
+  function cancelRenaming() {
+    setEditingLayerId(null);
+    setEditingName("");
+  }
 
   function handleLayerClick(layer: LayerItem) {
     if (!canvas || layer.locked) return;
@@ -299,6 +320,8 @@ function LayersSection() {
   function isSelected(layer: LayerItem) {
     return selectedObjects.some((obj) => obj === layer.object);
   }
+
+  const selectedLayer = layers.find((layer) => selectedObjects.includes(layer.object));
 
   function getLayerIcon(type: string) {
     switch (type) {
@@ -388,15 +411,22 @@ function LayersSection() {
 
   return (
     <div className={"flex flex-col"}>
-      {/* Add/Delete buttons */}
+      {/* Rename/Delete buttons */}
       <div className={"flex items-center gap-1 px-3 py-1"}>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button type={"button"} variant={"ghost"} size={"icon"} className={"h-7 w-7"}>
-              <Plus className={"h-4 w-4"} />
+            <Button
+              type={"button"}
+              variant={"ghost"}
+              size={"icon"}
+              className={"h-7 w-7"}
+              onClick={() => selectedLayer && startRenaming(selectedLayer)}
+              disabled={!selectedLayer}
+            >
+              <PenSquare className={"h-4 w-4"} />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Add Layer</TooltipContent>
+          <TooltipContent>Rename Selected</TooltipContent>
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -456,9 +486,36 @@ function LayersSection() {
 
               {/* Layer icon and name */}
               <Icon className={"text-muted-foreground h-4 w-4"} />
-              <span className={cn("flex-1 truncate text-sm", !layer.visible && "text-muted-foreground")}>
-                {layer.name}
-              </span>
+              {editingLayerId === layer.id ? (
+                <Input
+                  autoFocus
+                  value={editingName}
+                  onChange={(e) => setEditingName(e.target.value)}
+                  onBlur={() => commitRenaming(layer)}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    e.stopPropagation();
+                    if (e.key === "Enter") {
+                      commitRenaming(layer);
+                    }
+                    if (e.key === "Escape") {
+                      cancelRenaming();
+                    }
+                  }}
+                  className={"h-7 flex-1 text-xs"}
+                />
+              ) : (
+                <span
+                  className={cn("flex-1 truncate text-sm", !layer.visible && "text-muted-foreground")}
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    startRenaming(layer);
+                  }}
+                  title={"Double-click to rename"}
+                >
+                  {layer.name}
+                </span>
+              )}
 
               {/* Lock toggle */}
               <button
