@@ -43,6 +43,10 @@ export interface HistoryResponse {
   messages: ChatbotHistoryMessage[];
 }
 
+export interface VoiceAgentResponse {
+  signedUrl: string;
+}
+
 export default function initChatbotController(fetch: ServerFetch) {
   return {
     /**
@@ -105,6 +109,42 @@ export default function initChatbotController(fetch: ServerFetch) {
 
       if (!response.ok) {
         throw new Error("Failed to get chat history");
+      }
+
+      return response.json();
+    },
+
+    /**
+     * Get a signed URL for the ElevenLabs voice AI agent
+     */
+    getVoiceAgent: async (): Promise<VoiceAgentResponse> => {
+      const response = await fetch("/chatbot/voice-agent", {
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        const errorData: { error?: string } = await response.json();
+        throw new Error(errorData.error || "Failed to get voice agent");
+      }
+
+      return response.json();
+    },
+
+    /**
+     * Save voice conversation transcript messages
+     */
+    saveVoiceMessages: async (messages: ChatMessage[]): Promise<{ saved: number }> => {
+      const response = await fetch("/chatbot/voice-messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ messages }),
+      });
+
+      if (!response.ok) {
+        const errorData: { error?: string } = await response.json();
+        throw new Error(errorData.error || "Failed to save voice messages");
       }
 
       return response.json();

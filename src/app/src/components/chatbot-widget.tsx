@@ -15,6 +15,9 @@ import {
   TicketCheck,
   ExternalLink,
   Cpu,
+  Mic,
+  MicOff,
+  AudioLines,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -23,6 +26,7 @@ import { cn, formatMessageTime } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { AIModel, ToolAction } from "@/lib/server/chatbot";
+import { useVoiceChat, type VoiceMessage } from "@/hooks/use-voice-chat";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -45,9 +49,88 @@ export function ChatbotWidget() {
   const [selectedModel, setSelectedModel] = useState<string>("google/gemini-2.5-flash");
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
+  const [voiceActive, setVoiceActive] = useState(false);
+  const [voiceLoading, setVoiceLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Voice chat hook
+  const { voiceConnected, isListening, isSpeaking, voiceError, voiceStatus, startVoice, stopVoice } = useVoiceChat({
+    onMessage: (message: VoiceMessage) => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: message.role,
+          content: message.content,
+          timestamp: message.timestamp,
+        },
+      ]);
+    },
+    onConnect: () => {
+      setVoiceActive(true);
+    },
+    onDisconnect: async (voiceMessages: VoiceMessage[]) => {
+      setVoiceActive(false);
+      // Save voice transcript to database
+      if (voiceMessages.length > 0 && tokens?.accessToken) {
+        try {
+          await fetch(`${API_URL}/chatbot/voice-messages`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${tokens.accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              messages: voiceMessages.map((m) => ({
+                role: m.role,
+                content: m.content,
+              })),
+            }),
+          });
+        } catch (err) {
+          console.error("Failed to save voice transcript:", err);
+        }
+      }
+    },
+    onError: (errorMsg: string) => {
+      setError(errorMsg);
+      setVoiceActive(false);
+      setVoiceLoading(false);
+    },
+  });
+
+  // Toggle voice chat
+  const toggleVoice = useCallback(async () => {
+    if (voiceActive || voiceConnected) {
+      await stopVoice();
+      return;
+    }
+
+    if (!tokens?.accessToken) return;
+    setVoiceLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`${API_URL}/chatbot/voice-agent`, {
+        headers: {
+          Authorization: `Bearer ${tokens.accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to initialize voice agent");
+      }
+
+      const data = (await response.json()) as { signedUrl: string };
+      await startVoice(data.signedUrl);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to start voice chat";
+      setError(errorMessage);
+    } finally {
+      setVoiceLoading(false);
+    }
+  }, [voiceActive, voiceConnected, tokens?.accessToken, stopVoice, startVoice]);
 
   // Load chat history from database on mount
   useEffect(() => {
@@ -305,6 +388,20 @@ export function ChatbotWidget() {
             <div className="flex items-center gap-2">
               <Bot className="h-5 w-5" />
               <span className="font-semibold">Printly Assistant</span>
+              {voiceActive && (
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-[10px] font-medium",
+                    isListening
+                      ? "bg-green-500/20 text-green-100"
+                      : isSpeaking
+                        ? "bg-blue-500/20 text-blue-100"
+                        : "bg-primary-foreground/20 text-primary-foreground",
+                  )}
+                >
+                  {isListening ? "Listening" : isSpeaking ? "Speaking" : "Ready"}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-1">
               <Button
@@ -458,6 +555,32 @@ export function ChatbotWidget() {
                     </div>
                   ))}
 
+                  {/* Voice active indicators */}
+                  {voiceActive && isListening && (
+                    <div className="flex justify-start gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-500/10">
+                        <Mic className="h-4 w-4 animate-pulse text-green-500" />
+                      </div>
+                      <div className="rounded-2xl bg-green-500/10 px-4 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-green-600 dark:text-green-400">Listening...</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {voiceActive && isSpeaking && (
+                    <div className="flex justify-start gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500/10">
+                        <AudioLines className="h-4 w-4 animate-pulse text-blue-500" />
+                      </div>
+                      <div className="rounded-2xl bg-blue-500/10 px-4 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-blue-600 dark:text-blue-400">AI is speaking...</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Loading indicator */}
                   {isLoading && (
                     <div className="flex justify-start gap-3">
@@ -537,6 +660,22 @@ export function ChatbotWidget() {
                       )}
                     </div>
                   )}
+                  <Button
+                    onClick={toggleVoice}
+                    disabled={voiceLoading || isLoading}
+                    size="icon"
+                    variant={voiceActive ? "destructive" : "outline"}
+                    className="shrink-0"
+                    title={voiceActive ? "Stop voice chat" : "Start voice chat"}
+                  >
+                    {voiceLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : voiceActive ? (
+                      <MicOff className="h-4 w-4" />
+                    ) : (
+                      <Mic className="h-4 w-4" />
+                    )}
+                  </Button>
                   <Button
                     onClick={sendMessage}
                     disabled={!inputValue.trim() || isLoading}

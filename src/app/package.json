@@ -9,6 +9,7 @@
     "format": "prettier . --write"
   },
   "dependencies": {
+    "@elevenlabs/react": "^0.14.0",
     "@hookform/resolvers": "^5.2.2",
     "@livekit/components-react": "^2.9.19",
     "@livekit/components-styles": "^1.2.0",
@@ -94,5 +95,6 @@
       "@types/react": "19.2.10",
       "@types/react-dom": "19.2.3"
     }
-  }
+  },
+  "packageManager": "pnpm@10.10.0+sha512.d615db246fe70f25dcfea6d8d73dee782ce23e2245e3c4f6f888249fb568149318637dca73c2c5c8ef2a4ca0d5657fb9567188bfab47f566d1ee6ce987815c39"
 }
