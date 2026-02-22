@@ -210,7 +210,7 @@ export default function UserProfilePage() {
                   <div className="flex items-center gap-2">
                     <h1 className="text-2xl font-bold md:text-3xl">{username}</h1>
                     {followStatus?.isPrivate && (
-                      <LockIcon className="text-muted-foreground h-5 w-5" title="Private account" />
+                      <LockIcon className="text-muted-foreground h-5 w-5" aria-label="Private account" />
                     )}
                   </div>
                   <div className="flex items-center gap-2">
@@ -535,3 +535,4 @@ export default function UserProfilePage() {
     </div>
   );
 }
+

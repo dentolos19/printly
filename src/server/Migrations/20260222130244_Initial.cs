@@ -44,6 +44,20 @@ namespace PrintlyServer.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Tags",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Tags", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AspNetRoleClaims",
                 columns: table => new
                 {
@@ -125,6 +139,10 @@ namespace PrintlyServer.Migrations
                     DateOfBirth = table.Column<DateOnly>(type: "date", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsPrivate = table.Column<bool>(type: "boolean", nullable: false),
+                    IsBanned = table.Column<bool>(type: "boolean", nullable: false),
+                    BanReason = table.Column<string>(type: "text", nullable: true),
+                    UnreadEmailSent = table.Column<bool>(type: "boolean", nullable: false),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -253,6 +271,57 @@ namespace PrintlyServer.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "FollowRequests",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    RequesterId = table.Column<string>(type: "text", nullable: false),
+                    TargetId = table.Column<string>(type: "text", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FollowRequests", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_FollowRequests_AspNetUsers_RequesterId",
+                        column: x => x.RequesterId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_FollowRequests_AspNetUsers_TargetId",
+                        column: x => x.TargetId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "NotificationPreferences",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<string>(type: "text", nullable: false),
+                    Type = table.Column<int>(type: "integer", nullable: false),
+                    InAppEnabled = table.Column<bool>(type: "boolean", nullable: false),
+                    PushEnabled = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_NotificationPreferences", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_NotificationPreferences_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Orders",
                 columns: table => new
                 {
@@ -272,6 +341,28 @@ namespace PrintlyServer.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PushTokens",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<string>(type: "text", nullable: false),
+                    Token = table.Column<string>(type: "text", nullable: false),
+                    Platform = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PushTokens", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PushTokens_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -353,6 +444,33 @@ namespace PrintlyServer.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "UserMutes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    MuterId = table.Column<string>(type: "text", nullable: false),
+                    MutedId = table.Column<string>(type: "text", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserMutes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserMutes_AspNetUsers_MutedId",
+                        column: x => x.MutedId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserMutes_AspNetUsers_MuterId",
+                        column: x => x.MuterId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Designs",
                 columns: table => new
                 {
@@ -391,6 +509,10 @@ namespace PrintlyServer.Migrations
                     PhotoId = table.Column<Guid>(type: "uuid", nullable: false),
                     Visibility = table.Column<int>(type: "integer", nullable: false),
                     PostStatus = table.Column<int>(type: "integer", nullable: false),
+                    IsPinned = table.Column<bool>(type: "boolean", nullable: false),
+                    PinnedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    IsNsfw = table.Column<bool>(type: "boolean", nullable: false),
+                    ContentWarning = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
@@ -669,6 +791,86 @@ namespace PrintlyServer.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PostShares",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    PostId = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<string>(type: "text", nullable: false),
+                    Caption = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PostShares", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PostShares_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_PostShares_Posts_PostId",
+                        column: x => x.PostId,
+                        principalTable: "Posts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PostTags",
+                columns: table => new
+                {
+                    PostId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TagId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PostTags", x => new { x.PostId, x.TagId });
+                    table.ForeignKey(
+                        name: "FK_PostTags_Posts_PostId",
+                        column: x => x.PostId,
+                        principalTable: "Posts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_PostTags_Tags_TagId",
+                        column: x => x.TagId,
+                        principalTable: "Tags",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PostViews",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    PostId = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<string>(type: "text", nullable: true),
+                    IpHash = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PostViews", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PostViews_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_PostViews_Posts_PostId",
+                        column: x => x.PostId,
+                        principalTable: "Posts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Imprints",
                 columns: table => new
                 {
@@ -904,6 +1106,34 @@ namespace PrintlyServer.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CommentReactions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    CommentId = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<string>(type: "text", nullable: false),
+                    ReactionType = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CommentReactions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CommentReactions_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CommentReactions_PostComments_CommentId",
+                        column: x => x.CommentId,
+                        principalTable: "PostComments",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Reports",
                 columns: table => new
                 {
@@ -1095,6 +1325,17 @@ namespace PrintlyServer.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_CommentReactions_CommentId_UserId",
+                table: "CommentReactions",
+                columns: new[] { "CommentId", "UserId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CommentReactions_UserId",
+                table: "CommentReactions",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ConversationMessages_CallLogId",
                 table: "ConversationMessages",
                 column: "CallLogId");
@@ -1151,6 +1392,17 @@ namespace PrintlyServer.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_FollowRequests_RequesterId_TargetId",
+                table: "FollowRequests",
+                columns: new[] { "RequesterId", "TargetId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FollowRequests_TargetId",
+                table: "FollowRequests",
+                column: "TargetId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Imprints_PreviewId",
                 table: "Imprints",
                 column: "PreviewId");
@@ -1169,6 +1421,12 @@ namespace PrintlyServer.Migrations
                 name: "IX_Inventories_VariantId",
                 table: "Inventories",
                 column: "VariantId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_NotificationPreferences_UserId_Type",
+                table: "NotificationPreferences",
+                columns: new[] { "UserId", "Type" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -1276,6 +1534,11 @@ namespace PrintlyServer.Migrations
                 column: "AuthorId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Posts_AuthorId_IsPinned",
+                table: "Posts",
+                columns: new[] { "AuthorId", "IsPinned" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Posts_CreatedAt",
                 table: "Posts",
                 column: "CreatedAt");
@@ -1294,6 +1557,41 @@ namespace PrintlyServer.Migrations
                 name: "IX_Posts_Visibility",
                 table: "Posts",
                 column: "Visibility");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PostShares_PostId",
+                table: "PostShares",
+                column: "PostId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PostShares_UserId",
+                table: "PostShares",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PostTags_TagId",
+                table: "PostTags",
+                column: "TagId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PostViews_CreatedAt",
+                table: "PostViews",
+                column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PostViews_PostId",
+                table: "PostViews",
+                column: "PostId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PostViews_PostId_UserId",
+                table: "PostViews",
+                columns: new[] { "PostId", "UserId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PostViews_UserId",
+                table: "PostViews",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PrintAreas_ProductId_AreaId",
@@ -1331,6 +1629,17 @@ namespace PrintlyServer.Migrations
                 table: "ProductVariants",
                 columns: new[] { "ProductId", "Size", "Color" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PushTokens_Token",
+                table: "PushTokens",
+                column: "Token",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PushTokens_UserId",
+                table: "PushTokens",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_UserId",
@@ -1414,6 +1723,12 @@ namespace PrintlyServer.Migrations
                 column: "Status");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Tags_Name",
+                table: "Tags",
+                column: "Name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserBlocks_BlockedId",
                 table: "UserBlocks",
                 column: "BlockedId");
@@ -1444,6 +1759,22 @@ namespace PrintlyServer.Migrations
                 name: "IX_UserFollowers_FollowingId",
                 table: "UserFollowers",
                 column: "FollowingId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserMutes_MutedId",
+                table: "UserMutes",
+                column: "MutedId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserMutes_MuterId",
+                table: "UserMutes",
+                column: "MuterId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserMutes_MuterId_MutedId",
+                table: "UserMutes",
+                columns: new[] { "MuterId", "MutedId" },
+                unique: true);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_AspNetUserClaims_AspNetUsers_UserId",
@@ -1510,13 +1841,22 @@ namespace PrintlyServer.Migrations
                 name: "ChatbotMessages");
 
             migrationBuilder.DropTable(
+                name: "CommentReactions");
+
+            migrationBuilder.DropTable(
                 name: "ConversationMessages");
 
             migrationBuilder.DropTable(
                 name: "Designs");
 
             migrationBuilder.DropTable(
+                name: "FollowRequests");
+
+            migrationBuilder.DropTable(
                 name: "Inventories");
+
+            migrationBuilder.DropTable(
+                name: "NotificationPreferences");
 
             migrationBuilder.DropTable(
                 name: "Notifications");
@@ -1531,7 +1871,19 @@ namespace PrintlyServer.Migrations
                 name: "PostReactions");
 
             migrationBuilder.DropTable(
+                name: "PostShares");
+
+            migrationBuilder.DropTable(
+                name: "PostTags");
+
+            migrationBuilder.DropTable(
+                name: "PostViews");
+
+            migrationBuilder.DropTable(
                 name: "PrintAreas");
+
+            migrationBuilder.DropTable(
+                name: "PushTokens");
 
             migrationBuilder.DropTable(
                 name: "RefreshTokens");
@@ -1549,6 +1901,9 @@ namespace PrintlyServer.Migrations
                 name: "UserFollowers");
 
             migrationBuilder.DropTable(
+                name: "UserMutes");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
@@ -1562,6 +1917,9 @@ namespace PrintlyServer.Migrations
 
             migrationBuilder.DropTable(
                 name: "ProductVariants");
+
+            migrationBuilder.DropTable(
+                name: "Tags");
 
             migrationBuilder.DropTable(
                 name: "Payments");
