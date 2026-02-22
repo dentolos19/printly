@@ -35,6 +35,17 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
     public DbSet<UserBlock> UserBlocks { get; set; }
     public DbSet<PrintArea> PrintAreas { get; set; }
 
+    // New community feature DbSets
+    public DbSet<Tag> Tags { get; set; }
+    public DbSet<PostTag> PostTags { get; set; }
+    public DbSet<CommentReaction> CommentReactions { get; set; }
+    public DbSet<PostShare> PostShares { get; set; }
+    public DbSet<UserMute> UserMutes { get; set; }
+    public DbSet<FollowRequest> FollowRequests { get; set; }
+    public DbSet<PushToken> PushTokens { get; set; }
+    public DbSet<NotificationPreference> NotificationPreferences { get; set; }
+    public DbSet<PostView> PostViews { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
         if (!options.IsConfigured)
@@ -434,6 +445,113 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
         modelBuilder.Entity<UserBlock>().HasIndex(b => new { b.BlockerId, b.BlockedId }).IsUnique();
         modelBuilder.Entity<UserBlock>().HasIndex(b => b.BlockerId);
         modelBuilder.Entity<UserBlock>().HasIndex(b => b.BlockedId);
+
+        // ============ New Community Feature Config ============
+
+        // Tag - unique name
+        modelBuilder.Entity<Tag>().HasIndex(t => t.Name).IsUnique();
+
+        // PostTag - composite key join table
+        modelBuilder.Entity<PostTag>().HasKey(pt => new { pt.PostId, pt.TagId });
+        modelBuilder.Entity<PostTag>()
+            .HasOne(pt => pt.Post)
+            .WithMany(p => p.Tags)
+            .HasForeignKey(pt => pt.PostId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<PostTag>()
+            .HasOne(pt => pt.Tag)
+            .WithMany(t => t.PostTags)
+            .HasForeignKey(pt => pt.TagId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // CommentReaction relationships
+        modelBuilder.Entity<CommentReaction>()
+            .HasOne(cr => cr.Comment)
+            .WithMany(c => c.CommentReactions)
+            .HasForeignKey(cr => cr.CommentId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<CommentReaction>()
+            .HasOne(cr => cr.User)
+            .WithMany()
+            .HasForeignKey(cr => cr.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<CommentReaction>().HasIndex(cr => new { cr.CommentId, cr.UserId }).IsUnique();
+
+        // PostShare relationships
+        modelBuilder.Entity<PostShare>()
+            .HasOne(ps => ps.Post)
+            .WithMany(p => p.Shares)
+            .HasForeignKey(ps => ps.PostId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<PostShare>()
+            .HasOne(ps => ps.User)
+            .WithMany()
+            .HasForeignKey(ps => ps.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<PostShare>().HasIndex(ps => ps.PostId);
+
+        // UserMute relationships
+        modelBuilder.Entity<UserMute>()
+            .HasOne(um => um.Muter)
+            .WithMany()
+            .HasForeignKey(um => um.MuterId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<UserMute>()
+            .HasOne(um => um.Muted)
+            .WithMany()
+            .HasForeignKey(um => um.MutedId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<UserMute>().HasIndex(um => new { um.MuterId, um.MutedId }).IsUnique();
+        modelBuilder.Entity<UserMute>().HasIndex(um => um.MuterId);
+
+        // FollowRequest relationships
+        modelBuilder.Entity<FollowRequest>()
+            .HasOne(fr => fr.Requester)
+            .WithMany()
+            .HasForeignKey(fr => fr.RequesterId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<FollowRequest>()
+            .HasOne(fr => fr.Target)
+            .WithMany()
+            .HasForeignKey(fr => fr.TargetId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<FollowRequest>().HasIndex(fr => new { fr.RequesterId, fr.TargetId }).IsUnique();
+        modelBuilder.Entity<FollowRequest>().HasIndex(fr => fr.TargetId);
+
+        // PushToken relationships
+        modelBuilder.Entity<PushToken>()
+            .HasOne(pt => pt.User)
+            .WithMany()
+            .HasForeignKey(pt => pt.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<PushToken>().HasIndex(pt => pt.Token).IsUnique();
+        modelBuilder.Entity<PushToken>().HasIndex(pt => pt.UserId);
+
+        // NotificationPreference relationships
+        modelBuilder.Entity<NotificationPreference>()
+            .HasOne(np => np.User)
+            .WithMany()
+            .HasForeignKey(np => np.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<NotificationPreference>().HasIndex(np => new { np.UserId, np.Type }).IsUnique();
+
+        // PostView relationships
+        modelBuilder.Entity<PostView>()
+            .HasOne(pv => pv.Post)
+            .WithMany(p => p.Views)
+            .HasForeignKey(pv => pv.PostId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<PostView>()
+            .HasOne(pv => pv.User)
+            .WithMany()
+            .HasForeignKey(pv => pv.UserId)
+            .OnDelete(DeleteBehavior.SetNull);
+        modelBuilder.Entity<PostView>().HasIndex(pv => pv.PostId);
+        modelBuilder.Entity<PostView>().HasIndex(pv => new { pv.PostId, pv.UserId });
+        modelBuilder.Entity<PostView>().HasIndex(pv => pv.CreatedAt);
+
+        // Post pinned index
+        modelBuilder.Entity<Post>().HasIndex(p => new { p.AuthorId, p.IsPinned });
     }
 
     public override int SaveChanges()
