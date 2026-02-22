@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import {
@@ -31,13 +32,16 @@ import {
 } from "@/lib/server/community";
 import { cn } from "@/lib/utils";
 import {
+  AlertTriangleIcon,
   ArchiveIcon,
   BookmarkIcon,
+  EyeIcon,
   FlagIcon,
   HeartIcon,
   Loader2,
   MessageCircleIcon,
   MoreHorizontalIcon,
+  Share2Icon,
   TrashIcon,
   UndoIcon,
 } from "lucide-react";
@@ -49,9 +53,11 @@ interface PostCardProps {
   onReact: (postId: string, reaction: ReactionType | null) => void;
   onBookmark: (postId: string) => void;
   onComment: (postId: string) => void;
+  onShare?: (postId: string) => void;
   onDelete?: (postId: string) => void;
   onArchive?: (postId: string, newStatus: PostStatus) => void;
   onReport?: (postId: string, reason: ReportReason, description?: string) => Promise<void>;
+  onTagClick?: (tag: string) => void;
   isOwner: boolean;
 }
 
@@ -60,9 +66,11 @@ export function PostCard({
   onReact,
   onBookmark,
   onComment,
+  onShare,
   onDelete,
   onArchive,
   onReport,
+  onTagClick,
   isOwner,
 }: PostCardProps) {
   const [showReactions, setShowReactions] = useState(false);
@@ -70,9 +78,9 @@ export function PostCard({
   const [reportReason, setReportReason] = useState<ReportReason | null>(null);
   const [reportDescription, setReportDescription] = useState("");
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+  const [nsfwRevealed, setNsfwRevealed] = useState(false);
 
   const truncateUsername = (name: string) => {
-    // If it looks like an email, take the part before @
     if (name.includes("@")) {
       return name.split("@")[0];
     }
@@ -112,6 +120,11 @@ export function PostCard({
             })}
           </p>
         </div>
+        {post.isNsfw && (
+          <Badge variant="destructive" className="text-xs">
+            NSFW
+          </Badge>
+        )}
         {isOwner && (onDelete || onArchive) && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -168,12 +181,38 @@ export function PostCard({
         )}
       </CardHeader>
       <CardContent className="space-y-3 pb-2">
+        {/* NSFW / Content Warning Overlay */}
         {post.photoUrl && (
           <div className="relative aspect-square w-full overflow-hidden rounded-lg">
-            <img src={post.photoUrl} alt="Post" className="h-full w-full object-cover" />
+            <img src={post.photoUrl} alt="Post" className={cn("h-full w-full object-cover", (post.isNsfw || post.contentWarning) && !nsfwRevealed && "blur-xl")} />
+            {(post.isNsfw || post.contentWarning) && !nsfwRevealed && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60">
+                <AlertTriangleIcon className="h-8 w-8 text-yellow-400" />
+                <p className="text-sm font-medium text-white">{post.contentWarning || "Sensitive Content"}</p>
+                <Button size="sm" variant="secondary" onClick={() => setNsfwRevealed(true)}>
+                  Show Content
+                </Button>
+              </div>
+            )}
           </div>
         )}
         <p className="text-sm">{post.caption}</p>
+
+        {/* Tags */}
+        {post.tags && post.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {post.tags.map((tag) => (
+              <Badge
+                key={tag}
+                variant="secondary"
+                className="cursor-pointer text-xs hover:bg-primary/20"
+                onClick={() => onTagClick?.(tag)}
+              >
+                #{tag}
+              </Badge>
+            ))}
+          </div>
+        )}
       </CardContent>
       <CardFooter className="flex items-center justify-between border-t pt-3">
         <div className="flex items-center gap-1">
@@ -192,22 +231,24 @@ export function PostCard({
               {post.reactionCount}
             </Button>
             {showReactions && (
-              <div className="bg-popover absolute bottom-full left-0 mb-2 flex gap-1 rounded-full border p-1 shadow-lg">
-                {Object.entries(ReactionTypeEmojis).map(([type, emoji]) => (
-                  <button
-                    key={type}
-                    className={cn(
-                      "rounded-full p-1.5 text-lg transition-transform hover:scale-125",
-                      post.userReaction === Number(type) && "bg-muted",
-                    )}
-                    onClick={() => {
-                      onReact(post.id, post.userReaction === Number(type) ? null : (Number(type) as ReactionType));
-                      setShowReactions(false);
-                    }}
-                  >
-                    {emoji}
-                  </button>
-                ))}
+              <div className="absolute bottom-full left-0 pb-2">
+                <div className="bg-popover flex gap-1 rounded-full border p-1 shadow-lg">
+                  {Object.entries(ReactionTypeEmojis).map(([type, emoji]) => (
+                    <button
+                      key={type}
+                      className={cn(
+                        "rounded-full p-1.5 text-lg transition-transform hover:scale-125",
+                        post.userReaction === Number(type) && "bg-muted",
+                      )}
+                      onClick={() => {
+                        onReact(post.id, post.userReaction === Number(type) ? null : (Number(type) as ReactionType));
+                        setShowReactions(false);
+                      }}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -215,15 +256,29 @@ export function PostCard({
             <MessageCircleIcon className="h-4 w-4" />
             {post.commentCount}
           </Button>
+          {onShare && (
+            <Button variant="ghost" size="sm" className="gap-1" onClick={() => onShare(post.id)}>
+              <Share2Icon className="h-4 w-4" />
+              {post.shareCount > 0 && post.shareCount}
+            </Button>
+          )}
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onBookmark(post.id)}
-          className={cn(post.isBookmarked && "text-yellow-500")}
-        >
-          <BookmarkIcon className={cn("h-4 w-4", post.isBookmarked && "fill-current")} />
-        </Button>
+        <div className="flex items-center gap-1">
+          {post.viewCount > 0 && (
+            <span className="text-muted-foreground flex items-center gap-1 text-xs">
+              <EyeIcon className="h-3.5 w-3.5" />
+              {post.viewCount}
+            </span>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onBookmark(post.id)}
+            className={cn(post.isBookmarked && "text-yellow-500")}
+          >
+            <BookmarkIcon className={cn("h-4 w-4", post.isBookmarked && "fill-current")} />
+          </Button>
+        </div>
       </CardFooter>
 
       {/* Report Dialog */}

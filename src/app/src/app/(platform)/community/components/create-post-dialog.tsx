@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useServer } from "@/lib/providers/server";
 import { PostStatus } from "@/lib/server/community";
@@ -33,6 +35,22 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
   const [uploadedAssetId, setUploadedAssetId] = useState<string | null>(null);
   const [aiPrompt, setAiPrompt] = useState("");
   const [generatingCaption, setGeneratingCaption] = useState(false);
+  const [tagInput, setTagInput] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
+  const [isNsfw, setIsNsfw] = useState(false);
+  const [contentWarning, setContentWarning] = useState("");
+
+  const handleAddTag = () => {
+    const newTag = tagInput.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (newTag && !tags.includes(newTag) && tags.length < 10) {
+      setTags((prev) => [...prev, newTag]);
+      setTagInput("");
+    }
+  };
+
+  const handleRemoveTag = (tag: string) => {
+    setTags((prev) => prev.filter((t) => t !== tag));
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -95,6 +113,9 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
         caption: caption.trim(),
         photoId: uploadedAssetId,
         postStatus: PostStatus.Published,
+        tags: tags.length > 0 ? tags : undefined,
+        isNsfw: isNsfw || undefined,
+        contentWarning: contentWarning.trim() || undefined,
       });
 
       toast.success("Post created successfully!");
@@ -105,6 +126,10 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
       setPreview(null);
       setUploadedAssetId(null);
       setAiPrompt("");
+      setTags([]);
+      setTagInput("");
+      setIsNsfw(false);
+      setContentWarning("");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to create post");
     } finally {
@@ -188,6 +213,63 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
               <p className="text-muted-foreground text-xs">Give the AI hints about what kind of caption you want</p>
             </div>
           )}
+
+          {/* Tags */}
+          <div className="space-y-2">
+            <Label>Tags</Label>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Add a tag..."
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === ",") {
+                    e.preventDefault();
+                    handleAddTag();
+                  }
+                }}
+                className="text-sm"
+              />
+              <Button type="button" size="sm" variant="outline" onClick={handleAddTag} disabled={!tagInput.trim()}>
+                Add
+              </Button>
+            </div>
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {tags.map((tag) => (
+                  <Badge key={tag} variant="secondary" className="gap-1">
+                    #{tag}
+                    <button onClick={() => handleRemoveTag(tag)} className="hover:text-destructive ml-0.5">
+                      <XIcon className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
+            <p className="text-muted-foreground text-xs">Press Enter or comma to add. Max 10 tags.</p>
+          </div>
+
+          {/* NSFW & Content Warning */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="nsfw-toggle">Mark as NSFW</Label>
+                <p className="text-muted-foreground text-xs">Content will be blurred by default</p>
+              </div>
+              <Switch id="nsfw-toggle" checked={isNsfw} onCheckedChange={setIsNsfw} />
+            </div>
+            {isNsfw && (
+              <div className="space-y-1">
+                <Label className="text-xs">Content Warning (optional)</Label>
+                <Input
+                  placeholder="e.g., Contains graphic content"
+                  value={contentWarning}
+                  onChange={(e) => setContentWarning(e.target.value)}
+                  className="text-sm"
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         <DialogFooter>

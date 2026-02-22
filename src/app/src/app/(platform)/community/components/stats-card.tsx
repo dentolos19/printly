@@ -32,7 +32,7 @@ export function StatsCard({ stats, loading }: StatsCardProps) {
       <CardHeader>
         <h3 className="font-semibold">Community Stats</h3>
       </CardHeader>
-      <CardContent className="grid grid-cols-2 gap-4">
+      <CardContent className="grid grid-cols-3 gap-4">
         <div className="text-center">
           <p className="text-2xl font-bold">{stats.totalPosts}</p>
           <p className="text-muted-foreground text-sm">Posts</p>
@@ -44,10 +44,6 @@ export function StatsCard({ stats, loading }: StatsCardProps) {
         <div className="text-center">
           <p className="text-2xl font-bold">{stats.totalReactions}</p>
           <p className="text-muted-foreground text-sm">Reactions</p>
-        </div>
-        <div className="text-center">
-          <p className="text-2xl font-bold">{stats.totalUsers}</p>
-          <p className="text-muted-foreground text-sm">Contributors</p>
         </div>
       </CardContent>
     </Card>

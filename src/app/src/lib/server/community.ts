@@ -37,6 +37,11 @@ export enum NotificationType {
   PostLiked = 21,
   PostCommented = 22,
   CommentReplied = 23,
+  Mentioned = 24,
+  FollowRequested = 25,
+  FollowRequestApproved = 26,
+  CommentReacted = 27,
+  PostShared = 28,
 }
 
 export enum ReportType {
@@ -61,6 +66,12 @@ export enum ReportReason {
   FalseInformation = 5,
   Copyright = 6,
   Other = 7,
+}
+
+export enum FollowRequestStatus {
+  Pending = 0,
+  Approved = 1,
+  Rejected = 2,
 }
 
 export const ReactionTypeLabels: Record<ReactionType, string> = {
@@ -119,6 +130,11 @@ export type PostSummaryResponse = {
   isBookmarked: boolean;
   userReaction: ReactionType | null;
   createdAt: string;
+  tags: string[];
+  shareCount: number;
+  viewCount: number;
+  isNsfw: boolean;
+  contentWarning: string | null;
 };
 
 export type PostResponse = {
@@ -152,6 +168,8 @@ export type PostCommentResponse = {
   replyCount: number;
   createdAt: string;
   updatedAt: string;
+  reactionCount: number;
+  userReaction: ReactionType | null;
 };
 
 export type PostDetailResponse = {
@@ -169,6 +187,11 @@ export type PostDetailResponse = {
   userReaction: ReactionType | null;
   createdAt: string;
   updatedAt: string;
+  tags: string[];
+  shareCount: number;
+  viewCount: number;
+  isNsfw: boolean;
+  contentWarning: string | null;
 };
 
 export type PostFeedResponse = {
@@ -219,12 +242,18 @@ export type CreatePostDto = {
   caption: string;
   photoId: string;
   postStatus: PostStatus;
+  tags?: string[];
+  isNsfw?: boolean;
+  contentWarning?: string;
 };
 
 export type UpdatePostDto = {
   caption?: string;
   photoId?: string;
   postStatus?: PostStatus;
+  tags?: string[];
+  isNsfw?: boolean;
+  contentWarning?: string;
 };
 
 export type CreateCommentDto = {
@@ -282,6 +311,9 @@ export type FollowListResponse = {
 export type FollowStatusResponse = {
   isFollowing: boolean;
   isFollowedBy: boolean;
+  hasPendingRequest: boolean;
+  isPrivate: boolean;
+  incomingRequestId: string | null;
 };
 
 export type FollowCountsResponse = {
@@ -413,6 +445,164 @@ export type BlockListQuery = {
   pageSize?: number;
 };
 
+// ==================== New Feature Types ====================
+
+// Tag Types
+export type TagSummaryResponse = {
+  name: string;
+  postCount: number;
+};
+
+// Comment Reaction Types
+export type CommentReactionResponse = {
+  id: string;
+  commentId: string;
+  userId: string;
+  userName: string;
+  reactionType: ReactionType;
+  createdAt: string;
+};
+
+// Share Types
+export type PostShareResponse = {
+  id: string;
+  postId: string;
+  userId: string;
+  userName: string;
+  createdAt: string;
+};
+
+export type ShareListResponse = {
+  shares: PostShareResponse[];
+  totalCount: number;
+};
+
+// Mute Types
+export type MutedUserResponse = {
+  userId: string;
+  userName: string;
+  mutedAt: string;
+};
+
+export type MuteListResponse = {
+  users: MutedUserResponse[];
+  totalCount: number;
+};
+
+// Follow Request Types
+export type FollowRequestResponse = {
+  id: string;
+  requesterId: string;
+  requesterName: string;
+  createdAt: string;
+};
+
+// Notification Preference Types
+export type NotificationPreferenceResponse = {
+  likes: boolean;
+  comments: boolean;
+  follows: boolean;
+  mentions: boolean;
+  shares: boolean;
+};
+
+export type UpdateNotificationPreferenceDto = {
+  likes?: boolean;
+  comments?: boolean;
+  follows?: boolean;
+  mentions?: boolean;
+  shares?: boolean;
+};
+
+// Analytics Types
+export type PostAnalyticsResponse = {
+  postId: string;
+  viewCount: number;
+  reactionCount: number;
+  commentCount: number;
+  shareCount: number;
+  bookmarkCount: number;
+};
+
+export type ProfileStatsResponse = {
+  totalPosts: number;
+  totalViews: number;
+  totalReactions: number;
+  totalComments: number;
+  totalShares: number;
+  totalFollowers: number;
+  totalFollowing: number;
+};
+
+// Admin Types
+export type AdminOverviewStatsResponse = {
+  totalUsers: number;
+  totalPosts: number;
+  totalComments: number;
+  totalReactions: number;
+  totalReports: number;
+  flaggedPosts: number;
+  bannedUsers: number;
+};
+
+export type AdminTrendingTagResponse = {
+  name: string;
+  postCount: number;
+  recentPostCount: number;
+};
+
+export type AdminUserResponse = {
+  id: string;
+  userName: string;
+  email: string;
+  isBanned: boolean;
+  banReason: string | null;
+  postCount: number;
+  createdAt: string;
+};
+
+export type AdminUserListResponse = {
+  users: AdminUserResponse[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+// Search Types
+export type UserSearchResponse = {
+  id: string;
+  userName: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  followerCount: number;
+  isFollowing: boolean;
+  isPrivate: boolean;
+  hasPendingRequest: boolean;
+};
+
+export type PagedUserSearchResponse = {
+  items: UserSearchResponse[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+// Helper for building fetch error messages
+function buildError(response: Response, fallback: string): Promise<Error> {
+  return response
+    .json()
+    .catch(() => ({ message: fallback }))
+    .then((error) =>
+      new Error(
+        typeof error === "object" && error !== null && "message" in error
+          ? (error as { message: string }).message
+          : fallback,
+      ),
+    );
+}
+
 export default function initCommunityController(fetch: ServerFetch) {
   return {
     // ==================== Posts ====================
@@ -429,31 +619,14 @@ export default function initCommunityController(fetch: ServerFetch) {
       const url = `/community/posts${params.toString() ? `?${params}` : ""}`;
       const response = await fetch(url, { method: "GET" });
 
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to fetch posts" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to fetch posts",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to fetch posts");
       return response.json();
     },
 
     // Get a specific post by ID
     getPost: async (id: string): Promise<PostDetailResponse> => {
       const response = await fetch(`/community/posts/${id}`, { method: "GET" });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to fetch post" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to fetch post",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to fetch post");
       return response.json();
     },
 
@@ -464,16 +637,7 @@ export default function initCommunityController(fetch: ServerFetch) {
 
       const url = `/community/posts/my${params.toString() ? `?${params}` : ""}`;
       const response = await fetch(url, { method: "GET" });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to fetch your posts" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to fetch your posts",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to fetch your posts");
       return response.json();
     },
 
@@ -484,16 +648,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to create post" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to create post",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to create post");
       return response.json();
     },
 
@@ -504,64 +659,27 @@ export default function initCommunityController(fetch: ServerFetch) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to update post" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to update post",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to update post");
       return response.json();
     },
 
     // Soft delete a post
     deletePost: async (id: string): Promise<void> => {
-      const response = await fetch(`/community/posts/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to delete post" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to delete post",
-        );
-      }
+      const response = await fetch(`/community/posts/${id}`, { method: "DELETE" });
+      if (!response.ok) throw await buildError(response, "Failed to delete post");
     },
 
     // Get posts by user
     getUserPosts: async (authorId: string): Promise<PostSummaryResponse[]> => {
       const response = await fetch(`/community/users/${authorId}/posts`, { method: "GET" });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to fetch user posts" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to fetch user posts",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to fetch user posts");
       return response.json();
     },
 
     // Get community stats
     getStats: async (): Promise<CommunityStatsResponse> => {
       const response = await fetch("/community/stats", { method: "GET" });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to fetch stats" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to fetch stats",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to fetch stats");
       return response.json();
     },
 
@@ -574,16 +692,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(request),
       });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to generate caption" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to generate caption",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to generate caption");
       return response.json();
     },
 
@@ -592,32 +701,14 @@ export default function initCommunityController(fetch: ServerFetch) {
     // Get comments for a post
     getComments: async (postId: string): Promise<PostCommentResponse[]> => {
       const response = await fetch(`/community/posts/${postId}/comments`, { method: "GET" });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to fetch comments" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to fetch comments",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to fetch comments");
       return response.json();
     },
 
     // Get replies for a comment
     getReplies: async (commentId: string): Promise<PostCommentResponse[]> => {
       const response = await fetch(`/community/comments/${commentId}/replies`, { method: "GET" });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to fetch replies" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to fetch replies",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to fetch replies");
       return response.json();
     },
 
@@ -628,16 +719,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to create comment" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to create comment",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to create comment");
       return response.json();
     },
 
@@ -648,33 +730,33 @@ export default function initCommunityController(fetch: ServerFetch) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to update comment" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to update comment",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to update comment");
       return response.json();
     },
 
     // Delete a comment
     deleteComment: async (id: string): Promise<void> => {
-      const response = await fetch(`/community/comments/${id}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(`/community/comments/${id}`, { method: "DELETE" });
+      if (!response.ok) throw await buildError(response, "Failed to delete comment");
+    },
 
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to delete comment" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to delete comment",
-        );
-      }
+    // ==================== Comment Reactions ====================
+
+    // React to a comment
+    reactToComment: async (commentId: string, reactionType: ReactionType): Promise<CommentReactionResponse> => {
+      const response = await fetch(`/community/comments/${commentId}/reactions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reactionType }),
+      });
+      if (!response.ok) throw await buildError(response, "Failed to react to comment");
+      return response.json();
+    },
+
+    // Remove comment reaction
+    removeCommentReaction: async (commentId: string): Promise<void> => {
+      const response = await fetch(`/community/comments/${commentId}/reactions`, { method: "DELETE" });
+      if (!response.ok) throw await buildError(response, "Failed to remove comment reaction");
     },
 
     // ==================== Reactions ====================
@@ -682,16 +764,7 @@ export default function initCommunityController(fetch: ServerFetch) {
     // Get reactions for a post
     getReactions: async (postId: string): Promise<ReactionSummary[]> => {
       const response = await fetch(`/community/posts/${postId}/reactions`, { method: "GET" });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to fetch reactions" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to fetch reactions",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to fetch reactions");
       return response.json();
     },
 
@@ -702,33 +775,14 @@ export default function initCommunityController(fetch: ServerFetch) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to add reaction" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to add reaction",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to add reaction");
       return response.json();
     },
 
     // Remove a reaction
     deleteReaction: async (postId: string): Promise<void> => {
-      const response = await fetch(`/community/posts/${postId}/reactions`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to remove reaction" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to remove reaction",
-        );
-      }
+      const response = await fetch(`/community/posts/${postId}/reactions`, { method: "DELETE" });
+      if (!response.ok) throw await buildError(response, "Failed to remove reaction");
     },
 
     // ==================== Bookmarks ====================
@@ -736,16 +790,7 @@ export default function initCommunityController(fetch: ServerFetch) {
     // Get bookmarked posts
     getBookmarks: async (): Promise<BookmarkedPostResponse[]> => {
       const response = await fetch("/community/bookmarks", { method: "GET" });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to fetch bookmarks" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to fetch bookmarks",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to fetch bookmarks");
       return response.json();
     },
 
@@ -756,51 +801,228 @@ export default function initCommunityController(fetch: ServerFetch) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to create bookmark" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to create bookmark",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to create bookmark");
       return response.json();
     },
 
     // Toggle bookmark
     toggleBookmark: async (postId: string): Promise<BookmarkToggleResponse> => {
-      const response = await fetch(`/community/bookmarks/${postId}/toggle`, {
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to toggle bookmark" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to toggle bookmark",
-        );
-      }
-
+      const response = await fetch(`/community/bookmarks/${postId}/toggle`, { method: "POST" });
+      if (!response.ok) throw await buildError(response, "Failed to toggle bookmark");
       return response.json();
     },
 
     // Delete bookmark
     deleteBookmark: async (postId: string): Promise<void> => {
-      const response = await fetch(`/community/bookmarks/${postId}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(`/community/bookmarks/${postId}`, { method: "DELETE" });
+      if (!response.ok) throw await buildError(response, "Failed to remove bookmark");
+    },
 
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to remove bookmark" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to remove bookmark",
-        );
-      }
+    // ==================== Content Discovery ====================
+
+    // Get trending posts
+    getTrendingPosts: async (page = 1, pageSize = 12): Promise<PostFeedResponse> => {
+      const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+      const response = await fetch(`/community/posts/trending?${params}`, { method: "GET" });
+      if (!response.ok) throw await buildError(response, "Failed to fetch trending posts");
+      return response.json();
+    },
+
+    // Get posts by tag
+    getPostsByTag: async (tag: string, page = 1, pageSize = 12): Promise<PostFeedResponse> => {
+      const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+      const response = await fetch(`/community/tags/${encodeURIComponent(tag)}/posts?${params}`, { method: "GET" });
+      if (!response.ok) throw await buildError(response, "Failed to fetch posts by tag");
+      return response.json();
+    },
+
+    // Get popular tags
+    getPopularTags: async (count = 10): Promise<TagSummaryResponse[]> => {
+      const response = await fetch(`/community/tags/popular?limit=${count}`, { method: "GET" });
+      if (!response.ok) throw await buildError(response, "Failed to fetch popular tags");
+      return response.json();
+    },
+
+    // Get personalized feed
+    getPersonalizedFeed: async (page = 1, pageSize = 12): Promise<PostFeedResponse> => {
+      const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+      const response = await fetch(`/community/posts/feed?${params}`, { method: "GET" });
+      if (!response.ok) throw await buildError(response, "Failed to fetch personalized feed");
+      return response.json();
+    },
+
+    // Get explore feed
+    getExploreFeed: async (page = 1, pageSize = 12): Promise<PostFeedResponse> => {
+      const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+      const response = await fetch(`/community/posts/explore?${params}`, { method: "GET" });
+      if (!response.ok) throw await buildError(response, "Failed to fetch explore feed");
+      return response.json();
+    },
+
+    // ==================== Shares ====================
+
+    // Share a post
+    sharePost: async (postId: string): Promise<PostShareResponse> => {
+      const response = await fetch(`/community/posts/${postId}/share`, { method: "POST" });
+      if (!response.ok) throw await buildError(response, "Failed to share post");
+      return response.json();
+    },
+
+    // Get post shares
+    getPostShares: async (postId: string): Promise<ShareListResponse> => {
+      const response = await fetch(`/community/posts/${postId}/shares`, { method: "GET" });
+      if (!response.ok) throw await buildError(response, "Failed to fetch shares");
+      return response.json();
+    },
+
+    // ==================== Pinning ====================
+
+    // Pin a post
+    pinPost: async (postId: string): Promise<void> => {
+      const response = await fetch(`/community/posts/${postId}/pin`, { method: "POST" });
+      if (!response.ok) throw await buildError(response, "Failed to pin post");
+    },
+
+    // Unpin a post
+    unpinPost: async (postId: string): Promise<void> => {
+      const response = await fetch(`/community/posts/${postId}/pin`, { method: "DELETE" });
+      if (!response.ok) throw await buildError(response, "Failed to unpin post");
+    },
+
+    // Get pinned posts for a user
+    getPinnedPosts: async (userId: string): Promise<PostSummaryResponse[]> => {
+      const response = await fetch(`/community/users/${userId}/posts/pinned`, { method: "GET" });
+      if (!response.ok) throw await buildError(response, "Failed to fetch pinned posts");
+      return response.json();
+    },
+
+    // ==================== Moderation ====================
+
+    // Flag a post (admin)
+    flagPost: async (postId: string, isNsfw: boolean, contentWarning?: string): Promise<void> => {
+      const response = await fetch(`/community/admin/posts/${postId}/flag`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isNsfw, contentWarning }),
+      });
+      if (!response.ok) throw await buildError(response, "Failed to flag post");
+    },
+
+    // Mute a user
+    muteUser: async (userId: string): Promise<void> => {
+      const response = await fetch(`/community/mute/${userId}`, { method: "POST" });
+      if (!response.ok) throw await buildError(response, "Failed to mute user");
+    },
+
+    // Unmute a user
+    unmuteUser: async (userId: string): Promise<void> => {
+      const response = await fetch(`/community/mute/${userId}`, { method: "DELETE" });
+      if (!response.ok) throw await buildError(response, "Failed to unmute user");
+    },
+
+    // Get muted users
+    getMutedUsers: async (): Promise<MuteListResponse> => {
+      const response = await fetch("/community/mute/list", { method: "GET" });
+      if (!response.ok) throw await buildError(response, "Failed to fetch muted users");
+      return response.json();
+    },
+
+    // ==================== Profile & Social Graph ====================
+
+    // Search users
+    searchUsers: async (query: string, page = 1, pageSize = 20): Promise<PagedUserSearchResponse> => {
+      const params = new URLSearchParams({ q: query, page: String(page), pageSize: String(pageSize) });
+      const response = await fetch(`/community/users/search?${params}`, { method: "GET" });
+      if (!response.ok) throw await buildError(response, "Failed to search users");
+      return response.json();
+    },
+
+    // Get suggested users
+    getSuggestedUsers: async (count = 5): Promise<UserSearchResponse[]> => {
+      const response = await fetch(`/community/users/suggested?count=${count}`, { method: "GET" });
+      if (!response.ok) throw await buildError(response, "Failed to fetch suggested users");
+      return response.json();
+    },
+
+    // Get incoming follow requests
+    getIncomingFollowRequests: async (): Promise<FollowRequestResponse[]> => {
+      const response = await fetch("/community/follow/requests/incoming", { method: "GET" });
+      if (!response.ok) throw await buildError(response, "Failed to fetch follow requests");
+      return response.json();
+    },
+
+    // Approve follow request
+    approveFollowRequest: async (requestId: string): Promise<void> => {
+      const response = await fetch(`/community/follow/requests/${requestId}/approve`, { method: "POST" });
+      if (!response.ok) throw await buildError(response, "Failed to approve follow request");
+    },
+
+    // Reject follow request
+    rejectFollowRequest: async (requestId: string): Promise<void> => {
+      const response = await fetch(`/community/follow/requests/${requestId}/reject`, { method: "POST" });
+      if (!response.ok) throw await buildError(response, "Failed to reject follow request");
+    },
+
+    // ==================== Notifications (Push & Preferences) ====================
+
+    // Register push token
+    registerPushToken: async (token: string, platform: string): Promise<void> => {
+      const response = await fetch("/community/notifications/push-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, platform }),
+      });
+      if (!response.ok) throw await buildError(response, "Failed to register push token");
+    },
+
+    // Remove push token
+    removePushToken: async (token: string): Promise<void> => {
+      const response = await fetch("/community/notifications/push-token", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+      if (!response.ok) throw await buildError(response, "Failed to remove push token");
+    },
+
+    // Get notification preferences
+    getNotificationPreferences: async (): Promise<NotificationPreferenceResponse> => {
+      const response = await fetch("/community/notifications/preferences", { method: "GET" });
+      if (!response.ok) throw await buildError(response, "Failed to fetch notification preferences");
+      return response.json();
+    },
+
+    // Update notification preferences
+    updateNotificationPreferences: async (data: UpdateNotificationPreferenceDto): Promise<NotificationPreferenceResponse> => {
+      const response = await fetch("/community/notifications/preferences", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw await buildError(response, "Failed to update notification preferences");
+      return response.json();
+    },
+
+    // ==================== Analytics ====================
+
+    // Record a post view
+    recordPostView: async (postId: string): Promise<void> => {
+      const response = await fetch(`/community/posts/${postId}/view`, { method: "POST" });
+      if (!response.ok) throw await buildError(response, "Failed to record post view");
+    },
+
+    // Get post analytics (author only)
+    getPostAnalytics: async (postId: string): Promise<PostAnalyticsResponse> => {
+      const response = await fetch(`/community/posts/${postId}/analytics`, { method: "GET" });
+      if (!response.ok) throw await buildError(response, "Failed to fetch post analytics");
+      return response.json();
+    },
+
+    // Get profile stats
+    getProfileStats: async (userId: string): Promise<ProfileStatsResponse> => {
+      const response = await fetch(`/community/users/${userId}/stats`, { method: "GET" });
+      if (!response.ok) throw await buildError(response, "Failed to fetch profile stats");
+      return response.json();
     },
 
     // ==================== Admin ====================
@@ -817,114 +1039,96 @@ export default function initCommunityController(fetch: ServerFetch) {
 
       const url = `/community/admin/posts${params.toString() ? `?${params}` : ""}`;
       const response = await fetch(url, { method: "GET" });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to fetch posts" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to fetch posts",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to fetch posts");
       return response.json();
     },
 
     // [Admin] Hard delete a post
     hardDeletePost: async (id: string): Promise<void> => {
-      const response = await fetch(`/community/posts/${id}/permanent`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to permanently delete post" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to permanently delete post",
-        );
-      }
+      const response = await fetch(`/community/posts/${id}/permanent`, { method: "DELETE" });
+      if (!response.ok) throw await buildError(response, "Failed to permanently delete post");
     },
 
     // [Admin] Restore a deleted post
     restorePost: async (id: string): Promise<void> => {
-      const response = await fetch(`/community/posts/${id}/restore`, {
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to restore post" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to restore post",
-        );
-      }
+      const response = await fetch(`/community/posts/${id}/restore`, { method: "POST" });
+      if (!response.ok) throw await buildError(response, "Failed to restore post");
     },
 
     // [Admin] Delete any comment
     adminDeleteComment: async (id: string): Promise<void> => {
-      const response = await fetch(`/community/admin/comments/${id}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(`/community/admin/comments/${id}`, { method: "DELETE" });
+      if (!response.ok) throw await buildError(response, "Failed to delete comment");
+    },
 
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to delete comment" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to delete comment",
-        );
-      }
+    // [Admin] Get overview stats
+    getAdminOverviewStats: async (): Promise<AdminOverviewStatsResponse> => {
+      const response = await fetch("/community/admin/stats/overview", { method: "GET" });
+      if (!response.ok) throw await buildError(response, "Failed to fetch admin stats");
+      return response.json();
+    },
+
+    // [Admin] Get trending tags
+    getAdminTrendingTags: async (count = 10): Promise<AdminTrendingTagResponse[]> => {
+      const response = await fetch(`/community/admin/stats/trending-tags?count=${count}`, { method: "GET" });
+      if (!response.ok) throw await buildError(response, "Failed to fetch trending tags");
+      return response.json();
+    },
+
+    // [Admin] Get users list
+    getAdminUsers: async (query?: { page?: number; pageSize?: number; searchTerm?: string }): Promise<AdminUserListResponse> => {
+      const params = new URLSearchParams();
+      if (query?.page) params.append("page", String(query.page));
+      if (query?.pageSize) params.append("pageSize", String(query.pageSize));
+      if (query?.searchTerm) params.append("searchTerm", query.searchTerm);
+
+      const url = `/community/admin/users${params.toString() ? `?${params}` : ""}`;
+      const response = await fetch(url, { method: "GET" });
+      if (!response.ok) throw await buildError(response, "Failed to fetch users");
+      return response.json();
+    },
+
+    // [Admin] Get user posts
+    getAdminUserPosts: async (userId: string): Promise<PostSummaryResponse[]> => {
+      const response = await fetch(`/community/admin/users/${userId}/posts`, { method: "GET" });
+      if (!response.ok) throw await buildError(response, "Failed to fetch user posts");
+      return response.json();
+    },
+
+    // [Admin] Ban a user
+    banUser: async (userId: string, reason: string): Promise<void> => {
+      const response = await fetch(`/community/admin/users/${userId}/ban`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason }),
+      });
+      if (!response.ok) throw await buildError(response, "Failed to ban user");
+    },
+
+    // [Admin] Unban a user
+    unbanUser: async (userId: string): Promise<void> => {
+      const response = await fetch(`/community/admin/users/${userId}/ban`, { method: "DELETE" });
+      if (!response.ok) throw await buildError(response, "Failed to unban user");
     },
 
     // ==================== Following ====================
 
     // Follow a user
     follow: async (userId: string): Promise<void> => {
-      const response = await fetch(`/community/follow/${userId}`, {
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to follow user" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to follow user",
-        );
-      }
+      const response = await fetch(`/community/follow/${userId}`, { method: "POST" });
+      if (!response.ok) throw await buildError(response, "Failed to follow user");
     },
 
     // Unfollow a user
     unfollow: async (userId: string): Promise<void> => {
-      const response = await fetch(`/community/follow/${userId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to unfollow user" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to unfollow user",
-        );
-      }
+      const response = await fetch(`/community/follow/${userId}`, { method: "DELETE" });
+      if (!response.ok) throw await buildError(response, "Failed to unfollow user");
     },
 
     // Get follow status with a user
     getFollowStatus: async (userId: string): Promise<FollowStatusResponse> => {
       const response = await fetch(`/community/follow/${userId}/status`, { method: "GET" });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to get follow status" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to get follow status",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to get follow status");
       return response.json();
     },
 
@@ -936,16 +1140,7 @@ export default function initCommunityController(fetch: ServerFetch) {
 
       const url = `/community/follow/${userId}/followers${params.toString() ? `?${params}` : ""}`;
       const response = await fetch(url, { method: "GET" });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to fetch followers" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to fetch followers",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to fetch followers");
       return response.json();
     },
 
@@ -957,32 +1152,14 @@ export default function initCommunityController(fetch: ServerFetch) {
 
       const url = `/community/follow/${userId}/following${params.toString() ? `?${params}` : ""}`;
       const response = await fetch(url, { method: "GET" });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to fetch following" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to fetch following",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to fetch following");
       return response.json();
     },
 
     // Get follow counts for a user
     getFollowCounts: async (userId: string): Promise<FollowCountsResponse> => {
       const response = await fetch(`/community/follow/${userId}/counts`, { method: "GET" });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to fetch follow counts" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to fetch follow counts",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to fetch follow counts");
       return response.json();
     },
 
@@ -997,97 +1174,39 @@ export default function initCommunityController(fetch: ServerFetch) {
 
       const url = `/community/notifications${params.toString() ? `?${params}` : ""}`;
       const response = await fetch(url, { method: "GET" });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to fetch notifications" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to fetch notifications",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to fetch notifications");
       return response.json();
     },
 
     // Get notification counts
     getNotificationCount: async (): Promise<NotificationCountResponse> => {
       const response = await fetch("/community/notifications/count", { method: "GET" });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to fetch notification count" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to fetch notification count",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to fetch notification count");
       return response.json();
     },
 
     // Mark a notification as read
     markNotificationRead: async (id: string): Promise<void> => {
-      const response = await fetch(`/community/notifications/${id}/read`, {
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to mark notification as read" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to mark notification as read",
-        );
-      }
+      const response = await fetch(`/community/notifications/${id}/read`, { method: "POST" });
+      if (!response.ok) throw await buildError(response, "Failed to mark notification as read");
     },
 
     // Mark all notifications as read
     markAllNotificationsRead: async (): Promise<void> => {
-      const response = await fetch("/community/notifications/read-all", {
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to mark all notifications as read" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to mark all notifications as read",
-        );
-      }
+      const response = await fetch("/community/notifications/read-all", { method: "POST" });
+      if (!response.ok) throw await buildError(response, "Failed to mark all notifications as read");
     },
 
     // Delete a notification
     deleteNotification: async (id: string): Promise<void> => {
-      const response = await fetch(`/community/notifications/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to delete notification" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to delete notification",
-        );
-      }
+      const response = await fetch(`/community/notifications/${id}`, { method: "DELETE" });
+      if (!response.ok) throw await buildError(response, "Failed to delete notification");
     },
 
     // Delete all notifications
     deleteAllNotifications: async (): Promise<void> => {
-      const response = await fetch("/community/notifications/all", {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to delete all notifications" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to delete all notifications",
-        );
-      }
+      const response = await fetch("/community/notifications/all", { method: "DELETE" });
+      if (!response.ok) throw await buildError(response, "Failed to delete all notifications");
     },
 
     // ==================== Reports ====================
@@ -1099,32 +1218,14 @@ export default function initCommunityController(fetch: ServerFetch) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to create report" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to create report",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to create report");
       return response.json();
     },
 
     // Get my reports
     getMyReports: async (): Promise<ReportResponse[]> => {
       const response = await fetch("/community/reports/my", { method: "GET" });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to fetch your reports" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to fetch your reports",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to fetch your reports");
       return response.json();
     },
 
@@ -1138,16 +1239,7 @@ export default function initCommunityController(fetch: ServerFetch) {
 
       const url = `/community/admin/reports${params.toString() ? `?${params}` : ""}`;
       const response = await fetch(url, { method: "GET" });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to fetch reports" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to fetch reports",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to fetch reports");
       return response.json();
     },
 
@@ -1158,16 +1250,7 @@ export default function initCommunityController(fetch: ServerFetch) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to update report status" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to update report status",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to update report status");
       return response.json();
     },
 
@@ -1175,49 +1258,20 @@ export default function initCommunityController(fetch: ServerFetch) {
 
     // Block a user
     blockUser: async (userId: string): Promise<void> => {
-      const response = await fetch(`/community/block/${userId}`, {
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to block user" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to block user",
-        );
-      }
+      const response = await fetch(`/community/block/${userId}`, { method: "POST" });
+      if (!response.ok) throw await buildError(response, "Failed to block user");
     },
 
     // Unblock a user
     unblockUser: async (userId: string): Promise<void> => {
-      const response = await fetch(`/community/block/${userId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to unblock user" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to unblock user",
-        );
-      }
+      const response = await fetch(`/community/block/${userId}`, { method: "DELETE" });
+      if (!response.ok) throw await buildError(response, "Failed to unblock user");
     },
 
     // Get block status with a user
     getBlockStatus: async (userId: string): Promise<BlockStatusResponse> => {
       const response = await fetch(`/community/block/${userId}/status`, { method: "GET" });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to get block status" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to get block status",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to get block status");
       return response.json();
     },
 
@@ -1229,16 +1283,7 @@ export default function initCommunityController(fetch: ServerFetch) {
 
       const url = `/community/block/list${params.toString() ? `?${params}` : ""}`;
       const response = await fetch(url, { method: "GET" });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to fetch blocked users" }));
-        throw new Error(
-          typeof error === "object" && error !== null && "message" in error
-            ? (error as { message: string }).message
-            : "Failed to fetch blocked users",
-        );
-      }
-
+      if (!response.ok) throw await buildError(response, "Failed to fetch blocked users");
       return response.json();
     },
   };
