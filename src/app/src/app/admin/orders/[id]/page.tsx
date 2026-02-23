@@ -113,7 +113,9 @@ function OrderItemCard({ item }: { item: OrderItemResponse }) {
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1 dark:bg-blue-900/50">
               <Paintbrush className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">{item.imprintName || "Custom Design"}</span>
+              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                {item.imprintName || "Custom Design"}
+              </span>
             </div>
             <Button variant="default" size="sm" className="h-7 bg-blue-600 hover:bg-blue-700" asChild>
               <Link href={`/imprinter/${item.imprintId}`} target="_blank">
@@ -129,7 +131,9 @@ function OrderItemCard({ item }: { item: OrderItemResponse }) {
         <div className="mt-2 flex items-end justify-between">
           <div className="text-muted-foreground text-sm">
             ${item.unitPrice.toFixed(2)} × {item.quantity}
-            {hasCustomization && <span className="text-blue-600 dark:text-blue-400"> + ${item.customizationPrice.toFixed(2)} custom</span>}
+            {hasCustomization && (
+              <span className="text-blue-600 dark:text-blue-400"> + ${item.customizationPrice.toFixed(2)} custom</span>
+            )}
           </div>
           <span className="text-xl font-bold">${item.subtotal.toFixed(2)}</span>
         </div>
@@ -450,7 +454,9 @@ export default function AdminOrderDetailsPage() {
                     {refund.approvedAmount && (
                       <div className="flex justify-between text-sm">
                         <span>Approved Amount:</span>
-                        <span className="font-medium text-green-700 dark:text-green-400">${refund.approvedAmount.toFixed(2)}</span>
+                        <span className="font-medium text-green-700 dark:text-green-400">
+                          ${refund.approvedAmount.toFixed(2)}
+                        </span>
                       </div>
                     )}
                   </div>

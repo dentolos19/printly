@@ -293,7 +293,9 @@ function OrderDetailsDialog({
                         <span className="flex-1 text-sm text-blue-700 dark:text-blue-300">
                           Custom Design: {item.imprintName || "Unnamed"}
                           {item.customizationPrice > 0 && (
-                            <span className="ml-1 text-blue-600 dark:text-blue-400">(+${item.customizationPrice.toFixed(2)})</span>
+                            <span className="ml-1 text-blue-600 dark:text-blue-400">
+                              (+${item.customizationPrice.toFixed(2)})
+                            </span>
                           )}
                         </span>
                         <Link
