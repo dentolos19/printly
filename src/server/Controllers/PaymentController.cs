@@ -40,6 +40,8 @@ public class PaymentController(DatabaseContext context, IConfiguration configura
             .Orders.Include(o => o.Items)
                 .ThenInclude(i => i.Variant)
                     .ThenInclude(v => v.Product)
+            .Include(o => o.Items)
+                .ThenInclude(i => i.Imprint)
             .FirstOrDefaultAsync(o => o.Id == request.OrderId && o.UserId == userId);
 
         if (order == null)
@@ -99,19 +101,28 @@ public class PaymentController(DatabaseContext context, IConfiguration configura
 
         // Build line items from order items
         var lineItems = order
-            .Items.Select(item => new SessionLineItemOptions
+            .Items.Select(item =>
             {
-                PriceData = new SessionLineItemPriceDataOptions
+                var customizationPrice = item.Imprint?.CustomizationPrice ?? 0m;
+                var unitTotal = item.UnitPrice + customizationPrice;
+                var description = $"Size: {item.Variant.Size}, Color: {item.Variant.Color}";
+                if (customizationPrice > 0)
+                    description += $" + ${customizationPrice:F2} customization";
+
+                return new SessionLineItemOptions
                 {
-                    Currency = "sgd",
-                    ProductData = new SessionLineItemPriceDataProductDataOptions
+                    PriceData = new SessionLineItemPriceDataOptions
                     {
-                        Name = $"{item.Variant.Product.Name} ({item.Variant.Size}/{item.Variant.Color})",
-                        Description = $"Size: {item.Variant.Size}, Color: {item.Variant.Color}",
+                        Currency = "sgd",
+                        ProductData = new SessionLineItemPriceDataProductDataOptions
+                        {
+                            Name = $"{item.Variant.Product.Name} ({item.Variant.Size}/{item.Variant.Color})",
+                            Description = description,
+                        },
+                        UnitAmount = (long)(unitTotal * 100), // Stripe expects cents
                     },
-                    UnitAmount = (long)(item.UnitPrice * 100), // Stripe expects cents
-                },
-                Quantity = item.Quantity,
+                    Quantity = item.Quantity,
+                };
             })
             .ToList();
 
