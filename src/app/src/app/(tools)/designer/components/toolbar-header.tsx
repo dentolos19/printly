@@ -113,7 +113,7 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
 
   const navigateWithGuard = useCallback(
     (href: string) => {
-      if (!confirmNavigation()) {
+      if (!confirmNavigation(href)) {
         return;
       }
 

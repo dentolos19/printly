@@ -66,7 +66,7 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
 
   const navigateWithGuard = useCallback(
     (href: string) => {
-      if (!confirmNavigation()) {
+      if (!confirmNavigation(href)) {
         return;
       }
 
