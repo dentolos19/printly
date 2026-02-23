@@ -75,11 +75,11 @@ function OrderItemCard({ item }: { item: OrderItemResponse }) {
   const hasCustomization = item.customizationPrice > 0;
 
   return (
-    <div className="flex gap-4 rounded-xl border bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+    <div className="bg-card flex gap-4 rounded-xl border p-4 shadow-sm transition-shadow hover:shadow-md">
       {/* Product Image */}
-      <div className="bg-muted relative h-32 w-32 shrink-0 overflow-hidden rounded-lg">
+      <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
         {item.productImageUrl ? (
-          <Image src={item.productImageUrl} alt={item.productName} fill className="object-cover" />
+          <Image src={item.productImageUrl} alt={item.productName} fill className="object-contain p-1" />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <Package className="text-muted-foreground h-12 w-12" />
@@ -100,11 +100,13 @@ function OrderItemCard({ item }: { item: OrderItemResponse }) {
         {/* Imprint Badge & View Design CTA */}
         {hasImprint && (
           <div className="mt-2 flex items-center gap-2">
-            <div className="flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1">
-              <Paintbrush className="h-3.5 w-3.5 text-blue-600" />
-              <span className="text-sm font-medium text-blue-700">{item.imprintName || "Custom Design"}</span>
+            <div className="flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1 dark:bg-blue-900/50">
+              <Paintbrush className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                {item.imprintName || "Custom Design"}
+              </span>
             </div>
-            <Button variant="link" size="sm" className="h-auto p-0 text-blue-600" asChild>
+            <Button variant="link" size="sm" className="h-auto p-0 text-blue-600 dark:text-blue-400" asChild>
               <Link href={`/imprinter/${item.imprintId}`}>
                 View Design
                 <ArrowRight className="ml-1 h-3 w-3" />
@@ -117,7 +119,9 @@ function OrderItemCard({ item }: { item: OrderItemResponse }) {
         <div className="mt-2 flex items-end justify-between">
           <div className="text-muted-foreground text-sm">
             ${item.unitPrice.toFixed(2)} × {item.quantity}
-            {hasCustomization && <span className="text-blue-600"> + ${item.customizationPrice.toFixed(2)} custom</span>}
+            {hasCustomization && (
+              <span className="text-blue-600 dark:text-blue-400"> + ${item.customizationPrice.toFixed(2)} custom</span>
+            )}
           </div>
           <span className="text-xl font-bold">${item.subtotal.toFixed(2)}</span>
         </div>
@@ -287,7 +291,7 @@ export default function OrderDetailsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="bg-background min-h-screen p-6">
         <div className="mx-auto max-w-7xl space-y-6">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-32 w-full" />
@@ -305,7 +309,7 @@ export default function OrderDetailsPage() {
 
   if (!order) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
+      <div className="bg-background flex min-h-screen items-center justify-center p-6">
         <div className="text-center">
           <Package className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
           <h2 className="mb-2 text-2xl font-bold">Order not found</h2>
@@ -336,9 +340,9 @@ export default function OrderDetailsPage() {
   const customizationTotal = order.items.reduce((sum, item) => sum + item.customizationPrice * item.quantity, 0);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-background min-h-screen">
       {/* Header */}
-      <div className="border-b bg-white">
+      <div className="bg-card border-b">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" asChild>
@@ -375,7 +379,7 @@ export default function OrderDetailsPage() {
       </div>
 
       {/* Order Progress */}
-      <div className="border-b bg-white py-6">
+      <div className="bg-card border-b py-6">
         <div className="mx-auto max-w-7xl px-6">
           <OrderProgressTracker status={order.status} />
         </div>
@@ -388,17 +392,17 @@ export default function OrderDetailsPage() {
           <div className="space-y-6 lg:col-span-2">
             {/* Refund Status */}
             {refund && (
-              <Card className="border-yellow-200 bg-yellow-50">
+              <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/50">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2 text-yellow-800">
+                    <CardTitle className="flex items-center gap-2 text-yellow-800 dark:text-yellow-300">
                       <RefreshCcw className="h-5 w-5" />
                       Refund Request
                     </CardTitle>
                     <Badge className={RefundStatusColors[refund.status]}>{RefundStatusLabels[refund.status]}</Badge>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-2 text-yellow-700">
+                <CardContent className="space-y-2 text-yellow-700 dark:text-yellow-400">
                   <div className="flex justify-between text-sm">
                     <span>Requested Amount:</span>
                     <span className="font-medium">${refund.requestedAmount.toFixed(2)}</span>
@@ -410,7 +414,9 @@ export default function OrderDetailsPage() {
                   {refund.approvedAmount && (
                     <div className="flex justify-between text-sm">
                       <span>Approved Amount:</span>
-                      <span className="font-medium text-green-700">${refund.approvedAmount.toFixed(2)}</span>
+                      <span className="font-medium text-green-700 dark:text-green-400">
+                        ${refund.approvedAmount.toFixed(2)}
+                      </span>
                     </div>
                   )}
                   {hasActiveRefund && refund.conversationId && (
@@ -448,12 +454,12 @@ export default function OrderDetailsPage() {
                 {customizationTotal > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Customization Fees</span>
-                    <span className="text-blue-600">${customizationTotal.toFixed(2)}</span>
+                    <span className="text-blue-600 dark:text-blue-400">${customizationTotal.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Shipping</span>
-                  <span className="text-green-600">Free</span>
+                  <span className="text-green-600 dark:text-green-400">Free</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between text-xl font-bold">
