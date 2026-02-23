@@ -29,8 +29,7 @@ async function fetchWithRetry(url: string, retries = 1, timeoutMs = 30000): Prom
     try {
       const res = await fetch(url, {
         signal: controller.signal,
-        cache: "force-cache",
-        next: { revalidate: DOWNLOAD_URL_REVALIDATE_SECONDS },
+        cache: "no-store",
       });
       clearTimeout(timeoutId);
       if (res.ok) return res;
