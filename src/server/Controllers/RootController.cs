@@ -9,6 +9,14 @@ namespace PrintlyServer.Controllers;
 public class RootController(DatabaseContext context) : BaseController(context)
 {
     [HttpGet]
+    [Route("ready")]
+    [AllowAnonymous]
+    public IActionResult GetReady()
+    {
+        return Ok(new { ready = true });
+    }
+
+    [HttpGet]
     [Route("")]
     public IActionResult GetRoot()
     {

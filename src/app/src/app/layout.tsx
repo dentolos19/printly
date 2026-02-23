@@ -1,5 +1,7 @@
+import BackendWaitOverlay from "@/components/backend-wait-overlay";
 import { Toaster } from "@/components/ui/sonner";
 import AuthProvider from "@/lib/providers/auth";
+import BackendReadinessProvider from "@/lib/providers/backend-readiness";
 import CartProvider from "@/lib/providers/cart";
 import ServerProvider from "@/lib/providers/server";
 import { cn } from "@/lib/utils";
@@ -29,14 +31,17 @@ export default function Layout({ children }: { children: ReactNode }) {
     <html lang={"en"} className={"scroll-smooth"} suppressHydrationWarning>
       <body className={cn(fontSans.variable, fontMono.variable, "antialiased")}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <AuthProvider>
-            <ServerProvider>
-              <CartProvider>
-                {children}
-                <Toaster />
-              </CartProvider>
-            </ServerProvider>
-          </AuthProvider>
+          <BackendReadinessProvider>
+            <AuthProvider>
+              <ServerProvider>
+                <CartProvider>
+                  {children}
+                  <BackendWaitOverlay />
+                  <Toaster />
+                </CartProvider>
+              </ServerProvider>
+            </AuthProvider>
+          </BackendReadinessProvider>
         </ThemeProvider>
       </body>
     </html>

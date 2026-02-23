@@ -2,6 +2,7 @@
 
 import { API_URL } from "@/environment";
 import { useAuth } from "@/lib/providers/auth";
+import { useBackendReadiness } from "@/lib/providers/backend-readiness";
 import generateServerFunctions from "@/lib/server";
 import { ServerFetch, ServerFunctions } from "@/types";
 import { createContext, useContext, useRef } from "react";
@@ -20,6 +21,7 @@ export function useServer() {
 
 export default function ServerProvider({ children }: { children: React.ReactNode }) {
   const { tokens, refreshAccess, logout } = useAuth();
+  const { markUnavailable, reportResponse } = useBackendReadiness();
   const isRefreshing = useRef(false);
   const refreshPromise = useRef<Promise<void> | null>(null);
 
@@ -42,11 +44,19 @@ export default function ServerProvider({ children }: { children: React.ReactNode
   const fetch = async (endpoint: string, init?: RequestInit, retry = true): Promise<Response> => {
     const headers = normalizeHeaders(init?.headers);
     const authHeaders = tokens ? [["Authorization", `Bearer ${tokens.accessToken}`] as [string, string]] : [];
+    let response: Response;
 
-    const response: Response = await globalThis.fetch(`${API_URL}${endpoint}`, {
-      ...init,
-      headers: [...headers, ...authHeaders],
-    });
+    try {
+      response = await globalThis.fetch(`${API_URL}${endpoint}`, {
+        ...init,
+        headers: [...headers, ...authHeaders],
+      });
+    } catch (error) {
+      markUnavailable();
+      throw error;
+    }
+
+    reportResponse(response);
 
     // Handle 401 Unauthorized - attempt token refresh and retry
     if (response.status === 401 && retry && tokens?.refreshToken) {
