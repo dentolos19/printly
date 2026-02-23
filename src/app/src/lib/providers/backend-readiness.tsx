@@ -13,6 +13,7 @@ type BackendReadinessContextValue = {
   markUnavailable: () => void;
   markReady: () => void;
   reportResponse: (response: Response) => void;
+  waitUntilReady: () => Promise<void>;
 };
 
 const RETRY_INTERVAL_MS = 3000;
@@ -27,6 +28,7 @@ const BackendReadinessContext = createContext<BackendReadinessContextValue>({
   markUnavailable: () => {},
   markReady: () => {},
   reportResponse: () => {},
+  waitUntilReady: async () => {},
 });
 
 export function useBackendReadiness() {
@@ -38,6 +40,7 @@ export default function BackendReadinessProvider({ children }: { children: React
   const [retryInSeconds, setRetryInSeconds] = useState(Math.ceil(RETRY_INTERVAL_MS / 1000));
   const [attempts, setAttempts] = useState(0);
   const statusRef = useRef<BackendReadinessStatus>("checking");
+  const readyWaiters = useRef<Array<() => void>>([]);
 
   const markUnavailable = useCallback(() => {
     setStatus((previous) => (previous === "unavailable" ? previous : "unavailable"));
@@ -60,8 +63,25 @@ export default function BackendReadinessProvider({ children }: { children: React
     [markReady, markUnavailable],
   );
 
+  const waitUntilReady = useCallback((): Promise<void> => {
+    if (statusRef.current === "ready") {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+      readyWaiters.current.push(resolve);
+    });
+  }, []);
+
   useEffect(() => {
     statusRef.current = status;
+
+    if (status === "ready" && readyWaiters.current.length > 0) {
+      const pending = [...readyWaiters.current];
+      readyWaiters.current = [];
+
+      pending.forEach((resolve) => resolve());
+    }
   }, [status]);
 
   const probeBackend = useCallback(async () => {
@@ -134,8 +154,9 @@ export default function BackendReadinessProvider({ children }: { children: React
       markUnavailable,
       markReady,
       reportResponse,
+      waitUntilReady,
     }),
-    [attempts, markReady, markUnavailable, reportResponse, retryInSeconds, status],
+    [attempts, markReady, markUnavailable, reportResponse, retryInSeconds, status, waitUntilReady],
   );
 
   return <BackendReadinessContext.Provider value={value}>{children}</BackendReadinessContext.Provider>;

@@ -7,6 +7,8 @@ import generateServerFunctions from "@/lib/server";
 import { ServerFetch, ServerFunctions } from "@/types";
 import { createContext, useCallback, useContext, useMemo, useRef } from "react";
 
+const RETRYABLE_BACKEND_STATUS = new Set([502, 503, 504, 520, 521, 522, 523, 524, 525, 526]);
+
 const ServerContext = createContext<{
   fetch: ServerFetch;
   api: ServerFunctions;
@@ -21,7 +23,7 @@ export function useServer() {
 
 export default function ServerProvider({ children }: { children: React.ReactNode }) {
   const { tokens, refreshAccess, logout } = useAuth();
-  const { markUnavailable, reportResponse } = useBackendReadiness();
+  const { markUnavailable, reportResponse, waitUntilReady } = useBackendReadiness();
   const isRefreshing = useRef(false);
   const refreshPromise = useRef<Promise<void> | null>(null);
 
@@ -42,7 +44,13 @@ export default function ServerProvider({ children }: { children: React.ReactNode
   };
 
   const requestWithAuth = useCallback(
-    async (endpoint: string, init?: RequestInit, retry = true, accessTokenOverride?: string): Promise<Response> => {
+    async (
+      endpoint: string,
+      init?: RequestInit,
+      retryAuth = true,
+      accessTokenOverride?: string,
+      retryWhenBackendReady = true,
+    ): Promise<Response> => {
       const headers = normalizeHeaders(init?.headers);
       const accessToken = accessTokenOverride ?? tokens?.accessToken;
       const authHeaders = accessToken ? [["Authorization", `Bearer ${accessToken}`] as [string, string]] : [];
@@ -55,13 +63,25 @@ export default function ServerProvider({ children }: { children: React.ReactNode
         });
       } catch (error) {
         markUnavailable();
+
+        if (retryWhenBackendReady) {
+          await waitUntilReady();
+          return requestWithAuth(endpoint, init, retryAuth, accessTokenOverride, false);
+        }
+
         throw error;
       }
 
       reportResponse(response);
 
+      if (RETRYABLE_BACKEND_STATUS.has(response.status) && retryWhenBackendReady) {
+        markUnavailable();
+        await waitUntilReady();
+        return requestWithAuth(endpoint, init, retryAuth, accessTokenOverride, false);
+      }
+
       // Handle 401 Unauthorized - attempt token refresh and retry
-      if (response.status === 401 && retry && tokens?.refreshToken) {
+      if (response.status === 401 && retryAuth && tokens?.refreshToken) {
         try {
           // If already refreshing, wait for that refresh to complete
           if (isRefreshing.current && refreshPromise.current) {
@@ -81,7 +101,7 @@ export default function ServerProvider({ children }: { children: React.ReactNode
 
           // Retry the original request with new token (retry=false to prevent infinite loop)
           const refreshedAccessToken = localStorage.getItem("accessToken") || undefined;
-          return requestWithAuth(endpoint, init, false, refreshedAccessToken);
+          return requestWithAuth(endpoint, init, false, refreshedAccessToken, retryWhenBackendReady);
         } catch (error) {
           // Refresh failed, log out user
           console.error("Token refresh failed:", error);
@@ -92,7 +112,7 @@ export default function ServerProvider({ children }: { children: React.ReactNode
 
       return response;
     },
-    [logout, markUnavailable, refreshAccess, reportResponse, tokens?.accessToken, tokens?.refreshToken],
+    [logout, markUnavailable, refreshAccess, reportResponse, tokens?.accessToken, tokens?.refreshToken, waitUntilReady],
   );
 
   const fetch = useCallback<ServerFetch>(
