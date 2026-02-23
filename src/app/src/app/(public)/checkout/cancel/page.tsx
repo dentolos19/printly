@@ -15,8 +15,8 @@ function CheckoutCancelContent() {
     <div className="flex min-h-[60vh] items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-yellow-100">
-            <XCircle className="h-10 w-10 text-yellow-600" />
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900/50">
+            <XCircle className="h-10 w-10 text-yellow-600 dark:text-yellow-400" />
           </div>
           <CardTitle className="text-2xl">Payment Cancelled</CardTitle>
           <CardDescription>

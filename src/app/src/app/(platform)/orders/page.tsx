@@ -109,10 +109,10 @@ function OrderCard({
         <div className="flex items-center justify-between border-b p-4">
           <div className="flex items-center gap-3">
             <div
-              className={`rounded-full p-2 ${order.status === OrderStatus.Cancelled ? "bg-red-100" : order.status === OrderStatus.Delivered ? "bg-green-100" : "bg-primary/10"}`}
+              className={`rounded-full p-2 ${order.status === OrderStatus.Cancelled ? "bg-red-100 dark:bg-red-900/50" : order.status === OrderStatus.Delivered ? "bg-green-100 dark:bg-green-900/50" : "bg-primary/10"}`}
             >
               <StatusIcon
-                className={`h-4 w-4 ${order.status === OrderStatus.Cancelled ? "text-red-600" : order.status === OrderStatus.Delivered ? "text-green-600" : "text-primary"}`}
+                className={`h-4 w-4 ${order.status === OrderStatus.Cancelled ? "text-red-600 dark:text-red-400" : order.status === OrderStatus.Delivered ? "text-green-600 dark:text-green-400" : "text-primary"}`}
               />
             </div>
             <div>
@@ -211,10 +211,10 @@ function OrderDetailsDialog({
             <DialogHeader>
               <div className="flex items-center gap-3">
                 <div
-                  className={`rounded-full p-2 ${order.status === OrderStatus.Cancelled ? "bg-red-100" : order.status === OrderStatus.Delivered ? "bg-green-100" : "bg-primary/10"}`}
+                  className={`rounded-full p-2 ${order.status === OrderStatus.Cancelled ? "bg-red-100 dark:bg-red-900/50" : order.status === OrderStatus.Delivered ? "bg-green-100 dark:bg-green-900/50" : "bg-primary/10"}`}
                 >
                   <StatusIcon
-                    className={`h-5 w-5 ${order.status === OrderStatus.Cancelled ? "text-red-600" : order.status === OrderStatus.Delivered ? "text-green-600" : "text-primary"}`}
+                    className={`h-5 w-5 ${order.status === OrderStatus.Cancelled ? "text-red-600 dark:text-red-400" : order.status === OrderStatus.Delivered ? "text-green-600 dark:text-green-400" : "text-primary"}`}
                   />
                 </div>
                 <div>
@@ -238,15 +238,15 @@ function OrderDetailsDialog({
 
               {/* Refund Status Section */}
               {refund && (
-                <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+                <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-950/50">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <RefreshCcw className="h-4 w-4 text-yellow-600" />
-                      <span className="font-medium text-yellow-800">Refund Request</span>
+                      <RefreshCcw className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                      <span className="font-medium text-yellow-800 dark:text-yellow-300">Refund Request</span>
                     </div>
                     <Badge className={RefundStatusColors[refund.status]}>{RefundStatusLabels[refund.status]}</Badge>
                   </div>
-                  <div className="mt-2 text-sm text-yellow-700">
+                  <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-400">
                     <p>Amount: ${refund.requestedAmount.toFixed(2)}</p>
                     <p>Reason: {RefundReasonLabels[refund.reason]}</p>
                     {refund.approvedAmount && (
@@ -288,17 +288,17 @@ function OrderDetailsDialog({
                     </div>
                     {/* Imprint Info */}
                     {item.imprintId && (
-                      <div className="mt-2 flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5">
-                        <Paintbrush className="h-3.5 w-3.5 text-blue-600" />
-                        <span className="flex-1 text-sm text-blue-700">
+                      <div className="mt-2 flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5 dark:border-blue-800 dark:bg-blue-950/50">
+                        <Paintbrush className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                        <span className="flex-1 text-sm text-blue-700 dark:text-blue-300">
                           Custom Design: {item.imprintName || "Unnamed"}
                           {item.customizationPrice > 0 && (
-                            <span className="ml-1 text-blue-600">(+${item.customizationPrice.toFixed(2)})</span>
+                            <span className="ml-1 text-blue-600 dark:text-blue-400">(+${item.customizationPrice.toFixed(2)})</span>
                           )}
                         </span>
                         <Link
                           href={`/imprinter/${item.imprintId}`}
-                          className="text-xs text-blue-600 hover:underline"
+                          className="text-xs text-blue-600 hover:underline dark:text-blue-400"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <ExternalLink className="h-3 w-3" />
@@ -318,7 +318,7 @@ function OrderDetailsDialog({
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Shipping</span>
-                  <span className="text-green-600">Free</span>
+                  <span className="text-green-600 dark:text-green-400">Free</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between text-lg font-bold">
@@ -499,7 +499,7 @@ function RefundRequestDialog({
             />
           </div>
 
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700">
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-300">
             <div className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
               <p className="font-medium">What happens next?</p>

@@ -43,13 +43,13 @@ export const RefundStatusLabels: Record<RefundStatus, string> = {
 };
 
 export const RefundStatusColors: Record<RefundStatus, string> = {
-  [RefundStatus.Requested]: "bg-yellow-100 text-yellow-800",
-  [RefundStatus.UnderReview]: "bg-blue-100 text-blue-800",
-  [RefundStatus.Approved]: "bg-green-100 text-green-800",
-  [RefundStatus.Rejected]: "bg-red-100 text-red-800",
-  [RefundStatus.Processing]: "bg-purple-100 text-purple-800",
-  [RefundStatus.Completed]: "bg-green-100 text-green-800",
-  [RefundStatus.Failed]: "bg-red-100 text-red-800",
+  [RefundStatus.Requested]: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300",
+  [RefundStatus.UnderReview]: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300",
+  [RefundStatus.Approved]: "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300",
+  [RefundStatus.Rejected]: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300",
+  [RefundStatus.Processing]: "bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300",
+  [RefundStatus.Completed]: "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300",
+  [RefundStatus.Failed]: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300",
 };
 
 export const RefundReasonLabels: Record<RefundReason, string> = {
