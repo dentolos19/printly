@@ -25,12 +25,15 @@ function AutoFramedModel({ url }: { url: string }) {
     const size = box.getSize(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z);
 
+    // Shift the model so its bounding-box center sits at the origin
+    groupRef.current.position.set(-center.x, -center.y, -center.z);
+
     const perspCam = camera as THREE.PerspectiveCamera;
     const fov = perspCam.fov * (Math.PI / 180);
     const distance = (maxDim / (2 * Math.tan(fov / 2))) * 1.5;
 
-    perspCam.position.set(center.x + distance * 0.5, center.y + distance * 0.3, center.z + distance);
-    perspCam.lookAt(center);
+    perspCam.position.set(distance * 0.5, distance * 0.3, distance);
+    perspCam.lookAt(0, 0, 0);
     perspCam.updateProjectionMatrix();
   }, [clonedScene, camera]);
 

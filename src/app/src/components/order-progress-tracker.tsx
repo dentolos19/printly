@@ -46,14 +46,19 @@ export function OrderProgressTracker({ status, className }: OrderProgressTracker
   // Handle cancelled orders
   if (status === OrderStatus.Cancelled) {
     return (
-      <div className={cn("rounded-lg border border-red-200 bg-red-50 p-4", className)}>
+      <div
+        className={cn(
+          "rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/50",
+          className,
+        )}
+      >
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
-            <XCircle className="h-5 w-5 text-red-600" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/50">
+            <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
           </div>
           <div>
-            <p className="font-medium text-red-800">Order Cancelled</p>
-            <p className="text-sm text-red-600">This order has been cancelled</p>
+            <p className="font-medium text-red-800 dark:text-red-300">Order Cancelled</p>
+            <p className="text-sm text-red-600 dark:text-red-400">This order has been cancelled</p>
           </div>
         </div>
       </div>
@@ -63,14 +68,19 @@ export function OrderProgressTracker({ status, className }: OrderProgressTracker
   // Handle refund-related statuses
   if (status === OrderStatus.RefundRequested) {
     return (
-      <div className={cn("rounded-lg border border-orange-200 bg-orange-50 p-4", className)}>
+      <div
+        className={cn(
+          "rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-950/50",
+          className,
+        )}
+      >
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100">
-            <RotateCcw className="h-5 w-5 text-orange-600" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/50">
+            <RotateCcw className="h-5 w-5 text-orange-600 dark:text-orange-400" />
           </div>
           <div>
-            <p className="font-medium text-orange-800">Refund Requested</p>
-            <p className="text-sm text-orange-600">Your refund request is being reviewed</p>
+            <p className="font-medium text-orange-800 dark:text-orange-300">Refund Requested</p>
+            <p className="text-sm text-orange-600 dark:text-orange-400">Your refund request is being reviewed</p>
           </div>
         </div>
       </div>
@@ -79,14 +89,21 @@ export function OrderProgressTracker({ status, className }: OrderProgressTracker
 
   if (status === OrderStatus.RefundApproved) {
     return (
-      <div className={cn("rounded-lg border border-amber-200 bg-amber-50 p-4", className)}>
+      <div
+        className={cn(
+          "rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/50",
+          className,
+        )}
+      >
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
-            <CheckCircle2 className="h-5 w-5 text-amber-600" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
+            <CheckCircle2 className="h-5 w-5 text-amber-600 dark:text-amber-400" />
           </div>
           <div>
-            <p className="font-medium text-amber-800">Refund Approved</p>
-            <p className="text-sm text-amber-600">Your refund has been approved and is being processed</p>
+            <p className="font-medium text-amber-800 dark:text-amber-300">Refund Approved</p>
+            <p className="text-sm text-amber-600 dark:text-amber-400">
+              Your refund has been approved and is being processed
+            </p>
           </div>
         </div>
       </div>
@@ -95,14 +112,19 @@ export function OrderProgressTracker({ status, className }: OrderProgressTracker
 
   if (status === OrderStatus.Refunded) {
     return (
-      <div className={cn("rounded-lg border border-gray-200 bg-gray-50 p-4", className)}>
+      <div
+        className={cn(
+          "rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/50",
+          className,
+        )}
+      >
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
-            <CheckCircle2 className="h-5 w-5 text-gray-600" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+            <CheckCircle2 className="h-5 w-5 text-gray-600 dark:text-gray-400" />
           </div>
           <div>
-            <p className="font-medium text-gray-800">Refunded</p>
-            <p className="text-sm text-gray-600">This order has been refunded</p>
+            <p className="font-medium text-gray-800 dark:text-gray-200">Refunded</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">This order has been refunded</p>
           </div>
         </div>
       </div>

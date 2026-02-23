@@ -241,18 +241,20 @@ function OrderDetailsDialog({
                       </div>
                       {/* Imprint Info */}
                       {item.imprintId && (
-                        <div className="mt-2 flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5">
-                          <Paintbrush className="h-3.5 w-3.5 text-blue-600" />
-                          <span className="flex-1 text-sm text-blue-700">
+                        <div className="mt-2 flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5 dark:border-blue-800 dark:bg-blue-950/50">
+                          <Paintbrush className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                          <span className="flex-1 text-sm text-blue-700 dark:text-blue-300">
                             Custom: {item.imprintName || "Unnamed"}
                             {item.customizationPrice > 0 && (
-                              <span className="ml-1 text-blue-600">(+${item.customizationPrice.toFixed(2)})</span>
+                              <span className="ml-1 text-blue-600 dark:text-blue-400">
+                                (+${item.customizationPrice.toFixed(2)})
+                              </span>
                             )}
                           </span>
                           <Link
                             href={`/imprinter/${item.imprintId}`}
                             target="_blank"
-                            className="text-xs text-blue-600 hover:underline"
+                            className="text-xs text-blue-600 hover:underline dark:text-blue-400"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <ExternalLink className="h-3 w-3" />

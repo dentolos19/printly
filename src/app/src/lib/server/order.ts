@@ -28,15 +28,15 @@ export const OrderStatusLabels: Record<OrderStatus, string> = {
 };
 
 export const OrderStatusColors: Record<OrderStatus, string> = {
-  [OrderStatus.PendingPayment]: "bg-yellow-100 text-yellow-800",
-  [OrderStatus.Paid]: "bg-blue-100 text-blue-800",
-  [OrderStatus.Processing]: "bg-purple-100 text-purple-800",
-  [OrderStatus.Shipped]: "bg-indigo-100 text-indigo-800",
-  [OrderStatus.Delivered]: "bg-green-100 text-green-800",
-  [OrderStatus.Cancelled]: "bg-red-100 text-red-800",
-  [OrderStatus.RefundRequested]: "bg-orange-100 text-orange-800",
-  [OrderStatus.RefundApproved]: "bg-amber-100 text-amber-800",
-  [OrderStatus.Refunded]: "bg-gray-100 text-gray-800",
+  [OrderStatus.PendingPayment]: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300",
+  [OrderStatus.Paid]: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300",
+  [OrderStatus.Processing]: "bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300",
+  [OrderStatus.Shipped]: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300",
+  [OrderStatus.Delivered]: "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300",
+  [OrderStatus.Cancelled]: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300",
+  [OrderStatus.RefundRequested]: "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300",
+  [OrderStatus.RefundApproved]: "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300",
+  [OrderStatus.Refunded]: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
 };
 
 // Types
