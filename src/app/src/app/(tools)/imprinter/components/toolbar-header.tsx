@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { toast } from "sonner";
 import { SaveIndicator } from "../../shared/components/save-indicator";
+import { useUnsavedChangesGuard } from "../../shared/hooks";
 import { EXPORT_PRESETS } from "../types";
 import { useImprinter } from "./hooks/use-imprinter";
 
@@ -56,6 +57,24 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+
+  const hasPendingServerSave = isDirty || saveStatus === "saving" || saveStatus === "error";
+  const { allowNextNavigation, confirmNavigation } = useUnsavedChangesGuard({
+    when: hasPendingServerSave,
+    message: "Your imprint is not fully saved to the server yet. Leave anyway?",
+  });
+
+  const navigateWithGuard = useCallback(
+    (href: string) => {
+      if (!confirmNavigation()) {
+        return;
+      }
+
+      allowNextNavigation();
+      router.push(href);
+    },
+    [allowNextNavigation, confirmNavigation, router],
+  );
 
   const handleSaveImprint = useCallback(async () => {
     const latestName = nameInputRef.current?.flush();
@@ -98,7 +117,7 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
         description: `${product.name} with custom design added to your cart.`,
         action: {
           label: "View Cart",
-          onClick: () => router.push("/cart"),
+          onClick: () => navigateWithGuard("/cart"),
         },
       });
     } catch (error) {
@@ -129,7 +148,12 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
   return (
     <header className={cn("bg-background flex h-12 items-center justify-between border-b px-4", className)}>
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={() => router.push("/library?tab=imprints")} className="h-8 w-8">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigateWithGuard("/library?tab=imprints")}
+          className="h-8 w-8"
+        >
           <Home className="h-4 w-4" />
         </Button>
 

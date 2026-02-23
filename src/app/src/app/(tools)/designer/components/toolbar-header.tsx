@@ -49,6 +49,7 @@ import {
 import { useRouter } from "next/navigation";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { SaveIndicator } from "../../shared/components/save-indicator";
+import { useUnsavedChangesGuard } from "../../shared/hooks";
 import { useDesigner } from "./hooks";
 import { ResizeDesignDialog } from "./resize-design-dialog";
 
@@ -104,6 +105,24 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
     canvasSize,
   } = useDesigner();
 
+  const hasPendingServerSave = isDirty || saveStatus === "saving" || saveStatus === "error";
+  const { allowNextNavigation, confirmNavigation } = useUnsavedChangesGuard({
+    when: hasPendingServerSave,
+    message: "Your design is not fully saved to the server yet. Leave anyway?",
+  });
+
+  const navigateWithGuard = useCallback(
+    (href: string) => {
+      if (!confirmNavigation()) {
+        return;
+      }
+
+      allowNextNavigation();
+      router.push(href);
+    },
+    [allowNextNavigation, confirmNavigation, router],
+  );
+
   const handleSaveDesign = useCallback(async () => {
     const latestName = nameInputRef.current?.flush();
     return saveDesign({ force: true, nameOverride: latestName });
@@ -114,6 +133,7 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
       const savedDesignId = await handleSaveDesign();
       const idToUse = savedDesignId || designId;
       if (idToUse) {
+        allowNextNavigation();
         router.push(`/imprinter/new?design=${idToUse}`);
       }
     } catch (error) {
@@ -131,7 +151,7 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
             variant={"ghost"}
             size={"icon"}
             className={"mr-2 h-8 w-8"}
-            onClick={() => router.push("/library?tab=designs")}
+            onClick={() => navigateWithGuard("/library?tab=designs")}
           >
             <Home className={"h-4 w-4"} />
           </Button>
@@ -150,7 +170,7 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align={"start"}>
-            <DropdownMenuItem onClick={() => router.push("/designer")}>
+            <DropdownMenuItem onClick={() => navigateWithGuard("/designer")}>
               <FilePlus className={"mr-2 h-4 w-4"} />
               New
               <DropdownMenuShortcut>⌘N</DropdownMenuShortcut>
