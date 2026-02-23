@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 const PLACEHOLDER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="#f3f4f6"/><text x="100" y="95" text-anchor="middle" fill="#9ca3af" font-family="system-ui" font-size="14">Image</text><text x="100" y="115" text-anchor="middle" fill="#9ca3af" font-family="system-ui" font-size="14">Unavailable</text></svg>`;
 const PLACEHOLDER_BYTES = new TextEncoder().encode(PLACEHOLDER_SVG);
+const DOWNLOAD_URL_REVALIDATE_SECONDS = 60 * 55; // Signed URLs are valid for 60 minutes on the server.
+const ASSET_CACHE_CONTROL = "public, max-age=31536000, s-maxage=31536000, stale-while-revalidate=86400, immutable";
 
 function isImageAccept(request: NextRequest): boolean {
   const accept = request.headers.get("accept") || "";
@@ -25,7 +27,11 @@ async function fetchWithRetry(url: string, retries = 1, timeoutMs = 30000): Prom
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const res = await fetch(url, { signal: controller.signal });
+      const res = await fetch(url, {
+        signal: controller.signal,
+        cache: "force-cache",
+        next: { revalidate: DOWNLOAD_URL_REVALIDATE_SECONDS },
+      });
       clearTimeout(timeoutId);
       if (res.ok) return res;
       lastError = new Error(`HTTP ${res.status}: ${res.statusText}`);
@@ -44,7 +50,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { id } = await params;
 
     // Fetch download URL from backend
-    const response = await fetch(`${API_URL}/asset/${id}/download`);
+    const response = await fetch(`${API_URL}/asset/${id}/download`, {
+      next: { revalidate: DOWNLOAD_URL_REVALIDATE_SECONDS },
+    });
 
     if (!response.ok) {
       if (response.status === 404) {
@@ -67,7 +75,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       status: 200,
       headers: {
         "Content-Type": contentType,
-        "Cache-Control": "public, max-age=31536000, immutable",
+        "Cache-Control": ASSET_CACHE_CONTROL,
         ...(contentDisposition && { "Content-Disposition": contentDisposition }),
       },
     });
