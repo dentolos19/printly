@@ -21,7 +21,7 @@ const RETRYABLE_BACKEND_STATUS = new Set([502, 503, 504, 520, 521, 522, 523, 524
 
 const BackendReadinessContext = createContext<BackendReadinessContextValue>({
   status: "checking",
-  isBlocked: true,
+  isBlocked: false,
   retryInSeconds: Math.ceil(RETRY_INTERVAL_MS / 1000),
   attempts: 0,
   markUnavailable: () => {},
@@ -128,7 +128,7 @@ export default function BackendReadinessProvider({ children }: { children: React
   const value = useMemo<BackendReadinessContextValue>(
     () => ({
       status,
-      isBlocked: status !== "ready",
+      isBlocked: status === "unavailable",
       retryInSeconds,
       attempts,
       markUnavailable,
