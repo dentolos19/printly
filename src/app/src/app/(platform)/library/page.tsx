@@ -270,7 +270,12 @@ export default function LibraryPage() {
       setUploadFile(null);
       setUploadDescription("");
     } catch (error) {
-      toast.error("Failed to upload asset");
+      const err = error as Error & { isCopyrightViolation?: boolean };
+      if (err.isCopyrightViolation) {
+        toast.error(err.message);
+      } else {
+        toast.error("Failed to upload asset");
+      }
       console.error(error);
     } finally {
       setUploading(false);

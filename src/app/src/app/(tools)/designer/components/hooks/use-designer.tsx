@@ -41,7 +41,16 @@ type DesignerProviderProps = {
   initialGeneratedImages?: GeneratedImage[];
   onSave?: (data: { name: string; data: string; cover?: string }) => Promise<{ id: string }>;
   onLoad?: (id: string) => Promise<{ name: string; data: string }>;
-  onGenerateImage?: (prompt: string, style?: ArtStyle) => Promise<{ url: string; assetId: string }>;
+  onGenerateImage?: (
+    prompt: string,
+    style?: ArtStyle,
+  ) => Promise<{
+    url: string;
+    assetId: string;
+    promptRewritten?: boolean;
+    rewrittenPrompt?: string;
+    rewriteExplanation?: string;
+  }>;
 };
 
 export function DesignerProvider({
@@ -906,32 +915,34 @@ export function DesignerProvider({
 
   const generateImage = useCallback(
     (prompt: string, style?: ArtStyle) => {
-      return new Promise<void>((resolve, reject) => {
-        if (!onGenerateImage) {
-          reject(new Error("Image generation not configured"));
-          return;
-        }
+      return new Promise<{ promptRewritten?: boolean; rewrittenPrompt?: string; rewriteExplanation?: string } | void>(
+        (resolve, reject) => {
+          if (!onGenerateImage) {
+            reject(new Error("Image generation not configured"));
+            return;
+          }
 
-        setIsGenerating(true);
+          setIsGenerating(true);
 
-        onGenerateImage(prompt, style)
-          .then(({ url, assetId }) => {
-            const newImage: GeneratedImage = {
-              id: assetId,
-              url,
-              prompt,
-              style,
-              createdAt: new Date(),
-            };
-            setGeneratedImages((prev) => [newImage, ...prev]);
-            setIsGenerating(false);
-            resolve();
-          })
-          .catch((error) => {
-            setIsGenerating(false);
-            reject(error);
-          });
-      });
+          onGenerateImage(prompt, style)
+            .then(({ url, assetId, promptRewritten, rewrittenPrompt, rewriteExplanation }) => {
+              const newImage: GeneratedImage = {
+                id: assetId,
+                url,
+                prompt,
+                style,
+                createdAt: new Date(),
+              };
+              setGeneratedImages((prev) => [newImage, ...prev]);
+              setIsGenerating(false);
+              resolve({ promptRewritten, rewrittenPrompt, rewriteExplanation });
+            })
+            .catch((error) => {
+              setIsGenerating(false);
+              reject(error);
+            });
+        },
+      );
     },
     [onGenerateImage],
   );

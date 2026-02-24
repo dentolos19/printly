@@ -10,7 +10,8 @@ namespace PrintlyServer.Controllers;
 
 [Route("asset")]
 [Authorize(Roles = "User,Admin")]
-public class AssetController(DatabaseContext context, StorageService storageService) : BaseController(context)
+public class AssetController(DatabaseContext context, StorageService storageService, CopyrightService copyrightService)
+    : BaseController(context)
 {
     public record AssetResponse(
         Guid Id,
@@ -104,6 +105,34 @@ public class AssetController(DatabaseContext context, StorageService storageServ
         asset.Description = description;
         asset.CreatedAt = DateTime.UtcNow;
         asset.UpdatedAt = DateTime.UtcNow;
+
+        // Check uploaded images for copyrighted material
+        if (asset.Type.StartsWith("image/"))
+        {
+            try
+            {
+                var downloadUrl = await storageService.DownloadFileAsync(asset);
+                var copyrightResult = await copyrightService.CheckImageAsync(downloadUrl);
+
+                if (copyrightResult.IsViolation)
+                {
+                    await storageService.DeleteFileAsync(asset);
+                    return BadRequest(
+                        new
+                        {
+                            message = "This image contains copyrighted material and cannot be uploaded.",
+                            reason = copyrightResult.Reason,
+                            detectedItems = copyrightResult.DetectedItems,
+                            isCopyrightViolation = true,
+                        }
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AssetController] Copyright check failed, allowing upload: {ex.Message}");
+            }
+        }
 
         // Generate inline thumbnail for image assets (keeps previews fast and resilient)
         if (asset.Type.StartsWith("image/") && file.Length < 10_000_000)

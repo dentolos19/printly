@@ -5,6 +5,7 @@ import type { PrintAreaResponse } from "@/lib/server/print-area";
 import type { ProductResponse, ProductVariantResponse } from "@/lib/server/product";
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { useAutoSave } from "../../../shared/hooks/use-auto-save";
 import type {
   AppliedDesign,
@@ -541,7 +542,12 @@ export function ImprinterProvider({
         setSelectedDesignId(newDesign.id);
         triggerAutoSave();
       } catch (error) {
-        console.error("Failed to upload image:", error);
+        const err = error as Error & { isCopyrightViolation?: boolean };
+        if (err.isCopyrightViolation) {
+          toast.error(err.message);
+        } else {
+          toast.error("Failed to upload image.");
+        }
       }
     },
     [triggerAutoSave, onUploadPreview, appliedDesigns.length, placementMode, pushUndo],

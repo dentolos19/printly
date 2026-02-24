@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using PrintlyServer.Controllers.Dtos;
 using PrintlyServer.Data;
 using PrintlyServer.Data.Auth;
 using PrintlyServer.Services;
@@ -13,7 +14,8 @@ namespace PrintlyServer.Controllers;
 public class GenerateController(
     DatabaseContext context,
     StorageService storageService,
-    GenerativeService generativeService
+    GenerativeService generativeService,
+    CopyrightService copyrightService
 ) : BaseController(context)
 {
     public record GeneratedImageResponse(Guid Id, string Prompt, string? Style, string Type, DateTime CreatedAt);
@@ -31,19 +33,79 @@ public class GenerateController(
     public async Task<IActionResult> GenerateImage([FromQuery] string prompt, [FromQuery] string? style = null)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var asset = await generativeService.GenerateImageAsync(prompt, style);
+
+        // Check prompt for copyrighted material and rewrite if needed
+        var promptCheck = await copyrightService.CheckAndRewritePromptAsync(prompt);
+        var effectivePrompt = promptCheck.HasViolation ? promptCheck.RewrittenPrompt : prompt;
+
+        var asset = await generativeService.GenerateImageAsync(effectivePrompt, style);
 
         asset.IsGenerated = true;
         asset.UserId = userId;
         asset.Description = style;
         await Context.SaveChangesAsync();
 
+        // Check the generated image for copyrighted content
+        try
+        {
+            var downloadUrl = await storageService.DownloadFileAsync(asset);
+            var imageCheck = await copyrightService.CheckImageAsync(downloadUrl);
+
+            if (imageCheck.IsViolation)
+            {
+                await storageService.DeleteFileAsync(asset);
+                return BadRequest(
+                    new
+                    {
+                        message = "The generated image contains copyrighted material. Please try a different prompt.",
+                        reason = imageCheck.Reason,
+                        detectedItems = imageCheck.DetectedItems,
+                        isCopyrightViolation = true,
+                    }
+                );
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GenerateController] Post-generation copyright check failed: {ex.Message}");
+        }
+
         Response.Headers.Append("X-Asset-Id", asset.Id.ToString());
-        Response.Headers.Append("Access-Control-Expose-Headers", "X-Asset-Id");
+        Response.Headers.Append(
+            "Access-Control-Expose-Headers",
+            "X-Asset-Id, X-Prompt-Rewritten, X-Rewritten-Prompt, X-Rewrite-Explanation"
+        );
+
+        if (promptCheck.HasViolation)
+        {
+            Response.Headers.Append("X-Prompt-Rewritten", "true");
+            Response.Headers.Append("X-Rewritten-Prompt", effectivePrompt);
+            Response.Headers.Append(
+                "X-Rewrite-Explanation",
+                promptCheck.Explanation ?? "Prompt was modified to avoid copyrighted material."
+            );
+        }
 
         var stream = await storageService.StreamFileAsync(asset);
         return File(stream, asset.Type);
     }
+
+    [HttpPost]
+    [Route("check-prompt")]
+    public async Task<IActionResult> CheckPrompt([FromBody] CheckPromptRequest request)
+    {
+        var result = await copyrightService.CheckAndRewritePromptAsync(request.Prompt);
+        return Ok(
+            new Dtos.PromptCheckResponse(
+                result.HasViolation,
+                result.DetectedTerms,
+                result.RewrittenPrompt,
+                result.Explanation
+            )
+        );
+    }
+
+    public record CheckPromptRequest(string Prompt);
 
     [HttpGet]
     [Route("images")]

@@ -245,7 +245,10 @@ export type DesignerContextValue = {
   // AI Generator
   generatedImages: GeneratedImage[];
   isGenerating: boolean;
-  generateImage: (prompt: string, style?: ArtStyle) => Promise<void>;
+  generateImage: (
+    prompt: string,
+    style?: ArtStyle,
+  ) => Promise<{ promptRewritten?: boolean; rewrittenPrompt?: string; rewriteExplanation?: string } | void>;
 };
 
 // ============================================================================

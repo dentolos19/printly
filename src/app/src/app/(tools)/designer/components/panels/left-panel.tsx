@@ -14,6 +14,7 @@ import { Asset } from "@/lib/server/asset";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, Image as ImageIcon, Loader2, Sparkles, Upload } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { FallbackImage } from "../../../shared/components/fallback-image";
 
 type LeftPanelProps = {
@@ -140,7 +141,19 @@ function AIGeneratorPanel() {
 
   function handleGenerate() {
     if (!prompt.trim() || isGenerating) return;
-    generateImage(prompt.trim(), selectedStyle);
+    generateImage(prompt.trim(), selectedStyle)
+      .then((meta) => {
+        if (meta?.promptRewritten) {
+          toast.info(meta.rewriteExplanation || "Your prompt was modified to avoid copyrighted material.");
+        }
+      })
+      .catch((error: Error & { isCopyrightViolation?: boolean }) => {
+        if (error.isCopyrightViolation) {
+          toast.error(error.message);
+        } else {
+          toast.error("Failed to generate image.");
+        }
+      });
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -431,8 +444,12 @@ function AssetsPanel() {
         setActiveTool("select");
         loadAssets();
       })
-      .catch((error) => {
-        console.error("Failed to upload asset:", error);
+      .catch((error: Error & { isCopyrightViolation?: boolean; reason?: string }) => {
+        if (error.isCopyrightViolation) {
+          toast.error(error.message);
+        } else {
+          toast.error("Failed to upload image.");
+        }
       })
       .finally(() => {
         setIsUploading(false);
@@ -466,8 +483,12 @@ function AssetsPanel() {
         setActiveTool("select");
         loadAssets();
       })
-      .catch((error) => {
-        console.error("Failed to upload image from URL:", error);
+      .catch((error: Error & { isCopyrightViolation?: boolean }) => {
+        if (error.isCopyrightViolation) {
+          toast.error(error.message);
+        } else {
+          toast.error("Failed to upload image from URL.");
+        }
       })
       .finally(() => {
         setIsUploading(false);

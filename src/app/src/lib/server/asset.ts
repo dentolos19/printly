@@ -63,6 +63,18 @@ export default function initAssetController(fetch: ServerFetch) {
       });
 
       if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as Record<string, unknown> | null;
+        if (body?.isCopyrightViolation) {
+          const err = new Error((body.message as string) || "This image contains copyrighted material.") as Error & {
+            isCopyrightViolation: boolean;
+            reason?: string;
+            detectedItems?: string[];
+          };
+          err.isCopyrightViolation = true;
+          err.reason = body.reason as string | undefined;
+          err.detectedItems = body.detectedItems as string[] | undefined;
+          throw err;
+        }
         throw new Error("Failed to upload asset");
       }
 

@@ -162,13 +162,18 @@ export default function Page() {
   // Generate image handler for AI Generator
   const handleGenerateImage = useCallback(
     (prompt: string, style?: string) => {
-      return new Promise<{ url: string; assetId: string }>((resolve, reject) => {
+      return new Promise<{
+        url: string;
+        assetId: string;
+        promptRewritten?: boolean;
+        rewrittenPrompt?: string;
+        rewriteExplanation?: string;
+      }>((resolve, reject) => {
         api.generate
           .generateImage(prompt, style)
-          .then(({ assetId }) => {
-            // Use permanent asset URL instead of blob URL to ensure it persists across sessions
+          .then(({ assetId, promptRewritten, rewrittenPrompt, rewriteExplanation }) => {
             const url = `/assets/${assetId}/view`;
-            resolve({ url, assetId });
+            resolve({ url, assetId, promptRewritten, rewrittenPrompt, rewriteExplanation });
           })
           .catch(reject);
       });
