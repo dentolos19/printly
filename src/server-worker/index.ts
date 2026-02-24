@@ -10,17 +10,13 @@ const app = new Hono<{ Bindings: CloudflareEnv }>();
 
 app.all("*", async (c) => {
   const instance = c.env.CONTAINER.getByName("singleton");
-  const state = await instance.getState();
+  const variables = Object.fromEntries(Object.entries(process.env)) as Record<string, string>;
 
-  if (state.status !== "running") {
-    const variables = Object.fromEntries(Object.entries(process.env)) as Record<string, string>;
-
-    await instance.startAndWaitForPorts({
-      startOptions: {
-        envVars: variables,
-      },
-    });
-  }
+  await instance.startAndWaitForPorts({
+    startOptions: {
+      envVars: variables,
+    },
+  });
 
   return await instance.fetch(c.req.raw);
 });
