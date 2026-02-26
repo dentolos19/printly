@@ -121,26 +121,17 @@ export function ManagedUsersCard() {
                 {mutedUsers.map((user) => {
                   const displayName = extractUsername(user.userName);
                   return (
-                    <div
-                      key={user.userId}
-                      className="flex items-center gap-3 rounded-md px-3 py-2.5"
-                    >
+                    <div key={user.userId} className="flex items-center gap-3 rounded-md px-3 py-2.5">
                       <button
-                        className="flex min-w-0 flex-1 items-center gap-3 text-left hover:opacity-70 transition-opacity"
+                        className="flex min-w-0 flex-1 items-center gap-3 text-left transition-opacity hover:opacity-70"
                         onClick={() => router.push(`/user/${user.userId}`)}
                       >
                         <Avatar className="h-9 w-9">
-                          <AvatarFallback className="text-sm">
-                            {displayName.charAt(0).toUpperCase()}
-                          </AvatarFallback>
+                          <AvatarFallback className="text-sm">{displayName.charAt(0).toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <span className="truncate text-sm font-medium">{displayName}</span>
                       </button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleUnmute(user.userId)}
-                      >
+                      <Button variant="outline" size="sm" onClick={() => handleUnmute(user.userId)}>
                         <EyeOffIcon className="mr-1.5 h-3.5 w-3.5" />
                         Unmute
                       </Button>
@@ -163,26 +154,17 @@ export function ManagedUsersCard() {
                 {blockedUsers.map((user) => {
                   const displayName = extractUsername(user.userName);
                   return (
-                    <div
-                      key={user.userId}
-                      className="flex items-center gap-3 rounded-md px-3 py-2.5"
-                    >
+                    <div key={user.userId} className="flex items-center gap-3 rounded-md px-3 py-2.5">
                       <button
-                        className="flex min-w-0 flex-1 items-center gap-3 text-left hover:opacity-70 transition-opacity"
+                        className="flex min-w-0 flex-1 items-center gap-3 text-left transition-opacity hover:opacity-70"
                         onClick={() => router.push(`/user/${user.userId}`)}
                       >
                         <Avatar className="h-9 w-9">
-                          <AvatarFallback className="text-sm">
-                            {displayName.charAt(0).toUpperCase()}
-                          </AvatarFallback>
+                          <AvatarFallback className="text-sm">{displayName.charAt(0).toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <span className="truncate text-sm font-medium">{displayName}</span>
                       </button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleUnblock(user.userId)}
-                      >
+                      <Button variant="outline" size="sm" onClick={() => handleUnblock(user.userId)}>
                         <UserXIcon className="mr-1.5 h-3.5 w-3.5" />
                         Unblock
                       </Button>

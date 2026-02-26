@@ -101,11 +101,7 @@ export default function UserSettingsPage() {
                 When enabled, only approved followers can see your posts and profile details.
               </p>
             </div>
-            <Switch
-              id="private-profile"
-              checked={isPrivate}
-              onCheckedChange={setIsPrivate}
-            />
+            <Switch id="private-profile" checked={isPrivate} onCheckedChange={setIsPrivate} />
           </div>
         </CardContent>
       </Card>

@@ -28,12 +28,7 @@ export function SearchBar({ placeholder = "Search posts...", onSearch, debounceM
   return (
     <div className="relative">
       <SearchIcon className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-      <Input
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        className="pl-9 pr-9"
-      />
+      <Input placeholder={placeholder} value={value} onChange={(e) => setValue(e.target.value)} className="pr-9 pl-9" />
       {value && (
         <Button
           variant="ghost"

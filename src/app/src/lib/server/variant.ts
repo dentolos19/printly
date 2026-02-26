@@ -43,7 +43,11 @@ export default function initVariantController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch variants" }));
-        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch variants");
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to fetch variants",
+        );
       }
 
       return response.json();
@@ -55,7 +59,11 @@ export default function initVariantController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch variant" }));
-        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch variant");
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to fetch variant",
+        );
       }
 
       return response.json();
@@ -71,7 +79,11 @@ export default function initVariantController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to create variant" }));
-        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to create variant");
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to create variant",
+        );
       }
 
       return response.json();
@@ -87,7 +99,11 @@ export default function initVariantController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to update variant" }));
-        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to update variant");
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to update variant",
+        );
       }
 
       return response.json();
@@ -99,7 +115,11 @@ export default function initVariantController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to delete variant" }));
-        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to delete variant");
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to delete variant",
+        );
       }
     },
 
@@ -115,7 +135,11 @@ export default function initVariantController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to upload image" }));
-        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to upload image");
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to upload image",
+        );
       }
 
       return response.json();
@@ -127,7 +151,11 @@ export default function initVariantController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to remove image" }));
-        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to remove image");
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to remove image",
+        );
       }
 
       return response.json();
@@ -139,7 +167,11 @@ export default function initVariantController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch variants by size" }));
-        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch variants by size");
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to fetch variants by size",
+        );
       }
 
       return response.json();
@@ -151,7 +183,11 @@ export default function initVariantController(fetch: ServerFetch) {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ message: "Failed to fetch variants by color" }));
-        throw new Error(typeof error === "object" && error !== null && "message" in error ? (error as { message: string }).message : "Failed to fetch variants by color");
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to fetch variants by color",
+        );
       }
 
       return response.json();

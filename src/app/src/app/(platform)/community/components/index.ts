@@ -1,4 +1,4 @@
-﻿﻿export { CreatePostDialog } from "./create-post-dialog";
+﻿export { CreatePostDialog } from "./create-post-dialog";
 export { EmptyState } from "./empty-state";
 export { Pagination } from "./pagination";
 export { PostCard } from "./post-card";

@@ -168,9 +168,7 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
         [threadParentId]: [...(prev[threadParentId] || []), reply],
       }));
       // Update the top-level comment's reply count
-      setComments((prev) =>
-        prev.map((c) => (c.id === threadParentId ? { ...c, replyCount: c.replyCount + 1 } : c)),
-      );
+      setComments((prev) => prev.map((c) => (c.id === threadParentId ? { ...c, replyCount: c.replyCount + 1 } : c)));
       setReplyContent("");
       setReplyingTo(null);
       setReplyParentId(null);
@@ -219,7 +217,11 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
     }
   };
 
-  const handleCommentReact = async (commentId: string, currentReaction: ReactionType | null, reaction: ReactionType) => {
+  const handleCommentReact = async (
+    commentId: string,
+    currentReaction: ReactionType | null,
+    reaction: ReactionType,
+  ) => {
     try {
       if (currentReaction === reaction) {
         await api.community.removeCommentReaction(commentId);
@@ -377,7 +379,7 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                     <Badge
                       key={tag}
                       variant="secondary"
-                      className="cursor-pointer text-xs hover:bg-primary/20"
+                      className="hover:bg-primary/20 cursor-pointer text-xs"
                       onClick={() => onTagClick?.(tag)}
                     >
                       #{tag}
@@ -458,200 +460,215 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                   {comments
                     .filter((c) => !c.parentId)
                     .map((comment) => (
-                    <div key={comment.id} className="space-y-1">
-                      <div className="bg-muted space-y-2 rounded-lg p-3">
-                        <div className="flex gap-3">
-                          <Link href={`/user/${comment.authorId}`}>
-                            <Avatar className="h-8 w-8 cursor-pointer transition-opacity hover:opacity-80">
-                              <AvatarFallback>{comment.authorName.charAt(0).toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                          </Link>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <Link href={`/user/${comment.authorId}`}>
-                                <span className="cursor-pointer text-sm font-semibold hover:underline">
-                                  {comment.authorName}
-                                </span>
-                              </Link>
-                              {comment.authorId === post.authorId && (
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium border-primary/40 text-primary">
-                                  Owner
-                                </Badge>
-                              )}
-                              <span className="text-muted-foreground text-xs">
-                                {new Date(comment.createdAt).toLocaleDateString()}
-                              </span>
-                            </div>
-                            <p className="text-sm">{comment.content}</p>
-                          </div>
-                          {claims?.id === comment.authorId && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => handleDeleteComment(comment.id)}
-                            >
-                              <TrashIcon className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                        {/* Comment reaction bar + reply button */}
-                        <div className="flex items-center gap-1 pl-11">
-                          {Object.entries(ReactionTypeEmojis).map(([type, emoji]) => (
-                            <button
-                              key={type}
-                              className={cn(
-                                "rounded-full px-1.5 py-0.5 text-sm transition-transform hover:scale-110",
-                                comment.userReaction === Number(type) && "bg-primary/20 ring-primary/50 ring-1",
-                              )}
-                              onClick={() => handleCommentReact(comment.id, comment.userReaction, Number(type) as ReactionType)}
-                            >
-                              {emoji}
-                            </button>
-                          ))}
-                          {comment.reactionCount > 0 && (
-                            <span className="text-muted-foreground ml-1 text-xs">{comment.reactionCount}</span>
-                          )}
-                          <span className="text-muted-foreground mx-1">·</span>
-                          <button
-                            className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs font-medium transition-colors"
-                            onClick={() => handleReplyClick(comment.id, comment.authorName)}
-                          >
-                            <MessageCircleIcon className="h-3.5 w-3.5" />
-                            Reply
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* View replies toggle */}
-                      {comment.replyCount > 0 && (
-                        <button
-                          className="text-muted-foreground hover:text-foreground ml-11 flex items-center gap-1 text-xs font-medium transition-colors"
-                          onClick={() => toggleReplies(comment.id)}
-                          disabled={loadingReplies[comment.id]}
-                        >
-                          {loadingReplies[comment.id] ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : expandedReplies[comment.id] ? (
-                            <ChevronUpIcon className="h-3.5 w-3.5" />
-                          ) : (
-                            <ChevronDownIcon className="h-3.5 w-3.5" />
-                          )}
-                          {expandedReplies[comment.id]
-                            ? "Hide replies"
-                            : `View ${comment.replyCount} ${comment.replyCount === 1 ? "reply" : "replies"}`}
-                        </button>
-                      )}
-
-                      {/* Expanded replies */}
-                      {expandedReplies[comment.id] && (
-                        <div className="ml-8 space-y-2 border-l-2 pl-3">
-                          {expandedReplies[comment.id].map((reply) => (
-                            <div key={reply.id} className="bg-muted/60 space-y-1.5 rounded-lg p-2.5">
-                              <div className="flex gap-2.5">
-                                <Link href={`/user/${reply.authorId}`}>
-                                  <Avatar className="h-6 w-6 cursor-pointer transition-opacity hover:opacity-80">
-                                    <AvatarFallback className="text-xs">
-                                      {reply.authorName.charAt(0).toUpperCase()}
-                                    </AvatarFallback>
-                                  </Avatar>
+                      <div key={comment.id} className="space-y-1">
+                        <div className="bg-muted space-y-2 rounded-lg p-3">
+                          <div className="flex gap-3">
+                            <Link href={`/user/${comment.authorId}`}>
+                              <Avatar className="h-8 w-8 cursor-pointer transition-opacity hover:opacity-80">
+                                <AvatarFallback>{comment.authorName.charAt(0).toUpperCase()}</AvatarFallback>
+                              </Avatar>
+                            </Link>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <Link href={`/user/${comment.authorId}`}>
+                                  <span className="cursor-pointer text-sm font-semibold hover:underline">
+                                    {comment.authorName}
+                                  </span>
                                 </Link>
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <Link href={`/user/${reply.authorId}`}>
-                                      <span className="cursor-pointer text-xs font-semibold hover:underline">
-                                        {reply.authorName}
-                                      </span>
-                                    </Link>
-                                    {reply.authorId === post.authorId && (
-                                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium border-primary/40 text-primary">
-                                        Owner
-                                      </Badge>
-                                    )}
-                                    <span className="text-muted-foreground text-xs">
-                                      {new Date(reply.createdAt).toLocaleDateString()}
-                                    </span>
-                                  </div>
-                                  <p className="text-sm">{reply.content}</p>
-                                </div>
-                                {claims?.id === reply.authorId && (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6"
-                                    onClick={() => handleDeleteComment(reply.id)}
+                                {comment.authorId === post.authorId && (
+                                  <Badge
+                                    variant="outline"
+                                    className="border-primary/40 text-primary px-1.5 py-0 text-[10px] font-medium"
                                   >
-                                    <TrashIcon className="h-3 w-3" />
-                                  </Button>
+                                    Owner
+                                  </Badge>
                                 )}
+                                <span className="text-muted-foreground text-xs">
+                                  {new Date(comment.createdAt).toLocaleDateString()}
+                                </span>
                               </div>
-                              {/* Reply reaction bar + reply button */}
-                              <div className="flex items-center gap-1 pl-8">
-                                {Object.entries(ReactionTypeEmojis).map(([type, emoji]) => (
-                                  <button
-                                    key={type}
-                                    className={cn(
-                                      "rounded-full px-1 py-0.5 text-xs transition-transform hover:scale-110",
-                                      reply.userReaction === Number(type) && "bg-primary/20 ring-primary/50 ring-1",
-                                    )}
-                                    onClick={() => handleCommentReact(reply.id, reply.userReaction, Number(type) as ReactionType)}
-                                  >
-                                    {emoji}
-                                  </button>
-                                ))}
-                                {reply.reactionCount > 0 && (
-                                  <span className="text-muted-foreground ml-1 text-xs">{reply.reactionCount}</span>
-                                )}
-                                <span className="text-muted-foreground mx-0.5">·</span>
-                                <button
-                                  className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs font-medium transition-colors"
-                                  onClick={() => handleReplyClick(reply.id, reply.authorName, comment.id)}
-                                >
-                                  <MessageCircleIcon className="h-3 w-3" />
-                                  Reply
-                                </button>
-                              </div>
+                              <p className="text-sm">{comment.content}</p>
                             </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Reply input */}
-                      {replyingTo === comment.id && (
-                        <div className="ml-8 flex items-center gap-2 pt-1">
-                          <CornerDownRightIcon className="text-muted-foreground h-4 w-4 flex-shrink-0" />
-                          <Input
-                            ref={replyInputRef}
-                            placeholder={`Reply to ${replyTargetName}...`}
-                            value={replyContent}
-                            onChange={(e) => setReplyContent(e.target.value)}
-                            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSubmitReply(comment.id)}
-                            className="h-8 text-sm"
-                          />
-                          <Button
-                            size="sm"
-                            className="h-8"
-                            onClick={() => handleSubmitReply(comment.id)}
-                            disabled={replySubmitting || !replyContent.trim()}
-                          >
-                            {replySubmitting ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <SendIcon className="h-3.5 w-3.5" />
+                            {claims?.id === comment.authorId && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleDeleteComment(comment.id)}
+                              >
+                                <TrashIcon className="h-4 w-4" />
+                              </Button>
                             )}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 px-2"
-                            onClick={() => { setReplyingTo(null); setReplyParentId(null); setReplyTargetName(""); setReplyContent(""); }}
-                          >
-                            ✕
-                          </Button>
+                          </div>
+                          {/* Comment reaction bar + reply button */}
+                          <div className="flex items-center gap-1 pl-11">
+                            {Object.entries(ReactionTypeEmojis).map(([type, emoji]) => (
+                              <button
+                                key={type}
+                                className={cn(
+                                  "rounded-full px-1.5 py-0.5 text-sm transition-transform hover:scale-110",
+                                  comment.userReaction === Number(type) && "bg-primary/20 ring-primary/50 ring-1",
+                                )}
+                                onClick={() =>
+                                  handleCommentReact(comment.id, comment.userReaction, Number(type) as ReactionType)
+                                }
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                            {comment.reactionCount > 0 && (
+                              <span className="text-muted-foreground ml-1 text-xs">{comment.reactionCount}</span>
+                            )}
+                            <span className="text-muted-foreground mx-1">·</span>
+                            <button
+                              className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs font-medium transition-colors"
+                              onClick={() => handleReplyClick(comment.id, comment.authorName)}
+                            >
+                              <MessageCircleIcon className="h-3.5 w-3.5" />
+                              Reply
+                            </button>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  ))}
+
+                        {/* View replies toggle */}
+                        {comment.replyCount > 0 && (
+                          <button
+                            className="text-muted-foreground hover:text-foreground ml-11 flex items-center gap-1 text-xs font-medium transition-colors"
+                            onClick={() => toggleReplies(comment.id)}
+                            disabled={loadingReplies[comment.id]}
+                          >
+                            {loadingReplies[comment.id] ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : expandedReplies[comment.id] ? (
+                              <ChevronUpIcon className="h-3.5 w-3.5" />
+                            ) : (
+                              <ChevronDownIcon className="h-3.5 w-3.5" />
+                            )}
+                            {expandedReplies[comment.id]
+                              ? "Hide replies"
+                              : `View ${comment.replyCount} ${comment.replyCount === 1 ? "reply" : "replies"}`}
+                          </button>
+                        )}
+
+                        {/* Expanded replies */}
+                        {expandedReplies[comment.id] && (
+                          <div className="ml-8 space-y-2 border-l-2 pl-3">
+                            {expandedReplies[comment.id].map((reply) => (
+                              <div key={reply.id} className="bg-muted/60 space-y-1.5 rounded-lg p-2.5">
+                                <div className="flex gap-2.5">
+                                  <Link href={`/user/${reply.authorId}`}>
+                                    <Avatar className="h-6 w-6 cursor-pointer transition-opacity hover:opacity-80">
+                                      <AvatarFallback className="text-xs">
+                                        {reply.authorName.charAt(0).toUpperCase()}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                  </Link>
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <Link href={`/user/${reply.authorId}`}>
+                                        <span className="cursor-pointer text-xs font-semibold hover:underline">
+                                          {reply.authorName}
+                                        </span>
+                                      </Link>
+                                      {reply.authorId === post.authorId && (
+                                        <Badge
+                                          variant="outline"
+                                          className="border-primary/40 text-primary px-1.5 py-0 text-[10px] font-medium"
+                                        >
+                                          Owner
+                                        </Badge>
+                                      )}
+                                      <span className="text-muted-foreground text-xs">
+                                        {new Date(reply.createdAt).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm">{reply.content}</p>
+                                  </div>
+                                  {claims?.id === reply.authorId && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6"
+                                      onClick={() => handleDeleteComment(reply.id)}
+                                    >
+                                      <TrashIcon className="h-3 w-3" />
+                                    </Button>
+                                  )}
+                                </div>
+                                {/* Reply reaction bar + reply button */}
+                                <div className="flex items-center gap-1 pl-8">
+                                  {Object.entries(ReactionTypeEmojis).map(([type, emoji]) => (
+                                    <button
+                                      key={type}
+                                      className={cn(
+                                        "rounded-full px-1 py-0.5 text-xs transition-transform hover:scale-110",
+                                        reply.userReaction === Number(type) && "bg-primary/20 ring-primary/50 ring-1",
+                                      )}
+                                      onClick={() =>
+                                        handleCommentReact(reply.id, reply.userReaction, Number(type) as ReactionType)
+                                      }
+                                    >
+                                      {emoji}
+                                    </button>
+                                  ))}
+                                  {reply.reactionCount > 0 && (
+                                    <span className="text-muted-foreground ml-1 text-xs">{reply.reactionCount}</span>
+                                  )}
+                                  <span className="text-muted-foreground mx-0.5">·</span>
+                                  <button
+                                    className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs font-medium transition-colors"
+                                    onClick={() => handleReplyClick(reply.id, reply.authorName, comment.id)}
+                                  >
+                                    <MessageCircleIcon className="h-3 w-3" />
+                                    Reply
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Reply input */}
+                        {replyingTo === comment.id && (
+                          <div className="ml-8 flex items-center gap-2 pt-1">
+                            <CornerDownRightIcon className="text-muted-foreground h-4 w-4 flex-shrink-0" />
+                            <Input
+                              ref={replyInputRef}
+                              placeholder={`Reply to ${replyTargetName}...`}
+                              value={replyContent}
+                              onChange={(e) => setReplyContent(e.target.value)}
+                              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSubmitReply(comment.id)}
+                              className="h-8 text-sm"
+                            />
+                            <Button
+                              size="sm"
+                              className="h-8"
+                              onClick={() => handleSubmitReply(comment.id)}
+                              disabled={replySubmitting || !replyContent.trim()}
+                            >
+                              {replySubmitting ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <SendIcon className="h-3.5 w-3.5" />
+                              )}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 px-2"
+                              onClick={() => {
+                                setReplyingTo(null);
+                                setReplyParentId(null);
+                                setReplyTargetName("");
+                                setReplyContent("");
+                              }}
+                            >
+                              ✕
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
                 </div>
               </div>
             </div>

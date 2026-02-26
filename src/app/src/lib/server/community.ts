@@ -594,12 +594,13 @@ function buildError(response: Response, fallback: string): Promise<Error> {
   return response
     .json()
     .catch(() => ({ message: fallback }))
-    .then((error) =>
-      new Error(
-        typeof error === "object" && error !== null && "message" in error
-          ? (error as { message: string }).message
-          : fallback,
-      ),
+    .then(
+      (error) =>
+        new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : fallback,
+        ),
     );
 }
 
@@ -993,7 +994,9 @@ export default function initCommunityController(fetch: ServerFetch) {
     },
 
     // Update notification preferences
-    updateNotificationPreferences: async (data: UpdateNotificationPreferenceDto): Promise<NotificationPreferenceResponse> => {
+    updateNotificationPreferences: async (
+      data: UpdateNotificationPreferenceDto,
+    ): Promise<NotificationPreferenceResponse> => {
       const response = await fetch("/community/notifications/preferences", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -1076,7 +1079,11 @@ export default function initCommunityController(fetch: ServerFetch) {
     },
 
     // [Admin] Get users list
-    getAdminUsers: async (query?: { page?: number; pageSize?: number; searchTerm?: string }): Promise<AdminUserListResponse> => {
+    getAdminUsers: async (query?: {
+      page?: number;
+      pageSize?: number;
+      searchTerm?: string;
+    }): Promise<AdminUserListResponse> => {
       const params = new URLSearchParams();
       if (query?.page) params.append("page", String(query.page));
       if (query?.pageSize) params.append("pageSize", String(query.pageSize));

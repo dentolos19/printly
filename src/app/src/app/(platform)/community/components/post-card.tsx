@@ -184,7 +184,14 @@ export function PostCard({
         {/* NSFW / Content Warning Overlay */}
         {post.photoUrl && (
           <div className="relative aspect-square w-full overflow-hidden rounded-lg">
-            <img src={post.photoUrl} alt="Post" className={cn("h-full w-full object-cover", (post.isNsfw || post.contentWarning) && !nsfwRevealed && "blur-xl")} />
+            <img
+              src={post.photoUrl}
+              alt="Post"
+              className={cn(
+                "h-full w-full object-cover",
+                (post.isNsfw || post.contentWarning) && !nsfwRevealed && "blur-xl",
+              )}
+            />
             {(post.isNsfw || post.contentWarning) && !nsfwRevealed && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60">
                 <AlertTriangleIcon className="h-8 w-8 text-yellow-400" />
@@ -205,7 +212,7 @@ export function PostCard({
               <Badge
                 key={tag}
                 variant="secondary"
-                className="cursor-pointer text-xs hover:bg-primary/20"
+                className="hover:bg-primary/20 cursor-pointer text-xs"
                 onClick={() => onTagClick?.(tag)}
               >
                 #{tag}

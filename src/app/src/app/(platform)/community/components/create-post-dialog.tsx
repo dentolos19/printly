@@ -41,7 +41,10 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
   const [contentWarning, setContentWarning] = useState("");
 
   const handleAddTag = () => {
-    const newTag = tagInput.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+    const newTag = tagInput
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
     if (newTag && !tags.includes(newTag) && tags.length < 10) {
       setTags((prev) => [...prev, newTag]);
       setTagInput("");

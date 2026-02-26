@@ -14,21 +14,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useServer } from "@/lib/providers/server";
-import {
-  AdminOverviewStatsResponse,
-  AdminTrendingTagResponse,
-  AdminUserResponse,
-} from "@/lib/server/community";
+import { AdminOverviewStatsResponse, AdminTrendingTagResponse, AdminUserResponse } from "@/lib/server/community";
 import {
   AlertTriangleIcon,
   BanIcon,
@@ -45,14 +34,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import {
-  Bar,
-  BarChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 function StatCard({
   title,
@@ -384,12 +366,7 @@ export default function AdminCommunityPage() {
           {/* Pagination */}
           {userTotalPages > 1 && (
             <div className="mt-4 flex items-center justify-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={userPage <= 1}
-                onClick={() => setUserPage((p) => p - 1)}
-              >
+              <Button variant="outline" size="sm" disabled={userPage <= 1} onClick={() => setUserPage((p) => p - 1)}>
                 Previous
               </Button>
               <span className="text-muted-foreground text-sm">
@@ -414,8 +391,8 @@ export default function AdminCommunityPage() {
           <DialogHeader>
             <DialogTitle>Ban User</DialogTitle>
             <DialogDescription>
-              Are you sure you want to ban <strong>{banTarget?.userName}</strong>? They will not be able to post, comment, or
-              interact with the community.
+              Are you sure you want to ban <strong>{banTarget?.userName}</strong>? They will not be able to post,
+              comment, or interact with the community.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">

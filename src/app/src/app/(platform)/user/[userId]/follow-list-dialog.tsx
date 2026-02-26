@@ -2,12 +2,7 @@
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useServer } from "@/lib/providers/server";
 import { FollowUserResponse } from "@/lib/server/community";
@@ -155,23 +150,13 @@ export function FollowListDialog({
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="mt-2 flex items-center justify-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page <= 1}
-              onClick={() => onPageChange(page - 1)}
-            >
+            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
               Previous
             </Button>
             <span className="text-muted-foreground text-sm">
               {page} / {totalPages}
             </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= totalPages}
-              onClick={() => onPageChange(page + 1)}
-            >
+            <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
               Next
             </Button>
           </div>
@@ -188,12 +173,10 @@ export function FollowListDialog({
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)}>
               <TabsList className="w-full">
                 <TabsTrigger value="followers" className="flex-1">
-                  Followers{" "}
-                  <span className="text-muted-foreground ml-1 text-xs">({followerCount})</span>
+                  Followers <span className="text-muted-foreground ml-1 text-xs">({followerCount})</span>
                 </TabsTrigger>
                 <TabsTrigger value="following" className="flex-1">
-                  Following{" "}
-                  <span className="text-muted-foreground ml-1 text-xs">({followingCount})</span>
+                  Following <span className="text-muted-foreground ml-1 text-xs">({followingCount})</span>
                 </TabsTrigger>
               </TabsList>
             </Tabs>

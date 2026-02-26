@@ -10,15 +10,7 @@ import { useAuth } from "@/lib/providers/auth";
 import { useServer } from "@/lib/providers/server";
 import { UserSearchResponse } from "@/lib/server/community";
 import { useDebounce } from "@/hooks/use-debounce";
-import {
-  CheckIcon,
-  ClockIcon,
-  LockIcon,
-  SearchIcon,
-  UserPlusIcon,
-  UsersIcon,
-  XIcon,
-} from "lucide-react";
+import { CheckIcon, ClockIcon, LockIcon, SearchIcon, UserPlusIcon, UsersIcon, XIcon } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -96,9 +88,7 @@ export default function UserSearchPage() {
       // Update suggested list locally
       setSuggested((prev) =>
         prev.map((u) =>
-          u.id === userId
-            ? { ...u, isFollowing: !isFollowing && !hasPendingRequest, hasPendingRequest: false }
-            : u,
+          u.id === userId ? { ...u, isFollowing: !isFollowing && !hasPendingRequest, hasPendingRequest: false } : u,
         ),
       );
       setUsers((prev) =>
@@ -197,7 +187,7 @@ export default function UserSearchPage() {
           placeholder="Search by username..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="pl-9 pr-9"
+          className="pr-9 pl-9"
         />
         {query && (
           <Button
@@ -240,12 +230,7 @@ export default function UserSearchPage() {
               <div className="space-y-3">{users.map(renderUserCard)}</div>
               {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 pt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page <= 1}
-                    onClick={() => setPage((p) => p - 1)}
-                  >
+                  <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
                     Previous
                   </Button>
                   <span className="text-muted-foreground text-sm">

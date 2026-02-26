@@ -13,12 +13,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/providers/auth";
 import { useServer } from "@/lib/providers/server";
-import {
-  FollowStatusResponse,
-  PostSummaryResponse,
-  ProfileStatsResponse,
-  ReactionType,
-} from "@/lib/server/community";
+import { FollowStatusResponse, PostSummaryResponse, ProfileStatsResponse, ReactionType } from "@/lib/server/community";
 import { cn } from "@/lib/utils";
 import {
   BanIcon,
@@ -215,11 +210,7 @@ export default function UserProfilePage() {
                   </div>
                   <div className="flex items-center gap-2">
                     {isOwnProfile && (
-                      <Button
-                        variant="outline"
-                        size="lg"
-                        onClick={() => router.push("/user/settings")}
-                      >
+                      <Button variant="outline" size="lg" onClick={() => router.push("/user/settings")}>
                         <SettingsIcon className="mr-2 h-4 w-4" />
                         Settings
                       </Button>
@@ -297,7 +288,7 @@ export default function UserProfilePage() {
                   <span className="text-muted-foreground text-sm">Posts</span>
                 </div>
                 <button
-                  className="flex flex-col text-left hover:opacity-70 transition-opacity"
+                  className="flex flex-col text-left transition-opacity hover:opacity-70"
                   onClick={() => {
                     setFollowListTab("followers");
                     setFollowListOpen(true);
@@ -307,7 +298,7 @@ export default function UserProfilePage() {
                   <span className="text-muted-foreground text-sm">Followers</span>
                 </button>
                 <button
-                  className="flex flex-col text-left hover:opacity-70 transition-opacity"
+                  className="flex flex-col text-left transition-opacity hover:opacity-70"
                   onClick={() => {
                     setFollowListTab("following");
                     setFollowListOpen(true);
@@ -369,12 +360,7 @@ export default function UserProfilePage() {
               >
                 Decline
               </Button>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-7 w-7"
-                onClick={() => setRequestDismissed(true)}
-              >
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setRequestDismissed(true)}>
                 <XIcon className="h-4 w-4" />
               </Button>
             </div>
@@ -470,9 +456,7 @@ export default function UserProfilePage() {
           <div className="flex flex-col items-center justify-center gap-4 py-16">
             <LockIcon className="text-muted-foreground h-16 w-16" />
             <h3 className="text-xl font-semibold">This account is private</h3>
-            <p className="text-muted-foreground text-center text-sm">
-              Follow this account to see their posts.
-            </p>
+            <p className="text-muted-foreground text-center text-sm">Follow this account to see their posts.</p>
           </div>
         ) : userPosts.length > 0 ? (
           <div className="space-y-3">
@@ -535,4 +519,3 @@ export default function UserProfilePage() {
     </div>
   );
 }
-

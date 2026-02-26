@@ -5,13 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/providers/auth";
 import { useServer } from "@/lib/providers/server";
-import {
-  PostSummaryResponse,
-  PostStatus,
-  ReactionType,
-  ReportReason,
-  ReportType,
-} from "@/lib/server/community";
+import { PostSummaryResponse, PostStatus, ReactionType, ReportReason, ReportType } from "@/lib/server/community";
 import { ArrowLeftIcon, HashIcon } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
