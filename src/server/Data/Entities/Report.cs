@@ -4,7 +4,7 @@ public enum ReportType
 {
     Post = 0,
     Comment = 1,
-    User = 2
+    User = 2,
 }
 
 public enum ReportStatus
@@ -12,7 +12,7 @@ public enum ReportStatus
     Pending = 0,
     Reviewed = 1,
     Resolved = 2,
-    Dismissed = 3
+    Dismissed = 3,
 }
 
 public enum ReportReason
@@ -24,7 +24,7 @@ public enum ReportReason
     Nudity = 4,
     FalseInformation = 5,
     Copyright = 6,
-    Other = 7
+    Other = 7,
 }
 
 public class Report : BaseEntity

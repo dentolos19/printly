@@ -128,7 +128,9 @@ public class ConversationController(
         "image/gif",
         "image/webp",
     ];
+
     private static readonly HashSet<string> AllowedDocumentTypes = ["application/pdf"];
+
     private static readonly HashSet<string> AllowedAudioTypes =
     [
         "audio/mpeg",
@@ -138,6 +140,7 @@ public class ConversationController(
         "audio/x-m4a",
         "audio/webm",
     ];
+
     private static readonly HashSet<string> AllowedVideoTypes = ["video/mp4", "video/webm"];
 
     private const long MaxFileSize = 50 * 1024 * 1024; // 50MB
@@ -239,7 +242,7 @@ public class ConversationController(
         var messages = await Context
             .ConversationMessages.Where(m => conversationIds.Contains(m.ConversationId))
             .Include(m => m.Participant)
-                .ThenInclude(p => p.User)
+            .ThenInclude(p => p.User)
             .ToListAsync();
 
         var participants = await Context
@@ -375,7 +378,7 @@ public class ConversationController(
             .ConversationMessages.Where(m => m.ConversationId == conversation.Id)
             .OrderByDescending(m => m.CreatedAt)
             .Include(m => m.Participant)
-                .ThenInclude(p => p.User)
+            .ThenInclude(p => p.User)
             .FirstOrDefaultAsync();
 
         var response = new ConversationResponse(
@@ -623,7 +626,7 @@ public class ConversationController(
             .ConversationMessages.Where(m => m.ConversationId == conversationId)
             .OrderByDescending(m => m.CreatedAt)
             .Include(m => m.Participant)
-                .ThenInclude(p => p.User)
+            .ThenInclude(p => p.User)
             .FirstOrDefaultAsync();
 
         var response = new ConversationResponse(
@@ -702,7 +705,7 @@ public class ConversationController(
         var messages = await Context
             .ConversationMessages.Where(m => m.ConversationId == conversationId)
             .Include(m => m.CallLog)
-                .ThenInclude(cl => cl!.Initiator)
+            .ThenInclude(cl => cl!.Initiator)
             .OrderBy(m => m.CreatedAt)
             .Take(take)
             .Select(m => new MessageResponse(
@@ -1128,7 +1131,7 @@ public class ConversationController(
 
         var callLog = await Context
             .CallLogs.Include(c => c.Participants)
-                .ThenInclude(p => p.User)
+            .ThenInclude(p => p.User)
             .Include(c => c.Initiator)
             .FirstOrDefaultAsync(c => c.Id == callId);
 
@@ -1321,7 +1324,7 @@ public class ConversationController(
         var messages = await Context
             .ConversationMessages.Where(m => m.ConversationId == conversationId && !m.IsDeleted)
             .Include(m => m.Participant)
-                .ThenInclude(p => p.User)
+            .ThenInclude(p => p.User)
             .OrderBy(m => m.CreatedAt)
             .Select(m => new SummaryMessage
             {

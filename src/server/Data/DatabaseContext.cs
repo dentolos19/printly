@@ -453,24 +453,28 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
 
         // PostTag - composite key join table
         modelBuilder.Entity<PostTag>().HasKey(pt => new { pt.PostId, pt.TagId });
-        modelBuilder.Entity<PostTag>()
+        modelBuilder
+            .Entity<PostTag>()
             .HasOne(pt => pt.Post)
             .WithMany(p => p.Tags)
             .HasForeignKey(pt => pt.PostId)
             .OnDelete(DeleteBehavior.Cascade);
-        modelBuilder.Entity<PostTag>()
+        modelBuilder
+            .Entity<PostTag>()
             .HasOne(pt => pt.Tag)
             .WithMany(t => t.PostTags)
             .HasForeignKey(pt => pt.TagId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // CommentReaction relationships
-        modelBuilder.Entity<CommentReaction>()
+        modelBuilder
+            .Entity<CommentReaction>()
             .HasOne(cr => cr.Comment)
             .WithMany(c => c.CommentReactions)
             .HasForeignKey(cr => cr.CommentId)
             .OnDelete(DeleteBehavior.Cascade);
-        modelBuilder.Entity<CommentReaction>()
+        modelBuilder
+            .Entity<CommentReaction>()
             .HasOne(cr => cr.User)
             .WithMany()
             .HasForeignKey(cr => cr.UserId)
@@ -478,12 +482,14 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
         modelBuilder.Entity<CommentReaction>().HasIndex(cr => new { cr.CommentId, cr.UserId }).IsUnique();
 
         // PostShare relationships
-        modelBuilder.Entity<PostShare>()
+        modelBuilder
+            .Entity<PostShare>()
             .HasOne(ps => ps.Post)
             .WithMany(p => p.Shares)
             .HasForeignKey(ps => ps.PostId)
             .OnDelete(DeleteBehavior.Cascade);
-        modelBuilder.Entity<PostShare>()
+        modelBuilder
+            .Entity<PostShare>()
             .HasOne(ps => ps.User)
             .WithMany()
             .HasForeignKey(ps => ps.UserId)
@@ -491,12 +497,14 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
         modelBuilder.Entity<PostShare>().HasIndex(ps => ps.PostId);
 
         // UserMute relationships
-        modelBuilder.Entity<UserMute>()
+        modelBuilder
+            .Entity<UserMute>()
             .HasOne(um => um.Muter)
             .WithMany()
             .HasForeignKey(um => um.MuterId)
             .OnDelete(DeleteBehavior.Cascade);
-        modelBuilder.Entity<UserMute>()
+        modelBuilder
+            .Entity<UserMute>()
             .HasOne(um => um.Muted)
             .WithMany()
             .HasForeignKey(um => um.MutedId)
@@ -505,12 +513,14 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
         modelBuilder.Entity<UserMute>().HasIndex(um => um.MuterId);
 
         // FollowRequest relationships
-        modelBuilder.Entity<FollowRequest>()
+        modelBuilder
+            .Entity<FollowRequest>()
             .HasOne(fr => fr.Requester)
             .WithMany()
             .HasForeignKey(fr => fr.RequesterId)
             .OnDelete(DeleteBehavior.Cascade);
-        modelBuilder.Entity<FollowRequest>()
+        modelBuilder
+            .Entity<FollowRequest>()
             .HasOne(fr => fr.Target)
             .WithMany()
             .HasForeignKey(fr => fr.TargetId)
@@ -519,7 +529,8 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
         modelBuilder.Entity<FollowRequest>().HasIndex(fr => fr.TargetId);
 
         // PushToken relationships
-        modelBuilder.Entity<PushToken>()
+        modelBuilder
+            .Entity<PushToken>()
             .HasOne(pt => pt.User)
             .WithMany()
             .HasForeignKey(pt => pt.UserId)
@@ -528,7 +539,8 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
         modelBuilder.Entity<PushToken>().HasIndex(pt => pt.UserId);
 
         // NotificationPreference relationships
-        modelBuilder.Entity<NotificationPreference>()
+        modelBuilder
+            .Entity<NotificationPreference>()
             .HasOne(np => np.User)
             .WithMany()
             .HasForeignKey(np => np.UserId)
@@ -536,12 +548,14 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
         modelBuilder.Entity<NotificationPreference>().HasIndex(np => new { np.UserId, np.Type }).IsUnique();
 
         // PostView relationships
-        modelBuilder.Entity<PostView>()
+        modelBuilder
+            .Entity<PostView>()
             .HasOne(pv => pv.Post)
             .WithMany(p => p.Views)
             .HasForeignKey(pv => pv.PostId)
             .OnDelete(DeleteBehavior.Cascade);
-        modelBuilder.Entity<PostView>()
+        modelBuilder
+            .Entity<PostView>()
             .HasOne(pv => pv.User)
             .WithMany()
             .HasForeignKey(pv => pv.UserId)

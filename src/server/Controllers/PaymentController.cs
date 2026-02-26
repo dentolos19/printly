@@ -38,10 +38,10 @@ public class PaymentController(DatabaseContext context, IConfiguration configura
         // Get the order with items
         var order = await Context
             .Orders.Include(o => o.Items)
-                .ThenInclude(i => i.Variant)
-                    .ThenInclude(v => v.Product)
+            .ThenInclude(i => i.Variant)
+            .ThenInclude(v => v.Product)
             .Include(o => o.Items)
-                .ThenInclude(i => i.Imprint)
+            .ThenInclude(i => i.Imprint)
             .FirstOrDefaultAsync(o => o.Id == request.OrderId && o.UserId == userId);
 
         if (order == null)

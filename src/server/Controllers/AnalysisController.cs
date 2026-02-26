@@ -22,8 +22,8 @@ public class AnalysisController(DatabaseContext context, GenerativeService gener
         // Gather comprehensive data for analysis
         var orders = await Context
             .Orders.Include(o => o.Items)
-                .ThenInclude(i => i.Variant)
-                    .ThenInclude(v => v.Product)
+            .ThenInclude(i => i.Variant)
+            .ThenInclude(v => v.Product)
             .ToListAsync();
 
         var products = await Context.Products.Include(p => p.Variants).ThenInclude(v => v.Inventory).ToListAsync();

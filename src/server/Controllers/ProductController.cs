@@ -33,9 +33,9 @@ public class ProductController(
             .Include(p => p.Model)
             .Include(p => p.ModelPreview)
             .Include(p => p.Variants)
-                .ThenInclude(v => v.Inventory)
+            .ThenInclude(v => v.Inventory)
             .Include(p => p.Variants)
-                .ThenInclude(v => v.Image)
+            .ThenInclude(v => v.Image)
             .OrderBy(p => p.Name)
             .ToListAsync();
 
@@ -133,7 +133,7 @@ public class ProductController(
             .Include(p => p.Model)
             .Include(p => p.ModelPreview)
             .Include(p => p.Variants)
-                .ThenInclude(v => v.Inventory)
+            .ThenInclude(v => v.Inventory)
             .OrderBy(p => p.Name)
             .ToListAsync();
 
@@ -193,9 +193,9 @@ public class ProductController(
             .Include(p => p.Model)
             .Include(p => p.ModelPreview)
             .Include(p => p.Variants)
-                .ThenInclude(v => v.Inventory)
+            .ThenInclude(v => v.Inventory)
             .Include(p => p.Variants)
-                .ThenInclude(v => v.Image)
+            .ThenInclude(v => v.Image)
             .Where(p => p.Id == id)
             .FirstOrDefaultAsync();
 

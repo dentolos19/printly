@@ -123,8 +123,7 @@ public partial class ModelDetectionService
         }
 
         // Sort by standard display order
-        detectedAreas.Sort(
-            (a, b) =>
+        detectedAreas.Sort((a, b) =>
             {
                 var orderA = DisplayOrderMap.GetValueOrDefault(a.AreaId, 999);
                 var orderB = DisplayOrderMap.GetValueOrDefault(b.AreaId, 999);

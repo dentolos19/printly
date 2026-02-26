@@ -4,7 +4,7 @@ public enum FollowRequestStatus
 {
     Pending,
     Approved,
-    Rejected
+    Rejected,
 }
 
 public class FollowRequest : BaseEntity

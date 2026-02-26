@@ -20,7 +20,7 @@ public class InventoryController(DatabaseContext context) : BaseController(conte
     {
         var inventory = await Context
             .Inventories.Include(i => i.Variant)
-                .ThenInclude(v => v.Product)
+            .ThenInclude(v => v.Product)
             .OrderBy(i => i.Variant.Product.Name)
             .ThenBy(i => i.Variant.Size)
             .ThenBy(i => i.Variant.Color)
@@ -50,7 +50,7 @@ public class InventoryController(DatabaseContext context) : BaseController(conte
     {
         var inventory = await Context
             .Inventories.Include(i => i.Variant)
-                .ThenInclude(v => v.Product)
+            .ThenInclude(v => v.Product)
             .Where(i => i.VariantId == variantId)
             .Select(i => new InventoryWithVariantResponse(
                 i.Id,
@@ -86,7 +86,7 @@ public class InventoryController(DatabaseContext context) : BaseController(conte
 
         var inventory = await Context
             .Inventories.Include(i => i.Variant)
-                .ThenInclude(v => v.Product)
+            .ThenInclude(v => v.Product)
             .Where(i => i.Variant.ProductId == productId)
             .OrderBy(i => i.Variant.Size)
             .ThenBy(i => i.Variant.Color)
@@ -116,7 +116,7 @@ public class InventoryController(DatabaseContext context) : BaseController(conte
     {
         var inventory = await Context
             .Inventories.Include(i => i.Variant)
-                .ThenInclude(v => v.Product)
+            .ThenInclude(v => v.Product)
             .Where(i => i.Id == id)
             .Select(i => new InventoryWithVariantResponse(
                 i.Id,
@@ -276,7 +276,7 @@ public class InventoryController(DatabaseContext context) : BaseController(conte
     {
         var lowStockItems = await Context
             .Inventories.Include(i => i.Variant)
-                .ThenInclude(v => v.Product)
+            .ThenInclude(v => v.Product)
             .Where(i => i.Quantity <= i.ReorderLevel)
             .OrderBy(i => i.Quantity)
             .Select(i => new LowStockAlertResponse(
@@ -303,7 +303,7 @@ public class InventoryController(DatabaseContext context) : BaseController(conte
     {
         var outOfStockItems = await Context
             .Inventories.Include(i => i.Variant)
-                .ThenInclude(v => v.Product)
+            .ThenInclude(v => v.Product)
             .Where(i => i.Quantity == 0)
             .OrderBy(i => i.Variant.Product.Name)
             .Select(i => new LowStockAlertResponse(

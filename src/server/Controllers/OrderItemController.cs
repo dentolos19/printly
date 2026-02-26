@@ -31,7 +31,7 @@ public class OrderItemController(DatabaseContext context) : BaseController(conte
 
         var items = await query
             .Include(i => i.Variant)
-                .ThenInclude(v => v.Product)
+            .ThenInclude(v => v.Product)
             .Include(i => i.Imprint)
             .OrderByDescending(i => i.CreatedAt)
             .Select(i => new OrderItemResponse(
@@ -65,7 +65,7 @@ public class OrderItemController(DatabaseContext context) : BaseController(conte
     {
         var item = await Context
             .OrderItems.Include(i => i.Variant)
-                .ThenInclude(v => v.Product)
+            .ThenInclude(v => v.Product)
             .Include(i => i.Imprint)
             .FirstOrDefaultAsync(i => i.Id == id);
 
@@ -224,9 +224,9 @@ public class OrderItemController(DatabaseContext context) : BaseController(conte
             var item = await Context
                 .OrderItems.Include(i => i.Order)
                 .Include(i => i.Variant)
-                    .ThenInclude(v => v.Product)
+                .ThenInclude(v => v.Product)
                 .Include(i => i.Variant)
-                    .ThenInclude(v => v.Inventory)
+                .ThenInclude(v => v.Inventory)
                 .FirstOrDefaultAsync(i => i.Id == id);
 
             if (item == null)
@@ -339,7 +339,7 @@ public class OrderItemController(DatabaseContext context) : BaseController(conte
             var item = await Context
                 .OrderItems.Include(i => i.Order)
                 .Include(i => i.Variant)
-                    .ThenInclude(v => v.Inventory)
+                .ThenInclude(v => v.Inventory)
                 .FirstOrDefaultAsync(i => i.Id == id);
 
             if (item == null)

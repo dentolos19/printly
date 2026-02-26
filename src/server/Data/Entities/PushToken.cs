@@ -4,7 +4,7 @@ public enum PushPlatform
 {
     iOS,
     Android,
-    Web
+    Web,
 }
 
 public class PushToken : BaseEntity

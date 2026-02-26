@@ -115,9 +115,7 @@ public record CreateCommentDto(
     Guid? ParentId = null
 );
 
-public record UpdateCommentDto(
-    [StringLength(1000, MinimumLength = 1)] string? Content
-);
+public record UpdateCommentDto([StringLength(1000, MinimumLength = 1)] string? Content);
 
 // ============ Reaction DTOs ============
 
@@ -130,38 +128,19 @@ public record PostReactionResponse(
     DateTime CreatedAt
 );
 
-public record ReactionSummary(
-    PostReactionType ReactionType,
-    int Count
-);
+public record ReactionSummary(PostReactionType ReactionType, int Count);
 
-public record CreateReactionDto(
-    [Required] Guid PostId,
-    [Required] PostReactionType ReactionType
-);
+public record CreateReactionDto([Required] Guid PostId, [Required] PostReactionType ReactionType);
 
-public record UpdateReactionDto(
-    [Required] PostReactionType ReactionType
-);
+public record UpdateReactionDto([Required] PostReactionType ReactionType);
 
 // ============ Bookmark DTOs ============
 
-public record PostBookmarkResponse(
-    Guid Id,
-    Guid PostId,
-    string UserId,
-    DateTime CreatedAt
-);
+public record PostBookmarkResponse(Guid Id, Guid PostId, string UserId, DateTime CreatedAt);
 
-public record BookmarkedPostResponse(
-    Guid BookmarkId,
-    DateTime BookmarkedAt,
-    PostSummaryResponse Post
-);
+public record BookmarkedPostResponse(Guid BookmarkId, DateTime BookmarkedAt, PostSummaryResponse Post);
 
-public record CreateBookmarkDto(
-    [Required] Guid PostId
-);
+public record CreateBookmarkDto([Required] Guid PostId);
 
 // ============ Feed/Query DTOs ============
 
@@ -173,13 +152,7 @@ public record PostFeedQuery(
     string? SearchTerm = null
 );
 
-public record PostFeedResponse(
-    List<PostSummaryResponse> Posts,
-    int TotalCount,
-    int Page,
-    int PageSize,
-    int TotalPages
-);
+public record PostFeedResponse(List<PostSummaryResponse> Posts, int TotalCount, int Page, int PageSize, int TotalPages);
 
 // ============ Stats/Toggle DTOs ============
 
@@ -191,21 +164,13 @@ public record CommunityStatsResponse(
     List<ReactionSummary> TopReactionTypes
 );
 
-public record BookmarkToggleResponse(
-    bool IsBookmarked,
-    string Message
-);
+public record BookmarkToggleResponse(bool IsBookmarked, string Message);
 
 // ============ AI Caption DTOs ============
 
-public record GenerateCaptionRequest(
-    [Required] Guid PhotoId,
-    [StringLength(500)] string? Prompt = null
-);
+public record GenerateCaptionRequest([Required] Guid PhotoId, [StringLength(500)] string? Prompt = null);
 
-public record GenerateCaptionResponse(
-    string Caption
-);
+public record GenerateCaptionResponse(string Caption);
 
 // ============ Follow DTOs ============
 
@@ -221,7 +186,13 @@ public record FollowListResponse(
     int TotalPages
 );
 
-public record FollowStatusResponse(bool IsFollowing, bool IsFollowedBy, bool HasPendingRequest, bool IsPrivate, Guid? IncomingRequestId);
+public record FollowStatusResponse(
+    bool IsFollowing,
+    bool IsFollowedBy,
+    bool HasPendingRequest,
+    bool IsPrivate,
+    Guid? IncomingRequestId
+);
 
 public record FollowCountsResponse(int FollowerCount, int FollowingCount);
 
@@ -294,17 +265,9 @@ public record AdminReportResponse(
     DateTime? ReviewedAt
 );
 
-public record UpdateReportStatusDto(
-    [Required] ReportStatus Status,
-    [StringLength(1000)] string? AdminNotes
-);
+public record UpdateReportStatusDto([Required] ReportStatus Status, [StringLength(1000)] string? AdminNotes);
 
-public record ReportListQuery(
-    int Page = 1,
-    int PageSize = 20,
-    ReportStatus? Status = null,
-    ReportType? Type = null
-);
+public record ReportListQuery(int Page = 1, int PageSize = 20, ReportStatus? Status = null, ReportType? Type = null);
 
 public record ReportListResponse(
     List<AdminReportResponse> Reports,
@@ -336,15 +299,11 @@ public record TagSummaryResponse(string Name, int PostCount);
 
 // ============ Comment Reaction DTOs ============
 
-public record CreateCommentReactionDto(
-    [Required] PostReactionType ReactionType
-);
+public record CreateCommentReactionDto([Required] PostReactionType ReactionType);
 
 // ============ Post Share DTOs ============
 
-public record CreateShareDto(
-    string? Caption
-);
+public record CreateShareDto(string? Caption);
 
 public record ShareCountResponse(int Count);
 
@@ -354,13 +313,7 @@ public record MutedUserResponse(string UserId, string UserName, DateTime MutedAt
 
 public record MuteListQuery(int Page = 1, int PageSize = 20);
 
-public record MuteListResponse(
-    List<MutedUserResponse> Users,
-    int TotalCount,
-    int Page,
-    int PageSize,
-    int TotalPages
-);
+public record MuteListResponse(List<MutedUserResponse> Users, int TotalCount, int Page, int PageSize, int TotalPages);
 
 // ============ Content Flag DTOs ============
 
@@ -395,34 +348,17 @@ public record UserSearchResult(
     bool HasPendingRequest
 );
 
-public record UserSearchQuery(
-    string? Q = null,
-    int Page = 1,
-    int PageSize = 20
-);
+public record UserSearchQuery(string? Q = null, int Page = 1, int PageSize = 20);
 
-public record PagedResponse<T>(
-    List<T> Items,
-    int TotalCount,
-    int Page,
-    int PageSize,
-    int TotalPages
-);
+public record PagedResponse<T>(List<T> Items, int TotalCount, int Page, int PageSize, int TotalPages);
 
 // ============ Push Token DTOs ============
 
-public record RegisterPushTokenDto(
-    [Required] string Token,
-    [Required] PushPlatform Platform
-);
+public record RegisterPushTokenDto([Required] string Token, [Required] PushPlatform Platform);
 
 // ============ Notification Preference DTOs ============
 
-public record NotificationPreferenceDto(
-    NotificationType Type,
-    bool InAppEnabled,
-    bool PushEnabled
-);
+public record NotificationPreferenceDto(NotificationType Type, bool InAppEnabled, bool PushEnabled);
 
 // ============ Post View DTOs ============
 
@@ -474,11 +410,7 @@ public record AdminUserResponse(
     DateTime CreatedAt
 );
 
-public record AdminUserListQuery(
-    string? Search = null,
-    int Page = 1,
-    int PageSize = 20
-);
+public record AdminUserListQuery(string? Search = null, int Page = 1, int PageSize = 20);
 
 public record AdminUserListResponse(
     List<AdminUserResponse> Users,
@@ -488,6 +420,4 @@ public record AdminUserListResponse(
     int TotalPages
 );
 
-public record BanUserDto(
-    [Required] string Reason
-);
+public record BanUserDto([Required] string Reason);

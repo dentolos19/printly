@@ -445,7 +445,7 @@ public class ConversationHub(
         {
             replyToMessage = await _context
                 .ConversationMessages.Include(m => m.Participant)
-                    .ThenInclude(p => p.User)
+                .ThenInclude(p => p.User)
                 .FirstOrDefaultAsync(m => m.Id == replyToMessageId.Value && m.ConversationId == conversationId);
         }
 
@@ -669,7 +669,7 @@ public class ConversationHub(
         {
             replyToMessage = await _context
                 .ConversationMessages.Include(m => m.Participant)
-                    .ThenInclude(p => p.User)
+                .ThenInclude(p => p.User)
                 .FirstOrDefaultAsync(m => m.Id == replyToMessageId.Value && m.ConversationId == conversationId);
         }
 
@@ -869,7 +869,7 @@ public class ConversationHub(
         {
             replyToMessage = await _context
                 .ConversationMessages.Include(m => m.Participant)
-                    .ThenInclude(p => p.User)
+                .ThenInclude(p => p.User)
                 .FirstOrDefaultAsync(m => m.Id == replyToMessageId.Value && m.ConversationId == conversationId);
         }
 
@@ -1626,7 +1626,7 @@ public class ConversationHub(
         var callLog = await _context
             .CallLogs.Include(c => c.Participants)
             .Include(c => c.Conversation)
-                .ThenInclude(c => c.Messages)
+            .ThenInclude(c => c.Messages)
             .FirstOrDefaultAsync(c => c.Id == callId);
 
         if (callLog is null)
@@ -1696,7 +1696,7 @@ public class ConversationHub(
         var callLog = await _context
             .CallLogs.Include(c => c.Participants)
             .Include(c => c.Conversation)
-                .ThenInclude(c => c.Messages)
+            .ThenInclude(c => c.Messages)
             .FirstOrDefaultAsync(c => c.Id == callId);
 
         if (callLog is null)

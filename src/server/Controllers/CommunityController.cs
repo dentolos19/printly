@@ -40,7 +40,8 @@ public class CommunityController(
             .Include(p => p.Comments)
             .Include(p => p.Reactions)
             .Include(p => p.Bookmarks)
-            .Include(p => p.Tags).ThenInclude(pt => pt.Tag)
+            .Include(p => p.Tags)
+            .ThenInclude(pt => pt.Tag)
             .Include(p => p.Shares)
             .Include(p => p.Views)
             .Where(p => p.Visibility == PostVisibility.Visible)
@@ -52,18 +53,24 @@ public class CommunityController(
         // Block filtering
         if (userId != null)
         {
-            postsQuery = postsQuery.Where(p => !Context.UserBlocks.Any(b =>
-                (b.BlockerId == userId && b.BlockedId == p.AuthorId) ||
-                (b.BlockerId == p.AuthorId && b.BlockedId == userId)));
+            postsQuery = postsQuery.Where(p =>
+                !Context.UserBlocks.Any(b =>
+                    (b.BlockerId == userId && b.BlockedId == p.AuthorId)
+                    || (b.BlockerId == p.AuthorId && b.BlockedId == userId)
+                )
+            );
             // Mute filtering (single direction)
-            postsQuery = postsQuery.Where(p => !Context.UserMutes.Any(m =>
-                m.MuterId == userId && m.MutedId == p.AuthorId));
+            postsQuery = postsQuery.Where(p =>
+                !Context.UserMutes.Any(m => m.MuterId == userId && m.MutedId == p.AuthorId)
+            );
         }
 
         // Hide posts from private profiles unless the viewer follows them
-        postsQuery = postsQuery.Where(p => !p.Author.IsPrivate
+        postsQuery = postsQuery.Where(p =>
+            !p.Author.IsPrivate
             || p.AuthorId == userId
-            || (userId != null && Context.UserFollowers.Any(f => f.FollowerId == userId && f.FollowingId == p.AuthorId)));
+            || (userId != null && Context.UserFollowers.Any(f => f.FollowerId == userId && f.FollowingId == p.AuthorId))
+        );
 
         // Filter by author
         if (!string.IsNullOrEmpty(query.AuthorId))
@@ -136,7 +143,8 @@ public class CommunityController(
             .ThenInclude(c => c.CommentReactions)
             .Include(p => p.Reactions)
             .Include(p => p.Bookmarks)
-            .Include(p => p.Tags).ThenInclude(pt => pt.Tag)
+            .Include(p => p.Tags)
+            .ThenInclude(pt => pt.Tag)
             .Include(p => p.Shares)
             .Include(p => p.Views)
             .FirstOrDefaultAsync(p => p.Id == id && p.Visibility == PostVisibility.Visible);
@@ -212,7 +220,8 @@ public class CommunityController(
             .Include(p => p.Comments)
             .Include(p => p.Reactions)
             .Include(p => p.Bookmarks)
-            .Include(p => p.Tags).ThenInclude(pt => pt.Tag)
+            .Include(p => p.Tags)
+            .ThenInclude(pt => pt.Tag)
             .Include(p => p.Shares)
             .Include(p => p.Views)
             .Where(p => p.AuthorId == userId && p.Visibility == PostVisibility.Visible);
@@ -458,7 +467,8 @@ public class CommunityController(
             .Include(p => p.Comments)
             .Include(p => p.Reactions)
             .Include(p => p.Bookmarks)
-            .Include(p => p.Tags).ThenInclude(pt => pt.Tag)
+            .Include(p => p.Tags)
+            .ThenInclude(pt => pt.Tag)
             .Include(p => p.Shares)
             .Include(p => p.Views)
             .AsQueryable();
@@ -553,45 +563,40 @@ public class CommunityController(
         var visiblePosts = Context.Posts.Where(p =>
             p.Visibility == PostVisibility.Visible
             && p.PostStatus == PostStatus.Published
-            && (!p.Author.IsPrivate
+            && (
+                !p.Author.IsPrivate
                 || p.AuthorId == userId
-                || (userId != null && Context.UserFollowers.Any(f => f.FollowerId == userId && f.FollowingId == p.AuthorId)))
+                || (
+                    userId != null
+                    && Context.UserFollowers.Any(f => f.FollowerId == userId && f.FollowingId == p.AuthorId)
+                )
+            )
         );
 
         var totalPosts = await visiblePosts.CountAsync();
 
         var visiblePostIds = visiblePosts.Select(p => p.Id);
 
-        var totalComments = await Context.PostComments
-            .Where(c => visiblePostIds.Contains(c.PostId))
-            .CountAsync();
+        var totalComments = await Context.PostComments.Where(c => visiblePostIds.Contains(c.PostId)).CountAsync();
 
-        var totalReactions = await Context.PostReactions
-            .Where(r => visiblePostIds.Contains(r.PostId))
-            .CountAsync();
+        var totalReactions = await Context.PostReactions.Where(r => visiblePostIds.Contains(r.PostId)).CountAsync();
 
-        var totalUsers = await visiblePosts
-            .Select(p => p.AuthorId)
-            .Distinct()
-            .CountAsync();
+        var totalUsers = await visiblePosts.Select(p => p.AuthorId).Distinct().CountAsync();
 
-        var topReactionSummaries = (await Context.PostReactions
-                .Where(r => visiblePostIds.Contains(r.PostId))
-                .GroupBy(r => r.ReactionType)
-                .Select(g => new { ReactionType = g.Key, Count = g.Count() })
-                .OrderByDescending(x => x.Count)
-                .ToListAsync())
+        var topReactionSummaries = (
+                await Context
+                    .PostReactions.Where(r => visiblePostIds.Contains(r.PostId))
+                    .GroupBy(r => r.ReactionType)
+                    .Select(g => new { ReactionType = g.Key, Count = g.Count() })
+                    .OrderByDescending(x => x.Count)
+                    .ToListAsync()
+            )
             .Select(x => new ReactionSummary(x.ReactionType, x.Count))
             .ToList();
 
         return Ok(
-            new CommunityStatsResponse(
-                totalPosts,
-                totalComments,
-                totalReactions,
-                totalUsers,
-                topReactionSummaries
-            ));
+            new CommunityStatsResponse(totalPosts, totalComments, totalReactions, totalUsers, topReactionSummaries)
+        );
     }
 
     /// <summary>
@@ -610,8 +615,9 @@ public class CommunityController(
         // If the profile is private and the viewer is not the owner or a follower, return empty
         if (author.IsPrivate && userId != authorId)
         {
-            var isFollower = userId != null && await Context.UserFollowers.AnyAsync(f =>
-                f.FollowerId == userId && f.FollowingId == authorId);
+            var isFollower =
+                userId != null
+                && await Context.UserFollowers.AnyAsync(f => f.FollowerId == userId && f.FollowingId == authorId);
             if (!isFollower)
                 return Ok(new List<PostSummaryResponse>());
         }
@@ -622,7 +628,8 @@ public class CommunityController(
             .Include(p => p.Comments)
             .Include(p => p.Reactions)
             .Include(p => p.Bookmarks)
-            .Include(p => p.Tags).ThenInclude(pt => pt.Tag)
+            .Include(p => p.Tags)
+            .ThenInclude(pt => pt.Tag)
             .Include(p => p.Shares)
             .Include(p => p.Views)
             .Where(p =>
@@ -790,7 +797,9 @@ public class CommunityController(
         PostComment? parentComment = null;
         if (dto.ParentId.HasValue)
         {
-            parentComment = await Context.PostComments.Include(c => c.Author).FirstOrDefaultAsync(c => c.Id == dto.ParentId.Value);
+            parentComment = await Context
+                .PostComments.Include(c => c.Author)
+                .FirstOrDefaultAsync(c => c.Id == dto.ParentId.Value);
             if (parentComment is null || parentComment.PostId != dto.PostId)
                 return BadRequest(new { message = "Parent comment not found or belongs to different post" });
         }
@@ -971,9 +980,7 @@ public class CommunityController(
             .GroupBy(r => r.ReactionType)
             .Select(g => new { ReactionType = g.Key, Count = g.Count() })
             .ToListAsync();
-        var reactionSummaries = reactions
-            .Select(r => new ReactionSummary(r.ReactionType, r.Count))
-            .ToList();
+        var reactionSummaries = reactions.Select(r => new ReactionSummary(r.ReactionType, r.Count)).ToList();
 
         return Ok(reactionSummaries);
     }
@@ -1095,7 +1102,8 @@ public class CommunityController(
             .Include(b => b.Post)
             .ThenInclude(p => p.Reactions)
             .Include(b => b.Post)
-            .ThenInclude(p => p.Tags).ThenInclude(pt => pt.Tag)
+            .ThenInclude(p => p.Tags)
+            .ThenInclude(pt => pt.Tag)
             .Include(b => b.Post)
             .ThenInclude(p => p.Shares)
             .Include(b => b.Post)
@@ -1372,7 +1380,9 @@ public class CommunityController(
         var targetUser = await Context.Users.FindAsync(userId);
         var isPrivate = targetUser?.IsPrivate ?? false;
 
-        return Ok(new FollowStatusResponse(isFollowing, isFollowedBy, hasPendingRequest, isPrivate, incomingRequest?.Id));
+        return Ok(
+            new FollowStatusResponse(isFollowing, isFollowedBy, hasPendingRequest, isPrivate, incomingRequest?.Id)
+        );
     }
 
     /// <summary>
@@ -1386,8 +1396,8 @@ public class CommunityController(
         if (user == null)
             return NotFound("User not found");
 
-        var followersQuery = Context.UserFollowers
-            .Where(f => f.FollowingId == userId)
+        var followersQuery = Context
+            .UserFollowers.Where(f => f.FollowingId == userId)
             .Include(f => f.Follower)
             .OrderByDescending(f => f.CreatedAt);
 
@@ -1414,8 +1424,8 @@ public class CommunityController(
         if (user == null)
             return NotFound("User not found");
 
-        var followingQuery = Context.UserFollowers
-            .Where(f => f.FollowerId == userId)
+        var followingQuery = Context
+            .UserFollowers.Where(f => f.FollowerId == userId)
             .Include(f => f.Following)
             .OrderByDescending(f => f.CreatedAt);
 
@@ -1454,7 +1464,9 @@ public class CommunityController(
     /// Get community notifications for the current user.
     /// </summary>
     [HttpGet("notifications")]
-    public async Task<ActionResult<CommunityNotificationListResponse>> GetNotifications([FromQuery] NotificationListQuery query)
+    public async Task<ActionResult<CommunityNotificationListResponse>> GetNotifications(
+        [FromQuery] NotificationListQuery query
+    )
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (userId == null)
@@ -1466,19 +1478,20 @@ public class CommunityController(
             NotificationType.NewFollower,
             NotificationType.PostLiked,
             NotificationType.PostCommented,
-            NotificationType.CommentReplied
+            NotificationType.CommentReplied,
         };
 
-        var notificationsQuery = Context.Notifications
-            .Where(n => n.UserId == userId && communityTypes.Contains(n.Type) && !n.IsDeleted)
+        var notificationsQuery = Context
+            .Notifications.Where(n => n.UserId == userId && communityTypes.Contains(n.Type) && !n.IsDeleted)
             .AsQueryable();
 
         if (query.UnreadOnly == true)
             notificationsQuery = notificationsQuery.Where(n => !n.IsRead);
 
         var totalCount = await notificationsQuery.CountAsync();
-        var unreadCount = await Context.Notifications
-            .CountAsync(n => n.UserId == userId && communityTypes.Contains(n.Type) && !n.IsRead && !n.IsDeleted);
+        var unreadCount = await Context.Notifications.CountAsync(n =>
+            n.UserId == userId && communityTypes.Contains(n.Type) && !n.IsRead && !n.IsDeleted
+        );
         var totalPages = (int)Math.Ceiling(totalCount / (double)query.PageSize);
 
         var notifications = await notificationsQuery
@@ -1497,7 +1510,16 @@ public class CommunityController(
             ))
             .ToListAsync();
 
-        return Ok(new CommunityNotificationListResponse(notifications, totalCount, unreadCount, query.Page, query.PageSize, totalPages));
+        return Ok(
+            new CommunityNotificationListResponse(
+                notifications,
+                totalCount,
+                unreadCount,
+                query.Page,
+                query.PageSize,
+                totalPages
+            )
+        );
     }
 
     /// <summary>
@@ -1515,13 +1537,15 @@ public class CommunityController(
             NotificationType.NewFollower,
             NotificationType.PostLiked,
             NotificationType.PostCommented,
-            NotificationType.CommentReplied
+            NotificationType.CommentReplied,
         };
 
-        var totalCount = await Context.Notifications
-            .CountAsync(n => n.UserId == userId && communityTypes.Contains(n.Type) && !n.IsDeleted);
-        var unreadCount = await Context.Notifications
-            .CountAsync(n => n.UserId == userId && communityTypes.Contains(n.Type) && !n.IsRead && !n.IsDeleted);
+        var totalCount = await Context.Notifications.CountAsync(n =>
+            n.UserId == userId && communityTypes.Contains(n.Type) && !n.IsDeleted
+        );
+        var unreadCount = await Context.Notifications.CountAsync(n =>
+            n.UserId == userId && communityTypes.Contains(n.Type) && !n.IsRead && !n.IsDeleted
+        );
 
         return Ok(new NotificationCountResponse(totalCount, unreadCount));
     }
@@ -1565,14 +1589,12 @@ public class CommunityController(
             NotificationType.NewFollower,
             NotificationType.PostLiked,
             NotificationType.PostCommented,
-            NotificationType.CommentReplied
+            NotificationType.CommentReplied,
         };
 
-        await Context.Notifications
-            .Where(n => n.UserId == userId && communityTypes.Contains(n.Type) && !n.IsRead)
-            .ExecuteUpdateAsync(s => s
-                .SetProperty(n => n.IsRead, true)
-                .SetProperty(n => n.ReadAt, DateTime.UtcNow));
+        await Context
+            .Notifications.Where(n => n.UserId == userId && communityTypes.Contains(n.Type) && !n.IsRead)
+            .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true).SetProperty(n => n.ReadAt, DateTime.UtcNow));
 
         return Ok(new { message = "All notifications marked as read" });
     }
@@ -1616,14 +1638,14 @@ public class CommunityController(
             NotificationType.NewFollower,
             NotificationType.PostLiked,
             NotificationType.PostCommented,
-            NotificationType.CommentReplied
+            NotificationType.CommentReplied,
         };
 
-        await Context.Notifications
-            .Where(n => n.UserId == userId && communityTypes.Contains(n.Type))
-            .ExecuteUpdateAsync(s => s
-                .SetProperty(n => n.IsDeleted, true)
-                .SetProperty(n => n.DeletedAt, DateTime.UtcNow));
+        await Context
+            .Notifications.Where(n => n.UserId == userId && communityTypes.Contains(n.Type))
+            .ExecuteUpdateAsync(s =>
+                s.SetProperty(n => n.IsDeleted, true).SetProperty(n => n.DeletedAt, DateTime.UtcNow)
+            );
 
         return NoContent();
     }
@@ -1638,7 +1660,8 @@ public class CommunityController(
         NotificationType type,
         string title,
         string message,
-        string? actionUrl = null)
+        string? actionUrl = null
+    )
     {
         var notification = new Notification
         {
@@ -1646,7 +1669,7 @@ public class CommunityController(
             Type = type,
             Title = title,
             Message = message,
-            ActionUrl = actionUrl
+            ActionUrl = actionUrl,
         };
 
         Context.Notifications.Add(notification);
@@ -1697,12 +1720,12 @@ public class CommunityController(
 
         // Check for duplicate pending report
         var existingReport = await Context.Reports.FirstOrDefaultAsync(r =>
-            r.ReporterId == userId &&
-            r.Status == ReportStatus.Pending &&
-            r.ReportType == dto.ReportType &&
-            r.PostId == dto.PostId &&
-            r.CommentId == dto.CommentId &&
-            r.ReportedUserId == dto.ReportedUserId
+            r.ReporterId == userId
+            && r.Status == ReportStatus.Pending
+            && r.ReportType == dto.ReportType
+            && r.PostId == dto.PostId
+            && r.CommentId == dto.CommentId
+            && r.ReportedUserId == dto.ReportedUserId
         );
 
         if (existingReport != null)
@@ -1716,7 +1739,7 @@ public class CommunityController(
             CommentId = dto.CommentId,
             ReportedUserId = dto.ReportedUserId,
             Reason = dto.Reason,
-            Description = dto.Description
+            Description = dto.Description,
         };
 
         Context.Reports.Add(report);
@@ -1752,8 +1775,8 @@ public class CommunityController(
         if (userId == null)
             return Unauthorized();
 
-        var reports = await Context.Reports
-            .Include(r => r.Reporter)
+        var reports = await Context
+            .Reports.Include(r => r.Reporter)
             .Where(r => r.ReporterId == userId)
             .OrderByDescending(r => r.CreatedAt)
             .Select(r => new ReportResponse(
@@ -1781,10 +1804,7 @@ public class CommunityController(
     [Authorize(Roles = Roles.Admin)]
     public async Task<ActionResult<ReportListResponse>> GetAllReports([FromQuery] ReportListQuery query)
     {
-        var reportsQuery = Context.Reports
-            .Include(r => r.Reporter)
-            .Include(r => r.ReportedUser)
-            .AsQueryable();
+        var reportsQuery = Context.Reports.Include(r => r.Reporter).Include(r => r.ReportedUser).AsQueryable();
 
         if (query.Status.HasValue)
             reportsQuery = reportsQuery.Where(r => r.Status == query.Status.Value);
@@ -1865,24 +1885,23 @@ public class CommunityController(
         if (targetUser == null)
             return NotFound("User not found");
 
-        var existingBlock = await Context.UserBlocks
-            .FirstOrDefaultAsync(b => b.BlockerId == currentUserId && b.BlockedId == userId);
+        var existingBlock = await Context.UserBlocks.FirstOrDefaultAsync(b =>
+            b.BlockerId == currentUserId && b.BlockedId == userId
+        );
 
         if (existingBlock != null)
             return BadRequest("User already blocked");
 
-        var block = new UserBlock
-        {
-            BlockerId = currentUserId,
-            BlockedId = userId
-        };
+        var block = new UserBlock { BlockerId = currentUserId, BlockedId = userId };
 
         Context.UserBlocks.Add(block);
 
         // Also remove any follow relationships between the users
-        var followsToRemove = await Context.UserFollowers
-            .Where(f => (f.FollowerId == currentUserId && f.FollowingId == userId) ||
-                        (f.FollowerId == userId && f.FollowingId == currentUserId))
+        var followsToRemove = await Context
+            .UserFollowers.Where(f =>
+                (f.FollowerId == currentUserId && f.FollowingId == userId)
+                || (f.FollowerId == userId && f.FollowingId == currentUserId)
+            )
             .ToListAsync();
 
         Context.UserFollowers.RemoveRange(followsToRemove);
@@ -1902,8 +1921,9 @@ public class CommunityController(
         if (currentUserId == null)
             return Unauthorized();
 
-        var block = await Context.UserBlocks
-            .FirstOrDefaultAsync(b => b.BlockerId == currentUserId && b.BlockedId == userId);
+        var block = await Context.UserBlocks.FirstOrDefaultAsync(b =>
+            b.BlockerId == currentUserId && b.BlockedId == userId
+        );
 
         if (block == null)
             return NotFound("User not blocked");
@@ -1924,11 +1944,9 @@ public class CommunityController(
         if (currentUserId == null)
             return Unauthorized();
 
-        var isBlocked = await Context.UserBlocks
-            .AnyAsync(b => b.BlockerId == currentUserId && b.BlockedId == userId);
+        var isBlocked = await Context.UserBlocks.AnyAsync(b => b.BlockerId == currentUserId && b.BlockedId == userId);
 
-        var isBlockedBy = await Context.UserBlocks
-            .AnyAsync(b => b.BlockerId == userId && b.BlockedId == currentUserId);
+        var isBlockedBy = await Context.UserBlocks.AnyAsync(b => b.BlockerId == userId && b.BlockedId == currentUserId);
 
         return Ok(new BlockStatusResponse(isBlocked, isBlockedBy));
     }
@@ -1943,8 +1961,8 @@ public class CommunityController(
         if (currentUserId == null)
             return Unauthorized();
 
-        var blocksQuery = Context.UserBlocks
-            .Where(b => b.BlockerId == currentUserId)
+        var blocksQuery = Context
+            .UserBlocks.Where(b => b.BlockerId == currentUserId)
             .Include(b => b.Blocked)
             .OrderByDescending(b => b.CreatedAt);
 
@@ -1966,8 +1984,7 @@ public class CommunityController(
     private async Task<bool> IsBlockedAsync(string userId1, string userId2)
     {
         return await Context.UserBlocks.AnyAsync(b =>
-            (b.BlockerId == userId1 && b.BlockedId == userId2) ||
-            (b.BlockerId == userId2 && b.BlockedId == userId1)
+            (b.BlockerId == userId1 && b.BlockedId == userId2) || (b.BlockerId == userId2 && b.BlockedId == userId1)
         );
     }
 
@@ -1977,15 +1994,27 @@ public class CommunityController(
     {
         var photoUrl = await storageService.DownloadFileAsync(post.Photo);
         var isBookmarked = userId != null && post.Bookmarks.Any(b => b.UserId.ToString() == userId);
-        var userReaction = userId != null ? post.Reactions.FirstOrDefault(r => r.UserId.ToString() == userId)?.ReactionType : null;
+        var userReaction =
+            userId != null ? post.Reactions.FirstOrDefault(r => r.UserId.ToString() == userId)?.ReactionType : null;
 
         return new PostSummaryResponse(
-            post.Id, post.AuthorId, post.Author.UserName ?? "Unknown",
-            post.Caption, post.PhotoId, photoUrl, post.PostStatus,
-            post.Comments.Count, post.Reactions.Count, isBookmarked, userReaction,
+            post.Id,
+            post.AuthorId,
+            post.Author.UserName ?? "Unknown",
+            post.Caption,
+            post.PhotoId,
+            photoUrl,
+            post.PostStatus,
+            post.Comments.Count,
+            post.Reactions.Count,
+            isBookmarked,
+            userReaction,
             post.CreatedAt,
             post.Tags.Select(t => t.Tag.Name).ToList(),
-            post.Shares.Count, post.Views.Count, post.IsNsfw, post.ContentWarning
+            post.Shares.Count,
+            post.Views.Count,
+            post.IsNsfw,
+            post.ContentWarning
         );
     }
 
@@ -2000,7 +2029,8 @@ public class CommunityController(
         foreach (var rawName in tagNames)
         {
             var name = rawName.Trim().ToLowerInvariant().TrimStart('#');
-            if (string.IsNullOrEmpty(name)) continue;
+            if (string.IsNullOrEmpty(name))
+                continue;
 
             var tag = await Context.Tags.FirstOrDefaultAsync(t => t.Name == name);
             if (tag is null)
@@ -2025,7 +2055,8 @@ public class CommunityController(
         foreach (var username in mentionedUsernames)
         {
             var mentionedUser = await Context.Users.FirstOrDefaultAsync(u => u.UserName == username);
-            if (mentionedUser is null || mentionedUser.Id == senderUserId) continue;
+            if (mentionedUser is null || mentionedUser.Id == senderUserId)
+                continue;
 
             await CreateNotificationAsync(
                 mentionedUser.Id,
@@ -2044,44 +2075,59 @@ public class CommunityController(
     /// </summary>
     [HttpGet("posts/trending")]
     [AllowAnonymous]
-    public async Task<ActionResult<PostFeedResponse>> GetTrendingPosts([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<ActionResult<PostFeedResponse>> GetTrendingPosts(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20
+    )
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var postsQuery = Context.Posts
-            .Include(p => p.Author).Include(p => p.Photo)
-            .Include(p => p.Comments).Include(p => p.Reactions).Include(p => p.Bookmarks)
-            .Include(p => p.Tags).ThenInclude(pt => pt.Tag)
-            .Include(p => p.Shares).Include(p => p.Views)
+        var postsQuery = Context
+            .Posts.Include(p => p.Author)
+            .Include(p => p.Photo)
+            .Include(p => p.Comments)
+            .Include(p => p.Reactions)
+            .Include(p => p.Bookmarks)
+            .Include(p => p.Tags)
+            .ThenInclude(pt => pt.Tag)
+            .Include(p => p.Shares)
+            .Include(p => p.Views)
             .Where(p => p.Visibility == PostVisibility.Visible && p.PostStatus == PostStatus.Published);
 
         if (userId != null)
         {
-            postsQuery = postsQuery.Where(p => !Context.UserBlocks.Any(b =>
-                (b.BlockerId == userId && b.BlockedId == p.AuthorId) ||
-                (b.BlockerId == p.AuthorId && b.BlockedId == userId)));
-            postsQuery = postsQuery.Where(p => !Context.UserMutes.Any(m =>
-                m.MuterId == userId && m.MutedId == p.AuthorId));
+            postsQuery = postsQuery.Where(p =>
+                !Context.UserBlocks.Any(b =>
+                    (b.BlockerId == userId && b.BlockedId == p.AuthorId)
+                    || (b.BlockerId == p.AuthorId && b.BlockedId == userId)
+                )
+            );
+            postsQuery = postsQuery.Where(p =>
+                !Context.UserMutes.Any(m => m.MuterId == userId && m.MutedId == p.AuthorId)
+            );
         }
 
         // Hide posts from private profiles unless the viewer follows them
-        postsQuery = postsQuery.Where(p => !p.Author.IsPrivate
+        postsQuery = postsQuery.Where(p =>
+            !p.Author.IsPrivate
             || p.AuthorId == userId
-            || (userId != null && Context.UserFollowers.Any(f => f.FollowerId == userId && f.FollowingId == p.AuthorId)));
+            || (userId != null && Context.UserFollowers.Any(f => f.FollowerId == userId && f.FollowingId == p.AuthorId))
+        );
 
         var allPosts = await postsQuery.ToListAsync();
 
         // Trending score: engagement weighted by recency
         var now = DateTime.UtcNow;
-        var scored = allPosts.Select(p =>
-        {
-            var ageHours = Math.Max(1, (now - p.CreatedAt).TotalHours);
-            var engagement = p.Reactions.Count * 3 + p.Comments.Count * 2 + p.Views.Count + p.Shares.Count * 4;
-            var score = engagement / Math.Pow(ageHours, 1.5);
-            return (Post: p, Score: score);
-        })
-        .OrderByDescending(x => x.Score)
-        .ToList();
+        var scored = allPosts
+            .Select(p =>
+            {
+                var ageHours = Math.Max(1, (now - p.CreatedAt).TotalHours);
+                var engagement = p.Reactions.Count * 3 + p.Comments.Count * 2 + p.Views.Count + p.Shares.Count * 4;
+                var score = engagement / Math.Pow(ageHours, 1.5);
+                return (Post: p, Score: score);
+            })
+            .OrderByDescending(x => x.Score)
+            .ToList();
 
         var totalCount = scored.Count;
         var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
@@ -2100,27 +2146,44 @@ public class CommunityController(
     /// </summary>
     [HttpGet("tags/{tag}/posts")]
     [AllowAnonymous]
-    public async Task<ActionResult<PostFeedResponse>> GetPostsByTag(string tag, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<ActionResult<PostFeedResponse>> GetPostsByTag(
+        string tag,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20
+    )
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var normalizedTag = tag.Trim().ToLowerInvariant().TrimStart('#');
 
-        var postsQuery = Context.Posts
-            .Include(p => p.Author).Include(p => p.Photo)
-            .Include(p => p.Comments).Include(p => p.Reactions).Include(p => p.Bookmarks)
-            .Include(p => p.Tags).ThenInclude(pt => pt.Tag)
-            .Include(p => p.Shares).Include(p => p.Views)
+        var postsQuery = Context
+            .Posts.Include(p => p.Author)
+            .Include(p => p.Photo)
+            .Include(p => p.Comments)
+            .Include(p => p.Reactions)
+            .Include(p => p.Bookmarks)
+            .Include(p => p.Tags)
+            .ThenInclude(pt => pt.Tag)
+            .Include(p => p.Shares)
+            .Include(p => p.Views)
             .Where(p => p.Visibility == PostVisibility.Visible && p.PostStatus == PostStatus.Published)
             .Where(p => p.Tags.Any(t => t.Tag.Name == normalizedTag))
-            .Where(p => !p.Author.IsPrivate
+            .Where(p =>
+                !p.Author.IsPrivate
                 || p.AuthorId == userId
-                || (userId != null && Context.UserFollowers.Any(f => f.FollowerId == userId && f.FollowingId == p.AuthorId)));
+                || (
+                    userId != null
+                    && Context.UserFollowers.Any(f => f.FollowerId == userId && f.FollowingId == p.AuthorId)
+                )
+            );
 
         var totalCount = await postsQuery.CountAsync();
         var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
-        var posts = await postsQuery.OrderByDescending(p => p.CreatedAt)
-            .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var posts = await postsQuery
+            .OrderByDescending(p => p.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
 
         var summaries = new List<PostSummaryResponse>();
         foreach (var post in posts)
@@ -2136,8 +2199,8 @@ public class CommunityController(
     [AllowAnonymous]
     public async Task<ActionResult<List<TagSummaryResponse>>> GetPopularTags([FromQuery] int limit = 20)
     {
-        var tags = await Context.Tags
-            .Select(t => new TagSummaryResponse(t.Name, t.PostTags.Count))
+        var tags = await Context
+            .Tags.Select(t => new TagSummaryResponse(t.Name, t.PostTags.Count))
             .OrderByDescending(t => t.PostCount)
             .Take(limit)
             .ToListAsync();
@@ -2149,34 +2212,48 @@ public class CommunityController(
     /// Gets personalized "For You" feed from followed users, trending-scored.
     /// </summary>
     [HttpGet("posts/feed")]
-    public async Task<ActionResult<PostFeedResponse>> GetForYouFeed([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<ActionResult<PostFeedResponse>> GetForYouFeed(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20
+    )
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId is null) return Unauthorized();
+        if (userId is null)
+            return Unauthorized();
 
-        var followedIds = await Context.UserFollowers
-            .Where(uf => uf.FollowerId == userId)
+        var followedIds = await Context
+            .UserFollowers.Where(uf => uf.FollowerId == userId)
             .Select(uf => uf.FollowingId)
             .ToListAsync();
 
-        var postsQuery = Context.Posts
-            .Include(p => p.Author).Include(p => p.Photo)
-            .Include(p => p.Comments).Include(p => p.Reactions).Include(p => p.Bookmarks)
-            .Include(p => p.Tags).ThenInclude(pt => pt.Tag)
-            .Include(p => p.Shares).Include(p => p.Views)
+        var postsQuery = Context
+            .Posts.Include(p => p.Author)
+            .Include(p => p.Photo)
+            .Include(p => p.Comments)
+            .Include(p => p.Reactions)
+            .Include(p => p.Bookmarks)
+            .Include(p => p.Tags)
+            .ThenInclude(pt => pt.Tag)
+            .Include(p => p.Shares)
+            .Include(p => p.Views)
             .Where(p => p.Visibility == PostVisibility.Visible && p.PostStatus == PostStatus.Published)
             .Where(p => followedIds.Contains(p.AuthorId))
-            .Where(p => !Context.UserBlocks.Any(b =>
-                (b.BlockerId == userId && b.BlockedId == p.AuthorId) ||
-                (b.BlockerId == p.AuthorId && b.BlockedId == userId)))
-            .Where(p => !Context.UserMutes.Any(m =>
-                m.MuterId == userId && m.MutedId == p.AuthorId));
+            .Where(p =>
+                !Context.UserBlocks.Any(b =>
+                    (b.BlockerId == userId && b.BlockedId == p.AuthorId)
+                    || (b.BlockerId == p.AuthorId && b.BlockedId == userId)
+                )
+            )
+            .Where(p => !Context.UserMutes.Any(m => m.MuterId == userId && m.MutedId == p.AuthorId));
 
         var totalCount = await postsQuery.CountAsync();
         var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
-        var posts = await postsQuery.OrderByDescending(p => p.CreatedAt)
-            .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var posts = await postsQuery
+            .OrderByDescending(p => p.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
 
         var summaries = new List<PostSummaryResponse>();
         foreach (var post in posts)
@@ -2189,40 +2266,53 @@ public class CommunityController(
     /// Gets explore page — posts from unfollowed users, trending-scored.
     /// </summary>
     [HttpGet("posts/explore")]
-    public async Task<ActionResult<PostFeedResponse>> GetExplorePosts([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<ActionResult<PostFeedResponse>> GetExplorePosts(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20
+    )
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId is null) return Unauthorized();
+        if (userId is null)
+            return Unauthorized();
 
-        var followedIds = await Context.UserFollowers
-            .Where(uf => uf.FollowerId == userId)
+        var followedIds = await Context
+            .UserFollowers.Where(uf => uf.FollowerId == userId)
             .Select(uf => uf.FollowingId)
             .ToListAsync();
 
-        var postsQuery = Context.Posts
-            .Include(p => p.Author).Include(p => p.Photo)
-            .Include(p => p.Comments).Include(p => p.Reactions).Include(p => p.Bookmarks)
-            .Include(p => p.Tags).ThenInclude(pt => pt.Tag)
-            .Include(p => p.Shares).Include(p => p.Views)
+        var postsQuery = Context
+            .Posts.Include(p => p.Author)
+            .Include(p => p.Photo)
+            .Include(p => p.Comments)
+            .Include(p => p.Reactions)
+            .Include(p => p.Bookmarks)
+            .Include(p => p.Tags)
+            .ThenInclude(pt => pt.Tag)
+            .Include(p => p.Shares)
+            .Include(p => p.Views)
             .Where(p => p.Visibility == PostVisibility.Visible && p.PostStatus == PostStatus.Published)
             .Where(p => p.AuthorId != userId && !followedIds.Contains(p.AuthorId))
-            .Where(p => !Context.UserBlocks.Any(b =>
-                (b.BlockerId == userId && b.BlockedId == p.AuthorId) ||
-                (b.BlockerId == p.AuthorId && b.BlockedId == userId)))
-            .Where(p => !Context.UserMutes.Any(m =>
-                m.MuterId == userId && m.MutedId == p.AuthorId))
+            .Where(p =>
+                !Context.UserBlocks.Any(b =>
+                    (b.BlockerId == userId && b.BlockedId == p.AuthorId)
+                    || (b.BlockerId == p.AuthorId && b.BlockedId == userId)
+                )
+            )
+            .Where(p => !Context.UserMutes.Any(m => m.MuterId == userId && m.MutedId == p.AuthorId))
             .Where(p => !p.Author.IsPrivate);
 
         var allPosts = await postsQuery.ToListAsync();
 
         var now = DateTime.UtcNow;
-        var scored = allPosts.Select(p =>
-        {
-            var ageHours = Math.Max(1, (now - p.CreatedAt).TotalHours);
-            var engagement = p.Reactions.Count * 3 + p.Comments.Count * 2 + p.Views.Count + p.Shares.Count * 4;
-            return (Post: p, Score: engagement / Math.Pow(ageHours, 1.5));
-        })
-        .OrderByDescending(x => x.Score).ToList();
+        var scored = allPosts
+            .Select(p =>
+            {
+                var ageHours = Math.Max(1, (now - p.CreatedAt).TotalHours);
+                var engagement = p.Reactions.Count * 3 + p.Comments.Count * 2 + p.Views.Count + p.Shares.Count * 4;
+                return (Post: p, Score: engagement / Math.Pow(ageHours, 1.5));
+            })
+            .OrderByDescending(x => x.Score)
+            .ToList();
 
         var totalCount = scored.Count;
         var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
@@ -2244,12 +2334,16 @@ public class CommunityController(
     public async Task<ActionResult> ReactToComment(Guid commentId, [FromBody] CreateCommentReactionDto dto)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId is null) return Unauthorized();
+        if (userId is null)
+            return Unauthorized();
 
         var comment = await Context.PostComments.Include(c => c.Author).FirstOrDefaultAsync(c => c.Id == commentId);
-        if (comment is null) return NotFound(new { message = "Comment not found" });
+        if (comment is null)
+            return NotFound(new { message = "Comment not found" });
 
-        var existing = await Context.CommentReactions.FirstOrDefaultAsync(cr => cr.CommentId == commentId && cr.UserId == userId);
+        var existing = await Context.CommentReactions.FirstOrDefaultAsync(cr =>
+            cr.CommentId == commentId && cr.UserId == userId
+        );
         if (existing is not null)
         {
             existing.ReactionType = dto.ReactionType;
@@ -2257,19 +2351,25 @@ public class CommunityController(
             return Ok(new { message = "Reaction updated" });
         }
 
-        Context.CommentReactions.Add(new CommentReaction
-        {
-            CommentId = commentId,
-            UserId = userId,
-            ReactionType = dto.ReactionType
-        });
+        Context.CommentReactions.Add(
+            new CommentReaction
+            {
+                CommentId = commentId,
+                UserId = userId,
+                ReactionType = dto.ReactionType,
+            }
+        );
         await Context.SaveChangesAsync();
 
         if (comment.AuthorId != userId)
         {
-            await CreateNotificationAsync(comment.AuthorId, NotificationType.CommentReacted,
-                "Comment Reacted", $"Someone reacted to your comment",
-                $"/community/posts/{comment.PostId}");
+            await CreateNotificationAsync(
+                comment.AuthorId,
+                NotificationType.CommentReacted,
+                "Comment Reacted",
+                $"Someone reacted to your comment",
+                $"/community/posts/{comment.PostId}"
+            );
         }
 
         return Ok(new { message = "Reaction added" });
@@ -2282,10 +2382,14 @@ public class CommunityController(
     public async Task<ActionResult> RemoveCommentReaction(Guid commentId)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId is null) return Unauthorized();
+        if (userId is null)
+            return Unauthorized();
 
-        var reaction = await Context.CommentReactions.FirstOrDefaultAsync(cr => cr.CommentId == commentId && cr.UserId == userId);
-        if (reaction is null) return NotFound(new { message = "Reaction not found" });
+        var reaction = await Context.CommentReactions.FirstOrDefaultAsync(cr =>
+            cr.CommentId == commentId && cr.UserId == userId
+        );
+        if (reaction is null)
+            return NotFound(new { message = "Reaction not found" });
 
         Context.CommentReactions.Remove(reaction);
         await Context.SaveChangesAsync();
@@ -2301,19 +2405,34 @@ public class CommunityController(
     public async Task<ActionResult> SharePost(Guid postId, [FromBody] CreateShareDto dto)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId is null) return Unauthorized();
+        if (userId is null)
+            return Unauthorized();
 
-        var post = await Context.Posts.Include(p => p.Author).FirstOrDefaultAsync(p => p.Id == postId && p.Visibility == PostVisibility.Visible);
-        if (post is null) return NotFound(new { message = "Post not found" });
+        var post = await Context
+            .Posts.Include(p => p.Author)
+            .FirstOrDefaultAsync(p => p.Id == postId && p.Visibility == PostVisibility.Visible);
+        if (post is null)
+            return NotFound(new { message = "Post not found" });
 
-        Context.PostShares.Add(new PostShare { PostId = postId, UserId = userId, Caption = dto.Caption });
+        Context.PostShares.Add(
+            new PostShare
+            {
+                PostId = postId,
+                UserId = userId,
+                Caption = dto.Caption,
+            }
+        );
         await Context.SaveChangesAsync();
 
         if (post.AuthorId != userId)
         {
-            await CreateNotificationAsync(post.AuthorId, NotificationType.PostShared,
-                "Post Shared", $"Someone shared your post",
-                $"/community/posts/{postId}");
+            await CreateNotificationAsync(
+                post.AuthorId,
+                NotificationType.PostShared,
+                "Post Shared",
+                $"Someone shared your post",
+                $"/community/posts/{postId}"
+            );
         }
 
         return Ok(new { message = "Post shared" });
@@ -2339,11 +2458,14 @@ public class CommunityController(
     public async Task<ActionResult> PinPost(Guid id)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId is null) return Unauthorized();
+        if (userId is null)
+            return Unauthorized();
 
         var post = await Context.Posts.FirstOrDefaultAsync(p => p.Id == id);
-        if (post is null) return NotFound(new { message = "Post not found" });
-        if (post.AuthorId != userId) return Forbid();
+        if (post is null)
+            return NotFound(new { message = "Post not found" });
+        if (post.AuthorId != userId)
+            return Forbid();
 
         post.IsPinned = true;
         post.PinnedAt = DateTime.UtcNow;
@@ -2358,11 +2480,14 @@ public class CommunityController(
     public async Task<ActionResult> UnpinPost(Guid id)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId is null) return Unauthorized();
+        if (userId is null)
+            return Unauthorized();
 
         var post = await Context.Posts.FirstOrDefaultAsync(p => p.Id == id);
-        if (post is null) return NotFound(new { message = "Post not found" });
-        if (post.AuthorId != userId) return Forbid();
+        if (post is null)
+            return NotFound(new { message = "Post not found" });
+        if (post.AuthorId != userId)
+            return Forbid();
 
         post.IsPinned = false;
         post.PinnedAt = null;
@@ -2383,18 +2508,29 @@ public class CommunityController(
         var pinnedAuthor = await Context.Users.FindAsync(authorId);
         if (pinnedAuthor is not null && pinnedAuthor.IsPrivate && userId != authorId)
         {
-            var isFollower = userId != null && await Context.UserFollowers.AnyAsync(f =>
-                f.FollowerId == userId && f.FollowingId == authorId);
+            var isFollower =
+                userId != null
+                && await Context.UserFollowers.AnyAsync(f => f.FollowerId == userId && f.FollowingId == authorId);
             if (!isFollower)
                 return Ok(new List<PostSummaryResponse>());
         }
 
-        var posts = await Context.Posts
-            .Include(p => p.Author).Include(p => p.Photo)
-            .Include(p => p.Comments).Include(p => p.Reactions).Include(p => p.Bookmarks)
-            .Include(p => p.Tags).ThenInclude(pt => pt.Tag)
-            .Include(p => p.Shares).Include(p => p.Views)
-            .Where(p => p.AuthorId == authorId && p.IsPinned && p.Visibility == PostVisibility.Visible && p.PostStatus == PostStatus.Published)
+        var posts = await Context
+            .Posts.Include(p => p.Author)
+            .Include(p => p.Photo)
+            .Include(p => p.Comments)
+            .Include(p => p.Reactions)
+            .Include(p => p.Bookmarks)
+            .Include(p => p.Tags)
+            .ThenInclude(pt => pt.Tag)
+            .Include(p => p.Shares)
+            .Include(p => p.Views)
+            .Where(p =>
+                p.AuthorId == authorId
+                && p.IsPinned
+                && p.Visibility == PostVisibility.Visible
+                && p.PostStatus == PostStatus.Published
+            )
             .OrderByDescending(p => p.PinnedAt)
             .ToListAsync();
 
@@ -2415,7 +2551,8 @@ public class CommunityController(
     public async Task<ActionResult> FlagPost(Guid id, [FromBody] FlagPostDto dto)
     {
         var post = await Context.Posts.FindAsync(id);
-        if (post is null) return NotFound(new { message = "Post not found" });
+        if (post is null)
+            return NotFound(new { message = "Post not found" });
 
         post.IsNsfw = dto.IsNsfw;
         post.ContentWarning = dto.ContentWarning;
@@ -2432,14 +2569,20 @@ public class CommunityController(
     public async Task<ActionResult> MuteUser(string userId)
     {
         var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (currentUserId is null) return Unauthorized();
-        if (currentUserId == userId) return BadRequest(new { message = "Cannot mute yourself" });
+        if (currentUserId is null)
+            return Unauthorized();
+        if (currentUserId == userId)
+            return BadRequest(new { message = "Cannot mute yourself" });
 
         var targetUser = await Context.Users.FindAsync(userId);
-        if (targetUser is null) return NotFound(new { message = "User not found" });
+        if (targetUser is null)
+            return NotFound(new { message = "User not found" });
 
-        var existing = await Context.UserMutes.FirstOrDefaultAsync(m => m.MuterId == currentUserId && m.MutedId == userId);
-        if (existing is not null) return Conflict(new { message = "User already muted" });
+        var existing = await Context.UserMutes.FirstOrDefaultAsync(m =>
+            m.MuterId == currentUserId && m.MutedId == userId
+        );
+        if (existing is not null)
+            return Conflict(new { message = "User already muted" });
 
         Context.UserMutes.Add(new UserMute { MuterId = currentUserId, MutedId = userId });
         await Context.SaveChangesAsync();
@@ -2453,10 +2596,12 @@ public class CommunityController(
     public async Task<ActionResult> UnmuteUser(string userId)
     {
         var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (currentUserId is null) return Unauthorized();
+        if (currentUserId is null)
+            return Unauthorized();
 
         var mute = await Context.UserMutes.FirstOrDefaultAsync(m => m.MuterId == currentUserId && m.MutedId == userId);
-        if (mute is null) return NotFound(new { message = "Not muted" });
+        if (mute is null)
+            return NotFound(new { message = "Not muted" });
 
         Context.UserMutes.Remove(mute);
         await Context.SaveChangesAsync();
@@ -2470,10 +2615,11 @@ public class CommunityController(
     public async Task<ActionResult<MuteListResponse>> GetMutedUsers([FromQuery] MuteListQuery query)
     {
         var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (currentUserId is null) return Unauthorized();
+        if (currentUserId is null)
+            return Unauthorized();
 
-        var mutesQuery = Context.UserMutes
-            .Where(m => m.MuterId == currentUserId)
+        var mutesQuery = Context
+            .UserMutes.Where(m => m.MuterId == currentUserId)
             .Include(m => m.Muted)
             .OrderByDescending(m => m.CreatedAt);
 
@@ -2481,7 +2627,8 @@ public class CommunityController(
         var totalPages = (int)Math.Ceiling(totalCount / (double)query.PageSize);
 
         var mutedUsers = await mutesQuery
-            .Skip((query.Page - 1) * query.PageSize).Take(query.PageSize)
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
             .Select(m => new MutedUserResponse(m.Muted.Id, m.Muted.UserName ?? "Unknown", m.CreatedAt))
             .ToListAsync();
 
@@ -2497,12 +2644,15 @@ public class CommunityController(
     public async Task<ActionResult<PagedResponse<UserSearchResult>>> SearchUsers([FromQuery] UserSearchQuery query)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId is null) return Unauthorized();
+        if (userId is null)
+            return Unauthorized();
 
         var usersQuery = Context.Users.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(query.Q))
-            usersQuery = usersQuery.Where(u => u.UserName!.Contains(query.Q) || (u.DisplayName != null && u.DisplayName.Contains(query.Q)));
+            usersQuery = usersQuery.Where(u =>
+                u.UserName!.Contains(query.Q) || (u.DisplayName != null && u.DisplayName.Contains(query.Q))
+            );
 
         usersQuery = usersQuery.Where(u => u.Id != userId && !u.IsBanned);
 
@@ -2511,13 +2661,17 @@ public class CommunityController(
 
         var users = await usersQuery
             .OrderBy(u => u.UserName)
-            .Skip((query.Page - 1) * query.PageSize).Take(query.PageSize)
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
             .Select(u => new UserSearchResult(
-                u.Id, u.UserName ?? "Unknown",
+                u.Id,
+                u.UserName ?? "Unknown",
                 u.Followers.Count,
                 Context.UserFollowers.Any(uf => uf.FollowerId == userId && uf.FollowingId == u.Id),
                 u.IsPrivate,
-                Context.FollowRequests.Any(fr => fr.RequesterId == userId && fr.TargetId == u.Id && fr.Status == FollowRequestStatus.Pending)
+                Context.FollowRequests.Any(fr =>
+                    fr.RequesterId == userId && fr.TargetId == u.Id && fr.Status == FollowRequestStatus.Pending
+                )
             ))
             .ToListAsync();
 
@@ -2531,23 +2685,33 @@ public class CommunityController(
     public async Task<ActionResult<List<UserSearchResult>>> GetSuggestedUsers([FromQuery] int limit = 10)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId is null) return Unauthorized();
+        if (userId is null)
+            return Unauthorized();
 
-        var followedIds = await Context.UserFollowers
-            .Where(uf => uf.FollowerId == userId)
-            .Select(uf => uf.FollowingId).ToListAsync();
+        var followedIds = await Context
+            .UserFollowers.Where(uf => uf.FollowerId == userId)
+            .Select(uf => uf.FollowingId)
+            .ToListAsync();
 
-        var blockedIds = await Context.UserBlocks
-            .Where(b => b.BlockerId == userId || b.BlockedId == userId)
-            .Select(b => b.BlockerId == userId ? b.BlockedId : b.BlockerId).ToListAsync();
+        var blockedIds = await Context
+            .UserBlocks.Where(b => b.BlockerId == userId || b.BlockedId == userId)
+            .Select(b => b.BlockerId == userId ? b.BlockedId : b.BlockerId)
+            .ToListAsync();
 
         var excludeIds = followedIds.Concat(blockedIds).Append(userId).Distinct().ToList();
 
-        var suggested = await Context.Users
-            .Where(u => !excludeIds.Contains(u.Id) && !u.IsBanned)
+        var suggested = await Context
+            .Users.Where(u => !excludeIds.Contains(u.Id) && !u.IsBanned)
             .OrderByDescending(u => u.Followers.Count)
             .Take(limit)
-            .Select(u => new UserSearchResult(u.Id, u.UserName ?? "Unknown", u.Followers.Count, false, u.IsPrivate, false))
+            .Select(u => new UserSearchResult(
+                u.Id,
+                u.UserName ?? "Unknown",
+                u.Followers.Count,
+                false,
+                u.IsPrivate,
+                false
+            ))
             .ToListAsync();
 
         return Ok(suggested);
@@ -2559,13 +2723,17 @@ public class CommunityController(
     /// Get incoming follow requests for the current user.
     /// </summary>
     [HttpGet("follow/requests/incoming")]
-    public async Task<ActionResult<FollowRequestListResponse>> GetIncomingFollowRequests([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<ActionResult<FollowRequestListResponse>> GetIncomingFollowRequests(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20
+    )
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId is null) return Unauthorized();
+        if (userId is null)
+            return Unauthorized();
 
-        var requestsQuery = Context.FollowRequests
-            .Where(fr => fr.TargetId == userId && fr.Status == FollowRequestStatus.Pending)
+        var requestsQuery = Context
+            .FollowRequests.Where(fr => fr.TargetId == userId && fr.Status == FollowRequestStatus.Pending)
             .Include(fr => fr.Requester)
             .OrderByDescending(fr => fr.CreatedAt);
 
@@ -2573,8 +2741,15 @@ public class CommunityController(
         var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
         var requests = await requestsQuery
-            .Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(fr => new FollowRequestResponse(fr.Id, fr.RequesterId, fr.Requester.UserName ?? "Unknown", fr.Status, fr.CreatedAt))
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(fr => new FollowRequestResponse(
+                fr.Id,
+                fr.RequesterId,
+                fr.Requester.UserName ?? "Unknown",
+                fr.Status,
+                fr.CreatedAt
+            ))
             .ToListAsync();
 
         return Ok(new FollowRequestListResponse(requests, totalCount, page, pageSize, totalPages));
@@ -2587,11 +2762,14 @@ public class CommunityController(
     public async Task<ActionResult> ApproveFollowRequest(Guid id)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId is null) return Unauthorized();
+        if (userId is null)
+            return Unauthorized();
 
         var request = await Context.FollowRequests.FirstOrDefaultAsync(fr => fr.Id == id && fr.TargetId == userId);
-        if (request is null) return NotFound(new { message = "Follow request not found" });
-        if (request.Status != FollowRequestStatus.Pending) return BadRequest(new { message = "Request already processed" });
+        if (request is null)
+            return NotFound(new { message = "Follow request not found" });
+        if (request.Status != FollowRequestStatus.Pending)
+            return BadRequest(new { message = "Request already processed" });
 
         request.Status = FollowRequestStatus.Approved;
 
@@ -2599,9 +2777,13 @@ public class CommunityController(
         Context.UserFollowers.Add(new UserFollower { FollowerId = request.RequesterId, FollowingId = userId });
         await Context.SaveChangesAsync();
 
-        await CreateNotificationAsync(request.RequesterId, NotificationType.FollowRequestApproved,
-            "Follow Request Approved", $"Your follow request was approved",
-            $"/community/users/{userId}");
+        await CreateNotificationAsync(
+            request.RequesterId,
+            NotificationType.FollowRequestApproved,
+            "Follow Request Approved",
+            $"Your follow request was approved",
+            $"/community/users/{userId}"
+        );
 
         return Ok(new { message = "Follow request approved" });
     }
@@ -2613,11 +2795,14 @@ public class CommunityController(
     public async Task<ActionResult> RejectFollowRequest(Guid id)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId is null) return Unauthorized();
+        if (userId is null)
+            return Unauthorized();
 
         var request = await Context.FollowRequests.FirstOrDefaultAsync(fr => fr.Id == id && fr.TargetId == userId);
-        if (request is null) return NotFound(new { message = "Follow request not found" });
-        if (request.Status != FollowRequestStatus.Pending) return BadRequest(new { message = "Request already processed" });
+        if (request is null)
+            return NotFound(new { message = "Follow request not found" });
+        if (request.Status != FollowRequestStatus.Pending)
+            return BadRequest(new { message = "Request already processed" });
 
         request.Status = FollowRequestStatus.Rejected;
         await Context.SaveChangesAsync();
@@ -2633,7 +2818,8 @@ public class CommunityController(
     public async Task<ActionResult> RegisterPushToken([FromBody] RegisterPushTokenDto dto)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId is null) return Unauthorized();
+        if (userId is null)
+            return Unauthorized();
 
         var existing = await Context.PushTokens.FirstOrDefaultAsync(pt => pt.Token == dto.Token);
         if (existing is not null)
@@ -2643,7 +2829,14 @@ public class CommunityController(
         }
         else
         {
-            Context.PushTokens.Add(new PushToken { UserId = userId, Token = dto.Token, Platform = dto.Platform });
+            Context.PushTokens.Add(
+                new PushToken
+                {
+                    UserId = userId,
+                    Token = dto.Token,
+                    Platform = dto.Platform,
+                }
+            );
         }
         await Context.SaveChangesAsync();
         return Ok(new { message = "Push token registered" });
@@ -2656,10 +2849,12 @@ public class CommunityController(
     public async Task<ActionResult> RemovePushToken([FromBody] RegisterPushTokenDto dto)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId is null) return Unauthorized();
+        if (userId is null)
+            return Unauthorized();
 
         var token = await Context.PushTokens.FirstOrDefaultAsync(pt => pt.Token == dto.Token && pt.UserId == userId);
-        if (token is null) return NotFound(new { message = "Token not found" });
+        if (token is null)
+            return NotFound(new { message = "Token not found" });
 
         Context.PushTokens.Remove(token);
         await Context.SaveChangesAsync();
@@ -2673,10 +2868,11 @@ public class CommunityController(
     public async Task<ActionResult<List<NotificationPreferenceDto>>> GetNotificationPreferences()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId is null) return Unauthorized();
+        if (userId is null)
+            return Unauthorized();
 
-        var prefs = await Context.NotificationPreferences
-            .Where(np => np.UserId == userId)
+        var prefs = await Context
+            .NotificationPreferences.Where(np => np.UserId == userId)
             .Select(np => new NotificationPreferenceDto(np.Type, np.InAppEnabled, np.PushEnabled))
             .ToListAsync();
 
@@ -2690,12 +2886,14 @@ public class CommunityController(
     public async Task<ActionResult> UpdateNotificationPreferences([FromBody] List<NotificationPreferenceDto> prefs)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId is null) return Unauthorized();
+        if (userId is null)
+            return Unauthorized();
 
         foreach (var pref in prefs)
         {
-            var existing = await Context.NotificationPreferences
-                .FirstOrDefaultAsync(np => np.UserId == userId && np.Type == pref.Type);
+            var existing = await Context.NotificationPreferences.FirstOrDefaultAsync(np =>
+                np.UserId == userId && np.Type == pref.Type
+            );
             if (existing is not null)
             {
                 existing.InAppEnabled = pref.InAppEnabled;
@@ -2703,13 +2901,15 @@ public class CommunityController(
             }
             else
             {
-                Context.NotificationPreferences.Add(new NotificationPreference
-                {
-                    UserId = userId,
-                    Type = pref.Type,
-                    InAppEnabled = pref.InAppEnabled,
-                    PushEnabled = pref.PushEnabled
-                });
+                Context.NotificationPreferences.Add(
+                    new NotificationPreference
+                    {
+                        UserId = userId,
+                        Type = pref.Type,
+                        InAppEnabled = pref.InAppEnabled,
+                        PushEnabled = pref.PushEnabled,
+                    }
+                );
             }
         }
         await Context.SaveChangesAsync();
@@ -2726,7 +2926,8 @@ public class CommunityController(
     public async Task<ActionResult> RecordPostView(Guid id)
     {
         var post = await Context.Posts.FindAsync(id);
-        if (post is null) return NotFound(new { message = "Post not found" });
+        if (post is null)
+            return NotFound(new { message = "Post not found" });
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -2734,7 +2935,8 @@ public class CommunityController(
         if (userId != null)
         {
             var alreadyViewed = await Context.PostViews.AnyAsync(pv => pv.PostId == id && pv.UserId == userId);
-            if (alreadyViewed) return Ok(new { message = "View already recorded" });
+            if (alreadyViewed)
+                return Ok(new { message = "View already recorded" });
         }
 
         Context.PostViews.Add(new PostView { PostId = id, UserId = userId });
@@ -2749,35 +2951,48 @@ public class CommunityController(
     public async Task<ActionResult<PostAnalyticsResponse>> GetPostAnalytics(Guid id)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId is null) return Unauthorized();
+        if (userId is null)
+            return Unauthorized();
 
-        var post = await Context.Posts
-            .Include(p => p.Reactions).Include(p => p.Comments)
-            .Include(p => p.Shares).Include(p => p.Bookmarks)
+        var post = await Context
+            .Posts.Include(p => p.Reactions)
+            .Include(p => p.Comments)
+            .Include(p => p.Shares)
+            .Include(p => p.Bookmarks)
             .Include(p => p.Views)
             .FirstOrDefaultAsync(p => p.Id == id);
 
-        if (post is null) return NotFound(new { message = "Post not found" });
-        if (post.AuthorId != userId) return Forbid();
+        if (post is null)
+            return NotFound(new { message = "Post not found" });
+        if (post.AuthorId != userId)
+            return Forbid();
 
-        var reactionBreakdown = post.Reactions
-            .GroupBy(r => r.ReactionType)
-            .Select(g => new ReactionSummary(g.Key, g.Count())).ToList();
+        var reactionBreakdown = post
+            .Reactions.GroupBy(r => r.ReactionType)
+            .Select(g => new ReactionSummary(g.Key, g.Count()))
+            .ToList();
 
         var uniqueViewers = post.Views.Where(v => v.UserId != null).Select(v => v.UserId).Distinct().Count();
 
         var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
-        var viewsLast7Days = post.Views
-            .Where(v => v.CreatedAt >= sevenDaysAgo)
+        var viewsLast7Days = post
+            .Views.Where(v => v.CreatedAt >= sevenDaysAgo)
             .GroupBy(v => DateOnly.FromDateTime(v.CreatedAt))
             .Select(g => new DailyCount(g.Key, g.Count()))
-            .OrderBy(d => d.Date).ToList();
+            .OrderBy(d => d.Date)
+            .ToList();
 
-        return Ok(new PostAnalyticsResponse(
-            post.Views.Count, uniqueViewers, reactionBreakdown,
-            post.Comments.Count, post.Shares.Count, post.Bookmarks.Count,
-            viewsLast7Days
-        ));
+        return Ok(
+            new PostAnalyticsResponse(
+                post.Views.Count,
+                uniqueViewers,
+                reactionBreakdown,
+                post.Comments.Count,
+                post.Shares.Count,
+                post.Bookmarks.Count,
+                viewsLast7Days
+            )
+        );
     }
 
     /// <summary>
@@ -2788,16 +3003,23 @@ public class CommunityController(
     public async Task<ActionResult<ProfileStatsResponse>> GetProfileStats(string userId)
     {
         var user = await Context.Users.FindAsync(userId);
-        if (user is null) return NotFound(new { message = "User not found" });
+        if (user is null)
+            return NotFound(new { message = "User not found" });
 
-        var totalPosts = await Context.Posts.CountAsync(p => p.AuthorId == userId && p.Visibility == PostVisibility.Visible && p.PostStatus == PostStatus.Published);
+        var totalPosts = await Context.Posts.CountAsync(p =>
+            p.AuthorId == userId && p.Visibility == PostVisibility.Visible && p.PostStatus == PostStatus.Published
+        );
         var totalLikes = await Context.PostReactions.CountAsync(r => r.Post.AuthorId == userId);
-        var totalComments = await Context.PostComments.CountAsync(c => c.Post.AuthorId == userId && c.AuthorId != userId);
+        var totalComments = await Context.PostComments.CountAsync(c =>
+            c.Post.AuthorId == userId && c.AuthorId != userId
+        );
         var totalShares = await Context.PostShares.CountAsync(s => s.Post.AuthorId == userId);
         var followerCount = await Context.UserFollowers.CountAsync(uf => uf.FollowingId == userId);
         var followingCount = await Context.UserFollowers.CountAsync(uf => uf.FollowerId == userId);
 
-        return Ok(new ProfileStatsResponse(totalPosts, totalLikes, totalComments, totalShares, followerCount, followingCount));
+        return Ok(
+            new ProfileStatsResponse(totalPosts, totalLikes, totalComments, totalShares, followerCount, followingCount)
+        );
     }
 
     // ============ Admin Dashboard ============
@@ -2820,10 +3042,18 @@ public class CommunityController(
         var postsToday = await Context.Posts.CountAsync(p => p.CreatedAt >= today);
         var newUsersToday = await Context.Users.CountAsync(u => u.CreatedAt >= today);
 
-        return Ok(new AdminStatsResponse(
-            totalUsers, totalPosts, totalComments, totalReactions,
-            totalReports, pendingReports, postsToday, newUsersToday
-        ));
+        return Ok(
+            new AdminStatsResponse(
+                totalUsers,
+                totalPosts,
+                totalComments,
+                totalReactions,
+                totalReports,
+                pendingReports,
+                postsToday,
+                newUsersToday
+            )
+        );
     }
 
     /// <summary>
@@ -2833,10 +3063,11 @@ public class CommunityController(
     [Authorize(Roles = Roles.Admin)]
     public async Task<ActionResult<List<TagSummaryResponse>>> GetAdminTrendingTags([FromQuery] int limit = 20)
     {
-        var tags = await Context.Tags
-            .Select(t => new TagSummaryResponse(t.Name, t.PostTags.Count))
+        var tags = await Context
+            .Tags.Select(t => new TagSummaryResponse(t.Name, t.PostTags.Count))
             .OrderByDescending(t => t.PostCount)
-            .Take(limit).ToListAsync();
+            .Take(limit)
+            .ToListAsync();
 
         return Ok(tags);
     }
@@ -2858,13 +3089,16 @@ public class CommunityController(
 
         var users = await usersQuery
             .OrderByDescending(u => u.CreatedAt)
-            .Skip((query.Page - 1) * query.PageSize).Take(query.PageSize)
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
             .Select(u => new AdminUserResponse(
-                u.Id, u.UserName ?? "Unknown",
+                u.Id,
+                u.UserName ?? "Unknown",
                 u.Followers.Count,
                 Context.Posts.Count(p => p.AuthorId == u.Id),
                 Context.Reports.Count(r => r.ReportedUserId == u.Id),
-                u.IsBanned, u.CreatedAt
+                u.IsBanned,
+                u.CreatedAt
             ))
             .ToListAsync();
 
@@ -2876,20 +3110,32 @@ public class CommunityController(
     /// </summary>
     [HttpGet("admin/users/{userId}/posts")]
     [Authorize(Roles = Roles.Admin)]
-    public async Task<ActionResult<PostFeedResponse>> GetAdminUserPosts(string userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<ActionResult<PostFeedResponse>> GetAdminUserPosts(
+        string userId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20
+    )
     {
-        var postsQuery = Context.Posts
-            .Include(p => p.Author).Include(p => p.Photo)
-            .Include(p => p.Comments).Include(p => p.Reactions).Include(p => p.Bookmarks)
-            .Include(p => p.Tags).ThenInclude(pt => pt.Tag)
-            .Include(p => p.Shares).Include(p => p.Views)
+        var postsQuery = Context
+            .Posts.Include(p => p.Author)
+            .Include(p => p.Photo)
+            .Include(p => p.Comments)
+            .Include(p => p.Reactions)
+            .Include(p => p.Bookmarks)
+            .Include(p => p.Tags)
+            .ThenInclude(pt => pt.Tag)
+            .Include(p => p.Shares)
+            .Include(p => p.Views)
             .Where(p => p.AuthorId == userId);
 
         var totalCount = await postsQuery.CountAsync();
         var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
-        var posts = await postsQuery.OrderByDescending(p => p.CreatedAt)
-            .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var posts = await postsQuery
+            .OrderByDescending(p => p.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
 
         var summaries = new List<PostSummaryResponse>();
         foreach (var post in posts)
@@ -2906,7 +3152,8 @@ public class CommunityController(
     public async Task<ActionResult> BanUser(string userId, [FromBody] BanUserDto dto)
     {
         var user = await Context.Users.FindAsync(userId);
-        if (user is null) return NotFound(new { message = "User not found" });
+        if (user is null)
+            return NotFound(new { message = "User not found" });
 
         user.IsBanned = true;
         user.BanReason = dto.Reason;
@@ -2922,7 +3169,8 @@ public class CommunityController(
     public async Task<ActionResult> UnbanUser(string userId)
     {
         var user = await Context.Users.FindAsync(userId);
-        if (user is null) return NotFound(new { message = "User not found" });
+        if (user is null)
+            return NotFound(new { message = "User not found" });
 
         user.IsBanned = false;
         user.BanReason = null;

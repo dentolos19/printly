@@ -6,7 +6,6 @@ public class PrintArea : BaseEntity
 {
     [Required]
     public Guid ProductId { get; set; }
-    public Product Product { get; set; } = null!;
 
     [Required]
     [StringLength(50, MinimumLength = 1)]
@@ -19,11 +18,10 @@ public class PrintArea : BaseEntity
     [StringLength(100)]
     public string? MeshName { get; set; }
 
+    public Product Product { get; set; } = null!;
     public float RayDirectionX { get; set; }
     public float RayDirectionY { get; set; }
     public float RayDirectionZ { get; set; }
-
     public int DisplayOrder { get; set; }
-
     public bool IsAutoDetected { get; set; }
 }

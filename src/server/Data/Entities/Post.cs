@@ -3,21 +3,21 @@
 public enum PostVisibility
 {
     Visible,
-    Deleted
+    Deleted,
 }
 
 public enum PostStatus
 {
     Published,
     Draft,
-    Archived
+    Archived,
 }
 
 public enum PostReactionType
 {
     Like,
     Love,
-    Wow
+    Wow,
 }
 
 public class Post : BaseEntity

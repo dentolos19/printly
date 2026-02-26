@@ -89,10 +89,10 @@ public class OrderController(DatabaseContext context) : BaseController(context)
         var order = await Context
             .Orders.Include(o => o.User)
             .Include(o => o.Items)
-                .ThenInclude(i => i.Variant)
-                    .ThenInclude(v => v.Product)
+            .ThenInclude(i => i.Variant)
+            .ThenInclude(v => v.Product)
             .Include(o => o.Items)
-                .ThenInclude(i => i.Imprint)
+            .ThenInclude(i => i.Imprint)
             .FirstOrDefaultAsync(o => o.Id == id && o.UserId == userId);
 
         if (order == null)
@@ -162,7 +162,8 @@ public class OrderController(DatabaseContext context) : BaseController(context)
                     return Conflict(
                         new
                         {
-                            message = $"Insufficient stock for '{variant.Product.Name}' ({variant.Size}/{variant.Color}). "
+                            message =
+                                $"Insufficient stock for '{variant.Product.Name}' ({variant.Size}/{variant.Color}). "
                                 + $"Available: {variant.Inventory.Quantity}, Requested: {item.Quantity}",
                         }
                     );
@@ -234,10 +235,10 @@ public class OrderController(DatabaseContext context) : BaseController(context)
             var createdOrder = await Context
                 .Orders.Include(o => o.User)
                 .Include(o => o.Items)
-                    .ThenInclude(i => i.Variant)
-                        .ThenInclude(v => v.Product)
+                .ThenInclude(i => i.Variant)
+                .ThenInclude(v => v.Product)
                 .Include(o => o.Items)
-                    .ThenInclude(i => i.Imprint)
+                .ThenInclude(i => i.Imprint)
                 .FirstAsync(o => o.Id == order.Id);
 
             return CreatedAtAction(nameof(GetMyOrder), new { id = order.Id }, MapToOrderResponse(createdOrder));
@@ -266,8 +267,8 @@ public class OrderController(DatabaseContext context) : BaseController(context)
             var order = await Context
                 .Orders.Include(o => o.User)
                 .Include(o => o.Items)
-                    .ThenInclude(i => i.Variant)
-                        .ThenInclude(v => v.Inventory)
+                .ThenInclude(i => i.Variant)
+                .ThenInclude(v => v.Inventory)
                 .FirstOrDefaultAsync(o => o.Id == id && o.UserId == userId);
 
             if (order == null)
@@ -299,10 +300,10 @@ public class OrderController(DatabaseContext context) : BaseController(context)
             var updatedOrder = await Context
                 .Orders.Include(o => o.User)
                 .Include(o => o.Items)
-                    .ThenInclude(i => i.Variant)
-                        .ThenInclude(v => v.Product)
+                .ThenInclude(i => i.Variant)
+                .ThenInclude(v => v.Product)
                 .Include(o => o.Items)
-                    .ThenInclude(i => i.Imprint)
+                .ThenInclude(i => i.Imprint)
                 .FirstAsync(o => o.Id == id);
 
             return Ok(MapToOrderResponse(updatedOrder));
@@ -327,8 +328,8 @@ public class OrderController(DatabaseContext context) : BaseController(context)
         var order = await Context
             .Orders.Include(o => o.User)
             .Include(o => o.Items)
-                .ThenInclude(i => i.Variant)
-                    .ThenInclude(v => v.Product)
+            .ThenInclude(i => i.Variant)
+            .ThenInclude(v => v.Product)
             .FirstOrDefaultAsync(o => o.Id == id && o.UserId == userId);
 
         if (order == null)
@@ -454,10 +455,10 @@ public class OrderController(DatabaseContext context) : BaseController(context)
         var order = await Context
             .Orders.Include(o => o.User)
             .Include(o => o.Items)
-                .ThenInclude(i => i.Variant)
-                    .ThenInclude(v => v.Product)
+            .ThenInclude(i => i.Variant)
+            .ThenInclude(v => v.Product)
             .Include(o => o.Items)
-                .ThenInclude(i => i.Imprint)
+            .ThenInclude(i => i.Imprint)
             .FirstOrDefaultAsync(o => o.Id == id);
 
         if (order == null)
@@ -482,8 +483,8 @@ public class OrderController(DatabaseContext context) : BaseController(context)
             var order = await Context
                 .Orders.Include(o => o.User)
                 .Include(o => o.Items)
-                    .ThenInclude(i => i.Variant)
-                        .ThenInclude(v => v.Inventory)
+                .ThenInclude(i => i.Variant)
+                .ThenInclude(v => v.Inventory)
                 .FirstOrDefaultAsync(o => o.Id == id);
 
             if (order == null)
@@ -520,10 +521,10 @@ public class OrderController(DatabaseContext context) : BaseController(context)
             var updatedOrder = await Context
                 .Orders.Include(o => o.User)
                 .Include(o => o.Items)
-                    .ThenInclude(i => i.Variant)
-                        .ThenInclude(v => v.Product)
+                .ThenInclude(i => i.Variant)
+                .ThenInclude(v => v.Product)
                 .Include(o => o.Items)
-                    .ThenInclude(i => i.Imprint)
+                .ThenInclude(i => i.Imprint)
                 .FirstAsync(o => o.Id == id);
 
             return Ok(MapToOrderResponse(updatedOrder));
@@ -549,8 +550,8 @@ public class OrderController(DatabaseContext context) : BaseController(context)
             var order = await Context
                 .Orders.Include(o => o.User)
                 .Include(o => o.Items)
-                    .ThenInclude(i => i.Variant)
-                        .ThenInclude(v => v.Inventory)
+                .ThenInclude(i => i.Variant)
+                .ThenInclude(v => v.Inventory)
                 .FirstOrDefaultAsync(o => o.Id == id);
 
             if (order == null)
@@ -599,10 +600,10 @@ public class OrderController(DatabaseContext context) : BaseController(context)
             var updatedOrder = await Context
                 .Orders.Include(o => o.User)
                 .Include(o => o.Items)
-                    .ThenInclude(i => i.Variant)
-                        .ThenInclude(v => v.Product)
+                .ThenInclude(i => i.Variant)
+                .ThenInclude(v => v.Product)
                 .Include(o => o.Items)
-                    .ThenInclude(i => i.Imprint)
+                .ThenInclude(i => i.Imprint)
                 .FirstAsync(o => o.Id == id);
 
             return Ok(MapToOrderResponse(updatedOrder));
@@ -627,8 +628,8 @@ public class OrderController(DatabaseContext context) : BaseController(context)
         {
             var order = await Context
                 .Orders.Include(o => o.Items)
-                    .ThenInclude(i => i.Variant)
-                        .ThenInclude(v => v.Inventory)
+                .ThenInclude(i => i.Variant)
+                .ThenInclude(v => v.Inventory)
                 .FirstOrDefaultAsync(o => o.Id == id);
 
             if (order == null)
