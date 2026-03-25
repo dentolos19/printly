@@ -1,5 +1,5 @@
-import { API_URL } from "@/environment";
 import { NextRequest, NextResponse } from "next/server";
+import { API_URL } from "@/environment";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {

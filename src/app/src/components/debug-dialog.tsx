@@ -1,5 +1,8 @@
 "use client";
 
+import { BugIcon, RefreshCwIcon, ShuffleIcon } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,9 +16,6 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/lib/providers/auth";
 import { useServer } from "@/lib/providers/server";
-import { BugIcon, RefreshCwIcon, ShuffleIcon } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
 
 export default function DebugDialog() {
   const { claims, refreshAccess } = useAuth();
@@ -72,7 +72,7 @@ export default function DebugDialog() {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog onOpenChange={setIsOpen} open={isOpen}>
       <DialogTrigger asChild>
         <button className="hover:bg-accent focus:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none">
           <BugIcon className="size-4" />
@@ -116,28 +116,28 @@ export default function DebugDialog() {
 
             <div className="space-y-2">
               <Button
-                onClick={handleToggleRole}
-                disabled={isTogglingRole}
-                variant="outline"
                 className="w-full justify-start"
+                disabled={isTogglingRole}
+                onClick={handleToggleRole}
                 size="sm"
+                variant="outline"
               >
                 <ShuffleIcon className="mr-2 size-4" />
                 {isTogglingRole ? "Toggling Role..." : "Toggle User Role"}
               </Button>
 
               <Button
-                onClick={handleRefreshToken}
-                disabled={isRefreshingToken}
-                variant="outline"
                 className="w-full justify-start"
+                disabled={isRefreshingToken}
+                onClick={handleRefreshToken}
                 size="sm"
+                variant="outline"
               >
                 <RefreshCwIcon className="mr-2 size-4" />
                 {isRefreshingToken ? "Refreshing..." : "Refresh Access Token"}
               </Button>
 
-              <Button onClick={handleCopyToken} variant="outline" className="w-full justify-start" size="sm">
+              <Button className="w-full justify-start" onClick={handleCopyToken} size="sm" variant="outline">
                 <svg
                   className="mr-2 size-4"
                   fill="none"
@@ -146,10 +146,10 @@ export default function DebugDialog() {
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
                   />
                 </svg>
                 Copy Tokens to Clipboard

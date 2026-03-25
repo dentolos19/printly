@@ -1,20 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useServer } from "@/lib/providers/server";
-import { AiSalesAnalysisResponse } from "@/lib/server/analysis";
-import { AdminOrderStatsResponse, MonthlyRevenueData, OrderStatusData } from "@/lib/server/order";
 import {
   AlertTriangle,
   Box,
@@ -48,6 +33,21 @@ import {
   YAxis,
 } from "recharts";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useServer } from "@/lib/providers/server";
+import { AiSalesAnalysisResponse } from "@/lib/server/analysis";
+import { AdminOrderStatsResponse, MonthlyRevenueData, OrderStatusData } from "@/lib/server/order";
 
 type DashboardStats = {
   totalProducts: number;
@@ -115,7 +115,7 @@ function RevenueChart({ data, loading }: { data: MonthlyRevenueData[]; loading: 
         {loading ? (
           <Skeleton className="h-[300px] w-full" />
         ) : (
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer height={300} width="100%">
             <BarChart data={formattedData}>
               <XAxis dataKey="monthLabel" />
               <YAxis tickFormatter={(value) => `$${value}`} />
@@ -148,12 +148,12 @@ function OrdersChart({ data, loading }: { data: MonthlyRevenueData[]; loading: b
         {loading ? (
           <Skeleton className="h-[300px] w-full" />
         ) : (
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer height={300} width="100%">
             <LineChart data={formattedData}>
               <XAxis dataKey="monthLabel" />
               <YAxis />
               <Tooltip labelFormatter={(label) => `Month: ${label}`} />
-              <Line type="monotone" dataKey="orderCount" stroke="#8b5cf6" strokeWidth={2} dot={{ fill: "#8b5cf6" }} />
+              <Line dataKey="orderCount" dot={{ fill: "#8b5cf6" }} stroke="#8b5cf6" strokeWidth={2} type="monotone" />
             </LineChart>
           </ResponsiveContainer>
         )}
@@ -177,22 +177,22 @@ function StatusDistributionChart({ data, loading }: { data: OrderStatusData[]; l
         ) : filteredData.length === 0 ? (
           <div className="text-muted-foreground flex h-[300px] items-center justify-center">No orders yet</div>
         ) : (
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer height={300} width="100%">
             <PieChart>
               <Pie
-                data={filteredData}
                 cx="50%"
                 cy="50%"
-                innerRadius={60}
-                outerRadius={100}
-                paddingAngle={2}
+                data={filteredData}
                 dataKey="count"
-                nameKey="status"
+                innerRadius={60}
                 label={({ status, count }) => `${status}: ${count}`}
                 labelLine={false}
+                nameKey="status"
+                outerRadius={100}
+                paddingAngle={2}
               >
                 {filteredData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                  <Cell fill={CHART_COLORS[index % CHART_COLORS.length]} key={`cell-${index}`} />
                 ))}
               </Pie>
               <Tooltip />
@@ -376,9 +376,9 @@ export default function Page() {
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
           <p className="text-muted-foreground">Overview of your store performance</p>
         </div>
-        <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
+        <Dialog onOpenChange={setAiDialogOpen} open={aiDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={handleGetAiAnalysis} className="gap-2" disabled={loadingAiAnalysis}>
+            <Button className="gap-2" disabled={loadingAiAnalysis} onClick={handleGetAiAnalysis}>
               {loadingAiAnalysis ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               Get AI Analysis
             </Button>
@@ -448,7 +448,7 @@ export default function Page() {
           <CardContent>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {inventoryCards.slice(0, 5).map((card) => (
-                <Link key={card.title} href={card.href} className="block">
+                <Link className="block" href={card.href} key={card.title}>
                   <div className="hover:bg-muted/50 flex items-center gap-3 rounded-lg border p-3 transition-colors">
                     <card.icon className={`h-5 w-5 ${card.color}`} />
                     <div>

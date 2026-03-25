@@ -1,20 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 import {
   AlertTriangle,
   AlignCenter,
@@ -48,6 +33,21 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import { SaveIndicator } from "../../shared/components/save-indicator";
 import { useUnsavedChangesGuard } from "../../shared/hooks";
 import { useDesigner } from "./hooks";
@@ -147,11 +147,11 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            type={"button"}
-            variant={"ghost"}
-            size={"icon"}
             className={"mr-2 h-8 w-8"}
             onClick={() => navigateWithGuard("/library?tab=designs")}
+            size={"icon"}
+            type={"button"}
+            variant={"ghost"}
           >
             <Home className={"h-4 w-4"} />
           </Button>
@@ -164,7 +164,7 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
         {/* File Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button type={"button"} variant={"ghost"} size={"sm"} className={"h-7 px-2 text-sm"}>
+            <Button className={"h-7 px-2 text-sm"} size={"sm"} type={"button"} variant={"ghost"}>
               File
               <ChevronDown className={"ml-1 h-3 w-3"} />
             </Button>
@@ -208,18 +208,18 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
         {/* Edit Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button type={"button"} variant={"ghost"} size={"sm"} className={"h-7 px-2 text-sm"}>
+            <Button className={"h-7 px-2 text-sm"} size={"sm"} type={"button"} variant={"ghost"}>
               Edit
               <ChevronDown className={"ml-1 h-3 w-3"} />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align={"start"}>
-            <DropdownMenuItem onClick={undo} disabled={!canUndo}>
+            <DropdownMenuItem disabled={!canUndo} onClick={undo}>
               <Undo2 className={"mr-2 h-4 w-4"} />
               Undo
               <DropdownMenuShortcut>⌘Z</DropdownMenuShortcut>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={redo} disabled={!canRedo}>
+            <DropdownMenuItem disabled={!canRedo} onClick={redo}>
               <Redo2 className={"mr-2 h-4 w-4"} />
               Redo
               <DropdownMenuShortcut>⌘⇧Z</DropdownMenuShortcut>
@@ -268,7 +268,7 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
         {/* Layer Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button type={"button"} variant={"ghost"} size={"sm"} className={"h-7 px-2 text-sm"}>
+            <Button className={"h-7 px-2 text-sm"} size={"sm"} type={"button"} variant={"ghost"}>
               Layer
               <ChevronDown className={"ml-1 h-3 w-3"} />
             </Button>
@@ -346,7 +346,7 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
         {/* View Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button type={"button"} variant={"ghost"} size={"sm"} className={"h-7 px-2 text-sm"}>
+            <Button className={"h-7 px-2 text-sm"} size={"sm"} type={"button"} variant={"ghost"}>
               View
               <ChevronDown className={"ml-1 h-3 w-3"} />
             </Button>
@@ -385,13 +385,11 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
       <div className={"flex-1"} />
 
       {/* Save status */}
-      <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} isDirty={isDirty} />
+      <SaveIndicator isDirty={isDirty} lastSavedAt={lastSavedAt} status={saveStatus} />
 
       {/* Design name (debounced) */}
       <div className={"flex items-center gap-2 pl-4"}>
         <DebouncedNameInput
-          ref={nameInputRef}
-          value={designName}
           onChange={(name) => {
             setDesignName(name);
             triggerAutoSave();
@@ -400,6 +398,8 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
             void saveDesign({ force: true, nameOverride: name });
           }}
           placeholder="Untitled Design"
+          ref={nameInputRef}
+          value={designName}
         />
       </div>
 
@@ -407,12 +407,12 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
+            className={"ml-2 h-7 gap-1.5 px-3"}
+            disabled={saveStatus === "saving"}
+            onClick={handleImprint}
+            size={"sm"}
             type={"button"}
             variant={"default"}
-            size={"sm"}
-            className={"ml-2 h-7 gap-1.5 px-3"}
-            onClick={handleImprint}
-            disabled={saveStatus === "saving"}
           >
             <Shirt className={"h-4 w-4"} />
             Imprint
@@ -423,17 +423,17 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
 
       {/* Problem indicator */}
       {problemCount > 0 && (
-        <Button type={"button"} variant={"ghost"} size={"sm"} className={"text-destructive h-7 gap-1"}>
+        <Button className={"text-destructive h-7 gap-1"} size={"sm"} type={"button"} variant={"ghost"}>
           <AlertTriangle className={"h-4 w-4"} />
           {problemCount} problem{problemCount > 1 ? "s" : ""} found
         </Button>
       )}
 
       <ResizeDesignDialog
-        open={resizeDialogOpen}
-        onOpenChange={setResizeDialogOpen}
         currentSize={canvasSize}
+        onOpenChange={setResizeDialogOpen}
         onResize={resizeDesign}
+        open={resizeDialogOpen}
       />
     </div>
   );
@@ -491,20 +491,20 @@ const DebouncedNameInput = forwardRef<
 
   return (
     <Input
-      value={localValue}
-      onChange={handleChange}
+      className={"h-7 w-48 border-none bg-transparent px-1 text-sm font-medium shadow-none focus-visible:ring-1"}
       onBlur={() => {
         const latestValue = flush();
         onCommit?.(latestValue);
       }}
+      onChange={handleChange}
       onKeyDown={(e) => {
         if (e.key === "Enter") {
           const latestValue = flush();
           onCommit?.(latestValue);
         }
       }}
-      className={"h-7 w-48 border-none bg-transparent px-1 text-sm font-medium shadow-none focus-visible:ring-1"}
       placeholder={placeholder}
+      value={localValue}
     />
   );
 });

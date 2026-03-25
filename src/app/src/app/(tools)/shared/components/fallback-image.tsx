@@ -20,7 +20,7 @@ export function FallbackImage({ showBadge = true, fallbackSrc, className, alt, .
   if (failed) {
     return (
       <div className={`relative ${className ?? ""}`}>
-        <img {...props} src={fallbackSrc || PLACEHOLDER_SVG} alt={alt || "Unavailable"} className={className} />
+        <img {...props} alt={alt || "Unavailable"} className={className} src={fallbackSrc || PLACEHOLDER_SVG} />
         {showBadge && (
           <div className="bg-destructive/80 absolute top-1 right-1 rounded-full p-0.5" title="Asset failed to load">
             <AlertTriangle className="h-3 w-3 text-white" />

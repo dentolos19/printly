@@ -1,5 +1,26 @@
 "use client";
 
+import {
+  BellIcon,
+  BookIcon,
+  LayoutDashboardIcon,
+  LogOutIcon,
+  MessageCircleIcon,
+  MonitorIcon,
+  MoonIcon,
+  MoreVerticalIcon,
+  PackageIcon,
+  PaletteIcon,
+  SearchIcon,
+  ShieldIcon,
+  SunIcon,
+  UserIcon,
+  UsersIcon,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
+import { ReactNode } from "react";
 import AccessDenied from "@/components/access-denied";
 import { ChatbotWidget } from "@/components/chatbot-widget";
 import DebugDialog from "@/components/debug-dialog";
@@ -33,27 +54,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/providers/auth";
-import {
-  BellIcon,
-  BookIcon,
-  LayoutDashboardIcon,
-  LogOutIcon,
-  MessageCircleIcon,
-  MonitorIcon,
-  MoonIcon,
-  MoreVerticalIcon,
-  PackageIcon,
-  PaletteIcon,
-  SearchIcon,
-  ShieldIcon,
-  SunIcon,
-  UserIcon,
-  UsersIcon,
-} from "lucide-react";
-import { useTheme } from "next-themes";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ReactNode } from "react";
 
 function NestedLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -72,10 +72,10 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton size="lg" asChild>
+              <SidebarMenuButton asChild size="lg">
                 <Link href="/">
                   <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
-                    <img src="/icon.png" className="size-6" />
+                    <img className="size-6" src="/icon.png" />
                   </div>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-bold">Printly</span>
@@ -148,11 +148,11 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuButton
-                    size={"lg"}
                     className={"data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"}
+                    size={"lg"}
                   >
                     <Avatar className={"h-8 w-8 rounded-lg"}>
-                      <AvatarImage src={"/assets/profile.png"} alt={"Avatar"} />
+                      <AvatarImage alt={"Avatar"} src={"/assets/profile.png"} />
                       <AvatarFallback className={"rounded-lg"}>X</AvatarFallback>
                     </Avatar>
                     <div className={"grid flex-1 text-left text-sm leading-tight"}>
@@ -163,15 +163,15 @@ function NestedLayout({ children }: { children: React.ReactNode }) {
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
+                  align={"end"}
                   className={"w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"}
                   side={isMobile ? "bottom" : "right"}
-                  align={"end"}
                   sideOffset={4}
                 >
                   <DropdownMenuLabel className={"p-0 font-normal"}>
                     <div className={"flex items-center gap-2 px-1 py-1.5 text-left text-sm"}>
                       <Avatar className={"h-8 w-8 rounded-lg"}>
-                        <AvatarImage src={"/assets/profile.png"} alt={"Avatar"} />
+                        <AvatarImage alt={"Avatar"} src={"/assets/profile.png"} />
                         <AvatarFallback className={"rounded-lg"}>X</AvatarFallback>
                       </Avatar>
                       <div className={"grid flex-1 text-left text-sm leading-tight"}>

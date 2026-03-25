@@ -1,14 +1,14 @@
-import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export function HeroSection() {
   return (
     <section className="relative flex min-h-[90dvh] items-center overflow-hidden">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
-        <Image src="/assets/hero.png" alt="Apparel Studio" fill className="scale-105 object-cover" priority />
+        <Image alt="Apparel Studio" className="scale-105 object-cover" fill priority src="/assets/hero.png" />
         <div className="from-background via-background/90 absolute inset-0 bg-linear-to-r to-transparent" />
         <div className="from-background absolute inset-0 bg-linear-to-t via-transparent to-transparent" />
       </div>
@@ -31,13 +31,13 @@ export function HeroSection() {
           </p>
 
           <div className="flex flex-wrap gap-4">
-            <Button size="lg" className="h-14 rounded-full px-8 text-lg" asChild>
+            <Button asChild className="h-14 rounded-full px-8 text-lg" size="lg">
               <Link href="/auth">
                 Start Designing
                 <ArrowRight className="ml-2 size-5" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="h-14 rounded-full px-8 text-lg backdrop-blur-sm" asChild>
+            <Button asChild className="h-14 rounded-full px-8 text-lg backdrop-blur-sm" size="lg" variant="outline">
               <Link href="#products">Explore Catalog</Link>
             </Button>
           </div>

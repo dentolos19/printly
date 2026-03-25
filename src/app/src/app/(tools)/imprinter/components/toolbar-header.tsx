@@ -1,5 +1,9 @@
 "use client";
 
+import { ChevronDown, Download, FileDown, Home, Redo2, RotateCcw, Save, ShoppingCart, Undo2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -13,10 +17,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { useCart } from "@/lib/providers/cart";
 import { cn } from "@/lib/utils";
-import { ChevronDown, Download, FileDown, Home, Redo2, RotateCcw, Save, ShoppingCart, Undo2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
-import { toast } from "sonner";
 import { SaveIndicator } from "../../shared/components/save-indicator";
 import { useUnsavedChangesGuard } from "../../shared/hooks";
 import { EXPORT_PRESETS } from "../types";
@@ -149,17 +149,17 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
     <header className={cn("bg-background flex h-12 items-center justify-between border-b px-4", className)}>
       <div className="flex items-center gap-2">
         <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigateWithGuard("/library?tab=imprints")}
           className="h-8 w-8"
+          onClick={() => navigateWithGuard("/library?tab=imprints")}
+          size="icon"
+          variant="ghost"
         >
           <Home className="h-4 w-4" />
         </Button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 gap-1">
+            <Button className="h-8 gap-1" size="sm" variant="ghost">
               File
               <ChevronDown className="h-3 w-3 opacity-50" />
             </Button>
@@ -184,18 +184,18 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 gap-1">
+            <Button className="h-8 gap-1" size="sm" variant="ghost">
               Edit
               <ChevronDown className="h-3 w-3 opacity-50" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={undo} disabled={!canUndo}>
+            <DropdownMenuItem disabled={!canUndo} onClick={undo}>
               <Undo2 className="mr-2 h-4 w-4" />
               Undo
               <DropdownMenuShortcut>Ctrl+Z</DropdownMenuShortcut>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={redo} disabled={!canRedo}>
+            <DropdownMenuItem disabled={!canRedo} onClick={redo}>
               <Redo2 className="mr-2 h-4 w-4" />
               Redo
               <DropdownMenuShortcut>Ctrl+Y</DropdownMenuShortcut>
@@ -205,7 +205,7 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 gap-1">
+            <Button className="h-8 gap-1" size="sm" variant="ghost">
               View
               <ChevronDown className="h-3 w-3 opacity-50" />
             </Button>
@@ -220,33 +220,33 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
 
         <div className="bg-border mx-1 h-5 w-px" />
 
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={undo} disabled={!canUndo} title="Undo">
+        <Button className="h-8 w-8" disabled={!canUndo} onClick={undo} size="icon" title="Undo" variant="ghost">
           <Undo2 className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={redo} disabled={!canRedo} title="Redo">
+        <Button className="h-8 w-8" disabled={!canRedo} onClick={redo} size="icon" title="Redo" variant="ghost">
           <Redo2 className="h-4 w-4" />
         </Button>
       </div>
 
       <div className="flex flex-1 items-center justify-end gap-2">
-        <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} isDirty={isDirty} />
+        <SaveIndicator isDirty={isDirty} lastSavedAt={lastSavedAt} status={saveStatus} />
         <div className="flex items-center justify-end pl-4">
           <DebouncedNameInput
-            ref={nameInputRef}
-            value={imprintName}
             onChange={setImprintName}
             onCommit={(name) => {
               void saveImprint({ force: true, nameOverride: name });
             }}
             placeholder="Untitled Imprint"
+            ref={nameInputRef}
+            value={imprintName}
           />
         </div>
         <Button
-          variant="default"
-          size="sm"
           className="h-8 gap-2"
-          onClick={handleAddToCart}
           disabled={isAddingToCart || !selectedProduct?.variant}
+          onClick={handleAddToCart}
+          size="sm"
+          variant="default"
         >
           <ShoppingCart className="h-4 w-4" />
           {isAddingToCart ? "Adding..." : "Add to Cart"}
@@ -254,7 +254,7 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
       </div>
 
       {/* Export Dialog */}
-      <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
+      <Dialog onOpenChange={setExportDialogOpen} open={exportDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Export Render</DialogTitle>
@@ -263,11 +263,11 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
           <div className="grid gap-2">
             {EXPORT_PRESETS.map((preset) => (
               <Button
-                key={preset.label}
-                variant="outline"
                 className="justify-between"
-                onClick={() => handleExport(preset)}
                 disabled={isExporting}
+                key={preset.label}
+                onClick={() => handleExport(preset)}
+                variant="outline"
               >
                 <span>{preset.label}</span>
                 <span className="text-muted-foreground text-xs">
@@ -334,20 +334,20 @@ const DebouncedNameInput = forwardRef<
 
   return (
     <Input
-      value={localValue}
-      onChange={handleChange}
+      className={"h-7 w-48 border-none bg-transparent px-1 text-sm font-medium shadow-none focus-visible:ring-1"}
       onBlur={() => {
         const latestValue = flush();
         onCommit?.(latestValue);
       }}
+      onChange={handleChange}
       onKeyDown={(e) => {
         if (e.key === "Enter") {
           const latestValue = flush();
           onCommit?.(latestValue);
         }
       }}
-      className={"h-7 w-48 border-none bg-transparent px-1 text-sm font-medium shadow-none focus-visible:ring-1"}
       placeholder={placeholder}
+      value={localValue}
     />
   );
 });

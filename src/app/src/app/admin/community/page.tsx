@@ -1,5 +1,22 @@
 "use client";
 
+import {
+  AlertTriangleIcon,
+  BanIcon,
+  FlagIcon,
+  HashIcon,
+  Loader2,
+  MessageCircleIcon,
+  SearchIcon,
+  ShieldCheckIcon,
+  ThumbsUpIcon,
+  TrendingUpIcon,
+  UserIcon,
+  UsersIcon,
+} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,23 +35,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useServer } from "@/lib/providers/server";
 import { AdminOverviewStatsResponse, AdminTrendingTagResponse, AdminUserResponse } from "@/lib/server/community";
-import {
-  AlertTriangleIcon,
-  BanIcon,
-  FlagIcon,
-  HashIcon,
-  Loader2,
-  MessageCircleIcon,
-  SearchIcon,
-  ShieldCheckIcon,
-  ThumbsUpIcon,
-  TrendingUpIcon,
-  UserIcon,
-  UsersIcon,
-} from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 function StatCard({
   title,
@@ -206,13 +206,13 @@ export default function AdminCommunityPage() {
             ) : trendingTags.length === 0 ? (
               <div className="text-muted-foreground flex h-[250px] items-center justify-center">No tags yet</div>
             ) : (
-              <ResponsiveContainer width="100%" height={250}>
+              <ResponsiveContainer height={250} width="100%">
                 <BarChart data={trendingTags}>
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                   <YAxis />
                   <Tooltip />
-                  <Bar dataKey="postCount" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Total Posts" />
-                  <Bar dataKey="recentPostCount" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="Recent Posts" />
+                  <Bar dataKey="postCount" fill="#3b82f6" name="Total Posts" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="recentPostCount" fill="#8b5cf6" name="Recent Posts" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -285,13 +285,13 @@ export default function AdminCommunityPage() {
             <div className="relative w-full sm:w-64">
               <SearchIcon className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <Input
-                placeholder="Search users..."
-                value={userSearch}
+                className="pl-9"
                 onChange={(e) => {
                   setUserSearch(e.target.value);
                   setUserPage(1);
                 }}
-                className="pl-9"
+                placeholder="Search users..."
+                value={userSearch}
               />
             </div>
           </div>
@@ -300,7 +300,7 @@ export default function AdminCommunityPage() {
           {loadingUsers ? (
             <div className="space-y-2">
               {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" key={i} />
               ))}
             </div>
           ) : (
@@ -318,7 +318,7 @@ export default function AdminCommunityPage() {
               <TableBody>
                 {users.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-muted-foreground text-center">
+                    <TableCell className="text-muted-foreground text-center" colSpan={6}>
                       No users found
                     </TableCell>
                   </TableRow>
@@ -340,17 +340,17 @@ export default function AdminCommunityPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         {user.isBanned ? (
-                          <Button variant="outline" size="sm" onClick={() => handleUnban(user)}>
+                          <Button onClick={() => handleUnban(user)} size="sm" variant="outline">
                             Unban
                           </Button>
                         ) : (
                           <Button
-                            variant="destructive"
-                            size="sm"
                             onClick={() => {
                               setBanTarget(user);
                               setBanDialogOpen(true);
                             }}
+                            size="sm"
+                            variant="destructive"
                           >
                             Ban
                           </Button>
@@ -366,17 +366,17 @@ export default function AdminCommunityPage() {
           {/* Pagination */}
           {userTotalPages > 1 && (
             <div className="mt-4 flex items-center justify-center gap-2">
-              <Button variant="outline" size="sm" disabled={userPage <= 1} onClick={() => setUserPage((p) => p - 1)}>
+              <Button disabled={userPage <= 1} onClick={() => setUserPage((p) => p - 1)} size="sm" variant="outline">
                 Previous
               </Button>
               <span className="text-muted-foreground text-sm">
                 Page {userPage} of {userTotalPages}
               </span>
               <Button
-                variant="outline"
-                size="sm"
                 disabled={userPage >= userTotalPages}
                 onClick={() => setUserPage((p) => p + 1)}
+                size="sm"
+                variant="outline"
               >
                 Next
               </Button>
@@ -386,7 +386,7 @@ export default function AdminCommunityPage() {
       </Card>
 
       {/* Ban Dialog */}
-      <Dialog open={banDialogOpen} onOpenChange={setBanDialogOpen}>
+      <Dialog onOpenChange={setBanDialogOpen} open={banDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Ban User</DialogTitle>
@@ -399,18 +399,18 @@ export default function AdminCommunityPage() {
             <div className="space-y-2">
               <Label>Reason for ban</Label>
               <Textarea
-                placeholder="Explain why this user is being banned..."
-                value={banReason}
                 onChange={(e) => setBanReason(e.target.value)}
+                placeholder="Explain why this user is being banned..."
                 rows={3}
+                value={banReason}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setBanDialogOpen(false)}>
+            <Button onClick={() => setBanDialogOpen(false)} variant="outline">
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleBan} disabled={!banReason.trim() || banning}>
+            <Button disabled={!banReason.trim() || banning} onClick={handleBan} variant="destructive">
               {banning && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Ban User
             </Button>

@@ -1,20 +1,5 @@
 "use client";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/lib/providers/auth";
-import { useServer } from "@/lib/providers/server";
-import { FollowStatusResponse, PostSummaryResponse, ProfileStatsResponse, ReactionType } from "@/lib/server/community";
-import { cn } from "@/lib/utils";
 import {
   BanIcon,
   CheckIcon,
@@ -38,6 +23,21 @@ import {
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/lib/providers/auth";
+import { useServer } from "@/lib/providers/server";
+import { FollowStatusResponse, PostSummaryResponse, ProfileStatsResponse, ReactionType } from "@/lib/server/community";
+import { cn } from "@/lib/utils";
 import { PostDetailDialog, PostGrid } from "../../community/components";
 import { FollowListDialog } from "./follow-list-dialog";
 import { ManagedUsersCard } from "./managed-users-card";
@@ -205,12 +205,12 @@ export default function UserProfilePage() {
                   <div className="flex items-center gap-2">
                     <h1 className="text-2xl font-bold md:text-3xl">{username}</h1>
                     {followStatus?.isPrivate && (
-                      <LockIcon className="text-muted-foreground h-5 w-5" aria-label="Private account" />
+                      <LockIcon aria-label="Private account" className="text-muted-foreground h-5 w-5" />
                     )}
                   </div>
                   <div className="flex items-center gap-2">
                     {isOwnProfile && (
-                      <Button variant="outline" size="lg" onClick={() => router.push("/user/settings")}>
+                      <Button onClick={() => router.push("/user/settings")} size="lg" variant="outline">
                         <SettingsIcon className="mr-2 h-4 w-4" />
                         Settings
                       </Button>
@@ -219,8 +219,8 @@ export default function UserProfilePage() {
                       <>
                         <Button
                           onClick={handleFollow}
-                          variant={following || followStatus?.hasPendingRequest ? "outline" : "default"}
                           size="lg"
+                          variant={following || followStatus?.hasPendingRequest ? "outline" : "default"}
                         >
                           {following ? (
                             <>
@@ -241,7 +241,7 @@ export default function UserProfilePage() {
                         </Button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="icon">
+                            <Button size="icon" variant="outline">
                               <MoreHorizontalIcon className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -260,7 +260,7 @@ export default function UserProfilePage() {
                               )}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={handleBlock} className="text-destructive">
+                            <DropdownMenuItem className="text-destructive" onClick={handleBlock}>
                               {isBlocked ? (
                                 <>
                                   <UserXIcon className="mr-2 h-4 w-4" />
@@ -323,7 +323,6 @@ export default function UserProfilePage() {
             </p>
             <div className="flex items-center gap-2">
               <Button
-                size="sm"
                 disabled={requestActionLoading}
                 onClick={async () => {
                   setRequestActionLoading(true);
@@ -337,13 +336,12 @@ export default function UserProfilePage() {
                     setRequestActionLoading(false);
                   }
                 }}
+                size="sm"
               >
                 <UserCheckIcon className="mr-1.5 h-4 w-4" />
                 Accept
               </Button>
               <Button
-                size="sm"
-                variant="outline"
                 disabled={requestActionLoading}
                 onClick={async () => {
                   setRequestActionLoading(true);
@@ -357,10 +355,12 @@ export default function UserProfilePage() {
                     setRequestActionLoading(false);
                   }
                 }}
+                size="sm"
+                variant="outline"
               >
                 Decline
               </Button>
-              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setRequestDismissed(true)}>
+              <Button className="h-7 w-7" onClick={() => setRequestDismissed(true)} size="icon" variant="ghost">
                 <XIcon className="h-4 w-4" />
               </Button>
             </div>
@@ -419,20 +419,8 @@ export default function UserProfilePage() {
           <div className="space-y-3">
             <h3 className="text-lg font-semibold">📌 Pinned Posts</h3>
             <PostGrid
-              posts={pinnedPosts}
               currentUserId={claims?.id}
-              onReact={async (postId: string, reaction: ReactionType | null) => {
-                try {
-                  if (reaction === null) {
-                    await api.community.deleteReaction(postId);
-                  } else {
-                    await api.community.createOrUpdateReaction({ postId, reactionType: reaction });
-                  }
-                  loadUserData();
-                } catch (error) {
-                  toast.error("Failed to update reaction");
-                }
-              }}
+              emptyTitle="No pinned posts"
               onBookmark={async (postId: string) => {
                 try {
                   await api.community.toggleBookmark(postId);
@@ -445,8 +433,20 @@ export default function UserProfilePage() {
                 setSelectedPostId(postId);
                 setPostDetailOpen(true);
               }}
+              onReact={async (postId: string, reaction: ReactionType | null) => {
+                try {
+                  if (reaction === null) {
+                    await api.community.deleteReaction(postId);
+                  } else {
+                    await api.community.createOrUpdateReaction({ postId, reactionType: reaction });
+                  }
+                  loadUserData();
+                } catch (error) {
+                  toast.error("Failed to update reaction");
+                }
+              }}
               onTagClick={handleTagClick}
-              emptyTitle="No pinned posts"
+              posts={pinnedPosts}
             />
           </div>
         )}
@@ -462,20 +462,8 @@ export default function UserProfilePage() {
           <div className="space-y-3">
             <h3 className="text-lg font-semibold">Posts</h3>
             <PostGrid
-              posts={userPosts}
               currentUserId={claims?.id}
-              onReact={async (postId: string, reaction: ReactionType | null) => {
-                try {
-                  if (reaction === null) {
-                    await api.community.deleteReaction(postId);
-                  } else {
-                    await api.community.createOrUpdateReaction({ postId, reactionType: reaction });
-                  }
-                  loadUserData();
-                } catch (error) {
-                  toast.error("Failed to update reaction");
-                }
-              }}
+              emptyTitle="No posts yet"
               onBookmark={async (postId: string) => {
                 try {
                   await api.community.toggleBookmark(postId);
@@ -488,8 +476,20 @@ export default function UserProfilePage() {
                 setSelectedPostId(postId);
                 setPostDetailOpen(true);
               }}
+              onReact={async (postId: string, reaction: ReactionType | null) => {
+                try {
+                  if (reaction === null) {
+                    await api.community.deleteReaction(postId);
+                  } else {
+                    await api.community.createOrUpdateReaction({ postId, reactionType: reaction });
+                  }
+                  loadUserData();
+                } catch (error) {
+                  toast.error("Failed to update reaction");
+                }
+              }}
               onTagClick={handleTagClick}
-              emptyTitle="No posts yet"
+              posts={userPosts}
             />
           </div>
         ) : (
@@ -501,20 +501,20 @@ export default function UserProfilePage() {
       </div>
 
       <PostDetailDialog
-        postId={selectedPostId}
-        open={postDetailOpen}
         onOpenChange={setPostDetailOpen}
         onPostUpdated={loadUserData}
         onTagClick={handleTagClick}
+        open={postDetailOpen}
+        postId={selectedPostId}
       />
 
       <FollowListDialog
-        open={followListOpen}
-        onOpenChange={setFollowListOpen}
-        userId={userId}
         defaultTab={followListTab}
         followerCount={followerCount}
         followingCount={followingCount}
+        onOpenChange={setFollowListOpen}
+        open={followListOpen}
+        userId={userId}
       />
     </div>
   );

@@ -1,5 +1,5 @@
-import { API_URL } from "@/environment";
 import { NextRequest, NextResponse } from "next/server";
+import { API_URL } from "@/environment";
 
 const PLACEHOLDER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="#f3f4f6"/><text x="100" y="95" text-anchor="middle" fill="#9ca3af" font-family="system-ui" font-size="14">Image</text><text x="100" y="115" text-anchor="middle" fill="#9ca3af" font-family="system-ui" font-size="14">Unavailable</text></svg>`;
 const PLACEHOLDER_BYTES = new TextEncoder().encode(PLACEHOLDER_SVG);

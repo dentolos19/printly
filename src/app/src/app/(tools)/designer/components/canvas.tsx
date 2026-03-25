@@ -1,8 +1,8 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import { Canvas } from "fabric";
 import { useCallback, useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
 import { CanvasContextMenu } from "./canvas-context-menu";
 import { useDesigner } from "./hooks";
 
@@ -241,9 +241,9 @@ export function DesignerCanvas({ className }: DesignerCanvasProps) {
   return (
     <CanvasContextMenu>
       <div
-        ref={containerRef}
-        data-canvas-container
         className={cn("bg-muted/50 flex flex-1 items-center justify-center overflow-auto", className)}
+        data-canvas-container
+        ref={containerRef}
       >
         {/* Canvas container with drop shadow effect like in Mockly */}
         <div className={"relative"}>

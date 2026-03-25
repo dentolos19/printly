@@ -1,16 +1,16 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/lib/providers/auth";
-import { useServer } from "@/lib/providers/server";
-import { PostSummaryResponse, PostStatus, ReactionType, ReportReason, ReportType } from "@/lib/server/community";
 import { ArrowLeftIcon, HashIcon } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/lib/providers/auth";
+import { useServer } from "@/lib/providers/server";
+import { PostStatus, PostSummaryResponse, ReactionType, ReportReason, ReportType } from "@/lib/server/community";
 import { Pagination, PostDetailDialog, PostGrid } from "../../components";
 
 export default function TagPage() {
@@ -99,7 +99,7 @@ export default function TagPage() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link href="/community">
-          <Button variant="ghost" size="icon">
+          <Button size="icon" variant="ghost">
             <ArrowLeftIcon className="h-5 w-5" />
           </Button>
         </Link>
@@ -118,29 +118,29 @@ export default function TagPage() {
 
       {/* Posts grid */}
       <PostGrid
-        posts={posts}
-        loading={loading}
         currentUserId={claims?.id}
-        onReact={handleReact}
+        emptyDescription="Be the first to create a post with this tag"
+        emptyTitle={`No posts tagged #${tag}`}
+        loading={loading}
         onBookmark={handleBookmark}
         onComment={(postId) => {
           setSelectedPostId(postId);
           setPostDetailOpen(true);
         }}
-        onShare={handleShare}
+        onReact={handleReact}
         onReport={handleReport}
+        onShare={handleShare}
         onTagClick={handleTagClick}
-        emptyTitle={`No posts tagged #${tag}`}
-        emptyDescription="Be the first to create a post with this tag"
+        posts={posts}
       />
-      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+      <Pagination onPageChange={setPage} page={page} totalPages={totalPages} />
 
       <PostDetailDialog
-        postId={selectedPostId}
-        open={postDetailOpen}
         onOpenChange={setPostDetailOpen}
         onPostUpdated={loadPosts}
         onTagClick={handleTagClick}
+        open={postDetailOpen}
+        postId={selectedPostId}
       />
     </div>
   );

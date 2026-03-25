@@ -1,14 +1,14 @@
 "use client";
 
+import { Loader2, UserIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useServer } from "@/lib/providers/server";
 import { FollowUserResponse } from "@/lib/server/community";
-import { Loader2, UserIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
 
 type Tab = "followers" | "following";
 
@@ -130,8 +130,8 @@ export function FollowListDialog({
           const displayName = extractUsername(user.userName);
           return (
             <button
-              key={user.userId}
               className="hover:bg-muted flex items-center gap-3 rounded-md px-3 py-2.5 text-left transition-colors"
+              key={user.userId}
               onClick={() => {
                 onOpenChange(false);
                 router.push(`/user/${user.userId}`);
@@ -150,13 +150,13 @@ export function FollowListDialog({
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="mt-2 flex items-center justify-center gap-2">
-            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
+            <Button disabled={page <= 1} onClick={() => onPageChange(page - 1)} size="sm" variant="outline">
               Previous
             </Button>
             <span className="text-muted-foreground text-sm">
               {page} / {totalPages}
             </span>
-            <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
+            <Button disabled={page >= totalPages} onClick={() => onPageChange(page + 1)} size="sm" variant="outline">
               Next
             </Button>
           </div>
@@ -166,16 +166,16 @@ export function FollowListDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)}>
+            <Tabs onValueChange={(v) => setActiveTab(v as Tab)} value={activeTab}>
               <TabsList className="w-full">
-                <TabsTrigger value="followers" className="flex-1">
+                <TabsTrigger className="flex-1" value="followers">
                   Followers <span className="text-muted-foreground ml-1 text-xs">({followerCount})</span>
                 </TabsTrigger>
-                <TabsTrigger value="following" className="flex-1">
+                <TabsTrigger className="flex-1" value="following">
                   Following <span className="text-muted-foreground ml-1 text-xs">({followingCount})</span>
                 </TabsTrigger>
               </TabsList>

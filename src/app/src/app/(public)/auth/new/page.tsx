@@ -1,10 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { useAuth } from "@/lib/providers/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, Loader2, X } from "lucide-react";
 import Link from "next/link";
@@ -13,6 +8,11 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useAuth } from "@/lib/providers/auth";
 
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(100, "Name is too long"),
@@ -92,7 +92,7 @@ export default function Page() {
                 <FormItem>
                   <FormLabel>Full Name</FormLabel>
                   <FormControl>
-                    <Input {...field} type={"text"} placeholder={"John Doe"} disabled={isLoading} />
+                    <Input {...field} disabled={isLoading} placeholder={"John Doe"} type={"text"} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -105,7 +105,7 @@ export default function Page() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input {...field} type={"email"} placeholder={"john@example.com"} disabled={isLoading} />
+                    <Input {...field} disabled={isLoading} placeholder={"john@example.com"} type={"email"} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -118,7 +118,7 @@ export default function Page() {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input {...field} type={"password"} placeholder={"Create a strong password"} disabled={isLoading} />
+                    <Input {...field} disabled={isLoading} placeholder={"Create a strong password"} type={"password"} />
                   </FormControl>
                   <FormDescription>
                     <div className={"mt-2 space-y-1"}>
@@ -135,7 +135,7 @@ export default function Page() {
             />
           </CardContent>
           <CardFooter className={"flex-col gap-3"}>
-            <Button className={"w-full"} type={"submit"} variant={"default"} disabled={isLoading}>
+            <Button className={"w-full"} disabled={isLoading} type={"submit"} variant={"default"}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

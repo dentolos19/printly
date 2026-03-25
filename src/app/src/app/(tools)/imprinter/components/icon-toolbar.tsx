@@ -1,9 +1,9 @@
 "use client";
 
+import { Image, Shirt, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Image, Shirt, Sparkles } from "lucide-react";
 import { useImprinter } from "./hooks/use-imprinter";
 
 const PANEL_TOOLS: {
@@ -35,10 +35,10 @@ export function IconToolbar({ className }: IconToolbarProps) {
       <Tooltip key={item.view}>
         <TooltipTrigger asChild>
           <Button
-            variant="ghost"
-            size="icon"
             className={cn("h-10 w-10 rounded-md", isActive && "bg-accent text-accent-foreground")}
             onClick={() => handlePanelToggle(item.view)}
+            size="icon"
+            variant="ghost"
           >
             <Icon className="h-5 w-5" />
           </Button>

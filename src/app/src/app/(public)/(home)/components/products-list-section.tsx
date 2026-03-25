@@ -3,7 +3,7 @@ import { ProductsSection } from "./products-section";
 
 export function ProductsListSection() {
   return (
-    <section id="products" className="bg-background px-6 py-24 lg:px-12">
+    <section className="bg-background px-6 py-24 lg:px-12" id="products">
       <div className="container mx-auto space-y-16">
         <div className="flex flex-col items-center space-y-4 text-center">
           <div className="bg-primary/10 text-primary inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold tracking-widest uppercase">

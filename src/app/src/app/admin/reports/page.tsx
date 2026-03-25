@@ -1,16 +1,19 @@
 "use client";
 
+import { AlertTriangle, CheckCircle2, Eye, Loader2, MoreHorizontalIcon, Trash2, XCircle } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,9 +30,6 @@ import {
   ReportTypeLabels,
 } from "@/lib/server/community";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, CheckCircle2, Loader2, MoreHorizontalIcon, Trash2, XCircle, Eye } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
 
 export default function AdminReportsPage() {
   const { api } = useServer();
@@ -162,24 +162,24 @@ export default function AdminReportsPage() {
               <Label className="text-xs font-semibold">Filter by Status</Label>
               <div className="mt-2 flex flex-wrap gap-2">
                 <Button
-                  variant={statusFilter === undefined ? "default" : "outline"}
-                  size="sm"
                   onClick={() => {
                     setStatusFilter(undefined);
                     setPage(1);
                   }}
+                  size="sm"
+                  variant={statusFilter === undefined ? "default" : "outline"}
                 >
                   All
                 </Button>
                 {Object.entries(ReportStatusLabels).map(([status, label]) => (
                   <Button
                     key={status}
-                    variant={statusFilter === Number(status) ? "default" : "outline"}
-                    size="sm"
                     onClick={() => {
                       setStatusFilter(Number(status) as ReportStatus);
                       setPage(1);
                     }}
+                    size="sm"
+                    variant={statusFilter === Number(status) ? "default" : "outline"}
                   >
                     {label}
                   </Button>
@@ -191,24 +191,24 @@ export default function AdminReportsPage() {
               <Label className="text-xs font-semibold">Filter by Type</Label>
               <div className="mt-2 flex flex-wrap gap-2">
                 <Button
-                  variant={typeFilter === undefined ? "default" : "outline"}
-                  size="sm"
                   onClick={() => {
                     setTypeFilter(undefined);
                     setPage(1);
                   }}
+                  size="sm"
+                  variant={typeFilter === undefined ? "default" : "outline"}
                 >
                   All
                 </Button>
                 {Object.entries(ReportTypeLabels).map(([type, label]) => (
                   <Button
                     key={type}
-                    variant={typeFilter === Number(type) ? "default" : "outline"}
-                    size="sm"
                     onClick={() => {
                       setTypeFilter(Number(type) as ReportType);
                       setPage(1);
                     }}
+                    size="sm"
+                    variant={typeFilter === Number(type) ? "default" : "outline"}
                   >
                     {label}
                   </Button>
@@ -234,7 +234,7 @@ export default function AdminReportsPage() {
       ) : (
         <div className="grid gap-4">
           {reports.map((report) => (
-            <Card key={report.id} className="overflow-hidden">
+            <Card className="overflow-hidden" key={report.id}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -254,7 +254,7 @@ export default function AdminReportsPage() {
                     </Badge>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Button className="h-8 w-8" size="icon" variant="ghost">
                           <MoreHorizontalIcon className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -268,7 +268,7 @@ export default function AdminReportsPage() {
                           Update Status
                         </DropdownMenuItem>
                         {report.reportType === ReportType.Post && (
-                          <DropdownMenuItem onClick={handleDeletePost} className="text-destructive">
+                          <DropdownMenuItem className="text-destructive" onClick={handleDeletePost}>
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete Post
                           </DropdownMenuItem>
@@ -298,20 +298,20 @@ export default function AdminReportsPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-center gap-2">
-          <Button variant="outline" disabled={page === 1 || loading} onClick={() => setPage(page - 1)}>
+          <Button disabled={page === 1 || loading} onClick={() => setPage(page - 1)} variant="outline">
             Previous
           </Button>
           <div className="flex items-center px-3 text-sm">
             Page {page} of {totalPages}
           </div>
-          <Button variant="outline" disabled={page === totalPages || loading} onClick={() => setPage(page + 1)}>
+          <Button disabled={page === totalPages || loading} onClick={() => setPage(page + 1)} variant="outline">
             Next
           </Button>
         </div>
       )}
 
       {/* Details Dialog */}
-      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+      <Dialog onOpenChange={setDetailsOpen} open={detailsOpen}>
         <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Report Details</DialogTitle>
@@ -369,7 +369,7 @@ export default function AdminReportsPage() {
       </Dialog>
 
       {/* Update Status Dialog */}
-      <Dialog open={updateOpen} onOpenChange={setUpdateOpen}>
+      <Dialog onOpenChange={setUpdateOpen} open={updateOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Update Report Status</DialogTitle>
@@ -383,9 +383,9 @@ export default function AdminReportsPage() {
                 {Object.entries(ReportStatusLabels).map(([status, label]) => (
                   <Button
                     key={status}
-                    variant={updateStatus === Number(status) ? "default" : "outline"}
                     onClick={() => setUpdateStatus(Number(status) as ReportStatus)}
                     size="sm"
+                    variant={updateStatus === Number(status) ? "default" : "outline"}
                   >
                     {label}
                   </Button>
@@ -397,15 +397,15 @@ export default function AdminReportsPage() {
               <Label htmlFor="notes">Admin Notes</Label>
               <Textarea
                 id="notes"
-                placeholder="Add notes about this report..."
-                value={adminNotes}
                 onChange={(e) => setAdminNotes(e.target.value)}
+                placeholder="Add notes about this report..."
                 rows={4}
+                value={adminNotes}
               />
             </div>
 
             {selectedReport?.reportType === ReportType.Post && (
-              <Button onClick={handleDeletePost} variant="destructive" className="w-full">
+              <Button className="w-full" onClick={handleDeletePost} variant="destructive">
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete Post
               </Button>
@@ -413,10 +413,10 @@ export default function AdminReportsPage() {
           </div>
 
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setUpdateOpen(false)} disabled={isUpdating}>
+            <Button disabled={isUpdating} onClick={() => setUpdateOpen(false)} variant="outline">
               Cancel
             </Button>
-            <Button onClick={handleUpdateReport} disabled={isUpdating}>
+            <Button disabled={isUpdating} onClick={handleUpdateReport}>
               {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Update Report
             </Button>

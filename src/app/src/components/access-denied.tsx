@@ -1,9 +1,9 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 import { ShieldAlertIcon } from "lucide-react";
 import Link from "next/link";
 import { ComponentProps } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 export default function AccessDenied(props: ComponentProps<"div">) {
   return (
@@ -25,7 +25,7 @@ export default function AccessDenied(props: ComponentProps<"div">) {
             <Button asChild={true} className={"flex-1"}>
               <Link href={"/"}>Home</Link>
             </Button>
-            <Button asChild={true} variant={"outline"} className={"flex-1"}>
+            <Button asChild={true} className={"flex-1"} variant={"outline"}>
               <Link href={"/auth"}>Login</Link>
             </Button>
           </div>

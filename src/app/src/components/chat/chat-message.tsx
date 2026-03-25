@@ -1,5 +1,9 @@
 "use client";
 
+import { Check, CheckCheck, CornerUpLeft, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { forwardRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,10 +25,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { cn, formatMessageTime } from "@/lib/utils";
-import { Check, CheckCheck, CornerUpLeft, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
-import { forwardRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { FileAttachment } from "./file-attachment";
 import { VoiceMessagePlayer } from "./voice-message-player";
 
@@ -127,7 +127,7 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
 
     return (
       <>
-        <div ref={ref} className={cn("group flex gap-3 px-4 py-2", isCurrentUser ? "flex-row-reverse" : "flex-row")}>
+        <div className={cn("group flex gap-3 px-4 py-2", isCurrentUser ? "flex-row-reverse" : "flex-row")} ref={ref}>
           {!isCurrentUser && (
             <Avatar className="h-8 w-8 shrink-0">
               <AvatarFallback className="bg-muted text-xs">{getInitials(senderName)}</AvatarFallback>
@@ -154,16 +154,16 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
               {isEditing ? (
                 <div className="flex flex-col gap-2">
                   <Textarea
-                    value={editContent}
-                    onChange={(e) => setEditContent(e.target.value)}
-                    className="min-h-[60px] min-w-[200px]"
                     autoFocus
+                    className="min-h-[60px] min-w-[200px]"
+                    onChange={(e) => setEditContent(e.target.value)}
+                    value={editContent}
                   />
                   <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
+                    <Button onClick={handleCancelEdit} size="sm" variant="ghost">
                       Cancel
                     </Button>
-                    <Button size="sm" onClick={handleEdit}>
+                    <Button onClick={handleEdit} size="sm">
                       Save
                     </Button>
                   </div>
@@ -173,14 +173,14 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                   <div className="flex flex-col gap-2">
                     {hasVoice && !isDeleted && (
                       <VoiceMessagePlayer
-                        url={voiceMessageUrl}
-                        duration={voiceMessageDuration}
                         className={cn(isCurrentUser ? "bg-primary/10" : "bg-muted")}
+                        duration={voiceMessageDuration}
+                        url={voiceMessageUrl}
                       />
                     )}
 
                     {hasFile && !isDeleted && (
-                      <FileAttachment url={fileUrl} fileName={fileName} fileType={fileType} fileSize={fileSize} />
+                      <FileAttachment fileName={fileName} fileSize={fileSize} fileType={fileType} url={fileUrl} />
                     )}
 
                     {(!hasVoice || !content.startsWith("🎤")) && (!hasFile || !content.startsWith("📎")) && (
@@ -195,7 +195,6 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                         )}
                       >
                         <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
                           components={{
                             p: ({ children }) => (
                               <p className="mb-1 wrap-break-word whitespace-pre-wrap last:mb-0">{children}</p>
@@ -207,13 +206,13 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                             li: ({ children }) => <li className="text-sm">{children}</li>,
                             a: ({ href, children }) => (
                               <a
-                                href={href}
                                 className={cn(
                                   "underline hover:no-underline",
                                   isCurrentUser ? "text-primary-foreground/80" : "text-primary",
                                 )}
-                                target="_blank"
+                                href={href}
                                 rel="noopener noreferrer"
+                                target="_blank"
                               >
                                 {children}
                               </a>
@@ -241,6 +240,7 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                               );
                             },
                           }}
+                          remarkPlugins={[remarkGfm]}
                         >
                           {content}
                         </ReactMarkdown>
@@ -252,9 +252,9 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
-                          variant="ghost"
-                          size="icon"
                           className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
+                          size="icon"
+                          variant="ghost"
                         >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
@@ -274,8 +274,8 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                         )}
                         {onDelete && isCurrentUser && (
                           <DropdownMenuItem
-                            onClick={() => setShowDeleteDialog(true)}
                             className="text-destructive focus:text-destructive"
+                            onClick={() => setShowDeleteDialog(true)}
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete
@@ -300,7 +300,7 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
           </div>
         </div>
 
-        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialog onOpenChange={setShowDeleteDialog} open={showDeleteDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Message</AlertDialogTitle>
@@ -311,8 +311,8 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                onClick={handleDelete}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={handleDelete}
               >
                 Delete
               </AlertDialogAction>
@@ -333,7 +333,7 @@ export interface ChatDateSeparatorProps {
 export function ChatDateSeparator({ date }: ChatDateSeparatorProps) {
   return (
     <div className="flex items-center justify-center py-4">
-      <Badge variant="secondary" className="text-xs font-normal">
+      <Badge className="text-xs font-normal" variant="secondary">
         {formatDate(date)}
       </Badge>
     </div>

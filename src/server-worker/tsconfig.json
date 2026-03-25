@@ -3,10 +3,6 @@
     "target": "es2021",
     "module": "es2022",
     "moduleResolution": "bundler",
-    "types": ["node"],
-    "strict": true,
-    "noEmit": true,
     "skipLibCheck": true
-  },
-  "include": ["cloudflare-env.d.ts", "index.ts"]
+  }
 }

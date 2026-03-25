@@ -1,3 +1,7 @@
+import type { Metadata } from "next";
+import { Fira_Mono, Inter } from "next/font/google";
+import { ThemeProvider } from "next-themes";
+import { ReactNode } from "react";
 import BackendWaitOverlay from "@/components/backend-wait-overlay";
 import { Toaster } from "@/components/ui/sonner";
 import AuthProvider from "@/lib/providers/auth";
@@ -5,10 +9,6 @@ import BackendReadinessProvider from "@/lib/providers/backend-readiness";
 import CartProvider from "@/lib/providers/cart";
 import ServerProvider from "@/lib/providers/server";
 import { cn } from "@/lib/utils";
-import type { Metadata } from "next";
-import { ThemeProvider } from "next-themes";
-import { Fira_Mono, Inter } from "next/font/google";
-import { ReactNode } from "react";
 import "./globals.css";
 
 const fontSans = Inter({
@@ -28,9 +28,9 @@ export const metadata: Metadata = {
 
 export default function Layout({ children }: { children: ReactNode }) {
   return (
-    <html lang={"en"} className={"scroll-smooth"} suppressHydrationWarning>
+    <html className={"scroll-smooth"} lang={"en"} suppressHydrationWarning>
       <body className={cn(fontSans.variable, fontMono.variable, "antialiased")}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="system" disableTransitionOnChange enableSystem>
           <BackendReadinessProvider>
             <AuthProvider>
               <ServerProvider>

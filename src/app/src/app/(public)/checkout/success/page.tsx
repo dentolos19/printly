@@ -1,13 +1,13 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useServer } from "@/lib/providers/server";
-import { PaymentStatus } from "@/lib/server/payment";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useServer } from "@/lib/providers/server";
+import { PaymentStatus } from "@/lib/server/payment";
 
 function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
@@ -84,7 +84,7 @@ function CheckoutSuccessContent() {
           <Button asChild>
             <Link href="/orders">View My Orders</Link>
           </Button>
-          <Button variant="outline" asChild>
+          <Button asChild variant="outline">
             <Link href="/">Continue Shopping</Link>
           </Button>
         </CardContent>

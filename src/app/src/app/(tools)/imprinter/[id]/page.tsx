@@ -1,12 +1,12 @@
 "use client";
 
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { ImprinterContent } from "@/app/(tools)/imprinter/components";
 import { ImprinterProvider } from "@/app/(tools)/imprinter/components/hooks/use-imprinter";
 import type { AppliedDesign, CameraState, ProductModel } from "@/app/(tools)/imprinter/types";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useServer } from "@/lib/providers/server";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
 
 export default function Page() {
   const router = useRouter();
@@ -162,18 +162,18 @@ export default function Page() {
     <div className="h-dvh w-dvw">
       <TooltipProvider delayDuration={300}>
         <ImprinterProvider
+          initialDesignId={initialDesignId}
           initialImprintId={initialImprintId}
           initialImprintName={initialImprintName}
           initialProductId={initialProductId}
           initialVariantId={initialVariantId}
-          initialDesignId={initialDesignId}
           needsProductSelection={needsProductSelection}
-          onProductSelected={() => setNeedsProductSelection(false)}
-          onSave={handleSave}
           onLoad={handleLoad}
           onLoadDesign={handleLoadDesign}
-          onLoadProducts={handleLoadProducts}
           onLoadPrintAreas={handleLoadPrintAreas}
+          onLoadProducts={handleLoadProducts}
+          onProductSelected={() => setNeedsProductSelection(false)}
+          onSave={handleSave}
           onUploadPreview={handleUploadPreview}
         >
           <ImprinterContent />

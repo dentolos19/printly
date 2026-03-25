@@ -70,28 +70,28 @@ function DesignItem({
       }}
     >
       <image
+        height={designSize}
         href={imgFailed ? PLACEHOLDER_SVG : imageHref}
         onError={() => setImgFailed(true)}
-        x={x}
-        y={y}
-        width={designSize}
-        height={designSize}
         opacity={design.opacity}
         style={{
           transform: `rotate(${design.transform.rotation[2]}rad)`,
           transformOrigin: `${x + designSize / 2}px ${y + designSize / 2}px`,
         }}
+        width={designSize}
+        x={x}
+        y={y}
       />
       {isSelected && (
         <rect
+          fill="none"
+          height={designSize + 4}
+          stroke="hsl(var(--primary))"
+          strokeDasharray="4 2"
+          strokeWidth={2}
+          width={designSize + 4}
           x={x - 2}
           y={y - 2}
-          width={designSize + 4}
-          height={designSize + 4}
-          fill="none"
-          stroke="hsl(var(--primary))"
-          strokeWidth={2}
-          strokeDasharray="4 2"
         />
       )}
     </g>
@@ -116,32 +116,32 @@ function PrintAreaBox({
   return (
     <g>
       <rect
-        x={position.x}
-        y={position.y}
-        width={PRINT_AREA_SIZE}
-        height={PRINT_AREA_SIZE}
         fill="hsl(var(--muted))"
+        height={PRINT_AREA_SIZE}
+        rx={8}
         stroke="hsl(var(--border))"
         strokeWidth={1}
-        rx={8}
+        width={PRINT_AREA_SIZE}
+        x={position.x}
+        y={position.y}
       />
       <text
+        className="fill-muted-foreground text-xs font-medium"
+        textAnchor="middle"
         x={position.x + PRINT_AREA_SIZE / 2}
         y={position.y + 20}
-        textAnchor="middle"
-        className="fill-muted-foreground text-xs font-medium"
       >
         {printArea.name}
       </text>
       {designs.map((design) => (
         <DesignItem
-          key={design.id}
           design={design}
+          isSelected={design.id === selectedDesignId}
+          key={design.id}
+          onDragStart={onDragStart}
+          onSelect={() => onSelectDesign(design.id)}
           printArea={printArea}
           printAreaPosition={position}
-          isSelected={design.id === selectedDesignId}
-          onSelect={() => onSelectDesign(design.id)}
-          onDragStart={onDragStart}
         />
       ))}
     </g>
@@ -249,14 +249,14 @@ export function Imprinter2DView() {
   return (
     <div className="flex h-full min-h-0 w-full min-w-0 items-center justify-center bg-neutral-100 p-4 dark:bg-neutral-900">
       <svg
-        ref={svgRef}
-        width="100%"
-        height="100%"
-        viewBox={`0 0 ${CANVAS_SIZE} ${CANVAS_SIZE}`}
         className="h-full max-h-[600px] w-full max-w-[600px] rounded-lg bg-white shadow-lg dark:bg-neutral-800"
+        height="100%"
+        onMouseLeave={handleMouseLeave}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseLeave}
+        ref={svgRef}
+        viewBox={`0 0 ${CANVAS_SIZE} ${CANVAS_SIZE}`}
+        width="100%"
       >
         {availablePrintAreas.map((printArea, index) => {
           const position = getPrintAreaPosition(index, availablePrintAreas.length);
@@ -264,13 +264,13 @@ export function Imprinter2DView() {
 
           return (
             <PrintAreaBox
-              key={printArea.id}
-              printArea={printArea}
-              position={position}
               designs={designs}
-              selectedDesignId={selectedDesignId}
-              onSelectDesign={selectDesign}
+              key={printArea.id}
               onDragStart={handleDragStart}
+              onSelectDesign={selectDesign}
+              position={position}
+              printArea={printArea}
+              selectedDesignId={selectedDesignId}
             />
           );
         })}

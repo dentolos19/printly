@@ -1,5 +1,22 @@
 "use client";
 
+import {
+  AlertCircle,
+  Check,
+  CheckCircle2,
+  Clock,
+  CreditCard,
+  Eye,
+  Loader2,
+  MessageSquare,
+  MoreHorizontal,
+  RefreshCcw,
+  X,
+  XCircle,
+} from "lucide-react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,23 +53,6 @@ import {
   RefundStatusLabels,
   RefundWithOrderResponse,
 } from "@/lib/server/refund";
-import {
-  AlertCircle,
-  Check,
-  CheckCircle2,
-  Clock,
-  CreditCard,
-  Eye,
-  Loader2,
-  MessageSquare,
-  MoreHorizontal,
-  RefreshCcw,
-  X,
-  XCircle,
-} from "lucide-react";
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
 
 function RefundsSkeleton() {
   return (
@@ -60,7 +60,7 @@ function RefundsSkeleton() {
       <CardContent className="p-6">
         <div className="space-y-4">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="flex items-center justify-between">
+            <div className="flex items-center justify-between" key={i}>
               <Skeleton className="h-10 w-full" />
             </div>
           ))}
@@ -107,7 +107,7 @@ function RefundDetailsDialog({
   const canProcess = refund.status === RefundStatus.Approved;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-3">
@@ -197,7 +197,7 @@ function RefundDetailsDialog({
                   <MessageSquare className="h-4 w-4" />
                   <span className="text-sm font-medium">Support Chat Linked</span>
                 </div>
-                <Button variant="outline" size="sm" asChild>
+                <Button asChild size="sm" variant="outline">
                   <Link href={`/admin/support?conversation=${refund.conversationId}`}>
                     <MessageSquare className="mr-2 h-4 w-4" />
                     Open Chat
@@ -228,42 +228,42 @@ function RefundDetailsDialog({
             <div className="space-y-3 rounded-lg border border-green-200 bg-green-50 p-4">
               <h4 className="font-medium text-green-800">Approve Refund</h4>
               <div className="space-y-2">
-                <Label htmlFor="approved-amount" className="text-green-700">
+                <Label className="text-green-700" htmlFor="approved-amount">
                   Approved Amount ($)
                 </Label>
                 <Input
-                  id="approved-amount"
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  max={refund.orderTotalAmount}
-                  value={approvedAmount}
-                  onChange={(e) => setApprovedAmount(e.target.value)}
                   className="border-green-300"
+                  id="approved-amount"
+                  max={refund.orderTotalAmount}
+                  min="0.01"
+                  onChange={(e) => setApprovedAmount(e.target.value)}
+                  step="0.01"
+                  type="number"
+                  value={approvedAmount}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="admin-notes-approve" className="text-green-700">
+                <Label className="text-green-700" htmlFor="admin-notes-approve">
                   Admin Notes (Optional)
                 </Label>
                 <Textarea
+                  className="border-green-300"
                   id="admin-notes-approve"
-                  value={adminNotes}
                   onChange={(e) => setAdminNotes(e.target.value)}
                   placeholder="Add notes about this approval..."
                   rows={2}
-                  className="border-green-300"
+                  value={adminNotes}
                 />
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setShowApproveForm(false)} disabled={isProcessing}>
+                <Button disabled={isProcessing} onClick={() => setShowApproveForm(false)} size="sm" variant="outline">
                   Cancel
                 </Button>
                 <Button
-                  size="sm"
-                  onClick={() => onApprove(parseFloat(approvedAmount), adminNotes || undefined)}
-                  disabled={isProcessing}
                   className="bg-green-600 hover:bg-green-700"
+                  disabled={isProcessing}
+                  onClick={() => onApprove(parseFloat(approvedAmount), adminNotes || undefined)}
+                  size="sm"
                 >
                   {isProcessing ? "Approving..." : "Confirm Approval"}
                 </Button>
@@ -276,27 +276,27 @@ function RefundDetailsDialog({
             <div className="space-y-3 rounded-lg border border-red-200 bg-red-50 p-4">
               <h4 className="font-medium text-red-800">Reject Refund</h4>
               <div className="space-y-2">
-                <Label htmlFor="admin-notes-reject" className="text-red-700">
+                <Label className="text-red-700" htmlFor="admin-notes-reject">
                   Reason for Rejection
                 </Label>
                 <Textarea
+                  className="border-red-300"
                   id="admin-notes-reject"
-                  value={adminNotes}
                   onChange={(e) => setAdminNotes(e.target.value)}
                   placeholder="Explain why this refund is being rejected..."
                   rows={2}
-                  className="border-red-300"
+                  value={adminNotes}
                 />
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setShowRejectForm(false)} disabled={isProcessing}>
+                <Button disabled={isProcessing} onClick={() => setShowRejectForm(false)} size="sm" variant="outline">
                   Cancel
                 </Button>
                 <Button
+                  disabled={isProcessing}
+                  onClick={() => onReject(adminNotes || undefined)}
                   size="sm"
                   variant="destructive"
-                  onClick={() => onReject(adminNotes || undefined)}
-                  disabled={isProcessing}
                 >
                   {isProcessing ? "Rejecting..." : "Confirm Rejection"}
                 </Button>
@@ -309,18 +309,18 @@ function RefundDetailsDialog({
           {canApproveReject && !showApproveForm && !showRejectForm && (
             <>
               <Button
-                variant="outline"
-                onClick={() => setShowRejectForm(true)}
-                disabled={isProcessing}
                 className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                disabled={isProcessing}
+                onClick={() => setShowRejectForm(true)}
+                variant="outline"
               >
                 <X className="mr-2 h-4 w-4" />
                 Reject
               </Button>
               <Button
-                onClick={() => setShowApproveForm(true)}
-                disabled={isProcessing}
                 className="bg-green-600 hover:bg-green-700"
+                disabled={isProcessing}
+                onClick={() => setShowApproveForm(true)}
               >
                 <Check className="mr-2 h-4 w-4" />
                 Approve
@@ -328,12 +328,12 @@ function RefundDetailsDialog({
             </>
           )}
           {canProcess && (
-            <Button onClick={onProcess} disabled={isProcessing}>
+            <Button disabled={isProcessing} onClick={onProcess}>
               <CreditCard className="mr-2 h-4 w-4" />
               {isProcessing ? "Processing..." : "Process Refund via Stripe"}
             </Button>
           )}
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button onClick={() => onOpenChange(false)} variant="outline">
             Close
           </Button>
         </DialogFooter>
@@ -554,35 +554,35 @@ export default function AdminRefundsPage() {
           </CardContent>
         </Card>
       ) : (
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs onValueChange={setActiveTab} value={activeTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="all">
               All{" "}
-              <Badge variant="secondary" className="ml-2">
+              <Badge className="ml-2" variant="secondary">
                 {refundCounts.all}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="pending">
               Pending{" "}
-              <Badge variant="secondary" className="ml-2">
+              <Badge className="ml-2" variant="secondary">
                 {refundCounts.pending}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="approved">
               Approved{" "}
-              <Badge variant="secondary" className="ml-2">
+              <Badge className="ml-2" variant="secondary">
                 {refundCounts.approved}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="completed">
               Completed{" "}
-              <Badge variant="secondary" className="ml-2">
+              <Badge className="ml-2" variant="secondary">
                 {refundCounts.completed}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="rejected">
               Rejected{" "}
-              <Badge variant="secondary" className="ml-2">
+              <Badge className="ml-2" variant="secondary">
                 {refundCounts.rejected}
               </Badge>
             </TabsTrigger>
@@ -606,7 +606,7 @@ export default function AdminRefundsPage() {
                 <TableBody>
                   {filteredRefunds.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="py-8 text-center">
+                      <TableCell className="py-8 text-center" colSpan={8}>
                         <p className="text-muted-foreground">No refunds in this category</p>
                       </TableCell>
                     </TableRow>
@@ -648,7 +648,7 @@ export default function AdminRefundsPage() {
                         <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
+                              <Button size="icon" variant="ghost">
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
@@ -661,13 +661,13 @@ export default function AdminRefundsPage() {
                                 <>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem
-                                    onClick={() => handleQuickApprove(refund)}
                                     className="text-green-600"
+                                    onClick={() => handleQuickApprove(refund)}
                                   >
                                     <Check className="mr-2 h-4 w-4" />
                                     Quick Approve
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleQuickReject(refund)} className="text-red-600">
+                                  <DropdownMenuItem className="text-red-600" onClick={() => handleQuickReject(refund)}>
                                     <X className="mr-2 h-4 w-4" />
                                     Quick Reject
                                   </DropdownMenuItem>
@@ -701,13 +701,13 @@ export default function AdminRefundsPage() {
       )}
 
       <RefundDetailsDialog
-        refund={selectedRefund}
-        open={detailsOpen}
-        onOpenChange={setDetailsOpen}
-        onApprove={handleApprove}
-        onReject={handleReject}
-        onProcess={handleProcess}
         isProcessing={isProcessing}
+        onApprove={handleApprove}
+        onOpenChange={setDetailsOpen}
+        onProcess={handleProcess}
+        onReject={handleReject}
+        open={detailsOpen}
+        refund={selectedRefund}
       />
     </div>
   );

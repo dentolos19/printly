@@ -1,48 +1,48 @@
 "use client";
 
-import { useAuth } from "@/lib/providers/auth";
-import { API_URL } from "@/environment";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Status & Priority dropdowns only
 import * as signalR from "@microsoft/signalr";
-import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Send,
-  Loader2,
-  WifiOff,
-  Wifi,
-  ArrowLeft,
-  RefreshCw,
   AlertCircle,
+  ArrowLeft,
   Check,
   CheckCheck,
-  Edit2,
-  Trash2,
-  Reply,
-  X,
-  Plus,
-  MessageSquare,
   Clock,
-  Paperclip,
-  Mic,
+  Download,
+  Edit2,
   FileText,
   Image,
-  Download,
+  Loader2,
+  MessageSquare,
+  Mic,
+  Paperclip,
+  Plus,
+  RefreshCw,
+  Reply,
+  Send,
+  Trash2,
+  Wifi,
+  WifiOff,
+  X,
 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Status & Priority dropdowns only
+import { API_URL } from "@/environment";
+import { useAuth } from "@/lib/providers/auth";
 import {
+  getPriorityColor,
+  getPriorityLabel,
+  getStatusColor,
+  getStatusLabel,
   type Ticket,
   type TicketMessage,
-  TicketStatus,
   TicketPriority,
-  getStatusLabel,
-  getStatusColor,
-  getPriorityLabel,
-  getPriorityColor,
+  TicketStatus,
 } from "@/lib/server/ticket";
 import { cn } from "@/lib/utils";
 
@@ -993,7 +993,7 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
           <div className="flex items-center gap-2">
             <WifiOff className="h-4 w-4 text-red-500" />
             <span className="text-xs text-red-500">Error</span>
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={startConnection} title="Retry connection">
+            <Button className="h-6 w-6" onClick={startConnection} size="icon" title="Retry connection" variant="ghost">
               <RefreshCw className="h-3 w-3" />
             </Button>
           </div>
@@ -1003,7 +1003,7 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
           <div className="flex items-center gap-2">
             <WifiOff className="h-4 w-4 text-gray-400" />
             <span className="text-xs text-gray-400">Disconnected</span>
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={startConnection} title="Connect">
+            <Button className="h-6 w-6" onClick={startConnection} size="icon" title="Connect" variant="ghost">
               <RefreshCw className="h-3 w-3" />
             </Button>
           </div>
@@ -1020,13 +1020,13 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
         <AlertCircle className="h-4 w-4 shrink-0" />
         <span className="flex-1 truncate">{connectionError}</span>
         <Button
-          variant="ghost"
-          size="sm"
           className="h-6 px-2 text-xs"
           onClick={() => {
             setConnectionError(null);
             startConnection();
           }}
+          size="sm"
+          variant="ghost"
         >
           Retry
         </Button>
@@ -1057,7 +1057,7 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
           <div className="flex items-center gap-2">
             {renderConnectionStatus()}
             {!isAdmin && (
-              <Button size="sm" onClick={() => setShowNewTicketForm(true)}>
+              <Button onClick={() => setShowNewTicketForm(true)} size="sm">
                 <Plus className="mr-1 h-4 w-4" />
                 New Ticket
               </Button>
@@ -1072,20 +1072,20 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
           <div className="border-b px-4 pb-4">
             <div className="flex gap-2">
               <Input
-                placeholder="Describe your issue..."
-                value={newTicketSubject}
+                autoFocus
+                disabled={isCreatingTicket}
                 onChange={(e) => setNewTicketSubject(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleCreateTicket();
                   if (e.key === "Escape") setShowNewTicketForm(false);
                 }}
-                disabled={isCreatingTicket}
-                autoFocus
+                placeholder="Describe your issue..."
+                value={newTicketSubject}
               />
-              <Button onClick={handleCreateTicket} disabled={isCreatingTicket || !newTicketSubject.trim()}>
+              <Button disabled={isCreatingTicket || !newTicketSubject.trim()} onClick={handleCreateTicket}>
                 {isCreatingTicket ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create"}
               </Button>
-              <Button variant="ghost" onClick={() => setShowNewTicketForm(false)} disabled={isCreatingTicket}>
+              <Button disabled={isCreatingTicket} onClick={() => setShowNewTicketForm(false)} variant="ghost">
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -1106,7 +1106,7 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
                   {isAdmin ? "No tickets yet." : "You haven't created any tickets yet."}
                 </p>
                 {!isAdmin && (
-                  <Button variant="outline" size="sm" className="mt-4" onClick={() => setShowNewTicketForm(true)}>
+                  <Button className="mt-4" onClick={() => setShowNewTicketForm(true)} size="sm" variant="outline">
                     <Plus className="mr-2 h-4 w-4" />
                     Create Your First Ticket
                   </Button>
@@ -1116,9 +1116,9 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
               <div className="divide-y">
                 {tickets.map((ticket) => (
                   <button
+                    className="hover:bg-muted flex w-full items-center gap-3 p-4 text-left transition-colors"
                     key={ticket.id}
                     onClick={() => setSelectedTicket(ticket)}
-                    className="hover:bg-muted flex w-full items-center gap-3 p-4 text-left transition-colors"
                   >
                     <Avatar className="h-10 w-10 shrink-0">
                       <AvatarFallback>{getInitials(ticket.customerName)}</AvatarFallback>
@@ -1134,10 +1134,10 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
                       </div>
                       <div className="mt-1 flex items-center gap-2">
                         {isAdmin && <span className="text-muted-foreground text-xs">{ticket.customerName}</span>}
-                        <Badge variant="secondary" className={`text-[10px] ${getStatusColor(ticket.status)}`}>
+                        <Badge className={`text-[10px] ${getStatusColor(ticket.status)}`} variant="secondary">
                           {getStatusLabel(ticket.status)}
                         </Badge>
-                        <Badge variant="outline" className={`text-[10px] ${getPriorityColor(ticket.priority)}`}>
+                        <Badge className={`text-[10px] ${getPriorityColor(ticket.priority)}`} variant="outline">
                           {getPriorityLabel(ticket.priority)}
                         </Badge>
                       </div>
@@ -1176,17 +1176,17 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
   return (
     <Card className="mx-auto flex h-[600px] w-full max-w-4xl flex-col">
       <CardHeader className="flex flex-row items-center gap-3 space-y-0 border-b pb-3">
-        <Button variant="ghost" size="icon" onClick={() => setSelectedTicket(null)} title="Back to tickets">
+        <Button onClick={() => setSelectedTicket(null)} size="icon" title="Back to tickets" variant="ghost">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="min-w-0 flex-1">
           <CardTitle className="truncate text-base font-semibold">{selectedTicket.subject}</CardTitle>
           <div className="mt-1 flex items-center gap-2">
             {isAdmin && <span className="text-muted-foreground text-xs">From: {selectedTicket.customerName}</span>}
-            <Badge variant="secondary" className={`text-[10px] ${getStatusColor(selectedTicket.status)}`}>
+            <Badge className={`text-[10px] ${getStatusColor(selectedTicket.status)}`} variant="secondary">
               {getStatusLabel(selectedTicket.status)}
             </Badge>
-            <Badge variant="outline" className={`text-[10px] ${getPriorityColor(selectedTicket.priority)}`}>
+            <Badge className={`text-[10px] ${getPriorityColor(selectedTicket.priority)}`} variant="outline">
               {getPriorityLabel(selectedTicket.priority)}
             </Badge>
           </div>
@@ -1195,7 +1195,7 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
         {/* Admin Controls */}
         {isAdmin && (
           <div className="flex items-center gap-2">
-            <Select value={selectedTicket.status.toString()} onValueChange={handleStatusChange}>
+            <Select onValueChange={handleStatusChange} value={selectedTicket.status.toString()}>
               <SelectTrigger className="h-8 w-[110px] text-xs">
                 <SelectValue />
               </SelectTrigger>
@@ -1206,7 +1206,7 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
                 <SelectItem value="3">Closed</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={selectedTicket.priority.toString()} onValueChange={handlePriorityChange}>
+            <Select onValueChange={handlePriorityChange} value={selectedTicket.priority.toString()}>
               <SelectTrigger className="h-8 w-[100px] text-xs">
                 <SelectValue />
               </SelectTrigger>
@@ -1240,14 +1240,14 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
 
                 return (
                   <TicketMessageBubble
-                    key={message.id}
-                    message={message}
+                    formatTime={formatTime}
                     isOwnMessage={isOwnMessage}
                     isRead={isRead}
-                    onEdit={handleEditMessage}
+                    key={message.id}
+                    message={message}
                     onDelete={handleDeleteMessage}
+                    onEdit={handleEditMessage}
                     onReply={() => setReplyToMessage(message)}
-                    formatTime={formatTime}
                   />
                 );
               })
@@ -1279,7 +1279,7 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
               <p className="text-primary truncate text-xs font-medium">Replying to {replyToMessage.senderName}</p>
               <p className="text-muted-foreground truncate text-sm">{replyToMessage.content}</p>
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setReplyToMessage(null)}>
+            <Button className="h-8 w-8 shrink-0" onClick={() => setReplyToMessage(null)} size="icon" variant="ghost">
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -1296,31 +1296,37 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
         <div className="flex w-full gap-2 p-3">
           {/* Hidden file input */}
           <input
+            accept="image/*,application/pdf,.doc,.docx,.txt"
+            className="hidden"
+            onChange={handleFileSelect}
             ref={fileInputRef}
             type="file"
-            accept="image/*,application/pdf,.doc,.docx,.txt"
-            onChange={handleFileSelect}
-            className="hidden"
           />
 
           {/* File upload button */}
           <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => fileInputRef.current?.click()}
+            className="shrink-0"
             disabled={
               connectionState !== "connected" ||
               isUploadingFile ||
               isRecording ||
               selectedTicket.status === TicketStatus.Closed
             }
+            onClick={() => fileInputRef.current?.click()}
+            size="icon"
             title="Attach file"
-            className="shrink-0"
+            variant="ghost"
           >
             {isUploadingFile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
           </Button>
 
           <Input
+            autoComplete="off"
+            className="flex-1"
+            disabled={connectionState !== "connected" || isSending || selectedTicket.status === TicketStatus.Closed}
+            onBlur={handleStopTyping}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyPress}
             placeholder={
               selectedTicket.status === TicketStatus.Closed
                 ? "This ticket is closed"
@@ -1329,40 +1335,34 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
                   : "Connecting..."
             }
             value={inputMessage}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyPress}
-            onBlur={handleStopTyping}
-            disabled={connectionState !== "connected" || isSending || selectedTicket.status === TicketStatus.Closed}
-            className="flex-1"
-            autoComplete="off"
           />
 
           {/* Voice recording button */}
           <Button
-            variant={isRecording ? "destructive" : "ghost"}
-            size="icon"
-            onMouseDown={startVoiceRecording}
-            onMouseUp={stopVoiceRecording}
-            onMouseLeave={isRecording ? stopVoiceRecording : undefined}
-            onTouchStart={startVoiceRecording}
-            onTouchEnd={stopVoiceRecording}
+            className="shrink-0"
             disabled={
               connectionState !== "connected" || isUploadingFile || selectedTicket.status === TicketStatus.Closed
             }
+            onMouseDown={startVoiceRecording}
+            onMouseLeave={isRecording ? stopVoiceRecording : undefined}
+            onMouseUp={stopVoiceRecording}
+            onTouchEnd={stopVoiceRecording}
+            onTouchStart={startVoiceRecording}
+            size="icon"
             title={isRecording ? "Release to send" : "Hold to record voice message"}
-            className="shrink-0"
+            variant={isRecording ? "destructive" : "ghost"}
           >
             <Mic className={cn("h-4 w-4", isRecording && "animate-pulse")} />
           </Button>
 
           <Button
-            onClick={handleSendMessage}
             disabled={
               connectionState !== "connected" ||
               !inputMessage.trim() ||
               isSending ||
               selectedTicket.status === TicketStatus.Closed
             }
+            onClick={handleSendMessage}
             size="icon"
             title="Send message"
           >
@@ -1426,22 +1426,22 @@ function TicketMessageBubble({
         {isOwnMessage && !message.isDeleted && !isEditing && (
           <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
             <button
-              onClick={onReply}
               className="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700"
+              onClick={onReply}
               title="Reply"
             >
               <Reply className="h-3.5 w-3.5" />
             </button>
             <button
-              onClick={() => setIsEditing(true)}
               className="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700"
+              onClick={() => setIsEditing(true)}
               title="Edit message"
             >
               <Edit2 className="h-3.5 w-3.5" />
             </button>
             <button
-              onClick={() => onDelete(message.id)}
               className="rounded p-1 text-gray-400 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30"
+              onClick={() => onDelete(message.id)}
               title="Delete message"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -1472,21 +1472,21 @@ function TicketMessageBubble({
           {isEditing ? (
             <div className="flex flex-col gap-2">
               <Input
-                ref={inputRef}
-                type="text"
-                value={editValue}
+                className="h-8 bg-white/20 text-sm"
                 onChange={(e) => setEditValue(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSave();
                   if (e.key === "Escape") handleCancel();
                 }}
-                className="h-8 bg-white/20 text-sm"
+                ref={inputRef}
+                type="text"
+                value={editValue}
               />
               <div className="flex justify-end gap-1">
-                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={handleCancel}>
+                <Button className="h-6 px-2 text-xs" onClick={handleCancel} size="sm" variant="ghost">
                   Cancel
                 </Button>
-                <Button variant="secondary" size="sm" className="h-6 px-2 text-xs" onClick={handleSave}>
+                <Button className="h-6 px-2 text-xs" onClick={handleSave} size="sm" variant="secondary">
                   Save
                 </Button>
               </div>
@@ -1496,7 +1496,7 @@ function TicketMessageBubble({
               {/* Voice message */}
               {message.voiceMessageUrl && (
                 <div className="mb-2 flex items-center gap-2">
-                  <audio src={message.voiceMessageUrl} controls className="h-8 max-w-[200px]" />
+                  <audio className="h-8 max-w-[200px]" controls src={message.voiceMessageUrl} />
                   {message.voiceMessageDuration && (
                     <span className="text-xs opacity-70">
                       {Math.floor(message.voiceMessageDuration / 60)}:
@@ -1510,24 +1510,24 @@ function TicketMessageBubble({
               {message.fileUrl && (
                 <div className="mb-2">
                   {message.fileType?.startsWith("image/") ? (
-                    <a href={message.fileUrl} target="_blank" rel="noopener noreferrer" className="block">
+                    <a className="block" href={message.fileUrl} rel="noopener noreferrer" target="_blank">
                       <img
-                        src={message.fileUrl}
                         alt={message.fileName || "Image"}
                         className="max-h-48 max-w-full rounded-md object-cover hover:opacity-90"
+                        src={message.fileUrl}
                       />
                     </a>
                   ) : (
                     <a
-                      href={message.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       className={cn(
                         "flex items-center gap-2 rounded-md border p-2 transition-colors",
                         isOwnMessage
                           ? "border-primary-foreground/30 hover:bg-primary-foreground/10"
                           : "border-border hover:bg-muted/50",
                       )}
+                      href={message.fileUrl}
+                      rel="noopener noreferrer"
+                      target="_blank"
                     >
                       {message.fileType?.includes("pdf") ? (
                         <FileText className="h-5 w-5 shrink-0" />
@@ -1564,8 +1564,8 @@ function TicketMessageBubble({
         {!isOwnMessage && !message.isDeleted && (
           <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
             <button
-              onClick={onReply}
               className="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700"
+              onClick={onReply}
               title="Reply"
             >
               <Reply className="h-3.5 w-3.5" />

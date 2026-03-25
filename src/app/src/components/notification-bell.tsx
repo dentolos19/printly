@@ -1,5 +1,9 @@
 "use client";
 
+import * as signalR from "@microsoft/signalr";
+import { Archive, Bell, CheckCheck, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ComponentProps, useCallback, useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -7,10 +11,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { API_URL } from "@/environment";
 import { useAuth } from "@/lib/providers/auth";
 import { getNotificationIcon, type RealTimeNotification } from "@/lib/server/notification";
-import * as signalR from "@microsoft/signalr";
-import { Archive, Bell, CheckCheck, Trash2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { ComponentProps, useCallback, useEffect, useRef, useState } from "react";
 
 interface Notification {
   id: string;
@@ -277,14 +277,14 @@ export function NotificationBell(props: ComponentProps<typeof Button>) {
   };
 
   return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+    <DropdownMenu onOpenChange={setIsOpen} open={isOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative" {...props}>
+        <Button className="relative" size="icon" variant="ghost" {...props}>
           <Bell className="size-5" />
           {unreadCount > 0 && (
             <Badge
-              variant="destructive"
               className="absolute -top-1 -right-1 flex size-5 items-center justify-center p-0 text-xs"
+              variant="destructive"
             >
               {unreadCount > 9 ? "9+" : unreadCount}
             </Badge>
@@ -295,7 +295,7 @@ export function NotificationBell(props: ComponentProps<typeof Button>) {
         <div className="flex items-center justify-between border-b p-4">
           <h3 className="font-semibold">Notifications</h3>
           {unreadCount > 0 && (
-            <Button variant="ghost" size="sm" onClick={markAllAsRead} className="text-xs">
+            <Button className="text-xs" onClick={markAllAsRead} size="sm" variant="ghost">
               <CheckCheck className="mr-1 size-4" />
               Mark all read
             </Button>
@@ -312,10 +312,10 @@ export function NotificationBell(props: ComponentProps<typeof Button>) {
             <div className="divide-y">
               {notifications.map((notification) => (
                 <div
-                  key={notification.id}
                   className={`hover:bg-accent cursor-pointer p-4 transition-colors ${
                     !notification.isRead ? "bg-blue-50 dark:bg-blue-950" : ""
                   }`}
+                  key={notification.id}
                   onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex items-start gap-3">
@@ -332,24 +332,24 @@ export function NotificationBell(props: ComponentProps<typeof Button>) {
                     </div>
                     <div className="flex flex-shrink-0 gap-1">
                       <Button
-                        variant="ghost"
-                        size="icon"
                         className="size-7"
                         onClick={(e) => {
                           e.stopPropagation();
                           archiveNotification(notification.id);
                         }}
+                        size="icon"
+                        variant="ghost"
                       >
                         <Archive className="size-3.5" />
                       </Button>
                       <Button
-                        variant="ghost"
-                        size="icon"
                         className="size-7"
                         onClick={(e) => {
                           e.stopPropagation();
                           deleteNotification(notification.id);
                         }}
+                        size="icon"
+                        variant="ghost"
                       >
                         <Trash2 className="size-3.5" />
                       </Button>
@@ -363,12 +363,12 @@ export function NotificationBell(props: ComponentProps<typeof Button>) {
 
         <div className="border-t p-2">
           <Button
-            variant="ghost"
             className="w-full text-sm"
             onClick={() => {
               router.push("/notifications");
               setIsOpen(false);
             }}
+            variant="ghost"
           >
             View all notifications
           </Button>

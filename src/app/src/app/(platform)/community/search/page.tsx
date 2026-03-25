@@ -1,19 +1,19 @@
 "use client";
 
+import { CheckIcon, ClockIcon, LockIcon, SearchIcon, UserPlusIcon, UsersIcon, XIcon } from "lucide-react";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDebounce } from "@/hooks/use-debounce";
 import { useAuth } from "@/lib/providers/auth";
 import { useServer } from "@/lib/providers/server";
 import { UserSearchResponse } from "@/lib/server/community";
-import { useDebounce } from "@/hooks/use-debounce";
-import { CheckIcon, ClockIcon, LockIcon, SearchIcon, UserPlusIcon, UsersIcon, XIcon } from "lucide-react";
-import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
 
 export default function UserSearchPage() {
   const { api } = useServer();
@@ -132,7 +132,7 @@ export default function UserSearchPage() {
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <Link href={`/user/${user.id}`} className="truncate font-semibold hover:underline">
+              <Link className="truncate font-semibold hover:underline" href={`/user/${user.id}`}>
                 {extractUsername(user.userName)}
               </Link>
               {isPrivate && <LockIcon className="text-muted-foreground h-3.5 w-3.5 flex-shrink-0" />}
@@ -143,10 +143,10 @@ export default function UserSearchPage() {
           </div>
 
           <Button
-            variant={isFollowing || hasPending ? "outline" : "default"}
-            size="sm"
             disabled={actionLoading[user.id]}
             onClick={() => handleFollow(user.id, isFollowing, hasPending)}
+            size="sm"
+            variant={isFollowing || hasPending ? "outline" : "default"}
           >
             {isFollowing ? (
               <>
@@ -184,17 +184,17 @@ export default function UserSearchPage() {
       <div className="relative">
         <SearchIcon className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
         <Input
+          className="pr-9 pl-9"
+          onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by username..."
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="pr-9 pl-9"
         />
         {query && (
           <Button
-            variant="ghost"
-            size="icon"
             className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2"
             onClick={() => setQuery("")}
+            size="icon"
+            variant="ghost"
           >
             <XIcon className="h-4 w-4" />
           </Button>
@@ -230,17 +230,17 @@ export default function UserSearchPage() {
               <div className="space-y-3">{users.map(renderUserCard)}</div>
               {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 pt-4">
-                  <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+                  <Button disabled={page <= 1} onClick={() => setPage((p) => p - 1)} size="sm" variant="outline">
                     Previous
                   </Button>
                   <span className="text-muted-foreground text-sm">
                     Page {page} of {totalPages}
                   </span>
                   <Button
-                    variant="outline"
-                    size="sm"
                     disabled={page >= totalPages}
                     onClick={() => setPage((p) => p + 1)}
+                    size="sm"
+                    variant="outline"
                   >
                     Next
                   </Button>

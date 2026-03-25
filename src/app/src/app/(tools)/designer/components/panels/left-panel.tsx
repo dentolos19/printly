@@ -1,5 +1,8 @@
 "use client";
 
+import { ChevronLeft, Image as ImageIcon, Loader2, Sparkles, Upload } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { useDesigner } from "@/app/(tools)/designer/components/hooks";
 import { ART_STYLES, ArtStyle, ToolType } from "@/app/(tools)/designer/types";
 import { Button } from "@/components/ui/button";
@@ -12,9 +15,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useServer } from "@/lib/providers/server";
 import { Asset } from "@/lib/server/asset";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, Image as ImageIcon, Loader2, Sparkles, Upload } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 import { FallbackImage } from "../../../shared/components/fallback-image";
 
 type LeftPanelProps = {
@@ -80,11 +80,11 @@ export function LeftPanel({ className }: LeftPanelProps) {
 
   return (
     <div
-      ref={panelRef}
       className={cn("bg-background relative flex h-full flex-col border-r", className)}
+      ref={panelRef}
       style={{ width }}
     >
-      <PanelHeader tool={activeTool} onClose={() => setActiveTool("select")} />
+      <PanelHeader onClose={() => setActiveTool("select")} tool={activeTool} />
       <ScrollArea className={"h-0 flex-1"}>
         {activeTool === "ai-generator" && <AIGeneratorPanel />}
         {activeTool === "shapes" && <ShapesPanel />}
@@ -123,7 +123,7 @@ function PanelHeader({ tool, onClose }: PanelHeaderProps) {
   return (
     <div className={"flex shrink-0 items-center justify-between border-b px-3 py-2"}>
       <span className={"text-sm font-medium"}>{titles[tool] || "Panel"}</span>
-      <Button type={"button"} variant={"ghost"} size={"icon"} className={"h-7 w-7"} onClick={onClose}>
+      <Button className={"h-7 w-7"} onClick={onClose} size={"icon"} type={"button"} variant={"ghost"}>
         <ChevronLeft className={"h-4 w-4"} />
       </Button>
     </div>
@@ -179,16 +179,16 @@ function AIGeneratorPanel() {
         <div className={"grid grid-cols-2 gap-1.5"}>
           {ART_STYLES.map((style) => (
             <Button
-              key={style.value}
-              type={"button"}
-              variant={selectedStyle === style.value ? "default" : "outline"}
-              size={"sm"}
               className={cn(
                 "h-auto flex-col gap-0.5 py-2 text-xs",
                 selectedStyle === style.value && "ring-2 ring-offset-1",
               )}
-              onClick={() => handleStyleClick(style.value)}
               disabled={isGenerating}
+              key={style.value}
+              onClick={() => handleStyleClick(style.value)}
+              size={"sm"}
+              type={"button"}
+              variant={selectedStyle === style.value ? "default" : "outline"}
             >
               <span className={"font-medium"}>{style.label}</span>
             </Button>
@@ -205,18 +205,18 @@ function AIGeneratorPanel() {
       <div className={"flex flex-col gap-2"}>
         <Label className={"text-muted-foreground text-xs font-medium tracking-wide uppercase"}>Prompt</Label>
         <Textarea
-          placeholder={"Describe your design..."}
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          onKeyDown={handleKeyDown}
           className={"min-h-20 resize-none"}
           disabled={isGenerating}
+          onChange={(e) => setPrompt(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={"Describe your design..."}
+          value={prompt}
         />
         <Button
-          type={"button"}
           className={"w-full gap-2"}
-          onClick={handleGenerate}
           disabled={!prompt.trim() || isGenerating}
+          onClick={handleGenerate}
+          type={"button"}
         >
           {isGenerating ? <Loader2 className={"h-4 w-4 animate-spin"} /> : <Sparkles className={"h-4 w-4"} />}
           Generate {selectedStyle ? `(${ART_STYLES.find((s) => s.value === selectedStyle)?.label})` : ""}
@@ -238,18 +238,18 @@ function AIGeneratorPanel() {
           <div className={"grid grid-cols-2 gap-2"}>
             {generatedImages.map((image) => (
               <button
-                key={image.id}
-                type={"button"}
                 className={cn(
                   "group relative aspect-square overflow-hidden rounded-lg border",
                   "hover:ring-primary focus:ring-primary hover:ring-2 focus:ring-2 focus:outline-none",
                 )}
+                key={image.id}
                 onClick={() => handleImageClick(image.url)}
+                type={"button"}
               >
                 <img
-                  src={image.url}
                   alt={image.prompt}
                   className={"h-full w-full object-cover transition-transform group-hover:scale-105"}
+                  src={image.url}
                 />
                 <div
                   className={cn(
@@ -331,11 +331,11 @@ function ShapesPanel() {
       <div className={"grid grid-cols-2 gap-2"}>
         {shapes.map((shape) => (
           <Button
+            className={"aspect-square h-auto flex-col gap-2"}
             key={shape.id}
+            onClick={shape.onClick}
             type={"button"}
             variant={"outline"}
-            className={"aspect-square h-auto flex-col gap-2"}
-            onClick={shape.onClick}
           >
             {shape.id === "rect" && <div className={"h-8 w-8 rounded-sm bg-blue-500"} />}
             {shape.id === "circle" && <div className={"h-8 w-8 rounded-full bg-green-500"} />}
@@ -384,11 +384,11 @@ function StickersPanel() {
       <div className={"grid grid-cols-4 gap-2"}>
         {stickers.map((sticker) => (
           <Button
+            className={"aspect-square h-12 w-12 text-2xl"}
             key={sticker.id}
+            onClick={() => handleStickerClick(sticker.emoji)}
             type={"button"}
             variant={"outline"}
-            className={"aspect-square h-12 w-12 text-2xl"}
-            onClick={() => handleStickerClick(sticker.emoji)}
           >
             {sticker.emoji}
           </Button>
@@ -503,13 +503,13 @@ function AssetsPanel() {
 
   return (
     <div className={"flex flex-col gap-4 p-3"}>
-      <Tabs defaultValue={"library"} className={"w-full"}>
+      <Tabs className={"w-full"} defaultValue={"library"}>
         <TabsList className={"grid w-full grid-cols-2"}>
           <TabsTrigger value={"library"}>Library</TabsTrigger>
           <TabsTrigger value={"upload"}>Upload</TabsTrigger>
         </TabsList>
 
-        <TabsContent value={"library"} className={"mt-4"}>
+        <TabsContent className={"mt-4"} value={"library"}>
           <div className={"flex flex-col gap-2"}>
             <Label className={"text-muted-foreground text-xs font-medium tracking-wide uppercase"}>Your Assets</Label>
 
@@ -526,18 +526,18 @@ function AssetsPanel() {
               <div className={"grid grid-cols-2 gap-2"}>
                 {assets.map((asset) => (
                   <button
-                    key={asset.id}
-                    type={"button"}
                     className={cn(
                       "group bg-muted relative aspect-square overflow-hidden rounded-lg border",
                       "hover:ring-primary focus:ring-primary hover:ring-2 focus:ring-2 focus:outline-none",
                     )}
+                    key={asset.id}
                     onClick={() => handleAssetClick(asset.id)}
+                    type={"button"}
                   >
                     <FallbackImage
-                      src={`/assets/${asset.id}/view`}
                       alt={asset.name}
                       className={"h-full w-full object-cover transition-transform group-hover:scale-105"}
+                      src={`/assets/${asset.id}/view`}
                     />
                     <div
                       className={cn(
@@ -562,7 +562,7 @@ function AssetsPanel() {
           </div>
         </TabsContent>
 
-        <TabsContent value={"upload"} className={"mt-4"}>
+        <TabsContent className={"mt-4"} value={"upload"}>
           <div className={"flex flex-col gap-4"}>
             {/* Upload from file */}
             <div className={"flex flex-col gap-2"}>
@@ -570,19 +570,19 @@ function AssetsPanel() {
                 Upload Image
               </Label>
               <input
-                ref={fileInputRef}
-                type={"file"}
                 accept={"image/*"}
-                onChange={handleFileSelect}
                 className={"hidden"}
                 disabled={isUploading}
+                onChange={handleFileSelect}
+                ref={fileInputRef}
+                type={"file"}
               />
               <Button
+                className={"w-full gap-2"}
+                disabled={isUploading}
+                onClick={() => fileInputRef.current?.click()}
                 type={"button"}
                 variant={"outline"}
-                className={"w-full gap-2"}
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
               >
                 {isUploading ? <Loader2 className={"h-4 w-4 animate-spin"} /> : <Upload className={"h-4 w-4"} />}
                 {isUploading ? "Uploading..." : "Choose File"}
@@ -594,22 +594,22 @@ function AssetsPanel() {
               <Label className={"text-muted-foreground text-xs font-medium tracking-wide uppercase"}>From URL</Label>
               <div className={"flex gap-2"}>
                 <Input
-                  type={"url"}
-                  placeholder={"https://..."}
-                  value={imageUrl}
+                  disabled={isUploading}
                   onChange={(e) => setImageUrl(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !isUploading) {
                       handleUrlSubmit();
                     }
                   }}
-                  disabled={isUploading}
+                  placeholder={"https://..."}
+                  type={"url"}
+                  value={imageUrl}
                 />
                 <Button
-                  type={"button"}
-                  size={"icon"}
-                  onClick={handleUrlSubmit}
                   disabled={!imageUrl.trim() || isUploading}
+                  onClick={handleUrlSubmit}
+                  size={"icon"}
+                  type={"button"}
                 >
                   {isUploading ? <Loader2 className={"h-4 w-4 animate-spin"} /> : <Upload className={"h-4 w-4"} />}
                 </Button>

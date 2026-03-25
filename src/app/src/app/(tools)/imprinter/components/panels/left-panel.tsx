@@ -1,5 +1,7 @@
 "use client";
 
+import { ChevronLeft, Loader2, Upload } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,8 +11,6 @@ import { Asset } from "@/lib/server/asset";
 import { Design } from "@/lib/server/design";
 import { ProductVariantResponse } from "@/lib/server/product";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, Loader2, Upload } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
 import { FallbackImage } from "../../../shared/components/fallback-image";
 import { useImprinter } from "../hooks/use-imprinter";
 
@@ -74,11 +74,11 @@ export function LeftPanel({ className }: LeftPanelProps) {
 
   return (
     <div
-      ref={panelRef}
       className={cn("bg-background relative flex h-full flex-col border-r", className)}
+      ref={panelRef}
       style={{ width }}
     >
-      <PanelHeader view={leftPanelView} onClose={() => setLeftPanelView(null)} />
+      <PanelHeader onClose={() => setLeftPanelView(null)} view={leftPanelView} />
       <ScrollArea className="h-0 flex-1">
         {leftPanelView === "products" && <ProductsPanel />}
         {leftPanelView === "designs" && <DesignsPanel />}
@@ -115,7 +115,7 @@ function PanelHeader({ view, onClose }: PanelHeaderProps) {
   return (
     <div className="flex shrink-0 items-center justify-between border-b px-3 py-2">
       <span className="text-sm font-medium">{titles[view]}</span>
-      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
+      <Button className="h-7 w-7" onClick={onClose} size="icon" variant="ghost">
         <ChevronLeft className="h-4 w-4" />
       </Button>
     </div>
@@ -163,20 +163,20 @@ function ProductsPanel() {
         <div className="grid grid-cols-2 gap-2">
           {availableProducts.map((product) => (
             <button
-              key={product.id}
               className={cn(
                 "group relative aspect-square w-full overflow-hidden rounded-md border transition-all",
                 selectedProduct?.product.id === product.id
                   ? "border-primary ring-primary/20 ring-2"
                   : "bg-muted hover:border-primary",
               )}
+              key={product.id}
               onClick={() => handleProductClick(product)}
             >
               {product.modelPreviewId || product.imageId ? (
                 <FallbackImage
-                  src={`/assets/${product.modelPreviewId ?? product.imageId}/view`}
                   alt={product.name}
                   className="h-full w-full object-cover"
+                  src={`/assets/${product.modelPreviewId ?? product.imageId}/view`}
                 />
               ) : (
                 <div className="text-muted-foreground flex h-full w-full items-center justify-center text-xs">
@@ -198,13 +198,13 @@ function ProductsPanel() {
           <div className="flex flex-wrap gap-2">
             {selectedProduct.product.variants.map((variant) => (
               <button
-                key={variant.id}
                 className={cn(
                   "rounded-md border px-3 py-1.5 text-xs transition-all",
                   selectedProduct.variant?.id === variant.id
                     ? "border-primary bg-primary/10 text-primary"
                     : "hover:border-primary",
                 )}
+                key={variant.id}
                 onClick={() => handleVariantClick(variant)}
               >
                 {variant.color}
@@ -220,16 +220,16 @@ function ProductsPanel() {
           <span className="text-muted-foreground text-xs font-medium uppercase">Model Color</span>
           <div className="flex gap-2">
             <input
+              className="h-8 w-8 cursor-pointer rounded border"
+              onChange={(e) => changeProductColor(e.target.value)}
               type="color"
               value={productColor}
-              onChange={(e) => changeProductColor(e.target.value)}
-              className="h-8 w-8 cursor-pointer rounded border"
             />
             <input
+              className="border-input bg-background flex-1 rounded-md border px-2 text-xs"
+              onChange={(e) => changeProductColor(e.target.value)}
               type="text"
               value={productColor}
-              onChange={(e) => changeProductColor(e.target.value)}
-              className="border-input bg-background flex-1 rounded-md border px-2 text-xs"
             />
           </div>
         </div>
@@ -264,7 +264,7 @@ function DesignsPanel() {
     return (
       <div className="grid grid-cols-2 gap-2 p-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="aspect-square w-full" />
+          <Skeleton className="aspect-square w-full" key={i} />
         ))}
       </div>
     );
@@ -283,15 +283,15 @@ function DesignsPanel() {
     <div className="grid grid-cols-2 gap-2 p-3">
       {designs.map((design) => (
         <button
-          key={design.id}
           className="group bg-muted hover:border-primary relative aspect-square w-full overflow-hidden rounded-md border transition-colors"
+          key={design.id}
           onClick={() => handleDesignClick(design)}
         >
           {design.coverId ? (
             <FallbackImage
-              src={`/assets/${design.coverId}/view`}
               alt={design.name}
               className="h-full w-full object-cover"
+              src={`/assets/${design.coverId}/view`}
             />
           ) : (
             <div className="text-muted-foreground flex h-full w-full items-center justify-center text-xs">
@@ -362,21 +362,21 @@ function AssetsPanel() {
   }
 
   return (
-    <Tabs defaultValue="library" className="h-full">
+    <Tabs className="h-full" defaultValue="library">
       <TabsList className="w-full rounded-none">
-        <TabsTrigger value="library" className="flex-1">
+        <TabsTrigger className="flex-1" value="library">
           Library
         </TabsTrigger>
-        <TabsTrigger value="upload" className="flex-1">
+        <TabsTrigger className="flex-1" value="upload">
           Upload
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="library" className="mt-0 h-full">
+      <TabsContent className="mt-0 h-full" value="library">
         {loading ? (
           <div className="grid grid-cols-2 gap-2 p-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="aspect-square w-full" />
+              <Skeleton className="aspect-square w-full" key={i} />
             ))}
           </div>
         ) : assets.length === 0 ? (
@@ -388,14 +388,14 @@ function AssetsPanel() {
           <div className="grid grid-cols-2 gap-2 p-3">
             {assets.map((asset) => (
               <button
-                key={asset.id}
                 className="group bg-muted hover:border-primary relative aspect-square w-full overflow-hidden rounded-md border transition-colors"
+                key={asset.id}
                 onClick={() => handleAssetClick(asset)}
               >
                 <FallbackImage
-                  src={`/assets/${asset.id}/view`}
                   alt={asset.name}
                   className="h-full w-full object-cover"
+                  src={`/assets/${asset.id}/view`}
                 />
                 <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/60 to-transparent p-2">
                   <p className="truncate text-xs font-medium text-white">{asset.name}</p>
@@ -406,17 +406,17 @@ function AssetsPanel() {
         )}
       </TabsContent>
 
-      <TabsContent value="upload" className="mt-0 h-full">
+      <TabsContent className="mt-0 h-full" value="upload">
         <div className="flex flex-col gap-3 p-3">
           <input
+            accept="image/*"
+            className="hidden"
+            multiple
+            onChange={handleFileUpload}
             ref={fileInputRef}
             type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={handleFileUpload}
           />
-          <Button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="w-full">
+          <Button className="w-full" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
             {uploading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

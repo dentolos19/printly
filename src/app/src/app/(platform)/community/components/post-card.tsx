@@ -1,5 +1,21 @@
 ﻿"use client";
 
+import {
+  AlertTriangleIcon,
+  ArchiveIcon,
+  BookmarkIcon,
+  EyeIcon,
+  FlagIcon,
+  HeartIcon,
+  Loader2,
+  MessageCircleIcon,
+  MoreHorizontalIcon,
+  Share2Icon,
+  TrashIcon,
+  UndoIcon,
+} from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,30 +39,14 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  PostSummaryResponse,
   PostStatus,
+  PostSummaryResponse,
   ReactionType,
   ReactionTypeEmojis,
   ReportReason,
   ReportReasonLabels,
 } from "@/lib/server/community";
 import { cn } from "@/lib/utils";
-import {
-  AlertTriangleIcon,
-  ArchiveIcon,
-  BookmarkIcon,
-  EyeIcon,
-  FlagIcon,
-  HeartIcon,
-  Loader2,
-  MessageCircleIcon,
-  MoreHorizontalIcon,
-  Share2Icon,
-  TrashIcon,
-  UndoIcon,
-} from "lucide-react";
-import Link from "next/link";
-import { useState } from "react";
 
 interface PostCardProps {
   post: PostSummaryResponse;
@@ -121,14 +121,14 @@ export function PostCard({
           </p>
         </div>
         {post.isNsfw && (
-          <Badge variant="destructive" className="text-xs">
+          <Badge className="text-xs" variant="destructive">
             NSFW
           </Badge>
         )}
         {isOwner && (onDelete || onArchive) && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Button className="h-8 w-8" size="icon" variant="ghost">
                 <MoreHorizontalIcon className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -156,7 +156,7 @@ export function PostCard({
                 </DropdownMenuItem>
               )}
               {onDelete && (
-                <DropdownMenuItem onClick={() => onDelete(post.id)} className="text-destructive">
+                <DropdownMenuItem className="text-destructive" onClick={() => onDelete(post.id)}>
                   <TrashIcon className="mr-2 h-4 w-4" />
                   Delete
                 </DropdownMenuItem>
@@ -167,12 +167,12 @@ export function PostCard({
         {!isOwner && onReport && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Button className="h-8 w-8" size="icon" variant="ghost">
                 <MoreHorizontalIcon className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setReportDialogOpen(true)} className="text-destructive">
+              <DropdownMenuItem className="text-destructive" onClick={() => setReportDialogOpen(true)}>
                 <FlagIcon className="mr-2 h-4 w-4" />
                 Report
               </DropdownMenuItem>
@@ -185,18 +185,18 @@ export function PostCard({
         {post.photoUrl && (
           <div className="relative aspect-square w-full overflow-hidden rounded-lg">
             <img
-              src={post.photoUrl}
               alt="Post"
               className={cn(
                 "h-full w-full object-cover",
                 (post.isNsfw || post.contentWarning) && !nsfwRevealed && "blur-xl",
               )}
+              src={post.photoUrl}
             />
             {(post.isNsfw || post.contentWarning) && !nsfwRevealed && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60">
                 <AlertTriangleIcon className="h-8 w-8 text-yellow-400" />
                 <p className="text-sm font-medium text-white">{post.contentWarning || "Sensitive Content"}</p>
-                <Button size="sm" variant="secondary" onClick={() => setNsfwRevealed(true)}>
+                <Button onClick={() => setNsfwRevealed(true)} size="sm" variant="secondary">
                   Show Content
                 </Button>
               </div>
@@ -210,10 +210,10 @@ export function PostCard({
           <div className="flex flex-wrap gap-1">
             {post.tags.map((tag) => (
               <Badge
-                key={tag}
-                variant="secondary"
                 className="hover:bg-primary/20 cursor-pointer text-xs"
+                key={tag}
                 onClick={() => onTagClick?.(tag)}
+                variant="secondary"
               >
                 #{tag}
               </Badge>
@@ -229,10 +229,10 @@ export function PostCard({
             onMouseLeave={() => setShowReactions(false)}
           >
             <Button
-              variant="ghost"
-              size="sm"
               className={cn("gap-1", post.userReaction !== null && "text-red-500")}
               onClick={() => onReact(post.id, post.userReaction === ReactionType.Like ? null : ReactionType.Like)}
+              size="sm"
+              variant="ghost"
             >
               <HeartIcon className={cn("h-4 w-4", post.userReaction === ReactionType.Like && "fill-current")} />
               {post.reactionCount}
@@ -242,11 +242,11 @@ export function PostCard({
                 <div className="bg-popover flex gap-1 rounded-full border p-1 shadow-lg">
                   {Object.entries(ReactionTypeEmojis).map(([type, emoji]) => (
                     <button
-                      key={type}
                       className={cn(
                         "rounded-full p-1.5 text-lg transition-transform hover:scale-125",
                         post.userReaction === Number(type) && "bg-muted",
                       )}
+                      key={type}
                       onClick={() => {
                         onReact(post.id, post.userReaction === Number(type) ? null : (Number(type) as ReactionType));
                         setShowReactions(false);
@@ -259,12 +259,12 @@ export function PostCard({
               </div>
             )}
           </div>
-          <Button variant="ghost" size="sm" className="gap-1" onClick={() => onComment(post.id)}>
+          <Button className="gap-1" onClick={() => onComment(post.id)} size="sm" variant="ghost">
             <MessageCircleIcon className="h-4 w-4" />
             {post.commentCount}
           </Button>
           {onShare && (
-            <Button variant="ghost" size="sm" className="gap-1" onClick={() => onShare(post.id)}>
+            <Button className="gap-1" onClick={() => onShare(post.id)} size="sm" variant="ghost">
               <Share2Icon className="h-4 w-4" />
               {post.shareCount > 0 && post.shareCount}
             </Button>
@@ -278,10 +278,10 @@ export function PostCard({
             </span>
           )}
           <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onBookmark(post.id)}
             className={cn(post.isBookmarked && "text-yellow-500")}
+            onClick={() => onBookmark(post.id)}
+            size="sm"
+            variant="ghost"
           >
             <BookmarkIcon className={cn("h-4 w-4", post.isBookmarked && "fill-current")} />
           </Button>
@@ -289,7 +289,7 @@ export function PostCard({
       </CardFooter>
 
       {/* Report Dialog */}
-      <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
+      <Dialog onOpenChange={setReportDialogOpen} open={reportDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Report Post</DialogTitle>
@@ -301,13 +301,13 @@ export function PostCard({
             <div className="space-y-2">
               <Label>Reason for reporting</Label>
               <RadioGroup
-                value={reportReason?.toString() ?? ""}
                 onValueChange={(value) => setReportReason(Number(value) as ReportReason)}
+                value={reportReason?.toString() ?? ""}
               >
                 {Object.entries(ReportReasonLabels).map(([value, label]) => (
-                  <div key={value} className="flex items-center space-x-2">
-                    <RadioGroupItem value={value} id={`reason-${value}`} />
-                    <Label htmlFor={`reason-${value}`} className="cursor-pointer font-normal">
+                  <div className="flex items-center space-x-2" key={value}>
+                    <RadioGroupItem id={`reason-${value}`} value={value} />
+                    <Label className="cursor-pointer font-normal" htmlFor={`reason-${value}`}>
                       {label}
                     </Label>
                   </div>
@@ -318,20 +318,20 @@ export function PostCard({
               <Label htmlFor="report-description">Additional details (optional)</Label>
               <Textarea
                 id="report-description"
-                placeholder="Provide any additional context about why you're reporting this post..."
-                value={reportDescription}
                 onChange={(e) => setReportDescription(e.target.value)}
+                placeholder="Provide any additional context about why you're reporting this post..."
                 rows={3}
+                value={reportDescription}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReportDialogOpen(false)}>
+            <Button onClick={() => setReportDialogOpen(false)} variant="outline">
               Cancel
             </Button>
             <Button
-              onClick={handleSubmitReport}
               disabled={reportReason === null || isSubmittingReport}
+              onClick={handleSubmitReport}
               variant="destructive"
             >
               {isSubmittingReport && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

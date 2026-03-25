@@ -1,17 +1,5 @@
 "use client";
 
-import { BLEND_MODES, BlendMode, LayerItem } from "@/app/(tools)/designer/types";
-import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Slider } from "@/components/ui/slider";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 import type { FabricObject } from "fabric";
 import {
   AlertTriangle,
@@ -46,6 +34,18 @@ import {
   Unlock,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { BLEND_MODES, BlendMode, LayerItem } from "@/app/(tools)/designer/types";
+import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Slider } from "@/components/ui/slider";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import { ColorPicker } from "../color-picker";
 import { useDesigner } from "../hooks";
 
@@ -106,11 +106,11 @@ export function RightPanel({ className }: RightPanelProps) {
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                type={"button"}
-                variant={"ghost"}
-                size={"icon"}
                 className={"h-10 w-10"}
                 onClick={() => setIsExpanded(true)}
+                size={"icon"}
+                type={"button"}
+                variant={"ghost"}
               >
                 <ChevronLeft className={"h-5 w-5"} />
               </Button>
@@ -123,14 +123,14 @@ export function RightPanel({ className }: RightPanelProps) {
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                type={"button"}
-                variant={"ghost"}
-                size={"icon"}
                 className={"h-10 w-10"}
                 onClick={() => {
                   setIsExpanded(true);
                   setLayersOpen(true);
                 }}
+                size={"icon"}
+                type={"button"}
+                variant={"ghost"}
               >
                 <Layers className={"h-5 w-5"} />
               </Button>
@@ -141,14 +141,14 @@ export function RightPanel({ className }: RightPanelProps) {
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                type={"button"}
-                variant={"ghost"}
-                size={"icon"}
                 className={"h-10 w-10"}
                 onClick={() => {
                   setIsExpanded(true);
                   setPropertiesOpen(true);
                 }}
+                size={"icon"}
+                type={"button"}
+                variant={"ghost"}
               >
                 <Settings className={"h-5 w-5"} />
               </Button>
@@ -159,14 +159,14 @@ export function RightPanel({ className }: RightPanelProps) {
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                type={"button"}
-                variant={"ghost"}
-                size={"icon"}
                 className={"h-10 w-10"}
                 onClick={() => {
                   setIsExpanded(true);
                   setAdjustmentsOpen(true);
                 }}
+                size={"icon"}
+                type={"button"}
+                variant={"ghost"}
               >
                 <Sliders className={"h-5 w-5"} />
               </Button>
@@ -180,19 +180,19 @@ export function RightPanel({ className }: RightPanelProps) {
 
   return (
     <div
-      ref={panelRef}
       className={cn("bg-background relative flex h-full flex-col border-l", className)}
+      ref={panelRef}
       style={{ width }}
     >
       {/* Collapse button */}
       <div className={"flex shrink-0 items-center justify-between border-b px-3 py-2"}>
         <span className={"text-sm font-medium"}>Manage</span>
         <Button
-          type={"button"}
-          variant={"ghost"}
-          size={"icon"}
           className={"h-7 w-7"}
           onClick={() => setIsExpanded(false)}
+          size={"icon"}
+          type={"button"}
+          variant={"ghost"}
         >
           <ChevronRight className={"h-4 w-4"} />
         </Button>
@@ -200,7 +200,7 @@ export function RightPanel({ className }: RightPanelProps) {
 
       <ScrollArea className={"h-0 flex-1"}>
         {/* Layers Section */}
-        <Collapsible open={layersOpen} onOpenChange={setLayersOpen}>
+        <Collapsible onOpenChange={setLayersOpen} open={layersOpen}>
           <CollapsibleTrigger className={"hover:bg-accent flex w-full items-center justify-between px-3 py-2"}>
             <div className={"flex items-center gap-2"}>
               <Layers className={"h-4 w-4"} />
@@ -216,7 +216,7 @@ export function RightPanel({ className }: RightPanelProps) {
         <Separator />
 
         {/* Properties Section */}
-        <Collapsible open={propertiesOpen} onOpenChange={setPropertiesOpen}>
+        <Collapsible onOpenChange={setPropertiesOpen} open={propertiesOpen}>
           <CollapsibleTrigger className={"hover:bg-accent flex w-full items-center justify-between px-3 py-2"}>
             <span className={"text-sm font-medium"}>Properties</span>
             {propertiesOpen ? <ChevronDown className={"h-4 w-4"} /> : <ChevronRight className={"h-4 w-4"} />}
@@ -229,7 +229,7 @@ export function RightPanel({ className }: RightPanelProps) {
         <Separator />
 
         {/* Adjustments Section */}
-        <Collapsible open={adjustmentsOpen} onOpenChange={setAdjustmentsOpen}>
+        <Collapsible onOpenChange={setAdjustmentsOpen} open={adjustmentsOpen}>
           <CollapsibleTrigger className={"hover:bg-accent flex w-full items-center justify-between px-3 py-2"}>
             <span className={"text-sm font-medium"}>Adjustments</span>
             {adjustmentsOpen ? <ChevronDown className={"h-4 w-4"} /> : <ChevronRight className={"h-4 w-4"} />}
@@ -416,12 +416,12 @@ function LayersSection() {
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
+              className={"h-7 w-7"}
+              disabled={!selectedLayer}
+              onClick={() => selectedLayer && startRenaming(selectedLayer)}
+              size={"icon"}
               type={"button"}
               variant={"ghost"}
-              size={"icon"}
-              className={"h-7 w-7"}
-              onClick={() => selectedLayer && startRenaming(selectedLayer)}
-              disabled={!selectedLayer}
             >
               <PenSquare className={"h-4 w-4"} />
             </Button>
@@ -431,12 +431,12 @@ function LayersSection() {
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
+              className={"h-7 w-7"}
+              disabled={selectedObjects.length === 0}
+              onClick={deleteSelected}
+              size={"icon"}
               type={"button"}
               variant={"ghost"}
-              size={"icon"}
-              className={"h-7 w-7"}
-              onClick={deleteSelected}
-              disabled={selectedObjects.length === 0}
             >
               <Trash2 className={"h-4 w-4"} />
             </Button>
@@ -453,13 +453,6 @@ function LayersSection() {
 
           return (
             <div
-              key={layer.id}
-              draggable
-              onDragStart={(e) => handleDragStart(e, index)}
-              onDragEnd={handleDragEnd}
-              onDragOver={(e) => handleDragOver(e, index)}
-              onDragLeave={() => setDragOverIndex(null)}
-              onDrop={(e) => handleDrop(e, index)}
               className={cn(
                 "group flex cursor-pointer items-center gap-2 px-3 py-1.5",
                 "hover:bg-accent transition-colors",
@@ -467,15 +460,22 @@ function LayersSection() {
                 dragOverIndex === index && "border-primary border-t-2",
                 draggedIndex === index && "opacity-50",
               )}
+              draggable
+              key={layer.id}
               onClick={() => handleLayerClick(layer)}
+              onDragEnd={handleDragEnd}
+              onDragLeave={() => setDragOverIndex(null)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDrop={(e) => handleDrop(e, index)}
             >
               <GripVertical className={"text-muted-foreground h-3 w-3 cursor-grab opacity-0 group-hover:opacity-100"} />
 
               {/* Visibility toggle */}
               <button
-                type={"button"}
                 className={"hover:bg-muted rounded p-0.5"}
                 onClick={(e) => handleVisibilityToggle(layer, e)}
+                type={"button"}
               >
                 {layer.visible ? (
                   <Eye className={"text-muted-foreground h-3.5 w-3.5"} />
@@ -489,9 +489,9 @@ function LayersSection() {
               {editingLayerId === layer.id ? (
                 <Input
                   autoFocus
-                  value={editingName}
-                  onChange={(e) => setEditingName(e.target.value)}
+                  className={"h-7 flex-1 text-xs"}
                   onBlur={() => commitRenaming(layer)}
+                  onChange={(e) => setEditingName(e.target.value)}
                   onClick={(e) => e.stopPropagation()}
                   onKeyDown={(e) => {
                     e.stopPropagation();
@@ -502,7 +502,7 @@ function LayersSection() {
                       cancelRenaming();
                     }
                   }}
-                  className={"h-7 flex-1 text-xs"}
+                  value={editingName}
                 />
               ) : (
                 <span
@@ -519,9 +519,9 @@ function LayersSection() {
 
               {/* Lock toggle */}
               <button
-                type={"button"}
                 className={"hover:bg-muted rounded p-0.5 opacity-0 group-hover:opacity-100"}
                 onClick={(e) => handleLockToggle(layer, e)}
+                type={"button"}
               >
                 {layer.locked ? (
                   <Lock className={"text-muted-foreground h-3.5 w-3.5"} />
@@ -766,21 +766,21 @@ function PropertiesSection() {
           <div className={"flex flex-col gap-1"}>
             <Label className={"text-muted-foreground text-xs"}>X</Label>
             <Input
+              className={"h-8"}
+              onBlur={handlePropertyBlur}
+              onChange={(e) => handlePropertyChange("left", parseInt(e.target.value, 10) || 0)}
               type={"number"}
               value={properties.left}
-              onChange={(e) => handlePropertyChange("left", parseInt(e.target.value, 10) || 0)}
-              onBlur={handlePropertyBlur}
-              className={"h-8"}
             />
           </div>
           <div className={"flex flex-col gap-1"}>
             <Label className={"text-muted-foreground text-xs"}>Y</Label>
             <Input
+              className={"h-8"}
+              onBlur={handlePropertyBlur}
+              onChange={(e) => handlePropertyChange("top", parseInt(e.target.value, 10) || 0)}
               type={"number"}
               value={properties.top}
-              onChange={(e) => handlePropertyChange("top", parseInt(e.target.value, 10) || 0)}
-              onBlur={handlePropertyBlur}
-              className={"h-8"}
             />
           </div>
         </div>
@@ -790,21 +790,21 @@ function PropertiesSection() {
           <div className={"flex flex-col gap-1"}>
             <Label className={"text-muted-foreground text-xs"}>Width</Label>
             <Input
+              className={"h-8"}
+              onBlur={handlePropertyBlur}
+              onChange={(e) => handlePropertyChange("width", parseInt(e.target.value, 10) || 1)}
               type={"number"}
               value={properties.width}
-              onChange={(e) => handlePropertyChange("width", parseInt(e.target.value, 10) || 1)}
-              onBlur={handlePropertyBlur}
-              className={"h-8"}
             />
           </div>
           <div className={"flex flex-col gap-1"}>
             <Label className={"text-muted-foreground text-xs"}>Height</Label>
             <Input
+              className={"h-8"}
+              onBlur={handlePropertyBlur}
+              onChange={(e) => handlePropertyChange("height", parseInt(e.target.value, 10) || 1)}
               type={"number"}
               value={properties.height}
-              onChange={(e) => handlePropertyChange("height", parseInt(e.target.value, 10) || 1)}
-              onBlur={handlePropertyBlur}
-              className={"h-8"}
             />
           </div>
         </div>
@@ -816,33 +816,33 @@ function PropertiesSection() {
             <span className={"text-muted-foreground text-xs"}>{properties.rotation}°</span>
           </div>
           <Slider
-            value={[properties.rotation]}
+            max={180}
+            min={-180}
             onValueChange={([value]) => handlePropertyChange("rotation", value)}
             onValueCommit={handlePropertyBlur}
-            min={-180}
-            max={180}
             step={1}
+            value={[properties.rotation]}
           />
         </div>
 
         {/* Flip */}
         <div className={"flex items-center gap-2"}>
           <Button
-            type={"button"}
-            variant={"outline"}
-            size={"sm"}
             className={"h-8 flex-1"}
             onClick={() => handleFlip("horizontal")}
+            size={"sm"}
+            type={"button"}
+            variant={"outline"}
           >
             <FlipHorizontal className={"mr-1.5 h-3.5 w-3.5"} />
             Flip H
           </Button>
           <Button
-            type={"button"}
-            variant={"outline"}
-            size={"sm"}
             className={"h-8 flex-1"}
             onClick={() => handleFlip("vertical")}
+            size={"sm"}
+            type={"button"}
+            variant={"outline"}
           >
             <FlipVertical className={"mr-1.5 h-3.5 w-3.5"} />
             Flip V
@@ -856,12 +856,12 @@ function PropertiesSection() {
             <span className={"text-muted-foreground text-xs"}>{properties.opacity}%</span>
           </div>
           <Slider
-            value={[properties.opacity]}
+            max={100}
+            min={0}
             onValueChange={([value]) => handlePropertyChange("opacity", value)}
             onValueCommit={handlePropertyBlur}
-            min={0}
-            max={100}
             step={1}
+            value={[properties.opacity]}
           />
         </div>
 
@@ -869,11 +869,11 @@ function PropertiesSection() {
         <div className={"flex flex-col gap-2"}>
           <Label className={"text-muted-foreground text-xs"}>Blend Mode</Label>
           <Select
-            value={properties.blendMode}
             onValueChange={(value) => {
               handlePropertyChange("blendMode", value);
               saveHistory();
             }}
+            value={properties.blendMode}
           >
             <SelectTrigger className={"h-8"}>
               <SelectValue />
@@ -898,8 +898,8 @@ function PropertiesSection() {
 
             {/* Text Color */}
             <ColorPicker
-              label={"Color"}
               color={properties.fill || "#000000"}
+              label={"Color"}
               onChange={(color) => handlePropertyChange("fill", color)}
             />
 
@@ -907,11 +907,11 @@ function PropertiesSection() {
             <div className={"flex flex-col gap-2"}>
               <Label className={"text-muted-foreground text-xs"}>Font Family</Label>
               <Select
-                value={properties.fontFamily}
                 onValueChange={(value) => {
                   handlePropertyChange("fontFamily", value);
                   saveHistory();
                 }}
+                value={properties.fontFamily}
               >
                 <SelectTrigger className={"h-8"}>
                   <SelectValue />
@@ -933,12 +933,12 @@ function PropertiesSection() {
                 <span className={"text-muted-foreground text-xs"}>{properties.fontSize}px</span>
               </div>
               <Slider
-                value={[properties.fontSize || 48]}
+                max={200}
+                min={8}
                 onValueChange={([value]) => handlePropertyChange("fontSize", value)}
                 onValueCommit={handlePropertyBlur}
-                min={8}
-                max={200}
                 step={1}
+                value={[properties.fontSize || 48]}
               />
             </div>
 
@@ -946,11 +946,11 @@ function PropertiesSection() {
             <div className={"flex flex-col gap-2"}>
               <Label className={"text-muted-foreground text-xs"}>Font Weight</Label>
               <Select
-                value={String(properties.fontWeight)}
                 onValueChange={(value) => {
                   handlePropertyChange("fontWeight", value);
                   saveHistory();
                 }}
+                value={String(properties.fontWeight)}
               >
                 <SelectTrigger className={"h-8"}>
                   <SelectValue />
@@ -969,26 +969,26 @@ function PropertiesSection() {
             <div className={"flex flex-col gap-2"}>
               <Label className={"text-muted-foreground text-xs"}>Alignment</Label>
               <ToggleGroup
-                type={"single"}
-                value={properties.textAlign}
+                className={"justify-start"}
                 onValueChange={(value) => {
                   if (value) {
                     handlePropertyChange("textAlign", value);
                     saveHistory();
                   }
                 }}
-                className={"justify-start"}
+                type={"single"}
+                value={properties.textAlign}
               >
-                <ToggleGroupItem value={"left"} aria-label={"Align left"} className={"h-8 w-10"}>
+                <ToggleGroupItem aria-label={"Align left"} className={"h-8 w-10"} value={"left"}>
                   <AlignLeft className={"h-3.5 w-3.5"} />
                 </ToggleGroupItem>
-                <ToggleGroupItem value={"center"} aria-label={"Align center"} className={"h-8 w-10"}>
+                <ToggleGroupItem aria-label={"Align center"} className={"h-8 w-10"} value={"center"}>
                   <AlignCenter className={"h-3.5 w-3.5"} />
                 </ToggleGroupItem>
-                <ToggleGroupItem value={"right"} aria-label={"Align right"} className={"h-8 w-10"}>
+                <ToggleGroupItem aria-label={"Align right"} className={"h-8 w-10"} value={"right"}>
                   <AlignRight className={"h-3.5 w-3.5"} />
                 </ToggleGroupItem>
-                <ToggleGroupItem value={"justify"} aria-label={"Align justify"} className={"h-8 w-10"}>
+                <ToggleGroupItem aria-label={"Align justify"} className={"h-8 w-10"} value={"justify"}>
                   <AlignJustify className={"h-3.5 w-3.5"} />
                 </ToggleGroupItem>
               </ToggleGroup>
@@ -999,38 +999,38 @@ function PropertiesSection() {
               <Label className={"text-muted-foreground text-xs"}>Style</Label>
               <div className={"flex items-center gap-2"}>
                 <Button
-                  type={"button"}
-                  variant={properties.fontStyle === "italic" ? "default" : "outline"}
-                  size={"sm"}
                   className={"h-8 flex-1"}
                   onClick={() => {
                     handlePropertyChange("fontStyle", properties.fontStyle === "italic" ? "normal" : "italic");
                     saveHistory();
                   }}
+                  size={"sm"}
+                  type={"button"}
+                  variant={properties.fontStyle === "italic" ? "default" : "outline"}
                 >
                   <Italic className={"h-3.5 w-3.5"} />
                 </Button>
                 <Button
-                  type={"button"}
-                  variant={properties.underline ? "default" : "outline"}
-                  size={"sm"}
                   className={"h-8 flex-1"}
                   onClick={() => {
                     handlePropertyChange("underline", !properties.underline);
                     saveHistory();
                   }}
+                  size={"sm"}
+                  type={"button"}
+                  variant={properties.underline ? "default" : "outline"}
                 >
                   <Underline className={"h-3.5 w-3.5"} />
                 </Button>
                 <Button
-                  type={"button"}
-                  variant={properties.linethrough ? "default" : "outline"}
-                  size={"sm"}
                   className={"h-8 flex-1"}
                   onClick={() => {
                     handlePropertyChange("linethrough", !properties.linethrough);
                     saveHistory();
                   }}
+                  size={"sm"}
+                  type={"button"}
+                  variant={properties.linethrough ? "default" : "outline"}
                 >
                   <Strikethrough className={"h-3.5 w-3.5"} />
                 </Button>
@@ -1044,12 +1044,12 @@ function PropertiesSection() {
                 <span className={"text-muted-foreground text-xs"}>{properties.lineHeight?.toFixed(2)}</span>
               </div>
               <Slider
-                value={[properties.lineHeight || 1.16]}
+                max={3}
+                min={0.5}
                 onValueChange={([value]) => handlePropertyChange("lineHeight", value)}
                 onValueCommit={handlePropertyBlur}
-                min={0.5}
-                max={3}
                 step={0.01}
+                value={[properties.lineHeight || 1.16]}
               />
             </div>
 
@@ -1060,12 +1060,12 @@ function PropertiesSection() {
                 <span className={"text-muted-foreground text-xs"}>{properties.charSpacing}</span>
               </div>
               <Slider
-                value={[properties.charSpacing || 0]}
+                max={800}
+                min={-200}
                 onValueChange={([value]) => handlePropertyChange("charSpacing", value)}
                 onValueCommit={handlePropertyBlur}
-                min={-200}
-                max={800}
                 step={10}
+                value={[properties.charSpacing || 0]}
               />
             </div>
           </div>
@@ -1084,16 +1084,16 @@ function PropertiesSection() {
             {/* Fill Color (not for lines) */}
             {!isLine && (
               <ColorPicker
-                label={"Fill"}
                 color={properties.fill || "#3b82f6"}
+                label={"Fill"}
                 onChange={(color) => handlePropertyChange("fill", color)}
               />
             )}
 
             {/* Stroke Color */}
             <ColorPicker
-              label={"Stroke"}
               color={properties.stroke || "#000000"}
+              label={"Stroke"}
               onChange={(color) => handlePropertyChange("stroke", color)}
             />
 
@@ -1104,12 +1104,12 @@ function PropertiesSection() {
                 <span className={"text-muted-foreground text-xs"}>{properties.strokeWidth}px</span>
               </div>
               <Slider
-                value={[properties.strokeWidth || 2]}
+                max={20}
+                min={0}
                 onValueChange={([value]) => handlePropertyChange("strokeWidth", value)}
                 onValueCommit={handlePropertyBlur}
-                min={0}
-                max={20}
                 step={1}
+                value={[properties.strokeWidth || 2]}
               />
             </div>
 
@@ -1117,6 +1117,7 @@ function PropertiesSection() {
             <div className={"flex flex-col gap-2"}>
               <Label className={"text-muted-foreground text-xs"}>Stroke Style</Label>
               <Select
+                onValueChange={handleStrokeDashChange}
                 value={
                   !properties.strokeDashArray || properties.strokeDashArray.length === 0
                     ? "solid"
@@ -1124,7 +1125,6 @@ function PropertiesSection() {
                       ? "dashed"
                       : "dotted"
                 }
-                onValueChange={handleStrokeDashChange}
               >
                 <SelectTrigger className={"h-8"}>
                   <SelectValue />
@@ -1145,15 +1145,15 @@ function PropertiesSection() {
                   <span className={"text-muted-foreground text-xs"}>{properties.rx}px</span>
                 </div>
                 <Slider
-                  value={[properties.rx || 0]}
+                  max={100}
+                  min={0}
                   onValueChange={([value]) => {
                     handlePropertyChange("rx", value);
                     handlePropertyChange("ry", value);
                   }}
                   onValueCommit={handlePropertyBlur}
-                  min={0}
-                  max={100}
                   step={1}
+                  value={[properties.rx || 0]}
                 />
               </div>
             )}
@@ -1168,8 +1168,8 @@ function PropertiesSection() {
 
         {/* Shadow Color */}
         <ColorPicker
-          label={"Color"}
           color={properties.shadowColor || "#000000"}
+          label={"Color"}
           onChange={(color) => handlePropertyChange("shadowColor", color)}
         />
 
@@ -1180,12 +1180,12 @@ function PropertiesSection() {
             <span className={"text-muted-foreground text-xs"}>{properties.shadowBlur}px</span>
           </div>
           <Slider
-            value={[properties.shadowBlur || 0]}
+            max={50}
+            min={0}
             onValueChange={([value]) => handlePropertyChange("shadowBlur", value)}
             onValueCommit={handlePropertyBlur}
-            min={0}
-            max={50}
             step={1}
+            value={[properties.shadowBlur || 0]}
           />
         </div>
 
@@ -1194,21 +1194,21 @@ function PropertiesSection() {
           <div className={"flex flex-col gap-1"}>
             <Label className={"text-muted-foreground text-xs"}>Offset X</Label>
             <Input
+              className={"h-8"}
+              onBlur={handlePropertyBlur}
+              onChange={(e) => handlePropertyChange("shadowOffsetX", parseInt(e.target.value, 10) || 0)}
               type={"number"}
               value={properties.shadowOffsetX || 0}
-              onChange={(e) => handlePropertyChange("shadowOffsetX", parseInt(e.target.value, 10) || 0)}
-              onBlur={handlePropertyBlur}
-              className={"h-8"}
             />
           </div>
           <div className={"flex flex-col gap-1"}>
             <Label className={"text-muted-foreground text-xs"}>Offset Y</Label>
             <Input
+              className={"h-8"}
+              onBlur={handlePropertyBlur}
+              onChange={(e) => handlePropertyChange("shadowOffsetY", parseInt(e.target.value, 10) || 0)}
               type={"number"}
               value={properties.shadowOffsetY || 0}
-              onChange={(e) => handlePropertyChange("shadowOffsetY", parseInt(e.target.value, 10) || 0)}
-              onBlur={handlePropertyBlur}
-              className={"h-8"}
             />
           </div>
         </div>
@@ -1386,21 +1386,21 @@ function AdjustmentsSection() {
       {/* Flip Controls */}
       <div className={"flex items-center gap-2"}>
         <Button
-          type={"button"}
-          variant={"outline"}
-          size={"sm"}
           className={"h-8 flex-1"}
           onClick={() => handleFlipImage("horizontal")}
+          size={"sm"}
+          type={"button"}
+          variant={"outline"}
         >
           <FlipHorizontal className={"mr-1.5 h-3.5 w-3.5"} />
           Flip H
         </Button>
         <Button
-          type={"button"}
-          variant={"outline"}
-          size={"sm"}
           className={"h-8 flex-1"}
           onClick={() => handleFlipImage("vertical")}
+          size={"sm"}
+          type={"button"}
+          variant={"outline"}
         >
           <FlipVertical className={"mr-1.5 h-3.5 w-3.5"} />
           Flip V
@@ -1419,12 +1419,12 @@ function AdjustmentsSection() {
           </span>
         </div>
         <Slider
-          value={[filters.brightness]}
+          max={100}
+          min={-100}
           onValueChange={([value]) => handleFilterChange("brightness", value)}
           onValueCommit={handleFilterBlur}
-          min={-100}
-          max={100}
           step={1}
+          value={[filters.brightness]}
         />
       </div>
 
@@ -1438,12 +1438,12 @@ function AdjustmentsSection() {
           </span>
         </div>
         <Slider
-          value={[filters.contrast]}
+          max={100}
+          min={-100}
           onValueChange={([value]) => handleFilterChange("contrast", value)}
           onValueCommit={handleFilterBlur}
-          min={-100}
-          max={100}
           step={1}
+          value={[filters.contrast]}
         />
       </div>
 
@@ -1457,12 +1457,12 @@ function AdjustmentsSection() {
           </span>
         </div>
         <Slider
-          value={[filters.saturation]}
+          max={100}
+          min={-100}
           onValueChange={([value]) => handleFilterChange("saturation", value)}
           onValueCommit={handleFilterBlur}
-          min={-100}
-          max={100}
           step={1}
+          value={[filters.saturation]}
         />
       </div>
 
@@ -1473,12 +1473,12 @@ function AdjustmentsSection() {
           <span className={"text-muted-foreground text-xs"}>{filters.blur.toFixed(1)}</span>
         </div>
         <Slider
-          value={[filters.blur]}
+          max={1}
+          min={0}
           onValueChange={([value]) => handleFilterChange("blur", value)}
           onValueCommit={handleFilterBlur}
-          min={0}
-          max={1}
           step={0.01}
+          value={[filters.blur]}
         />
       </div>
 
@@ -1489,12 +1489,12 @@ function AdjustmentsSection() {
           <span className={"text-muted-foreground text-xs"}>{filters.hue}°</span>
         </div>
         <Slider
-          value={[filters.hue]}
+          max={360}
+          min={0}
           onValueChange={([value]) => handleFilterChange("hue", value)}
           onValueCommit={handleFilterBlur}
-          min={0}
-          max={360}
           step={1}
+          value={[filters.hue]}
         />
       </div>
 
@@ -1502,20 +1502,20 @@ function AdjustmentsSection() {
       <div className={"flex items-center justify-between"}>
         <Label className={"text-muted-foreground text-xs"}>Grayscale</Label>
         <input
-          type={"checkbox"}
           checked={filters.grayscale}
+          className={"h-4 w-4"}
           onChange={(e) => {
             handleFilterChange("grayscale", e.target.checked);
             handleFilterBlur();
           }}
-          className={"h-4 w-4"}
+          type={"checkbox"}
         />
       </div>
 
       <Separator />
 
       {/* Reset Filters */}
-      <Button type={"button"} variant={"outline"} size={"sm"} className={"h-8 w-full"} onClick={handleResetFilters}>
+      <Button className={"h-8 w-full"} onClick={handleResetFilters} size={"sm"} type={"button"} variant={"outline"}>
         <RotateCcw className={"mr-1.5 h-3.5 w-3.5"} />
         Reset All Filters
       </Button>

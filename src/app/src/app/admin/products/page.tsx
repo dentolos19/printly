@@ -1,5 +1,9 @@
 "use client";
 
+import { ArrowUpDown, Edit, Eye, EyeOff, MoreHorizontal, Plus, Search, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,10 +40,6 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useServer } from "@/lib/providers/server";
 import type { ProductResponse } from "@/lib/server/product";
-import { ArrowUpDown, Edit, Eye, EyeOff, MoreHorizontal, Plus, Search, Trash2 } from "lucide-react";
-import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
 
 type SortField = "name" | "basePrice" | "variants" | "stock" | "createdAt";
 type SortOrder = "asc" | "desc";
@@ -275,13 +275,13 @@ export default function ProductsPage() {
             <div className="relative min-w-[200px] flex-1">
               <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
               <Input
+                className="pl-9"
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search products..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select onValueChange={setStatusFilter} value={statusFilter}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -302,32 +302,32 @@ export default function ProductsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>
-                  <Button variant="ghost" size="sm" onClick={() => handleSort("name")}>
+                  <Button onClick={() => handleSort("name")} size="sm" variant="ghost">
                     Name
                     <ArrowUpDown className="ml-2 size-4" />
                   </Button>
                 </TableHead>
                 <TableHead>
-                  <Button variant="ghost" size="sm" onClick={() => handleSort("basePrice")}>
+                  <Button onClick={() => handleSort("basePrice")} size="sm" variant="ghost">
                     Base Price
                     <ArrowUpDown className="ml-2 size-4" />
                   </Button>
                 </TableHead>
                 <TableHead>
-                  <Button variant="ghost" size="sm" onClick={() => handleSort("variants")}>
+                  <Button onClick={() => handleSort("variants")} size="sm" variant="ghost">
                     Variants
                     <ArrowUpDown className="ml-2 size-4" />
                   </Button>
                 </TableHead>
                 <TableHead>
-                  <Button variant="ghost" size="sm" onClick={() => handleSort("stock")}>
+                  <Button onClick={() => handleSort("stock")} size="sm" variant="ghost">
                     Total Stock
                     <ArrowUpDown className="ml-2 size-4" />
                   </Button>
                 </TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>
-                  <Button variant="ghost" size="sm" onClick={() => handleSort("createdAt")}>
+                  <Button onClick={() => handleSort("createdAt")} size="sm" variant="ghost">
                     Created
                     <ArrowUpDown className="ml-2 size-4" />
                   </Button>
@@ -364,7 +364,7 @@ export default function ProductsPage() {
                 ))
               ) : filteredProducts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-muted-foreground h-24 text-center">
+                  <TableCell className="text-muted-foreground h-24 text-center" colSpan={7}>
                     No products found
                   </TableCell>
                 </TableRow>
@@ -372,7 +372,7 @@ export default function ProductsPage() {
                 filteredProducts.map((product) => (
                   <TableRow key={product.id}>
                     <TableCell className="font-medium">
-                      <Link href={`/admin/products/${product.id}`} className="hover:underline">
+                      <Link className="hover:underline" href={`/admin/products/${product.id}`}>
                         {product.name}
                       </Link>
                     </TableCell>
@@ -388,7 +388,7 @@ export default function ProductsPage() {
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button size="icon" variant="ghost">
                             <MoreHorizontal className="size-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -417,7 +417,7 @@ export default function ProductsPage() {
                             )}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => openDeleteDialog(product)} className="text-destructive">
+                          <DropdownMenuItem className="text-destructive" onClick={() => openDeleteDialog(product)}>
                             <Trash2 className="mr-2 size-4" />
                             Delete
                           </DropdownMenuItem>
@@ -433,7 +433,7 @@ export default function ProductsPage() {
       </Card>
 
       {/* Create Dialog */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+      <Dialog onOpenChange={setCreateDialogOpen} open={createDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create Product</DialogTitle>
@@ -444,33 +444,33 @@ export default function ProductsPage() {
               <Label htmlFor="name">Name *</Label>
               <Input
                 id="name"
+                onChange={(e) => setFormName(e.target.value)}
                 placeholder="Product name"
                 value={formName}
-                onChange={(e) => setFormName(e.target.value)}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="price">Base Price *</Label>
               <Input
                 id="price"
-                type="number"
-                step="0.01"
                 min="0.01"
-                placeholder="0.00"
-                value={formPrice}
                 onChange={(e) => setFormPrice(e.target.value)}
+                placeholder="0.00"
+                step="0.01"
+                type="number"
+                value={formPrice}
               />
             </div>
             <div className="flex items-center gap-2">
-              <Switch id="active" checked={formActive} onCheckedChange={setFormActive} />
+              <Switch checked={formActive} id="active" onCheckedChange={setFormActive} />
               <Label htmlFor="active">Active</Label>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+            <Button onClick={() => setCreateDialogOpen(false)} variant="outline">
               Cancel
             </Button>
-            <Button onClick={handleCreate} disabled={formSubmitting}>
+            <Button disabled={formSubmitting} onClick={handleCreate}>
               {formSubmitting ? "Creating..." : "Create"}
             </Button>
           </DialogFooter>
@@ -478,7 +478,7 @@ export default function ProductsPage() {
       </Dialog>
 
       {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+      <Dialog onOpenChange={setEditDialogOpen} open={editDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Product</DialogTitle>
@@ -489,33 +489,33 @@ export default function ProductsPage() {
               <Label htmlFor="edit-name">Name *</Label>
               <Input
                 id="edit-name"
+                onChange={(e) => setFormName(e.target.value)}
                 placeholder="Product name"
                 value={formName}
-                onChange={(e) => setFormName(e.target.value)}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-price">Base Price *</Label>
               <Input
                 id="edit-price"
-                type="number"
-                step="0.01"
                 min="0.01"
-                placeholder="0.00"
-                value={formPrice}
                 onChange={(e) => setFormPrice(e.target.value)}
+                placeholder="0.00"
+                step="0.01"
+                type="number"
+                value={formPrice}
               />
             </div>
             <div className="flex items-center gap-2">
-              <Switch id="edit-active" checked={formActive} onCheckedChange={setFormActive} />
+              <Switch checked={formActive} id="edit-active" onCheckedChange={setFormActive} />
               <Label htmlFor="edit-active">Active</Label>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+            <Button onClick={() => setEditDialogOpen(false)} variant="outline">
               Cancel
             </Button>
-            <Button onClick={handleEdit} disabled={formSubmitting}>
+            <Button disabled={formSubmitting} onClick={handleEdit}>
               {formSubmitting ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
@@ -523,7 +523,7 @@ export default function ProductsPage() {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialog onOpenChange={setDeleteDialogOpen} open={deleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Product</AlertDialogTitle>
@@ -535,8 +535,8 @@ export default function ProductsPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDelete}
             >
               {formSubmitting ? "Deleting..." : "Delete"}
             </AlertDialogAction>

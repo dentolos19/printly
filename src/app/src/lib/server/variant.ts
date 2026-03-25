@@ -1,5 +1,5 @@
 import { ServerFetch } from "@/types";
-import { ProductSize, InventoryResponse } from "./product";
+import { InventoryResponse, ProductSize } from "./product";
 
 export type ProductVariantWithProductResponse = {
   id: string;

@@ -1,11 +1,5 @@
 "use client";
 
-import { useDesigner } from "@/app/(tools)/designer/components/hooks";
-import { ToolType } from "@/app/(tools)/designer/types";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 import {
   Circle,
   Image,
@@ -19,6 +13,12 @@ import {
   Triangle,
   Type,
 } from "lucide-react";
+import { useDesigner } from "@/app/(tools)/designer/components/hooks";
+import { ToolType } from "@/app/(tools)/designer/types";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 type ToolItem = {
   id: ToolType;
@@ -98,11 +98,11 @@ export function IconToolbar({ className }: IconToolbarProps) {
       <Tooltip key={tool.id}>
         <TooltipTrigger asChild>
           <Button
-            type={"button"}
-            variant={isActive ? "secondary" : "ghost"}
-            size={"icon"}
             className={cn("h-10 w-10", isActive && "bg-accent")}
             onClick={() => handleToolClick(tool.id)}
+            size={"icon"}
+            type={"button"}
+            variant={isActive ? "secondary" : "ghost"}
           >
             <Icon className={"h-5 w-5"} />
           </Button>

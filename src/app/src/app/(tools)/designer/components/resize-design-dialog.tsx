@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -15,7 +16,6 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
 import type { CanvasSize } from "../types";
 import { CANVAS_PRESETS } from "../types";
 
@@ -62,7 +62,7 @@ export function ResizeDesignDialog({ open, onOpenChange, currentSize, onResize }
   const presentationPresets = CANVAS_PRESETS.filter((p) => p.category === "presentation");
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog onOpenChange={handleOpenChange} open={open}>
       <DialogContent className={"max-w-lg"}>
         <DialogHeader>
           <DialogTitle>Resize Design</DialogTitle>
@@ -71,13 +71,13 @@ export function ResizeDesignDialog({ open, onOpenChange, currentSize, onResize }
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue={"presets"} className={"mt-4"}>
+        <Tabs className={"mt-4"} defaultValue={"presets"}>
           <TabsList className={"grid w-full grid-cols-2"}>
             <TabsTrigger value={"presets"}>Presets</TabsTrigger>
             <TabsTrigger value={"custom"}>Custom Size</TabsTrigger>
           </TabsList>
 
-          <TabsContent value={"presets"} className={"mt-4"}>
+          <TabsContent className={"mt-4"} value={"presets"}>
             <ScrollArea className={"h-64 pr-4"}>
               <div className={"space-y-4"}>
                 <div>
@@ -85,14 +85,14 @@ export function ResizeDesignDialog({ open, onOpenChange, currentSize, onResize }
                   <div className={"grid grid-cols-2 gap-2"}>
                     {socialPresets.map((preset) => (
                       <Button
-                        key={preset.name}
-                        type={"button"}
-                        variant={"outline"}
                         className={cn(
                           "h-auto justify-start py-2",
                           selectedPreset === preset.name && "border-primary bg-primary/5",
                         )}
+                        key={preset.name}
                         onClick={() => handlePresetSelect(preset)}
+                        type={"button"}
+                        variant={"outline"}
                       >
                         <div className={"text-left"}>
                           <div className={"text-sm font-medium"}>{preset.name}</div>
@@ -110,14 +110,14 @@ export function ResizeDesignDialog({ open, onOpenChange, currentSize, onResize }
                   <div className={"grid grid-cols-2 gap-2"}>
                     {printPresets.map((preset) => (
                       <Button
-                        key={preset.name}
-                        type={"button"}
-                        variant={"outline"}
                         className={cn(
                           "h-auto justify-start py-2",
                           selectedPreset === preset.name && "border-primary bg-primary/5",
                         )}
+                        key={preset.name}
                         onClick={() => handlePresetSelect(preset)}
+                        type={"button"}
+                        variant={"outline"}
                       >
                         <div className={"text-left"}>
                           <div className={"text-sm font-medium"}>{preset.name}</div>
@@ -135,14 +135,14 @@ export function ResizeDesignDialog({ open, onOpenChange, currentSize, onResize }
                   <div className={"grid grid-cols-2 gap-2"}>
                     {presentationPresets.map((preset) => (
                       <Button
-                        key={preset.name}
-                        type={"button"}
-                        variant={"outline"}
                         className={cn(
                           "h-auto justify-start py-2",
                           selectedPreset === preset.name && "border-primary bg-primary/5",
                         )}
+                        key={preset.name}
                         onClick={() => handlePresetSelect(preset)}
+                        type={"button"}
+                        variant={"outline"}
                       >
                         <div className={"text-left"}>
                           <div className={"text-sm font-medium"}>{preset.name}</div>
@@ -158,34 +158,34 @@ export function ResizeDesignDialog({ open, onOpenChange, currentSize, onResize }
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value={"custom"} className={"mt-4"}>
+          <TabsContent className={"mt-4"} value={"custom"}>
             <div className={"grid grid-cols-2 gap-4"}>
               <div className={"space-y-2"}>
                 <Label htmlFor={"width"}>Width (px)</Label>
                 <Input
                   id={"width"}
-                  type={"number"}
-                  min={100}
                   max={10000}
-                  value={width}
+                  min={100}
                   onChange={(e) => {
                     setWidth(Number(e.target.value));
                     handleCustomChange();
                   }}
+                  type={"number"}
+                  value={width}
                 />
               </div>
               <div className={"space-y-2"}>
                 <Label htmlFor={"height"}>Height (px)</Label>
                 <Input
                   id={"height"}
-                  type={"number"}
-                  min={100}
                   max={10000}
-                  value={height}
+                  min={100}
                   onChange={(e) => {
                     setHeight(Number(e.target.value));
                     handleCustomChange();
                   }}
+                  type={"number"}
+                  value={height}
                 />
               </div>
             </div>
@@ -194,20 +194,20 @@ export function ResizeDesignDialog({ open, onOpenChange, currentSize, onResize }
 
         <div className={"mt-4 flex items-center space-x-2"}>
           <Checkbox
-            id={"scale-content"}
             checked={scaleContent}
+            id={"scale-content"}
             onCheckedChange={(checked) => setScaleContent(checked === true)}
           />
-          <Label htmlFor={"scale-content"} className={"text-sm font-normal"}>
+          <Label className={"text-sm font-normal"} htmlFor={"scale-content"}>
             Scale content proportionally
           </Label>
         </div>
 
         <DialogFooter className={"mt-6"}>
-          <Button type={"button"} variant={"outline"} onClick={() => onOpenChange(false)}>
+          <Button onClick={() => onOpenChange(false)} type={"button"} variant={"outline"}>
             Cancel
           </Button>
-          <Button type={"button"} onClick={handleSubmit}>
+          <Button onClick={handleSubmit} type={"button"}>
             Resize
           </Button>
         </DialogFooter>

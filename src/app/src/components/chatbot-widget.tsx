@@ -1,32 +1,32 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { useAuth } from "@/lib/providers/auth";
-import { API_URL } from "@/environment";
 import {
-  MessageCircle,
-  X,
-  Send,
-  Bot,
-  User,
-  Loader2,
   AlertCircle,
-  Minimize2,
-  TicketCheck,
-  ExternalLink,
+  AudioLines,
+  Bot,
   Cpu,
+  ExternalLink,
+  Loader2,
+  MessageCircle,
   Mic,
   MicOff,
-  AudioLines,
+  Minimize2,
+  Send,
+  TicketCheck,
+  User,
+  X,
 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { cn, formatMessageTime } from "@/lib/utils";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import type { AIModel, ToolAction } from "@/lib/server/chatbot";
+import { API_URL } from "@/environment";
 import { useVoiceChat, type VoiceMessage } from "@/hooks/use-voice-chat";
+import { useAuth } from "@/lib/providers/auth";
+import type { AIModel, ToolAction } from "@/lib/server/chatbot";
+import { cn, formatMessageTime } from "@/lib/utils";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -366,8 +366,8 @@ export function ChatbotWidget() {
       {/* Chat Button */}
       {!isOpen && (
         <Button
-          onClick={() => setIsOpen(true)}
           className="fixed right-6 bottom-6 z-50 h-14 w-14 rounded-full shadow-lg transition-transform hover:scale-105"
+          onClick={() => setIsOpen(true)}
           size="icon"
         >
           <MessageCircle className="h-6 w-6" />
@@ -405,18 +405,18 @@ export function ChatbotWidget() {
             </div>
             <div className="flex items-center gap-1">
               <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => setIsMinimized(!isMinimized)}
                 className="text-primary-foreground hover:bg-primary-foreground/20"
+                onClick={() => setIsMinimized(!isMinimized)}
+                size="icon-sm"
+                variant="ghost"
               >
                 <Minimize2 className="h-4 w-4" />
               </Button>
               <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => setIsOpen(false)}
                 className="text-primary-foreground hover:bg-primary-foreground/20"
+                onClick={() => setIsOpen(false)}
+                size="icon-sm"
+                variant="ghost"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -427,12 +427,12 @@ export function ChatbotWidget() {
           {!isMinimized && (
             <>
               {/* Messages */}
-              <ScrollArea ref={scrollAreaRef} className="flex-1 overflow-y-auto p-4">
+              <ScrollArea className="flex-1 overflow-y-auto p-4" ref={scrollAreaRef}>
                 <div className="space-y-4 pb-2">
                   {messages.map((message, index) => (
                     <div
-                      key={index}
                       className={cn("flex gap-3", message.role === "user" ? "justify-end" : "justify-start")}
+                      key={index}
                     >
                       {message.role === "assistant" && (
                         <div
@@ -463,7 +463,6 @@ export function ChatbotWidget() {
                         ) : (
                           <div className="prose prose-sm dark:prose-invert max-w-none">
                             <ReactMarkdown
-                              remarkPlugins={[remarkGfm]}
                               components={{
                                 // Style inline code
                                 code: ({ className, children, ...props }) => {
@@ -492,10 +491,10 @@ export function ChatbotWidget() {
                                 // Style links
                                 a: ({ href, children }) => (
                                   <a
-                                    href={href}
                                     className="text-primary underline hover:no-underline"
-                                    target="_blank"
+                                    href={href}
                                     rel="noopener noreferrer"
+                                    target="_blank"
                                   >
                                     {children}
                                   </a>
@@ -503,6 +502,7 @@ export function ChatbotWidget() {
                                 // Style strong/bold
                                 strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
                               }}
+                              remarkPlugins={[remarkGfm]}
                             >
                               {message.content}
                             </ReactMarkdown>
@@ -513,8 +513,8 @@ export function ChatbotWidget() {
                           <div className="mt-2 space-y-2">
                             {message.actions.map((action, actionIdx) => (
                               <div
-                                key={actionIdx}
                                 className="bg-primary/5 border-primary/20 flex items-center gap-2 rounded-lg border p-2"
+                                key={actionIdx}
                               >
                                 {action.type === "create_support_ticket" && (
                                   <>
@@ -526,8 +526,8 @@ export function ChatbotWidget() {
                                       )}
                                     </div>
                                     <a
-                                      href="/chat"
                                       className="text-primary hover:text-primary/80 shrink-0"
+                                      href="/chat"
                                       title="Open Chat"
                                     >
                                       <ExternalLink className="h-3.5 w-3.5" />
@@ -610,24 +610,24 @@ export function ChatbotWidget() {
               <div className="border-t p-4">
                 <div className="flex items-end gap-2">
                   <Textarea
-                    ref={textareaRef}
-                    value={inputValue}
+                    className="max-h-[100px] min-h-[40px] resize-none"
+                    disabled={isLoading}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Type a message..."
-                    className="max-h-[100px] min-h-[40px] resize-none"
+                    ref={textareaRef}
                     rows={1}
-                    disabled={isLoading}
+                    value={inputValue}
                   />
                   {models.length > 0 && (
                     <div className="model-dropdown-container relative">
                       <Button
-                        onClick={() => setIsModelMenuOpen(!isModelMenuOpen)}
-                        disabled={isLoading || isLoadingModels}
-                        size="icon"
-                        variant="outline"
                         className="shrink-0"
+                        disabled={isLoading || isLoadingModels}
+                        onClick={() => setIsModelMenuOpen(!isModelMenuOpen)}
+                        size="icon"
                         title="Change AI Model"
+                        variant="outline"
                       >
                         <Cpu className="h-4 w-4" />
                       </Button>
@@ -638,17 +638,17 @@ export function ChatbotWidget() {
                             <div className="max-h-64 space-y-1 overflow-y-auto">
                               {models.map((model) => (
                                 <button
-                                  key={model.id}
-                                  onClick={() => {
-                                    setSelectedModel(model.id);
-                                    setIsModelMenuOpen(false);
-                                  }}
                                   className={cn(
                                     "w-full rounded-md px-3 py-2 text-left text-sm transition-colors",
                                     selectedModel === model.id
                                       ? "bg-primary text-primary-foreground"
                                       : "hover:bg-muted text-foreground",
                                   )}
+                                  key={model.id}
+                                  onClick={() => {
+                                    setSelectedModel(model.id);
+                                    setIsModelMenuOpen(false);
+                                  }}
                                 >
                                   <div className="font-medium">{model.displayName}</div>
                                   <div className="line-clamp-2 text-xs opacity-70">{model.description}</div>
@@ -661,12 +661,12 @@ export function ChatbotWidget() {
                     </div>
                   )}
                   <Button
-                    onClick={toggleVoice}
-                    disabled={voiceLoading || isLoading}
-                    size="icon"
-                    variant={voiceActive ? "destructive" : "outline"}
                     className="shrink-0"
+                    disabled={voiceLoading || isLoading}
+                    onClick={toggleVoice}
+                    size="icon"
                     title={voiceActive ? "Stop voice chat" : "Start voice chat"}
+                    variant={voiceActive ? "destructive" : "outline"}
                   >
                     {voiceLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -677,10 +677,10 @@ export function ChatbotWidget() {
                     )}
                   </Button>
                   <Button
-                    onClick={sendMessage}
-                    disabled={!inputValue.trim() || isLoading}
-                    size="icon"
                     className="shrink-0"
+                    disabled={!inputValue.trim() || isLoading}
+                    onClick={sendMessage}
+                    size="icon"
                   >
                     {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   </Button>

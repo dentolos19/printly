@@ -1,8 +1,8 @@
 "use client";
 
+import { Download, ExternalLink, File, FileAudio, FileImage, FileText, FileVideo } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Download, File, FileAudio, FileImage, FileText, FileVideo, ExternalLink } from "lucide-react";
 
 export interface FileAttachmentProps {
   url: string;
@@ -41,12 +41,12 @@ export function FileAttachment({ url, fileName, fileType, fileSize, className }:
   if (isImageType(fileType)) {
     return (
       <div className={cn("group relative max-w-xs overflow-hidden rounded-lg", className)}>
-        <a href={url} target="_blank" rel="noopener noreferrer">
+        <a href={url} rel="noopener noreferrer" target="_blank">
           <img
-            src={url}
             alt={fileName}
             className="max-h-60 w-auto rounded-lg object-contain transition-opacity group-hover:opacity-90"
             loading="lazy"
+            src={url}
           />
           <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
             <ExternalLink className="h-6 w-6 text-white" />
@@ -65,7 +65,7 @@ export function FileAttachment({ url, fileName, fileType, fileSize, className }:
   if (isVideoType(fileType)) {
     return (
       <div className={cn("max-w-sm overflow-hidden rounded-lg", className)}>
-        <video src={url} controls className="max-h-60 w-auto rounded-lg" preload="metadata">
+        <video className="max-h-60 w-auto rounded-lg" controls preload="metadata" src={url}>
           Your browser does not support the video tag.
         </video>
         <div className="text-muted-foreground mt-1 flex items-center gap-2 text-xs">
@@ -87,8 +87,8 @@ export function FileAttachment({ url, fileName, fileType, fileSize, className }:
         <p className="truncate text-sm font-medium">{fileName}</p>
         <p className="text-muted-foreground text-xs">{formatFileSize(fileSize)}</p>
       </div>
-      <Button variant="ghost" size="icon" className="shrink-0" asChild>
-        <a href={url} download={fileName} target="_blank" rel="noopener noreferrer">
+      <Button asChild className="shrink-0" size="icon" variant="ghost">
+        <a download={fileName} href={url} rel="noopener noreferrer" target="_blank">
           <Download className="h-4 w-4" />
         </a>
       </Button>

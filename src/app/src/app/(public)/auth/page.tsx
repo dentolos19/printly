@@ -1,11 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { API_URL } from "@/environment";
-import { useAuth } from "@/lib/providers/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -14,6 +8,12 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { API_URL } from "@/environment";
+import { useAuth } from "@/lib/providers/auth";
 
 const loginSchema = z.object({
   email: z.string().min(1, "Email is required").email("Please enter a valid email address"),
@@ -71,7 +71,7 @@ export default function Page() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input {...field} type={"email"} placeholder={"john@example.com"} disabled={isLoading} />
+                    <Input {...field} disabled={isLoading} placeholder={"john@example.com"} type={"email"} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -84,7 +84,7 @@ export default function Page() {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input {...field} type={"password"} placeholder={"••••••••••••"} disabled={isLoading} />
+                    <Input {...field} disabled={isLoading} placeholder={"••••••••••••"} type={"password"} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -92,7 +92,7 @@ export default function Page() {
             />
           </CardContent>
           <CardFooter className={"flex-col gap-3"}>
-            <Button className={"w-full"} type={"submit"} variant={"default"} disabled={isLoading}>
+            <Button className={"w-full"} disabled={isLoading} type={"submit"} variant={"default"}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -112,10 +112,10 @@ export default function Page() {
             </div>
             <Button
               className={"w-full"}
+              disabled={isLoading}
+              onClick={handleGoogle}
               type={"button"}
               variant={"outline"}
-              onClick={handleGoogle}
-              disabled={isLoading}
             >
               <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                 <path

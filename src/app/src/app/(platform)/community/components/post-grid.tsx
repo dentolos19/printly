@@ -1,9 +1,9 @@
 ﻿"use client";
 
-import { PostSummaryResponse, PostStatus, ReactionType, ReportReason } from "@/lib/server/community";
+import { PostStatus, PostSummaryResponse, ReactionType, ReportReason } from "@/lib/server/community";
+import { EmptyState } from "./empty-state";
 import { PostCard } from "./post-card";
 import { PostCardSkeleton } from "./post-card-skeleton";
-import { EmptyState } from "./empty-state";
 
 interface PostGridProps {
   posts: PostSummaryResponse[];
@@ -47,10 +47,10 @@ export function PostGrid({
   if (posts.length === 0) {
     return (
       <EmptyState
-        title={emptyTitle}
-        description={emptyDescription}
         actionLabel={emptyActionLabel}
+        description={emptyDescription}
         onAction={onEmptyAction}
+        title={emptyTitle}
       />
     );
   }
@@ -59,17 +59,17 @@ export function PostGrid({
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       {posts.map((post) => (
         <PostCard
+          isOwner={currentUserId?.toLowerCase() === post.authorId?.toLowerCase()}
           key={post.id}
-          post={post}
-          onReact={onReact}
+          onArchive={onArchive}
           onBookmark={onBookmark}
           onComment={onComment}
-          onShare={onShare}
           onDelete={onDelete}
-          onArchive={onArchive}
+          onReact={onReact}
           onReport={onReport}
+          onShare={onShare}
           onTagClick={onTagClick}
-          isOwner={currentUserId?.toLowerCase() === post.authorId?.toLowerCase()}
+          post={post}
         />
       ))}
     </div>

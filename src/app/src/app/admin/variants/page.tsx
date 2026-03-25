@@ -1,6 +1,24 @@
 "use client";
 
 import {
+  ArrowUpDown,
+  ChevronDown,
+  ChevronUp,
+  Edit,
+  ExternalLink,
+  ImageIcon,
+  Package,
+  Plus,
+  Search,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -28,26 +46,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useServer } from "@/lib/providers/server";
 import type { ProductResponse } from "@/lib/server/product";
+import { CommonColors, ProductSize, ProductSizeLabels } from "@/lib/server/product";
 import type { ProductVariantWithProductResponse } from "@/lib/server/variant";
-import { ProductSize, ProductSizeLabels, CommonColors } from "@/lib/server/product";
-import {
-  ArrowUpDown,
-  ChevronDown,
-  ChevronUp,
-  Edit,
-  ExternalLink,
-  ImageIcon,
-  Package,
-  Plus,
-  Search,
-  Trash2,
-  Upload,
-  X,
-} from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 
 type SortField = "productName" | "size" | "color" | "stock";
 type SortOrder = "asc" | "desc";
@@ -312,7 +312,7 @@ export default function VariantsPage() {
         <Skeleton className="h-8 w-48" />
         <div className="grid gap-4 md:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-24" />
+            <Skeleton className="h-24" key={i} />
           ))}
         </div>
         <Skeleton className="h-96" />
@@ -381,13 +381,13 @@ export default function VariantsPage() {
             <div className="relative max-w-sm flex-1">
               <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
               <Input
+                className="pl-9"
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by product name..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
               />
             </div>
-            <Select value={filterProduct} onValueChange={setFilterProduct}>
+            <Select onValueChange={setFilterProduct} value={filterProduct}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Filter by product" />
               </SelectTrigger>
@@ -400,7 +400,7 @@ export default function VariantsPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={filterSize} onValueChange={setFilterSize}>
+            <Select onValueChange={setFilterSize} value={filterSize}>
               <SelectTrigger className="w-[130px]">
                 <SelectValue placeholder="Size" />
               </SelectTrigger>
@@ -414,10 +414,10 @@ export default function VariantsPage() {
               </SelectContent>
             </Select>
             <Input
+              className="w-[150px]"
+              onChange={(e) => setFilterColor(e.target.value)}
               placeholder="Filter by color..."
               value={filterColor}
-              onChange={(e) => setFilterColor(e.target.value)}
-              className="w-[150px]"
             />
           </div>
 
@@ -428,25 +428,25 @@ export default function VariantsPage() {
                 <TableRow>
                   <TableHead className="w-[80px]">Image</TableHead>
                   <TableHead>
-                    <Button variant="ghost" onClick={() => handleSort("productName")} className="-ml-4">
+                    <Button className="-ml-4" onClick={() => handleSort("productName")} variant="ghost">
                       Product
                       {getSortIcon("productName")}
                     </Button>
                   </TableHead>
                   <TableHead>
-                    <Button variant="ghost" onClick={() => handleSort("size")} className="-ml-4">
+                    <Button className="-ml-4" onClick={() => handleSort("size")} variant="ghost">
                       Size
                       {getSortIcon("size")}
                     </Button>
                   </TableHead>
                   <TableHead>
-                    <Button variant="ghost" onClick={() => handleSort("color")} className="-ml-4">
+                    <Button className="-ml-4" onClick={() => handleSort("color")} variant="ghost">
                       Color
                       {getSortIcon("color")}
                     </Button>
                   </TableHead>
                   <TableHead>
-                    <Button variant="ghost" onClick={() => handleSort("stock")} className="-ml-4">
+                    <Button className="-ml-4" onClick={() => handleSort("stock")} variant="ghost">
                       Stock
                       {getSortIcon("stock")}
                     </Button>
@@ -458,7 +458,7 @@ export default function VariantsPage() {
               <TableBody>
                 {filteredVariants.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-muted-foreground h-24 text-center">
+                    <TableCell className="text-muted-foreground h-24 text-center" colSpan={7}>
                       <Package className="mx-auto mb-2 size-8 opacity-50" />
                       No variants found
                     </TableCell>
@@ -476,10 +476,10 @@ export default function VariantsPage() {
                           {variant.imageUrl ? (
                             <div className="relative h-12 w-12 overflow-hidden rounded-md border">
                               <Image
-                                src={variant.imageUrl}
                                 alt={`${variant.productName} - ${variant.color}`}
-                                fill
                                 className="object-cover"
+                                fill
+                                src={variant.imageUrl}
                               />
                             </div>
                           ) : (
@@ -490,8 +490,8 @@ export default function VariantsPage() {
                         </TableCell>
                         <TableCell>
                           <Link
-                            href={`/admin/products/${variant.productId}`}
                             className="flex items-center gap-1 font-medium hover:underline"
+                            href={`/admin/products/${variant.productId}`}
                           >
                             {variant.productName}
                             <ExternalLink className="size-3" />
@@ -518,11 +518,11 @@ export default function VariantsPage() {
                           {isOutOfStock ? (
                             <Badge variant="destructive">Out of Stock</Badge>
                           ) : isLowStock ? (
-                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                            <Badge className="bg-yellow-100 text-yellow-800" variant="secondary">
                               Low Stock
                             </Badge>
                           ) : (
-                            <Badge variant="default" className="bg-green-100 text-green-800">
+                            <Badge className="bg-green-100 text-green-800" variant="default">
                               In Stock
                             </Badge>
                           )}
@@ -530,27 +530,27 @@ export default function VariantsPage() {
                         <TableCell>
                           <div className="flex gap-1">
                             <Button
-                              variant="ghost"
-                              size="icon"
                               onClick={() => openImageDialog(variant)}
+                              size="icon"
                               title="Manage Image"
+                              variant="ghost"
                             >
                               <ImageIcon className="size-4" />
                             </Button>
                             <Button
-                              variant="ghost"
-                              size="icon"
                               onClick={() => openEditDialog(variant)}
+                              size="icon"
                               title="Edit Variant"
+                              variant="ghost"
                             >
                               <Edit className="size-4" />
                             </Button>
                             <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openDeleteDialog(variant)}
-                              title="Delete Variant"
                               className="text-destructive hover:text-destructive"
+                              onClick={() => openDeleteDialog(variant)}
+                              size="icon"
+                              title="Delete Variant"
+                              variant="ghost"
                             >
                               <Trash2 className="size-4" />
                             </Button>
@@ -567,7 +567,7 @@ export default function VariantsPage() {
       </Card>
 
       {/* Create Dialog */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+      <Dialog onOpenChange={setCreateDialogOpen} open={createDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Variant</DialogTitle>
@@ -576,7 +576,7 @@ export default function VariantsPage() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Product *</Label>
-              <Select value={formProductId} onValueChange={setFormProductId}>
+              <Select onValueChange={setFormProductId} value={formProductId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select product" />
                 </SelectTrigger>
@@ -593,7 +593,7 @@ export default function VariantsPage() {
             </div>
             <div className="space-y-2">
               <Label>Size *</Label>
-              <Select value={formSize} onValueChange={setFormSize}>
+              <Select onValueChange={setFormSize} value={formSize}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select size" />
                 </SelectTrigger>
@@ -609,19 +609,19 @@ export default function VariantsPage() {
             <div className="space-y-2">
               <Label>Color *</Label>
               <Input
+                onChange={(e) => setFormColor(e.target.value)}
                 placeholder="Enter color (e.g., Red, Navy Blue, Forest Green)"
                 value={formColor}
-                onChange={(e) => setFormColor(e.target.value)}
               />
               <div className="flex flex-wrap gap-1 pt-1">
                 {CommonColors.slice(0, 8).map((color) => (
                   <Button
+                    className="h-6 px-2 text-xs"
                     key={color}
+                    onClick={() => setFormColor(color)}
+                    size="sm"
                     type="button"
                     variant="outline"
-                    size="sm"
-                    className="h-6 px-2 text-xs"
-                    onClick={() => setFormColor(color)}
                   >
                     {color}
                   </Button>
@@ -630,10 +630,10 @@ export default function VariantsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+            <Button onClick={() => setCreateDialogOpen(false)} variant="outline">
               Cancel
             </Button>
-            <Button onClick={handleCreate} disabled={formSubmitting}>
+            <Button disabled={formSubmitting} onClick={handleCreate}>
               {formSubmitting ? "Creating..." : "Create"}
             </Button>
           </DialogFooter>
@@ -641,7 +641,7 @@ export default function VariantsPage() {
       </Dialog>
 
       {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+      <Dialog onOpenChange={setEditDialogOpen} open={editDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Variant</DialogTitle>
@@ -650,7 +650,7 @@ export default function VariantsPage() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Size *</Label>
-              <Select value={formSize} onValueChange={setFormSize}>
+              <Select onValueChange={setFormSize} value={formSize}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select size" />
                 </SelectTrigger>
@@ -666,19 +666,19 @@ export default function VariantsPage() {
             <div className="space-y-2">
               <Label>Color *</Label>
               <Input
+                onChange={(e) => setFormColor(e.target.value)}
                 placeholder="Enter color (e.g., Red, Navy Blue, Forest Green)"
                 value={formColor}
-                onChange={(e) => setFormColor(e.target.value)}
               />
               <div className="flex flex-wrap gap-1 pt-1">
                 {CommonColors.slice(0, 8).map((color) => (
                   <Button
+                    className="h-6 px-2 text-xs"
                     key={color}
+                    onClick={() => setFormColor(color)}
+                    size="sm"
                     type="button"
                     variant="outline"
-                    size="sm"
-                    className="h-6 px-2 text-xs"
-                    onClick={() => setFormColor(color)}
                   >
                     {color}
                   </Button>
@@ -687,10 +687,10 @@ export default function VariantsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+            <Button onClick={() => setEditDialogOpen(false)} variant="outline">
               Cancel
             </Button>
-            <Button onClick={handleEdit} disabled={formSubmitting}>
+            <Button disabled={formSubmitting} onClick={handleEdit}>
               {formSubmitting ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
@@ -698,7 +698,7 @@ export default function VariantsPage() {
       </Dialog>
 
       {/* Delete Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialog onOpenChange={setDeleteDialogOpen} open={deleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Variant</AlertDialogTitle>
@@ -715,8 +715,8 @@ export default function VariantsPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDelete}
             >
               {formSubmitting ? "Deleting..." : "Delete"}
             </AlertDialogAction>
@@ -725,7 +725,7 @@ export default function VariantsPage() {
       </AlertDialog>
 
       {/* Image Upload Dialog */}
-      <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
+      <Dialog onOpenChange={setImageDialogOpen} open={imageDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Manage Variant Image</DialogTitle>
@@ -744,7 +744,7 @@ export default function VariantsPage() {
               <div className="space-y-2">
                 <Label>Current Image</Label>
                 <div className="relative mx-auto h-48 w-48 overflow-hidden rounded-lg border">
-                  <Image src={selectedVariant.imageUrl} alt="Current variant image" fill className="object-cover" />
+                  <Image alt="Current variant image" className="object-cover" fill src={selectedVariant.imageUrl} />
                 </div>
               </div>
             )}
@@ -754,15 +754,15 @@ export default function VariantsPage() {
               <div className="space-y-2">
                 <Label>New Image Preview</Label>
                 <div className="relative mx-auto h-48 w-48 overflow-hidden rounded-lg border">
-                  <Image src={imagePreview} alt="New image preview" fill className="object-cover" />
+                  <Image alt="New image preview" className="object-cover" fill src={imagePreview} />
                   <Button
-                    variant="destructive"
-                    size="icon"
                     className="absolute top-2 right-2 h-6 w-6"
                     onClick={() => {
                       setSelectedImage(null);
                       setImagePreview(null);
                     }}
+                    size="icon"
+                    variant="destructive"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -774,13 +774,13 @@ export default function VariantsPage() {
             <div className="space-y-2">
               <Label>Upload New Image</Label>
               <input
-                type="file"
-                ref={fileInputRef}
                 accept="image/jpeg,image/png,image/gif,image/webp"
-                onChange={handleImageSelect}
                 className="hidden"
+                onChange={handleImageSelect}
+                ref={fileInputRef}
+                type="file"
               />
-              <Button variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()}>
+              <Button className="w-full" onClick={() => fileInputRef.current?.click()} variant="outline">
                 <Upload className="mr-2 h-4 w-4" />
                 Select Image
               </Button>
@@ -790,20 +790,20 @@ export default function VariantsPage() {
           <DialogFooter className="flex-col gap-2 sm:flex-row">
             {selectedVariant?.imageUrl && !imagePreview && (
               <Button
-                variant="destructive"
-                onClick={handleRemoveImage}
-                disabled={uploadingImage}
                 className="w-full sm:w-auto"
+                disabled={uploadingImage}
+                onClick={handleRemoveImage}
+                variant="destructive"
               >
                 {uploadingImage ? "Removing..." : "Remove Image"}
               </Button>
             )}
             <div className="flex w-full gap-2 sm:w-auto">
-              <Button variant="outline" onClick={() => setImageDialogOpen(false)} className="flex-1">
+              <Button className="flex-1" onClick={() => setImageDialogOpen(false)} variant="outline">
                 Cancel
               </Button>
               {selectedImage && (
-                <Button onClick={handleImageUpload} disabled={uploadingImage} className="flex-1">
+                <Button className="flex-1" disabled={uploadingImage} onClick={handleImageUpload}>
                   {uploadingImage ? "Uploading..." : "Upload"}
                 </Button>
               )}

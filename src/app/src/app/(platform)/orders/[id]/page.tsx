@@ -1,5 +1,26 @@
 "use client";
 
+import {
+  ArrowLeft,
+  ArrowRight,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  CreditCard,
+  HelpCircle,
+  MessageSquare,
+  Package,
+  Paintbrush,
+  RefreshCcw,
+  RotateCcw,
+  Truck,
+  XCircle,
+} from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { OrderProgressTracker } from "@/components/order-progress-tracker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,27 +57,6 @@ import {
   RefundStatusColors,
   RefundStatusLabels,
 } from "@/lib/server/refund";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Calendar,
-  CheckCircle2,
-  Clock,
-  CreditCard,
-  HelpCircle,
-  MessageSquare,
-  Package,
-  Paintbrush,
-  RefreshCcw,
-  RotateCcw,
-  Truck,
-  XCircle,
-} from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
 
 const StatusIcons: Record<OrderStatus, React.ElementType<{ className?: string }>> = {
   [OrderStatus.PendingPayment]: Clock,
@@ -79,7 +79,7 @@ function OrderItemCard({ item }: { item: OrderItemResponse }) {
       {/* Product Image */}
       <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
         {item.productImageUrl ? (
-          <Image src={item.productImageUrl} alt={item.productName} fill className="object-contain p-1" />
+          <Image alt={item.productName} className="object-contain p-1" fill src={item.productImageUrl} />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <Package className="text-muted-foreground h-12 w-12" />
@@ -106,7 +106,7 @@ function OrderItemCard({ item }: { item: OrderItemResponse }) {
                 {item.imprintName || "Custom Design"}
               </span>
             </div>
-            <Button variant="link" size="sm" className="h-auto p-0 text-blue-600 dark:text-blue-400" asChild>
+            <Button asChild className="h-auto p-0 text-blue-600 dark:text-blue-400" size="sm" variant="link">
               <Link href={`/imprinter/${item.imprintId}`}>
                 View Design
                 <ArrowRight className="ml-1 h-3 w-3" />
@@ -155,7 +155,7 @@ function RefundRequestDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Request Refund</DialogTitle>
@@ -166,8 +166,8 @@ function RefundRequestDialog({
           <div className="space-y-2">
             <Label htmlFor="reason">Reason for Refund</Label>
             <Select
-              value={reason !== null ? String(reason) : undefined}
               onValueChange={(val) => setReason(Number(val) as RefundReason)}
+              value={reason !== null ? String(reason) : undefined}
             >
               <SelectTrigger id="reason">
                 <SelectValue placeholder="Select a reason" />
@@ -186,12 +186,12 @@ function RefundRequestDialog({
             <Label htmlFor="amount">Refund Amount</Label>
             <Input
               id="amount"
-              type="number"
-              step="0.01"
-              min="0"
               max={order.totalAmount}
-              value={amount}
+              min="0"
               onChange={(e) => setAmount(Number(e.target.value))}
+              step="0.01"
+              type="number"
+              value={amount}
             />
             <p className="text-muted-foreground text-xs">Maximum: ${order.totalAmount.toFixed(2)}</p>
           </div>
@@ -200,19 +200,19 @@ function RefundRequestDialog({
             <Label htmlFor="description">Additional Details</Label>
             <Textarea
               id="description"
-              placeholder="Describe the issue or reason for your refund request..."
-              value={description}
               onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe the issue or reason for your refund request..."
               rows={3}
+              value={description}
             />
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+          <Button disabled={isLoading} onClick={() => onOpenChange(false)} variant="outline">
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading || reason === null}>
+          <Button disabled={isLoading || reason === null} onClick={handleSubmit}>
             {isLoading ? "Submitting..." : "Submit Request"}
           </Button>
         </DialogFooter>
@@ -345,7 +345,7 @@ export default function OrderDetailsPage() {
       <div className="bg-card border-b">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild>
+            <Button asChild size="icon" variant="ghost">
               <Link href="/orders">
                 <ArrowLeft className="h-5 w-5" />
               </Link>
@@ -368,7 +368,7 @@ export default function OrderDetailsPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" asChild>
+            <Button asChild variant="outline">
               <Link href="/support">
                 <HelpCircle className="mr-2 h-4 w-4" />
                 Contact Support
@@ -420,7 +420,7 @@ export default function OrderDetailsPage() {
                     </div>
                   )}
                   {hasActiveRefund && refund.conversationId && (
-                    <Button variant="outline" size="sm" className="mt-2 w-full" asChild>
+                    <Button asChild className="mt-2 w-full" size="sm" variant="outline">
                       <Link href={`/messages?conversation=${refund.conversationId}`}>
                         <MessageSquare className="mr-2 h-4 w-4" />
                         Continue in Chat
@@ -436,7 +436,7 @@ export default function OrderDetailsPage() {
               <h2 className="mb-4 text-lg font-semibold">Order Items ({order.items.length})</h2>
               <div className="space-y-4">
                 {order.items.map((item) => (
-                  <OrderItemCard key={item.id} item={item} />
+                  <OrderItemCard item={item} key={item.id} />
                 ))}
               </div>
             </div>
@@ -522,7 +522,7 @@ export default function OrderDetailsPage() {
                   <p className="text-muted-foreground mb-4 text-sm">
                     If something went wrong with your order, you can request a refund.
                   </p>
-                  <Button variant="outline" className="w-full" onClick={() => setRefundDialogOpen(true)}>
+                  <Button className="w-full" onClick={() => setRefundDialogOpen(true)} variant="outline">
                     <RefreshCcw className="mr-2 h-4 w-4" />
                     Request Refund
                   </Button>
@@ -536,11 +536,11 @@ export default function OrderDetailsPage() {
       {/* Refund Dialog */}
       {order && (
         <RefundRequestDialog
-          order={order}
-          open={refundDialogOpen}
+          isLoading={isSubmittingRefund}
           onOpenChange={setRefundDialogOpen}
           onSubmit={handleRequestRefund}
-          isLoading={isSubmittingRefund}
+          open={refundDialogOpen}
+          order={order}
         />
       )}
     </div>

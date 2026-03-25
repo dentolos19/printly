@@ -18,7 +18,7 @@ export function StatsCard({ stats, loading }: StatsCardProps) {
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-4">
           {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-16" />
+            <Skeleton className="h-16" key={i} />
           ))}
         </CardContent>
       </Card>

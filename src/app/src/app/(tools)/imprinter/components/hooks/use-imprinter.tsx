@@ -1,11 +1,11 @@
 "use client";
 
-import type { Design } from "@/lib/server/design";
-import type { PrintAreaResponse } from "@/lib/server/print-area";
-import type { ProductResponse, ProductVariantResponse } from "@/lib/server/product";
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import type { Design } from "@/lib/server/design";
+import type { PrintAreaResponse } from "@/lib/server/print-area";
+import type { ProductResponse, ProductVariantResponse } from "@/lib/server/product";
 import { useAutoSave } from "../../../shared/hooks/use-auto-save";
 import type {
   AppliedDesign,

@@ -1,5 +1,23 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  CalendarIcon,
+  CameraIcon,
+  GlobeIcon,
+  KeyIcon,
+  Loader2,
+  MailIcon,
+  MapPinIcon,
+  ShieldIcon,
+  Trash2Icon,
+  UserIcon,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,24 +39,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/providers/auth";
 import { useServer } from "@/lib/providers/server";
 import { UserProfileResponse } from "@/lib/server/user";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  CalendarIcon,
-  CameraIcon,
-  GlobeIcon,
-  KeyIcon,
-  Loader2,
-  MailIcon,
-  MapPinIcon,
-  ShieldIcon,
-  Trash2Icon,
-  UserIcon,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { z } from "zod";
 
 const profileSchema = z.object({
   displayName: z
@@ -278,17 +278,17 @@ export default function Page() {
         <p className="text-muted-foreground">Manage your profile, security, and account preferences</p>
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-6">
+      <Tabs className="space-y-6" defaultValue="profile">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="profile" className="gap-2">
+          <TabsTrigger className="gap-2" value="profile">
             <UserIcon className="h-4 w-4" />
             Profile
           </TabsTrigger>
-          <TabsTrigger value="security" className="gap-2">
+          <TabsTrigger className="gap-2" value="security">
             <ShieldIcon className="h-4 w-4" />
             Security
           </TabsTrigger>
-          <TabsTrigger value="danger" className="gap-2">
+          <TabsTrigger className="gap-2" value="danger">
             <Trash2Icon className="h-4 w-4" />
             Danger Zone
           </TabsTrigger>
@@ -305,7 +305,7 @@ export default function Page() {
                 <ProfileSkeleton />
               ) : (
                 <Form {...profileForm}>
-                  <form onSubmit={handleProfileSubmit} className="space-y-6">
+                  <form className="space-y-6" onSubmit={handleProfileSubmit}>
                     <div className="flex items-center gap-6">
                       <div className="relative">
                         <Avatar className="h-24 w-24">
@@ -315,20 +315,20 @@ export default function Page() {
                           </AvatarFallback>
                         </Avatar>
                         <input
-                          ref={avatarInputRef}
-                          type="file"
                           accept="image/*"
                           className="hidden"
-                          onChange={handleAvatarUpload}
                           disabled={isUploadingAvatar || isSaving}
+                          onChange={handleAvatarUpload}
+                          ref={avatarInputRef}
+                          type="file"
                         />
                         <Button
-                          type="button"
-                          size="icon"
-                          variant="secondary"
                           className="absolute -right-1 -bottom-1 h-8 w-8 rounded-full shadow-md"
-                          onClick={() => avatarInputRef.current?.click()}
                           disabled={isUploadingAvatar || isSaving}
+                          onClick={() => avatarInputRef.current?.click()}
+                          size="icon"
+                          type="button"
+                          variant="secondary"
                         >
                           {isUploadingAvatar ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -356,7 +356,7 @@ export default function Page() {
                           <FormItem>
                             <FormLabel>Display Name</FormLabel>
                             <FormControl>
-                              <Input {...field} value={field.value || ""} placeholder="John Doe" disabled={isSaving} />
+                              <Input {...field} disabled={isSaving} placeholder="John Doe" value={field.value || ""} />
                             </FormControl>
                             <FormDescription>Your public display name</FormDescription>
                             <FormMessage />
@@ -374,10 +374,10 @@ export default function Page() {
                           <FormControl>
                             <Textarea
                               {...field}
-                              value={field.value || ""}
-                              placeholder="Tell us about yourself..."
                               className="min-h-24 resize-none"
                               disabled={isSaving}
+                              placeholder="Tell us about yourself..."
+                              value={field.value || ""}
                             />
                           </FormControl>
                           <FormDescription>Brief description about yourself (max 500 characters)</FormDescription>
@@ -399,9 +399,9 @@ export default function Page() {
                             <FormControl>
                               <Input
                                 {...field}
-                                value={field.value || ""}
-                                placeholder="San Francisco, CA"
                                 disabled={isSaving}
+                                placeholder="San Francisco, CA"
+                                value={field.value || ""}
                               />
                             </FormControl>
                             <FormMessage />
@@ -421,9 +421,9 @@ export default function Page() {
                             <FormControl>
                               <Input
                                 {...field}
-                                value={field.value || ""}
-                                placeholder="https://yourwebsite.com"
                                 disabled={isSaving}
+                                placeholder="https://yourwebsite.com"
+                                value={field.value || ""}
                               />
                             </FormControl>
                             <FormMessage />
@@ -442,7 +442,7 @@ export default function Page() {
                             Date of Birth
                           </FormLabel>
                           <FormControl>
-                            <Input {...field} value={field.value || ""} type="date" disabled={isSaving} />
+                            <Input {...field} disabled={isSaving} type="date" value={field.value || ""} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -450,7 +450,7 @@ export default function Page() {
                     />
 
                     <div className="flex justify-end">
-                      <Button type="submit" disabled={isSaving}>
+                      <Button disabled={isSaving} type="submit">
                         {isSaving ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -468,7 +468,7 @@ export default function Page() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="security" className="space-y-6">
+        <TabsContent className="space-y-6" value="security">
           {profile?.hasPassword ? (
             <>
               <Card>
@@ -483,7 +483,7 @@ export default function Page() {
                 </CardHeader>
                 <CardContent>
                   <Form {...emailForm}>
-                    <form onSubmit={handleEmailSubmit} className="space-y-4">
+                    <form className="space-y-4" onSubmit={handleEmailSubmit}>
                       <div className="grid gap-4 sm:grid-cols-2">
                         <FormField
                           control={emailForm.control}
@@ -494,9 +494,9 @@ export default function Page() {
                               <FormControl>
                                 <Input
                                   {...field}
-                                  type="email"
-                                  placeholder="newemail@example.com"
                                   disabled={isChangingEmail}
+                                  placeholder="newemail@example.com"
+                                  type="email"
                                 />
                               </FormControl>
                               <FormMessage />
@@ -512,9 +512,9 @@ export default function Page() {
                               <FormControl>
                                 <Input
                                   {...field}
-                                  type="password"
-                                  placeholder="••••••••••••"
                                   disabled={isChangingEmail}
+                                  placeholder="••••••••••••"
+                                  type="password"
                                 />
                               </FormControl>
                               <FormMessage />
@@ -523,7 +523,7 @@ export default function Page() {
                         />
                       </div>
                       <div className="flex justify-end">
-                        <Button type="submit" disabled={isChangingEmail}>
+                        <Button disabled={isChangingEmail} type="submit">
                           {isChangingEmail ? (
                             <>
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -549,7 +549,7 @@ export default function Page() {
                 </CardHeader>
                 <CardContent>
                   <Form {...passwordForm}>
-                    <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                    <form className="space-y-4" onSubmit={handlePasswordSubmit}>
                       <FormField
                         control={passwordForm.control}
                         name="currentPassword"
@@ -559,9 +559,9 @@ export default function Page() {
                             <FormControl>
                               <Input
                                 {...field}
-                                type="password"
-                                placeholder="••••••••••••"
                                 disabled={isChangingPassword}
+                                placeholder="••••••••••••"
+                                type="password"
                               />
                             </FormControl>
                             <FormMessage />
@@ -578,9 +578,9 @@ export default function Page() {
                               <FormControl>
                                 <Input
                                   {...field}
-                                  type="password"
-                                  placeholder="••••••••••••"
                                   disabled={isChangingPassword}
+                                  placeholder="••••••••••••"
+                                  type="password"
                                 />
                               </FormControl>
                               <FormDescription>Must be at least 8 characters</FormDescription>
@@ -597,9 +597,9 @@ export default function Page() {
                               <FormControl>
                                 <Input
                                   {...field}
-                                  type="password"
-                                  placeholder="••••••••••••"
                                   disabled={isChangingPassword}
+                                  placeholder="••••••••••••"
+                                  type="password"
                                 />
                               </FormControl>
                               <FormMessage />
@@ -608,7 +608,7 @@ export default function Page() {
                         />
                       </div>
                       <div className="flex justify-end">
-                        <Button type="submit" disabled={isChangingPassword}>
+                        <Button disabled={isChangingPassword} type="submit">
                           {isChangingPassword ? (
                             <>
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -672,7 +672,7 @@ export default function Page() {
               </div>
             </CardContent>
             <CardFooter>
-              <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+              <Dialog onOpenChange={setDeleteDialogOpen} open={deleteDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="destructive">Delete My Account</Button>
                 </DialogTrigger>
@@ -685,10 +685,10 @@ export default function Page() {
                     </DialogDescription>
                   </DialogHeader>
                   <DialogFooter className="gap-2 sm:gap-0">
-                    <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+                    <Button onClick={() => setDeleteDialogOpen(false)} variant="outline">
                       Cancel
                     </Button>
-                    <Button variant="destructive" onClick={handleDeleteAccount} disabled={isDeleting}>
+                    <Button disabled={isDeleting} onClick={handleDeleteAccount} variant="destructive">
                       {isDeleting ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />

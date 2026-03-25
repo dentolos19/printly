@@ -1,8 +1,9 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import {
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
   Clock,
   FileText,
   Loader2,
@@ -10,19 +11,18 @@ import {
   PhoneIncoming,
   PhoneMissed,
   PhoneOff,
+  User,
   Video,
   X,
-  AlertCircle,
-  User,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { API_URL } from "@/environment";
 import { useAuth } from "@/lib/providers/auth";
-import { useState, useRef, useEffect } from "react";
-import ReactMarkdown from "react-markdown";
+import { cn } from "@/lib/utils";
 
 // Call status enum matching backend
 export enum CallStatus {
@@ -210,7 +210,7 @@ function AiCallNotesDialog({
   }, [isOpen, callLogId, tokens?.accessToken]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog onOpenChange={(open) => !open && onClose()} open={isOpen}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -242,8 +242,8 @@ function AiCallNotesDialog({
               {transcript && (
                 <div className="border-t pt-4 pb-4">
                   <button
-                    onClick={() => setShowTranscript(!showTranscript)}
                     className="text-muted-foreground hover:text-foreground flex w-full items-center justify-between text-sm font-semibold tracking-wide uppercase transition-colors"
+                    onClick={() => setShowTranscript(!showTranscript)}
                   >
                     <span>Transcript</span>
                     {showTranscript ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -370,10 +370,10 @@ export function CallMessage({
         {showAiCallNotes && callStatus === CallStatus.Completed && callLogId && (
           <>
             <Button
-              variant="outline"
-              size="sm"
               className="mt-1 gap-1.5 text-xs"
               onClick={() => setNotesDialogOpen(true)}
+              size="sm"
+              variant="outline"
             >
               <FileText className="h-3.5 w-3.5" />
               AI Call Notes
@@ -392,11 +392,11 @@ export function CallMessage({
             {/* Answer/Decline buttons for incoming calls */}
             {isRinging && onAnswerCall && onDeclineCall && (
               <div className="flex gap-2">
-                <Button onClick={onDeclineCall} variant="destructive" size="sm" className="flex-1 gap-1.5">
+                <Button className="flex-1 gap-1.5" onClick={onDeclineCall} size="sm" variant="destructive">
                   <PhoneOff className="h-3.5 w-3.5" />
                   Decline
                 </Button>
-                <Button onClick={onAnswerCall} size="sm" className="flex-1 gap-1.5 bg-green-600 hover:bg-green-700">
+                <Button className="flex-1 gap-1.5 bg-green-600 hover:bg-green-700" onClick={onAnswerCall} size="sm">
                   {isVideo ? <Video className="h-3.5 w-3.5" /> : <Phone className="h-3.5 w-3.5" />}
                   Answer
                 </Button>
@@ -405,7 +405,7 @@ export function CallMessage({
 
             {/* Join button for active calls */}
             {!isRinging && canJoinCall && onJoinCall && (
-              <Button onClick={onJoinCall} size="sm" className="w-full gap-1.5 bg-green-600 hover:bg-green-700">
+              <Button className="w-full gap-1.5 bg-green-600 hover:bg-green-700" onClick={onJoinCall} size="sm">
                 {isVideo ? <Video className="h-3.5 w-3.5" /> : <Phone className="h-3.5 w-3.5" />}
                 Join Call
               </Button>

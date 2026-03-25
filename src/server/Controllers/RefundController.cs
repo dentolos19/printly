@@ -284,7 +284,7 @@ public class RefundController(
             .Refunds.Include(r => r.RequestedByUser)
             .Include(r => r.ProcessedByUser)
             .Include(r => r.Order)
-            .ThenInclude(o => o.Items)
+                .ThenInclude(o => o.Items)
             .AsQueryable();
 
         if (status.HasValue)
@@ -431,7 +431,7 @@ public class RefundController(
             await AddSystemMessageToConversation(
                 refund.ConversationId.Value,
                 $"✅ **Refund Approved**\n\nApproved amount: ${approvedAmount:F2}"
-                + (string.IsNullOrWhiteSpace(request.AdminNotes) ? "" : $"\n\nAdmin notes: {request.AdminNotes}")
+                    + (string.IsNullOrWhiteSpace(request.AdminNotes) ? "" : $"\n\nAdmin notes: {request.AdminNotes}")
             );
         }
 
@@ -481,7 +481,7 @@ public class RefundController(
             NotificationType.RefundRejected,
             "Refund Rejected",
             $"Your refund request for Order #{refund.OrderId.ToString()[..8]} has been rejected."
-            + (string.IsNullOrWhiteSpace(request.AdminNotes) ? "" : $" Reason: {request.AdminNotes}"),
+                + (string.IsNullOrWhiteSpace(request.AdminNotes) ? "" : $" Reason: {request.AdminNotes}"),
             refund.ConversationId,
             priority: NotificationPriority.High
         );
@@ -492,7 +492,7 @@ public class RefundController(
             await AddSystemMessageToConversation(
                 refund.ConversationId.Value,
                 $"❌ **Refund Rejected**"
-                + (string.IsNullOrWhiteSpace(request.AdminNotes) ? "" : $"\n\nReason: {request.AdminNotes}")
+                    + (string.IsNullOrWhiteSpace(request.AdminNotes) ? "" : $"\n\nReason: {request.AdminNotes}")
             );
         }
 

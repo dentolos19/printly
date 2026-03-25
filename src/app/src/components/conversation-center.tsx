@@ -1,5 +1,8 @@
 "use client";
 
+import * as signalR from "@microsoft/signalr";
+import { Loader2, MessageCircle, Plus, RefreshCw, Send, Users, Wifi, WifiOff } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,9 +10,6 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { API_URL } from "@/environment";
 import { useAuth } from "@/lib/providers/auth";
-import * as signalR from "@microsoft/signalr";
-import { Loader2, MessageCircle, Plus, RefreshCw, Send, Users, Wifi, WifiOff } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatMessageTime } from "@/lib/utils";
 
 interface Contact {
@@ -512,20 +512,20 @@ export default function ConversationCenter() {
           </div>
           <div className="flex gap-2">
             <Input
+              className="flex-1"
+              onChange={(e) => setFilter(e.target.value)}
               placeholder="Search conversations"
               value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="flex-1"
             />
-            <Button variant="outline" size="icon" onClick={fetchConversations} disabled={isLoadingConversations}>
+            <Button disabled={isLoadingConversations} onClick={fetchConversations} size="icon" variant="outline">
               <RefreshCw className={`h-4 w-4 ${isLoadingConversations ? "animate-spin" : ""}`} />
             </Button>
           </div>
           <div className="flex gap-2">
             <select
               className="w-full rounded-md border px-3 py-2 text-sm"
-              value={selectedContactId ?? ""}
               onChange={(e) => setSelectedContactId(e.target.value)}
+              value={selectedContactId ?? ""}
             >
               <option value="">Start a new chat</option>
               {contacts.map((contact) => (
@@ -534,7 +534,7 @@ export default function ConversationCenter() {
                 </option>
               ))}
             </select>
-            <Button onClick={handleCreateConversation} disabled={!selectedContactId || isCreatingConversation}>
+            <Button disabled={!selectedContactId || isCreatingConversation} onClick={handleCreateConversation}>
               {isCreatingConversation ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             </Button>
           </div>
@@ -555,9 +555,9 @@ export default function ConversationCenter() {
                   const unread = conversation.unreadCount > 0;
                   return (
                     <button
+                      className={`hover:bg-muted flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${selectedConversationId === conversation.id ? "bg-muted" : ""}`}
                       key={conversation.id}
                       onClick={() => handleSelectConversation(conversation.id)}
-                      className={`hover:bg-muted flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${selectedConversationId === conversation.id ? "bg-muted" : ""}`}
                     >
                       <Avatar className="h-10 w-10">
                         <AvatarFallback>{title.slice(0, 2).toUpperCase()}</AvatarFallback>
@@ -598,7 +598,7 @@ export default function ConversationCenter() {
             <div className="bg-destructive/10 text-destructive flex items-center gap-2 rounded-md px-3 py-2 text-sm">
               <WifiOff className="h-4 w-4" />
               <span className="flex-1 truncate">{connectionError}</span>
-              <Button size="sm" variant="ghost" onClick={startConnection}>
+              <Button onClick={startConnection} size="sm" variant="ghost">
                 Retry
               </Button>
             </div>
@@ -619,7 +619,7 @@ export default function ConversationCenter() {
                     {messages.map((message) => {
                       const fromMe = message.senderId === currentUserId;
                       return (
-                        <div key={message.id} className={`flex ${fromMe ? "justify-end" : "justify-start"}`}>
+                        <div className={`flex ${fromMe ? "justify-end" : "justify-start"}`} key={message.id}>
                           <div
                             className={`max-w-[70%] rounded-2xl px-4 py-2.5 text-sm shadow-sm ${fromMe ? "bg-primary text-primary-foreground" : "bg-muted"}`}
                           >
@@ -647,20 +647,20 @@ export default function ConversationCenter() {
         <CardFooter className="bg-background border-t">
           <div className="flex w-full items-center gap-2">
             <Input
-              placeholder={selectedConversation ? "Type your message..." : "Select a conversation to start"}
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
               disabled={!selectedConversation || connectionState !== "connected"}
+              onChange={(e) => setInputMessage(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   handleSendMessage();
                 }
               }}
+              placeholder={selectedConversation ? "Type your message..." : "Select a conversation to start"}
+              value={inputMessage}
             />
             <Button
-              onClick={handleSendMessage}
               disabled={!selectedConversation || isSending || connectionState !== "connected"}
+              onClick={handleSendMessage}
             >
               {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>

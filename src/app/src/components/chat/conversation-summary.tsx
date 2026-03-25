@@ -1,12 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import { API_URL } from "@/environment";
-import type { ConversationSummaryResponse } from "@/lib/server/conversation";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -19,6 +12,13 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { API_URL } from "@/environment";
+import type { ConversationSummaryResponse } from "@/lib/server/conversation";
 
 export interface ConversationSummaryProps {
   conversationId: string;
@@ -83,7 +83,7 @@ export function ConversationSummary({ conversationId, isOpen, onClose, authorize
   const sentimentInfo = summary ? (SENTIMENT_CONFIG[summary.sentiment] ?? SENTIMENT_CONFIG.neutral) : null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog onOpenChange={(open) => !open && onClose()} open={isOpen}>
       <DialogContent className="flex h-[80vh] flex-col p-0 sm:max-w-lg">
         <DialogHeader className="border-b px-6 pt-5 pb-3">
           <DialogTitle className="flex items-center gap-2 text-lg">
@@ -122,7 +122,7 @@ export function ConversationSummary({ conversationId, isOpen, onClose, authorize
                   <p className="text-destructive font-medium">Failed to generate summary</p>
                   <p className="text-muted-foreground mt-1 text-sm">{error}</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={fetchSummary}>
+                <Button onClick={fetchSummary} size="sm" variant="outline">
                   Try again
                 </Button>
               </div>
@@ -188,7 +188,7 @@ export function ConversationSummary({ conversationId, isOpen, onClose, authorize
                     </h4>
                     <ul className="space-y-0.5">
                       {summary.keyPoints.map((point, i) => (
-                        <li key={i} className="text-muted-foreground flex items-start gap-1.5 text-xs">
+                        <li className="text-muted-foreground flex items-start gap-1.5 text-xs" key={i}>
                           <span className="bg-primary mt-1 h-1 w-1 shrink-0 rounded-full" />
                           {point}
                         </li>
@@ -206,7 +206,7 @@ export function ConversationSummary({ conversationId, isOpen, onClose, authorize
                     </h4>
                     <ul className="space-y-0.5 pb-2">
                       {summary.actionItems.map((item, i) => (
-                        <li key={i} className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400">
+                        <li className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400" key={i}>
                           <XCircle className="mt-0.5 h-3 w-3 shrink-0" />
                           {item}
                         </li>
@@ -220,7 +220,7 @@ export function ConversationSummary({ conversationId, isOpen, onClose, authorize
         </ScrollArea>
 
         <div className="mt-auto border-t px-5 py-3">
-          <Button variant="outline" onClick={onClose} className="h-8 w-full text-xs">
+          <Button className="h-8 w-full text-xs" onClick={onClose} variant="outline">
             Close
           </Button>
         </div>

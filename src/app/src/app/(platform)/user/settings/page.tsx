@@ -1,17 +1,17 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/lib/providers/auth";
-import { useServer } from "@/lib/providers/server";
-import { UserProfileResponse } from "@/lib/server/user";
 import { ArrowLeftIcon, Loader2, ShieldIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import { useAuth } from "@/lib/providers/auth";
+import { useServer } from "@/lib/providers/server";
+import { UserProfileResponse } from "@/lib/server/user";
 
 export default function UserSettingsPage() {
   const { api } = useServer();
@@ -76,7 +76,7 @@ export default function UserSettingsPage() {
     <div className="container mx-auto max-w-2xl space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+        <Button onClick={() => router.back()} size="icon" variant="ghost">
           <ArrowLeftIcon className="h-5 w-5" />
         </Button>
         <h1 className="text-2xl font-bold">Settings</h1>
@@ -94,21 +94,21 @@ export default function UserSettingsPage() {
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-1">
-              <Label htmlFor="private-profile" className="text-base font-medium">
+              <Label className="text-base font-medium" htmlFor="private-profile">
                 Private Profile
               </Label>
               <p className="text-muted-foreground text-sm">
                 When enabled, only approved followers can see your posts and profile details.
               </p>
             </div>
-            <Switch id="private-profile" checked={isPrivate} onCheckedChange={setIsPrivate} />
+            <Switch checked={isPrivate} id="private-profile" onCheckedChange={setIsPrivate} />
           </div>
         </CardContent>
       </Card>
 
       {/* Save Button */}
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saving || !hasChanges}>
+        <Button disabled={saving || !hasChanges} onClick={handleSave}>
           {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Save Changes
         </Button>

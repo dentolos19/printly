@@ -1,5 +1,24 @@
 "use client";
 
+import {
+  Box,
+  Copy,
+  Download,
+  Edit3,
+  FileImage,
+  ImageIcon,
+  MoreVertical,
+  Pencil,
+  Plus,
+  Search,
+  Sparkles,
+  Trash2,
+  Upload,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { FallbackImage } from "@/app/(tools)/shared/components/fallback-image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,25 +46,6 @@ import { useServer } from "@/lib/providers/server";
 import type { Asset } from "@/lib/server/asset";
 import type { Design } from "@/lib/server/design";
 import type { Imprint } from "@/lib/server/imprint";
-import {
-  Box,
-  Copy,
-  Download,
-  Edit3,
-  FileImage,
-  ImageIcon,
-  MoreVertical,
-  Pencil,
-  Plus,
-  Search,
-  Sparkles,
-  Trash2,
-  Upload,
-} from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
 
 type DesignWithPreview = Design & {
   preview?: string;
@@ -344,27 +344,27 @@ export default function LibraryPage() {
       <div className="relative max-w-md">
         <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
         <Input
+          className="pl-9"
+          onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search library..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
         />
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs className="space-y-6" onValueChange={setActiveTab} value={activeTab}>
         <TabsList>
-          <TabsTrigger value="designs" className="gap-2">
+          <TabsTrigger className="gap-2" value="designs">
             <FileImage className="h-4 w-4" />
             Designs
             {!designsLoading && <span className="text-muted-foreground text-xs">({filteredDesigns.length})</span>}
           </TabsTrigger>
-          <TabsTrigger value="imprints" className="gap-2">
+          <TabsTrigger className="gap-2" value="imprints">
             <Box className="h-4 w-4" />
             Imprints
             {!imprintsLoading && <span className="text-muted-foreground text-xs">({filteredImprints.length})</span>}
           </TabsTrigger>
-          <TabsTrigger value="assets" className="gap-2">
+          <TabsTrigger className="gap-2" value="assets">
             <ImageIcon className="h-4 w-4" />
             Assets
             {!assetsLoading && <span className="text-muted-foreground text-xs">({filteredAssets.length})</span>}
@@ -372,7 +372,7 @@ export default function LibraryPage() {
         </TabsList>
 
         {/* Designs Tab */}
-        <TabsContent value="designs" className="space-y-6">
+        <TabsContent className="space-y-6" value="designs">
           <div className="flex items-center justify-between">
             <p className="text-muted-foreground">Create and manage your custom designs</p>
             <Button asChild>
@@ -386,7 +386,7 @@ export default function LibraryPage() {
           {designsLoading ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
-                <Card key={i} className="overflow-hidden p-0">
+                <Card className="overflow-hidden p-0" key={i}>
                   <Skeleton className="aspect-square w-full" />
                   <div className="p-4">
                     <Skeleton className="h-5 w-3/4" />
@@ -419,16 +419,16 @@ export default function LibraryPage() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filteredDesigns.map((design) => (
                 <Card
-                  key={design.id}
                   className="group hover:border-primary/50 m-0 cursor-pointer gap-0 overflow-hidden p-0 transition-all hover:shadow-lg"
+                  key={design.id}
                   onClick={() => router.push(`/designer/${design.id}`)}
                 >
                   <div className="bg-muted relative aspect-square overflow-hidden">
                     {design.preview ? (
                       <img
-                        src={design.preview}
                         alt={design.name}
                         className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        src={design.preview}
                       />
                     ) : (
                       <div className="flex size-full items-center justify-center">
@@ -441,7 +441,7 @@ export default function LibraryPage() {
                       <h3 className="line-clamp-1 font-semibold">{design.name}</h3>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                          <Button className="h-8 w-8 shrink-0" size="icon" variant="ghost">
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -498,7 +498,7 @@ export default function LibraryPage() {
         </TabsContent>
 
         {/* Imprints Tab */}
-        <TabsContent value="imprints" className="space-y-6">
+        <TabsContent className="space-y-6" value="imprints">
           <div className="flex items-center justify-between">
             <p className="text-muted-foreground">Configure 3D product imprints for your designs</p>
             <Button asChild>
@@ -512,7 +512,7 @@ export default function LibraryPage() {
           {imprintsLoading ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
-                <Card key={i} className="overflow-hidden">
+                <Card className="overflow-hidden" key={i}>
                   <Skeleton className="aspect-square w-full" />
                   <div className="p-3">
                     <Skeleton className="h-5 w-3/4" />
@@ -547,16 +547,16 @@ export default function LibraryPage() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filteredImprints.map((imprint) => (
                 <Card
-                  key={imprint.id}
                   className="group hover:border-primary/50 m-0 cursor-pointer gap-0 overflow-hidden p-0 transition-all hover:shadow-lg"
+                  key={imprint.id}
                   onClick={() => router.push(`/imprinter/${imprint.id}`)}
                 >
                   <div className="bg-muted relative aspect-square overflow-hidden">
                     {imprint.previewId ? (
                       <FallbackImage
-                        src={`/assets/${imprint.previewId}/view`}
                         alt={imprint.name}
                         className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        src={`/assets/${imprint.previewId}/view`}
                       />
                     ) : (
                       <div className="flex size-full items-center justify-center">
@@ -574,7 +574,7 @@ export default function LibraryPage() {
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                          <Button className="h-8 w-8 shrink-0" size="icon" variant="ghost">
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -613,7 +613,7 @@ export default function LibraryPage() {
         </TabsContent>
 
         {/* Assets Tab */}
-        <TabsContent value="assets" className="space-y-6">
+        <TabsContent className="space-y-6" value="assets">
           <div className="flex items-center justify-between">
             <p className="text-muted-foreground">Upload and manage your image assets</p>
             <Button onClick={() => setUploadDialogOpen(true)}>
@@ -625,7 +625,7 @@ export default function LibraryPage() {
           {assetsLoading ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
-                <Card key={i} className="overflow-hidden p-0">
+                <Card className="overflow-hidden p-0" key={i}>
                   <Skeleton className="aspect-square w-full" />
                   <div className="p-4">
                     <Skeleton className="h-5 w-3/4" />
@@ -656,16 +656,16 @@ export default function LibraryPage() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filteredAssets.map((asset) => (
                 <Card
-                  key={asset.id}
                   className="group hover:border-primary/50 m-0 cursor-pointer gap-0 overflow-hidden p-0 transition-all hover:shadow-lg"
+                  key={asset.id}
                   onClick={() => openAssetDetail(asset)}
                 >
                   <div className="bg-muted relative aspect-square overflow-hidden">
                     {imageUrls[asset.id] ? (
                       <FallbackImage
-                        src={imageUrls[asset.id]}
                         alt={asset.name}
                         className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        src={imageUrls[asset.id]}
                       />
                     ) : (
                       <div className="flex size-full items-center justify-center">
@@ -683,13 +683,13 @@ export default function LibraryPage() {
                       <h3 className="line-clamp-1 font-semibold">{asset.name}</h3>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                          <Button className="h-8 w-8 shrink-0" size="icon" variant="ghost">
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
-                            <a href={imageUrls[asset.id]} target="_blank" rel="noopener noreferrer">
+                            <a href={imageUrls[asset.id]} rel="noopener noreferrer" target="_blank">
                               <Download className="mr-2 h-4 w-4" />
                               Download
                             </a>
@@ -723,7 +723,7 @@ export default function LibraryPage() {
       </Tabs>
 
       {/* Rename Dialog */}
-      <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
+      <Dialog onOpenChange={setRenameDialogOpen} open={renameDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Rename Design</DialogTitle>
@@ -734,27 +734,27 @@ export default function LibraryPage() {
               <Label htmlFor="name">Name</Label>
               <Input
                 id="name"
-                value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="Enter design name"
+                value={newName}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
-                value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}
                 placeholder="Enter design description (optional)"
                 rows={3}
+                value={newDescription}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRenameDialogOpen(false)}>
+            <Button onClick={() => setRenameDialogOpen(false)} variant="outline">
               Cancel
             </Button>
-            <Button onClick={handleRenameDesign} disabled={!newName.trim()}>
+            <Button disabled={!newName.trim()} onClick={handleRenameDesign}>
               Save Changes
             </Button>
           </DialogFooter>
@@ -762,7 +762,7 @@ export default function LibraryPage() {
       </Dialog>
 
       {/* Delete Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <Dialog onOpenChange={setDeleteDialogOpen} open={deleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Design</DialogTitle>
@@ -771,10 +771,10 @@ export default function LibraryPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+            <Button onClick={() => setDeleteDialogOpen(false)} variant="outline">
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDeleteDesign}>
+            <Button onClick={handleDeleteDesign} variant="destructive">
               Delete
             </Button>
           </DialogFooter>
@@ -782,7 +782,7 @@ export default function LibraryPage() {
       </Dialog>
 
       {/* Upload Dialog */}
-      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+      <Dialog onOpenChange={setUploadDialogOpen} open={uploadDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Upload Asset</DialogTitle>
@@ -792,28 +792,28 @@ export default function LibraryPage() {
             <div className="space-y-2">
               <Label htmlFor="file">File</Label>
               <Input
-                id="file"
-                type="file"
                 accept="image/*"
+                id="file"
                 onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                type="file"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="upload-description">Description</Label>
               <Textarea
                 id="upload-description"
-                value={uploadDescription}
                 onChange={(e) => setUploadDescription(e.target.value)}
                 placeholder="Enter asset description (optional)"
                 rows={3}
+                value={uploadDescription}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setUploadDialogOpen(false)} disabled={uploading}>
+            <Button disabled={uploading} onClick={() => setUploadDialogOpen(false)} variant="outline">
               Cancel
             </Button>
-            <Button onClick={handleUploadAsset} disabled={!uploadFile || uploading}>
+            <Button disabled={!uploadFile || uploading} onClick={handleUploadAsset}>
               {uploading ? "Uploading..." : "Upload"}
             </Button>
           </DialogFooter>
@@ -821,7 +821,7 @@ export default function LibraryPage() {
       </Dialog>
 
       {/* Asset Detail Dialog */}
-      <Dialog open={assetDetailOpen} onOpenChange={setAssetDetailOpen}>
+      <Dialog onOpenChange={setAssetDetailOpen} open={assetDetailOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{selectedAsset?.name}</DialogTitle>
@@ -832,9 +832,9 @@ export default function LibraryPage() {
               <div className="bg-muted relative aspect-video overflow-hidden rounded-lg">
                 {imageUrls[selectedAsset.id] && (
                   <FallbackImage
-                    src={imageUrls[selectedAsset.id]}
                     alt={selectedAsset.name}
                     className="size-full object-contain"
+                    src={imageUrls[selectedAsset.id]}
                   />
                 )}
               </div>
@@ -859,12 +859,12 @@ export default function LibraryPage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAssetDetailOpen(false)}>
+            <Button onClick={() => setAssetDetailOpen(false)} variant="outline">
               Close
             </Button>
             {selectedAsset && (
               <Button asChild>
-                <a href={imageUrls[selectedAsset.id]} target="_blank" rel="noopener noreferrer">
+                <a href={imageUrls[selectedAsset.id]} rel="noopener noreferrer" target="_blank">
                   <Download className="mr-2 h-4 w-4" />
                   Download
                 </a>

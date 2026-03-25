@@ -1,5 +1,7 @@
 "use client";
 
+import { AlertCircle, CheckCircle, Clock, Flag, MessageSquare, Plus, Search, User, XCircle } from "lucide-react";
+import { forwardRef, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,8 +10,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConversationPriority, ConversationStatus, type ConversationSummary } from "@/lib/server/conversation";
 import { cn } from "@/lib/utils";
-import { AlertCircle, CheckCircle, Clock, Flag, MessageSquare, Plus, Search, User, XCircle } from "lucide-react";
-import { forwardRef, useState } from "react";
 
 export interface ConversationListProps {
   conversations: ConversationSummary[];
@@ -250,7 +250,7 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
             <div className="mb-2 flex items-center justify-between">
               <h2 className="text-sm font-semibold">Messages</h2>
               {onCreateNew && (
-                <Button size="icon" variant="default" className="h-7 w-7 rounded-full" onClick={onCreateNew}>
+                <Button className="h-7 w-7 rounded-full" onClick={onCreateNew} size="icon" variant="default">
                   <Plus className="h-3 w-3" />
                 </Button>
               )}
@@ -260,16 +260,16 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
               <div className="relative mb-2">
                 <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
                 <Input
+                  className="h-8 pl-8 text-xs"
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-8 pl-8 text-xs"
                 />
               </div>
             )}
 
             {showFilter && (
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select onValueChange={setStatusFilter} value={statusFilter}>
                 <SelectTrigger className="h-8 w-full text-xs">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
@@ -295,7 +295,7 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
             </p>
           </div>
         ) : (
-          <ScrollArea ref={ref} className="flex-1">
+          <ScrollArea className="flex-1" ref={ref}>
             <div className="flex flex-col">
               {filteredConversations.map((conversation) => {
                 const isSelected = selectedId === conversation.id;
@@ -308,14 +308,14 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
 
                 return (
                   <button
-                    key={conversation.id}
-                    onClick={() => onSelect(conversation.id)}
                     className={cn(
                       "hover:bg-accent/50 flex w-full items-start gap-2.5 border-b py-3.5 pr-6 pl-3 text-left transition-all duration-200",
                       "border-l-4 hover:shadow-sm",
                       showPriority ? getPriorityCardBorder(conversation.priority) : "border-l-transparent",
                       isSelected && "bg-accent shadow-sm",
                     )}
+                    key={conversation.id}
+                    onClick={() => onSelect(conversation.id)}
                   >
                     <Avatar className="ring-border/5 h-11 w-11 shrink-0 ring-2">
                       <AvatarFallback
@@ -345,11 +345,11 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                         <div className="flex w-full flex-wrap items-center gap-1.5">
                           {showStatus && (
                             <Badge
-                              variant="outline"
                               className={cn(
                                 "gap-1 px-2 py-0.5 text-[10px] font-medium",
                                 getStatusBadgeClasses(conversation.status),
                               )}
+                              variant="outline"
                             >
                               {getStatusIcon(conversation.status)}
                               {getStatusLabel(conversation.status)}
@@ -357,11 +357,11 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                           )}
                           {showPriority && conversation.priority >= 2 && (
                             <Badge
-                              variant="outline"
                               className={cn(
                                 "gap-1 px-2 py-0.5 text-[10px] font-medium",
                                 getPriorityBadgeClasses(conversation.priority),
                               )}
+                              variant="outline"
                             >
                               {getPriorityIcon(conversation.priority)}
                               {getPriorityLabel(conversation.priority)}
@@ -369,9 +369,9 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                           )}
                           {showAssignment && conversation.assignedToAdminName && (
                             <Badge
-                              variant="outline"
                               className="gap-1 border-blue-200 bg-blue-50/50 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:border-blue-800 dark:bg-blue-950/20 dark:text-blue-400"
                               title={conversation.assignedToAdminName}
+                              variant="outline"
                             >
                               <User className="h-2.5 w-2.5" />
                               <span className="max-w-[70px] truncate">{conversation.assignedToAdminName}</span>

@@ -1,5 +1,8 @@
 ﻿"use client";
 
+import { Loader2, PlusIcon, SparklesIcon, XIcon } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,9 +19,6 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useServer } from "@/lib/providers/server";
 import { PostStatus } from "@/lib/server/community";
-import { Loader2, PlusIcon, SparklesIcon, XIcon } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
 
 interface CreatePostDialogProps {
   open: boolean;
@@ -141,7 +141,7 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Create Post</DialogTitle>
@@ -154,8 +154,8 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
             <Label>Photo</Label>
             {preview ? (
               <div className="relative">
-                <img src={preview} alt="Preview" className="aspect-square w-full rounded-lg object-cover" />
-                <Button variant="destructive" size="icon" className="absolute top-2 right-2" onClick={handleClearPhoto}>
+                <img alt="Preview" className="aspect-square w-full rounded-lg object-cover" src={preview} />
+                <Button className="absolute top-2 right-2" onClick={handleClearPhoto} size="icon" variant="destructive">
                   <XIcon className="h-4 w-4" />
                 </Button>
               </div>
@@ -163,7 +163,7 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
               <label className="border-muted-foreground/25 hover:border-muted-foreground/50 flex aspect-square cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed transition-colors">
                 <PlusIcon className="text-muted-foreground h-10 w-10" />
                 <span className="text-muted-foreground text-sm">Click to upload</span>
-                <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                <input accept="image/*" className="hidden" onChange={handleFileChange} type="file" />
               </label>
             )}
           </div>
@@ -174,12 +174,12 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
               <Label>Caption</Label>
               {uploadedAssetId && (
                 <Button
+                  className="gap-1.5 text-xs"
+                  disabled={generatingCaption}
+                  onClick={handleGenerateCaption}
+                  size="sm"
                   type="button"
                   variant="outline"
-                  size="sm"
-                  onClick={handleGenerateCaption}
-                  disabled={generatingCaption}
-                  className="gap-1.5 text-xs"
                 >
                   {generatingCaption ? (
                     <>
@@ -196,10 +196,10 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
               )}
             </div>
             <Textarea
-              placeholder="Write a caption..."
-              value={caption}
               onChange={(e) => setCaption(e.target.value)}
+              placeholder="Write a caption..."
               rows={3}
+              value={caption}
             />
           </div>
 
@@ -208,10 +208,10 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
             <div className="space-y-2">
               <Label className="text-muted-foreground text-xs">AI Guidance (optional)</Label>
               <Input
+                className="text-sm"
+                onChange={(e) => setAiPrompt(e.target.value)}
                 placeholder="e.g., Make it fun and casual, or professional tone..."
                 value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                className="text-sm"
               />
               <p className="text-muted-foreground text-xs">Give the AI hints about what kind of caption you want</p>
             </div>
@@ -222,8 +222,7 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
             <Label>Tags</Label>
             <div className="flex gap-2">
               <Input
-                placeholder="Add a tag..."
-                value={tagInput}
+                className="text-sm"
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === ",") {
@@ -231,18 +230,19 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
                     handleAddTag();
                   }
                 }}
-                className="text-sm"
+                placeholder="Add a tag..."
+                value={tagInput}
               />
-              <Button type="button" size="sm" variant="outline" onClick={handleAddTag} disabled={!tagInput.trim()}>
+              <Button disabled={!tagInput.trim()} onClick={handleAddTag} size="sm" type="button" variant="outline">
                 Add
               </Button>
             </div>
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {tags.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="gap-1">
+                  <Badge className="gap-1" key={tag} variant="secondary">
                     #{tag}
-                    <button onClick={() => handleRemoveTag(tag)} className="hover:text-destructive ml-0.5">
+                    <button className="hover:text-destructive ml-0.5" onClick={() => handleRemoveTag(tag)}>
                       <XIcon className="h-3 w-3" />
                     </button>
                   </Badge>
@@ -259,16 +259,16 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
                 <Label htmlFor="nsfw-toggle">Mark as NSFW</Label>
                 <p className="text-muted-foreground text-xs">Content will be blurred by default</p>
               </div>
-              <Switch id="nsfw-toggle" checked={isNsfw} onCheckedChange={setIsNsfw} />
+              <Switch checked={isNsfw} id="nsfw-toggle" onCheckedChange={setIsNsfw} />
             </div>
             {isNsfw && (
               <div className="space-y-1">
                 <Label className="text-xs">Content Warning (optional)</Label>
                 <Input
+                  className="text-sm"
+                  onChange={(e) => setContentWarning(e.target.value)}
                   placeholder="e.g., Contains graphic content"
                   value={contentWarning}
-                  onChange={(e) => setContentWarning(e.target.value)}
-                  className="text-sm"
                 />
               </div>
             )}
@@ -276,10 +276,10 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button onClick={() => onOpenChange(false)} variant="outline">
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting || !uploadedAssetId || !caption.trim()}>
+          <Button disabled={submitting || !uploadedAssetId || !caption.trim()} onClick={handleSubmit}>
             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Post
           </Button>

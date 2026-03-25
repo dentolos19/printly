@@ -1,7 +1,7 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ProductResponse } from "@/lib/server/product";
 import { ArrowUpRight, Package } from "lucide-react";
 import Image from "next/image";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ProductResponse } from "@/lib/server/product";
 
 export function ProductCard({ product, onClick }: { product: ProductResponse; onClick: () => void }) {
   const totalStock = product.variants.reduce((sum, v) => sum + (v.inventory?.quantity ?? 0), 0);
@@ -21,10 +21,10 @@ export function ProductCard({ product, onClick }: { product: ProductResponse; on
       <div className="bg-muted relative aspect-square overflow-hidden">
         {displayImage ? (
           <Image
-            src={displayImage}
             alt={product.name}
-            fill
             className="object-cover transition-transform duration-500 group-hover:scale-110"
+            fill
+            src={displayImage}
           />
         ) : (
           <div className="flex size-full items-center justify-center bg-slate-100">

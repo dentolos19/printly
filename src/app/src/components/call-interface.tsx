@@ -1,11 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { CallType } from "@/lib/types/call";
-import { API_URL } from "@/environment";
-import { cn } from "@/lib/utils";
 import {
   ControlBar,
   GridLayout,
@@ -15,6 +9,12 @@ import {
   useRoomContext,
   useTracks,
 } from "@livekit/components-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { API_URL } from "@/environment";
+import { CallType } from "@/lib/types/call";
+import { cn } from "@/lib/utils";
 import "@livekit/components-styles";
 import { RoomEvent, Track } from "livekit-client";
 import { MessageSquare, Phone, PhoneOff, Send, Video, X } from "lucide-react";
@@ -50,13 +50,13 @@ function AudioCallLayout({ isChatOpen, onChatToggle, unreadCount }: AudioCallLay
       </div>
       <RoomAudioRenderer />
       <div className="flex gap-2">
-        <ControlBar variation="minimal" controls={{ camera: false, screenShare: false }} />
+        <ControlBar controls={{ camera: false, screenShare: false }} variation="minimal" />
         <Button
-          variant="secondary"
-          size="icon"
           className="relative"
           onClick={onChatToggle}
+          size="icon"
           title={isChatOpen ? "Close chat" : "Open chat"}
+          variant="secondary"
         >
           <MessageSquare className="h-5 w-5" />
           {unreadCount > 0 && (
@@ -91,11 +91,11 @@ function VideoCallLayout({
     <div className="relative flex h-full w-full flex-col overflow-hidden bg-black">
       <div className="flex-1 overflow-hidden">
         <GridLayout
-          tracks={tracks}
           style={{
             height: "100%",
             width: "100%",
           }}
+          tracks={tracks}
         >
           <ParticipantTile />
         </GridLayout>
@@ -105,11 +105,11 @@ function VideoCallLayout({
         <div className="flex items-center justify-center gap-2">
           <ControlBar variation="minimal" />
           <Button
-            variant="secondary"
-            size="icon"
             className="relative"
             onClick={onChatToggle}
+            size="icon"
             title={isChatOpen ? "Close chat" : "Open chat"}
+            variant="secondary"
           >
             <MessageSquare className="h-5 w-5" />
             {unreadCount > 0 && (
@@ -252,7 +252,7 @@ function CallChat({ participantName, isOpen, onOpen, onClose, onUnreadChange }: 
           {/* Header */}
           <div className="border-border flex shrink-0 items-center justify-between border-b px-4 py-3">
             <h3 className="text-sm font-semibold">In-Call Chat</h3>
-            <Button variant="ghost" size="icon" className="hover:bg-muted h-7 w-7" onClick={onClose}>
+            <Button className="hover:bg-muted h-7 w-7" onClick={onClose} size="icon" variant="ghost">
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -268,13 +268,13 @@ function CallChat({ participantName, isOpen, onOpen, onClose, onUnreadChange }: 
                 <div className="space-y-2">
                   {messages.map((msg) => (
                     <div
-                      key={msg.id}
                       className={cn(
                         "rounded-lg px-3 py-2 text-sm",
                         msg.sender === "You"
                           ? "bg-primary text-primary-foreground ml-8"
                           : "bg-muted text-foreground mr-8",
                       )}
+                      key={msg.id}
                     >
                       {msg.sender !== "You" && (
                         <p className="text-muted-foreground mb-0.5 text-[10px] font-semibold">{msg.sender}</p>
@@ -292,13 +292,13 @@ function CallChat({ participantName, isOpen, onOpen, onClose, onUnreadChange }: 
           <div className="border-border shrink-0 border-t p-3">
             <div className="flex gap-2">
               <Input
-                value={input}
+                className="text-sm"
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Type a message..."
-                className="text-sm"
+                value={input}
               />
-              <Button size="icon" onClick={sendMessage} disabled={!input.trim()} className="shrink-0">
+              <Button className="shrink-0" disabled={!input.trim()} onClick={sendMessage} size="icon">
                 <Send className="h-4 w-4" />
               </Button>
             </div>
@@ -454,25 +454,25 @@ export function CallInterface({
   return (
     <div className="bg-background fixed inset-0 z-50 flex flex-col">
       <LiveKitRoom
-        serverUrl={serverUrl}
-        token={token}
+        audio={true}
         connect={true}
+        data-lk-theme="default"
         onConnected={() => setIsConnected(true)}
         onDisconnected={() => {
           setIsConnected(false);
           onLeave();
         }}
-        audio={true}
-        video={callType === CallType.Video}
-        data-lk-theme="default"
+        serverUrl={serverUrl}
         style={{ height: "100%", display: "flex", flexDirection: "column" }}
+        token={token}
+        video={callType === CallType.Video}
       >
         <div className="bg-card flex shrink-0 items-center justify-between border-b p-4">
           <div>
             <h2 className="text-lg font-semibold">{callType === CallType.Audio ? "Voice Call" : "Video Call"}</h2>
             <p className="text-muted-foreground text-sm">{isConnected ? "Connected" : "Connecting..."}</p>
           </div>
-          <Button variant="destructive" onClick={onLeave} className="gap-2">
+          <Button className="gap-2" onClick={onLeave} variant="destructive">
             <PhoneOff className="h-4 w-4" />
             End Call
           </Button>
@@ -495,13 +495,13 @@ export function CallInterface({
         </div>
 
         <CallChat
-          participantName={participantName}
           isOpen={isChatOpen}
-          onOpen={() => setIsChatOpen(true)}
           onClose={() => setIsChatOpen(false)}
+          onOpen={() => setIsChatOpen(true)}
           onUnreadChange={setUnreadCount}
+          participantName={participantName}
         />
-        <CallAudioRecorder callId={callId} accessToken={accessToken} />
+        <CallAudioRecorder accessToken={accessToken} callId={callId} />
       </LiveKitRoom>
     </div>
   );
@@ -533,11 +533,11 @@ export function IncomingCallNotification({ callerName, callType, onAnswer, onDec
         </div>
       </div>
       <div className="mt-4 flex gap-2">
-        <Button variant="destructive" onClick={onDecline} className="flex-1 gap-2">
+        <Button className="flex-1 gap-2" onClick={onDecline} variant="destructive">
           <PhoneOff className="h-4 w-4" />
           Decline
         </Button>
-        <Button onClick={onAnswer} className="flex-1 gap-2">
+        <Button className="flex-1 gap-2" onClick={onAnswer}>
           {callType === CallType.Video ? <Video className="h-4 w-4" /> : <Phone className="h-4 w-4" />}
           Answer
         </Button>

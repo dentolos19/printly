@@ -1,5 +1,28 @@
 "use client";
 
+import {
+  ArrowLeft,
+  ArrowRight,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  CreditCard,
+  ExternalLink,
+  Mail,
+  Package,
+  Paintbrush,
+  RefreshCcw,
+  RotateCcw,
+  Trash2,
+  Truck,
+  User,
+  XCircle,
+} from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,35 +48,12 @@ import {
 } from "@/lib/server/order";
 import { ProductSizeLabels } from "@/lib/server/product";
 import {
+  RefundReasonLabels,
   RefundResponse,
   RefundStatus,
   RefundStatusColors,
   RefundStatusLabels,
-  RefundReasonLabels,
 } from "@/lib/server/refund";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Calendar,
-  CheckCircle2,
-  Clock,
-  CreditCard,
-  ExternalLink,
-  Mail,
-  Package,
-  Paintbrush,
-  RefreshCcw,
-  RotateCcw,
-  Trash2,
-  Truck,
-  User,
-  XCircle,
-} from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
 
 const StatusIcons: Record<OrderStatus, React.ElementType<{ className?: string }>> = {
   [OrderStatus.PendingPayment]: Clock,
@@ -89,7 +89,7 @@ function OrderItemCard({ item }: { item: OrderItemResponse }) {
       {/* Product Image */}
       <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
         {item.productImageUrl ? (
-          <Image src={item.productImageUrl} alt={item.productName} fill className="object-contain p-1" />
+          <Image alt={item.productName} className="object-contain p-1" fill src={item.productImageUrl} />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <Package className="text-muted-foreground h-12 w-12" />
@@ -117,7 +117,7 @@ function OrderItemCard({ item }: { item: OrderItemResponse }) {
                 {item.imprintName || "Custom Design"}
               </span>
             </div>
-            <Button variant="default" size="sm" className="h-7 bg-blue-600 hover:bg-blue-700" asChild>
+            <Button asChild className="h-7 bg-blue-600 hover:bg-blue-700" size="sm" variant="default">
               <Link href={`/imprinter/${item.imprintId}`} target="_blank">
                 View Design
                 <ArrowRight className="ml-1 h-3 w-3" />
@@ -168,7 +168,7 @@ function UpdateStatusDialog({
   const availableStatuses = validTransitions[order.status];
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Update Order Status</DialogTitle>
@@ -187,8 +187,8 @@ function UpdateStatusDialog({
               <p className="text-muted-foreground text-sm">No status changes available for this order.</p>
             ) : (
               <Select
-                value={newStatus !== null ? String(newStatus) : undefined}
                 onValueChange={(value) => setNewStatus(Number(value) as OrderStatus)}
+                value={newStatus !== null ? String(newStatus) : undefined}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select new status" />
@@ -206,10 +206,10 @@ function UpdateStatusDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+          <Button disabled={isLoading} onClick={() => onOpenChange(false)} variant="outline">
             Cancel
           </Button>
-          <Button onClick={() => newStatus !== null && onConfirm(newStatus)} disabled={isLoading || newStatus === null}>
+          <Button disabled={isLoading || newStatus === null} onClick={() => newStatus !== null && onConfirm(newStatus)}>
             {isLoading ? "Updating..." : "Update Status"}
           </Button>
         </DialogFooter>
@@ -234,7 +234,7 @@ function DeleteConfirmDialog({
   if (!order) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Delete Order</DialogTitle>
@@ -243,10 +243,10 @@ function DeleteConfirmDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+          <Button disabled={isLoading} onClick={() => onOpenChange(false)} variant="outline">
             Cancel
           </Button>
-          <Button variant="destructive" onClick={onConfirm} disabled={isLoading}>
+          <Button disabled={isLoading} onClick={onConfirm} variant="destructive">
             {isLoading ? "Deleting..." : "Delete Order"}
           </Button>
         </DialogFooter>
@@ -387,7 +387,7 @@ export default function AdminOrderDetailsPage() {
       <div className="bg-card border-b">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild>
+            <Button asChild size="icon" variant="ghost">
               <Link href="/admin/orders">
                 <ArrowLeft className="h-5 w-5" />
               </Link>
@@ -411,12 +411,12 @@ export default function AdminOrderDetailsPage() {
           </div>
           <div className="flex gap-2">
             {availableTransitions.length > 0 && (
-              <Button variant="outline" onClick={() => setStatusDialogOpen(true)}>
+              <Button onClick={() => setStatusDialogOpen(true)} variant="outline">
                 <RefreshCcw className="mr-2 h-4 w-4" />
                 Update Status
               </Button>
             )}
-            <Button variant="outline" className="text-destructive" onClick={() => setDeleteDialogOpen(true)}>
+            <Button className="text-destructive" onClick={() => setDeleteDialogOpen(true)} variant="outline">
               <Trash2 className="mr-2 h-4 w-4" />
               Delete
             </Button>
@@ -466,7 +466,7 @@ export default function AdminOrderDetailsPage() {
                       <p className="text-sm">{refund.customerNotes}</p>
                     </div>
                   )}
-                  <Button variant="outline" size="sm" className="mt-2 w-full" asChild>
+                  <Button asChild className="mt-2 w-full" size="sm" variant="outline">
                     <Link href="/admin/refunds">
                       <ExternalLink className="mr-2 h-4 w-4" />
                       Manage in Refunds
@@ -481,7 +481,7 @@ export default function AdminOrderDetailsPage() {
               <h2 className="mb-4 text-lg font-semibold">Order Items ({order.items.length})</h2>
               <div className="space-y-4">
                 {order.items.map((item) => (
-                  <OrderItemCard key={item.id} item={item} />
+                  <OrderItemCard item={item} key={item.id} />
                 ))}
               </div>
             </div>
@@ -608,19 +608,19 @@ export default function AdminOrderDetailsPage() {
 
       {/* Dialogs */}
       <UpdateStatusDialog
-        order={order}
-        open={statusDialogOpen}
-        onOpenChange={setStatusDialogOpen}
-        onConfirm={handleUpdateStatus}
         isLoading={isUpdating}
+        onConfirm={handleUpdateStatus}
+        onOpenChange={setStatusDialogOpen}
+        open={statusDialogOpen}
+        order={order}
       />
 
       <DeleteConfirmDialog
-        order={order}
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        onConfirm={handleDelete}
         isLoading={isDeleting}
+        onConfirm={handleDelete}
+        onOpenChange={setDeleteDialogOpen}
+        open={deleteDialogOpen}
+        order={order}
       />
     </div>
   );

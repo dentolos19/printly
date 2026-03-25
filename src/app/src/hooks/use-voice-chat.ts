@@ -1,7 +1,7 @@
 "use client";
 
 import { useConversation } from "@elevenlabs/react";
-import { useState, useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 
 export interface VoiceMessage {
   role: "user" | "assistant";

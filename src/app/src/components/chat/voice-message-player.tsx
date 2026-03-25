@@ -1,10 +1,10 @@
 "use client";
 
+import { Pause, Play } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
-import { Pause, Play } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface VoiceMessagePlayerProps {
   url: string;
@@ -77,18 +77,18 @@ export function VoiceMessagePlayer({ url, duration, className }: VoiceMessagePla
 
   return (
     <div className={cn("bg-muted/50 flex items-center gap-3 rounded-lg p-3", className)}>
-      <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={handlePlayPause} disabled={!isLoaded}>
+      <Button className="h-9 w-9 shrink-0" disabled={!isLoaded} onClick={handlePlayPause} size="icon" variant="ghost">
         {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
       </Button>
 
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <Slider
-          value={[currentTime]}
-          max={duration}
-          step={0.1}
-          onValueChange={handleSeek}
-          disabled={!isLoaded}
           className="flex-1"
+          disabled={!isLoaded}
+          max={duration}
+          onValueChange={handleSeek}
+          step={0.1}
+          value={[currentTime]}
         />
         <span className="text-muted-foreground text-xs tabular-nums">
           {formatDuration(currentTime)} / {formatDuration(duration)}

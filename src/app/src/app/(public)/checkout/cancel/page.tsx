@@ -1,11 +1,11 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 function CheckoutCancelContent() {
   const searchParams = useSearchParams();
@@ -30,7 +30,7 @@ function CheckoutCancelContent() {
               <Link href="/orders">Return to Orders</Link>
             </Button>
           )}
-          <Button variant="outline" asChild>
+          <Button asChild variant="outline">
             <Link href="/">Continue Shopping</Link>
           </Button>
         </CardContent>

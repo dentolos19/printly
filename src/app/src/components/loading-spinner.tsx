@@ -1,6 +1,6 @@
+import { ComponentProps } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
-import { ComponentProps } from "react";
 
 export default function LoadingSpinner({ className, ...props }: ComponentProps<"div">) {
   return (

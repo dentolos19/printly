@@ -1,6 +1,20 @@
 "use client";
 
 import {
+  AlertTriangle,
+  ArrowUpDown,
+  ChevronDown,
+  ChevronUp,
+  Minus,
+  Package,
+  Plus,
+  RefreshCw,
+  Search,
+  XCircle,
+} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -29,20 +43,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useServer } from "@/lib/providers/server";
 import type { InventoryWithVariantResponse, LowStockAlertResponse, TotalStockResponse } from "@/lib/server/inventory";
 import { ProductSizeLabels } from "@/lib/server/product";
-import {
-  AlertTriangle,
-  ArrowUpDown,
-  ChevronDown,
-  ChevronUp,
-  Minus,
-  Package,
-  Plus,
-  RefreshCw,
-  Search,
-  XCircle,
-} from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
 
 type SortField = "productName" | "quantity" | "reorderLevel";
 type SortOrder = "asc" | "desc";
@@ -222,7 +222,7 @@ export default function InventoryPage() {
         <Skeleton className="h-8 w-48" />
         <div className="grid gap-4 md:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-24" />
+            <Skeleton className="h-24" key={i} />
           ))}
         </div>
         <Skeleton className="h-96" />
@@ -238,7 +238,7 @@ export default function InventoryPage() {
           <h1 className="text-3xl font-bold">Inventory</h1>
           <p className="text-muted-foreground">Monitor and manage stock levels</p>
         </div>
-        <Button variant="outline" onClick={loadInventory}>
+        <Button onClick={loadInventory} variant="outline">
           <RefreshCw className="mr-2 size-4" />
           Refresh
         </Button>
@@ -301,13 +301,13 @@ export default function InventoryPage() {
             <div className="relative max-w-sm flex-1">
               <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
               <Input
+                className="pl-9"
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by product name..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
               />
             </div>
-            <Select value={stockFilter} onValueChange={(value) => setStockFilter(value as StockFilter)}>
+            <Select onValueChange={(value) => setStockFilter(value as StockFilter)} value={stockFilter}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Filter by stock" />
               </SelectTrigger>
@@ -325,20 +325,20 @@ export default function InventoryPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>
-                    <Button variant="ghost" onClick={() => handleSort("productName")} className="-ml-4">
+                    <Button className="-ml-4" onClick={() => handleSort("productName")} variant="ghost">
                       Product
                       {getSortIcon("productName")}
                     </Button>
                   </TableHead>
                   <TableHead>Variant</TableHead>
                   <TableHead>
-                    <Button variant="ghost" onClick={() => handleSort("quantity")} className="-ml-4">
+                    <Button className="-ml-4" onClick={() => handleSort("quantity")} variant="ghost">
                       Quantity
                       {getSortIcon("quantity")}
                     </Button>
                   </TableHead>
                   <TableHead>
-                    <Button variant="ghost" onClick={() => handleSort("reorderLevel")} className="-ml-4">
+                    <Button className="-ml-4" onClick={() => handleSort("reorderLevel")} variant="ghost">
                       Reorder Level
                       {getSortIcon("reorderLevel")}
                     </Button>
@@ -350,7 +350,7 @@ export default function InventoryPage() {
               <TableBody>
                 {filteredInventory.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-muted-foreground h-24 text-center">
+                    <TableCell className="text-muted-foreground h-24 text-center" colSpan={6}>
                       <Package className="mx-auto mb-2 size-8 opacity-50" />
                       No inventory items found
                     </TableCell>
@@ -387,22 +387,22 @@ export default function InventoryPage() {
                           {isOutOfStock ? (
                             <Badge variant="destructive">Out of Stock</Badge>
                           ) : isLowStock ? (
-                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                            <Badge className="bg-yellow-100 text-yellow-800" variant="secondary">
                               Low Stock
                             </Badge>
                           ) : (
-                            <Badge variant="default" className="bg-green-100 text-green-800">
+                            <Badge className="bg-green-100 text-green-800" variant="default">
                               In Stock
                             </Badge>
                           )}
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            <Button variant="outline" size="sm" onClick={() => openAdjustDialog(item)}>
+                            <Button onClick={() => openAdjustDialog(item)} size="sm" variant="outline">
                               <Plus className="mr-1 size-3" />
                               <Minus className="size-3" />
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => openEditDialog(item)}>
+                            <Button onClick={() => openEditDialog(item)} size="sm" variant="ghost">
                               Edit
                             </Button>
                           </div>
@@ -418,7 +418,7 @@ export default function InventoryPage() {
       </Card>
 
       {/* Adjust Inventory Dialog */}
-      <Dialog open={adjustDialogOpen} onOpenChange={setAdjustDialogOpen}>
+      <Dialog onOpenChange={setAdjustDialogOpen} open={adjustDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Adjust Stock</DialogTitle>
@@ -439,10 +439,10 @@ export default function InventoryPage() {
               <Label htmlFor="adjustAmount">Adjustment Amount *</Label>
               <Input
                 id="adjustAmount"
-                type="number"
-                placeholder="e.g., 10 or -5"
-                value={adjustAmount}
                 onChange={(e) => setAdjustAmount(e.target.value)}
+                placeholder="e.g., 10 or -5"
+                type="number"
+                value={adjustAmount}
               />
               <p className="text-muted-foreground text-xs">Use positive numbers to add stock, negative to remove</p>
             </div>
@@ -454,10 +454,10 @@ export default function InventoryPage() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAdjustDialogOpen(false)}>
+            <Button onClick={() => setAdjustDialogOpen(false)} variant="outline">
               Cancel
             </Button>
-            <Button onClick={handleAdjust} disabled={formSubmitting}>
+            <Button disabled={formSubmitting} onClick={handleAdjust}>
               {formSubmitting ? "Adjusting..." : "Apply Adjustment"}
             </Button>
           </DialogFooter>
@@ -465,7 +465,7 @@ export default function InventoryPage() {
       </Dialog>
 
       {/* Edit Inventory Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+      <Dialog onOpenChange={setEditDialogOpen} open={editDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Inventory</DialogTitle>
@@ -483,29 +483,29 @@ export default function InventoryPage() {
               <Label htmlFor="editQuantity">Quantity *</Label>
               <Input
                 id="editQuantity"
-                type="number"
                 min="0"
-                value={formQuantity}
                 onChange={(e) => setFormQuantity(e.target.value)}
+                type="number"
+                value={formQuantity}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="editReorderLevel">Reorder Level *</Label>
               <Input
                 id="editReorderLevel"
-                type="number"
                 min="0"
-                value={formReorderLevel}
                 onChange={(e) => setFormReorderLevel(e.target.value)}
+                type="number"
+                value={formReorderLevel}
               />
               <p className="text-muted-foreground text-xs">You&apos;ll be alerted when stock falls below this level</p>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+            <Button onClick={() => setEditDialogOpen(false)} variant="outline">
               Cancel
             </Button>
-            <Button onClick={handleUpdate} disabled={formSubmitting}>
+            <Button disabled={formSubmitting} onClick={handleUpdate}>
               {formSubmitting ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>

@@ -1,5 +1,24 @@
 "use client";
 
+import * as signalR from "@microsoft/signalr";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Circle,
+  Clock,
+  Loader2,
+  MessageSquarePlus,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Phone,
+  RefreshCw,
+  Sparkles,
+  Video,
+  Wifi,
+  WifiOff,
+  XCircle,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CallInterface, IncomingCallNotification } from "@/components/call-interface";
 import {
   AiMessageAssistant,
@@ -9,8 +28,8 @@ import {
   ConversationList,
   ConversationSummary as ConversationSummaryDialog,
   MessageInput,
-  TypingIndicator,
   type ReplyInfo,
+  TypingIndicator,
 } from "@/components/chat";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,27 +50,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { API_URL } from "@/environment";
 import { useAuth } from "@/lib/providers/auth";
 import { type ConversationMessage, type ConversationSummary } from "@/lib/server/conversation";
-import { CallType, type CallTokenResponse, type IncomingCallData } from "@/lib/types/call";
+import { type CallTokenResponse, CallType, type IncomingCallData } from "@/lib/types/call";
 import { cn } from "@/lib/utils";
-import * as signalR from "@microsoft/signalr";
-import {
-  AlertCircle,
-  CheckCircle2,
-  Circle,
-  Clock,
-  Loader2,
-  MessageSquarePlus,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Phone,
-  RefreshCw,
-  Sparkles,
-  Video,
-  Wifi,
-  WifiOff,
-  XCircle,
-} from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const HUB_URL = `${API_URL}/hubs/conversation`;
 
@@ -1049,7 +1049,7 @@ export default function ChatPage() {
       {/* Header Bar - Compact */}
       <div className="flex shrink-0 items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="gap-2">
+          <Button className="gap-2" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} size="sm" variant="outline">
             {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
             <span className="hidden sm:inline">{sidebarCollapsed ? "Show" : "Hide"}</span>
           </Button>
@@ -1059,6 +1059,7 @@ export default function ChatPage() {
         </div>
         <div className="flex items-center gap-2">
           <Badge
+            className="gap-1 px-2 py-0.5 text-xs"
             variant={
               connectionState === "connected"
                 ? "default"
@@ -1066,7 +1067,6 @@ export default function ChatPage() {
                   ? "secondary"
                   : "destructive"
             }
-            className="gap-1 px-2 py-0.5 text-xs"
           >
             {connectionState === "connected" ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
             <span className="hidden sm:inline">
@@ -1077,12 +1077,12 @@ export default function ChatPage() {
                   : "Disconnected"}
             </span>
           </Badge>
-          <Button variant="ghost" size="icon" onClick={fetchConversations} disabled={isLoadingConversations}>
+          <Button disabled={isLoadingConversations} onClick={fetchConversations} size="icon" variant="ghost">
             <RefreshCw className={cn("h-4 w-4", isLoadingConversations && "animate-spin")} />
           </Button>
-          <Dialog open={newConversationOpen} onOpenChange={setNewConversationOpen}>
+          <Dialog onOpenChange={setNewConversationOpen} open={newConversationOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" className="gap-2">
+              <Button className="gap-2" size="sm">
                 <MessageSquarePlus className="h-4 w-4" />
                 <span className="hidden sm:inline">New</span>
               </Button>
@@ -1097,21 +1097,21 @@ export default function ChatPage() {
                   <Label htmlFor="subject">Subject</Label>
                   <Input
                     id="subject"
+                    onChange={(e) => setNewSubject(e.target.value)}
                     placeholder="e.g., Order inquiry, Technical issue"
                     value={newSubject}
-                    onChange={(e) => setNewSubject(e.target.value)}
                   />
                 </div>
                 <div className="grid gap-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="message">Message (optional)</Label>
                     <Button
-                      variant="ghost"
-                      size="sm"
                       className="h-7 gap-1.5 text-xs text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                      onClick={() => setAiAssistantOpen(true)}
                       disabled={!newSubject.trim()}
+                      onClick={() => setAiAssistantOpen(true)}
+                      size="sm"
                       title={!newSubject.trim() ? "Enter a subject first" : "Get AI help drafting your message"}
+                      variant="ghost"
                     >
                       <Sparkles className="h-3.5 w-3.5" />
                       Ask AI
@@ -1119,18 +1119,18 @@ export default function ChatPage() {
                   </div>
                   <Textarea
                     id="message"
-                    placeholder="Describe your issue or question..."
-                    value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Describe your issue or question..."
                     rows={4}
+                    value={newMessage}
                   />
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setNewConversationOpen(false)}>
+                <Button onClick={() => setNewConversationOpen(false)} variant="outline">
                   Cancel
                 </Button>
-                <Button onClick={handleCreateConversation} disabled={!newSubject.trim() || isCreating}>
+                <Button disabled={!newSubject.trim() || isCreating} onClick={handleCreateConversation}>
                   {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Start Conversation
                 </Button>
@@ -1138,6 +1138,7 @@ export default function ChatPage() {
             </DialogContent>
           </Dialog>
           <AiMessageAssistant
+            authorizedFetch={authorizedFetch}
             isOpen={aiAssistantOpen}
             onClose={() => setAiAssistantOpen(false)}
             onInsert={(text) => {
@@ -1145,7 +1146,6 @@ export default function ChatPage() {
               setAiAssistantOpen(false);
             }}
             subject={newSubject}
-            authorizedFetch={authorizedFetch}
           />
         </div>
       </div>
@@ -1165,15 +1165,15 @@ export default function ChatPage() {
           <ScrollArea className="min-h-0 flex-1">
             <ConversationList
               conversations={conversations}
-              selectedId={selectedConversationId}
-              onSelect={setSelectedConversationId}
-              isLoading={isLoadingConversations}
-              showStatus
-              showPriority
-              showHeader={true}
-              showSearch={true}
-              showFilter={true}
               emptyMessage="No conversations yet. Start one!"
+              isLoading={isLoadingConversations}
+              onSelect={setSelectedConversationId}
+              selectedId={selectedConversationId}
+              showFilter={true}
+              showHeader={true}
+              showPriority
+              showSearch={true}
+              showStatus
             />
           </ScrollArea>
         </Card>
@@ -1211,14 +1211,14 @@ export default function ChatPage() {
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5">
                     <Badge
-                      variant="outline"
                       className={cn("gap-1 border px-2 py-0.5 text-xs", STATUS_COLORS[selectedConversation.status])}
+                      variant="outline"
                     >
                       {STATUS_LABELS[selectedConversation.status]}
                     </Badge>
                     <Badge
-                      variant="outline"
                       className={cn("gap-1 border px-2 py-0.5 text-xs", PRIORITY_COLORS[selectedConversation.priority])}
+                      variant="outline"
                     >
                       {selectedConversation.priority === 3 && <AlertCircle className="h-3 w-3" />}
                       {PRIORITY_LABELS[selectedConversation.priority]}
@@ -1227,32 +1227,32 @@ export default function ChatPage() {
                     {/* Call buttons */}
                     <div className="ml-2 flex items-center gap-1 border-l pl-2">
                       <Button
-                        variant="outline"
-                        size="icon"
                         className="h-7 w-7"
-                        onClick={() => setSummaryOpen(true)}
                         disabled={messages.length === 0}
+                        onClick={() => setSummaryOpen(true)}
+                        size="icon"
                         title="AI Conversation Summary"
+                        variant="outline"
                       >
                         <Sparkles className="h-3.5 w-3.5" />
                       </Button>
                       <Button
-                        variant="outline"
-                        size="icon"
                         className="h-7 w-7"
-                        onClick={() => handleInitiateCall(CallType.Audio)}
                         disabled={connectionState !== "connected" || isInCall || selectedConversation.status === 3}
+                        onClick={() => handleInitiateCall(CallType.Audio)}
+                        size="icon"
                         title="Start voice call"
+                        variant="outline"
                       >
                         <Phone className="h-3.5 w-3.5" />
                       </Button>
                       <Button
-                        variant="outline"
-                        size="icon"
                         className="h-7 w-7"
-                        onClick={() => handleInitiateCall(CallType.Video)}
                         disabled={connectionState !== "connected" || isInCall || selectedConversation.status === 3}
+                        onClick={() => handleInitiateCall(CallType.Video)}
+                        size="icon"
                         title="Start video call"
+                        variant="outline"
                       >
                         <Video className="h-3.5 w-3.5" />
                       </Button>
@@ -1264,10 +1264,10 @@ export default function ChatPage() {
                     <WifiOff className="h-4 w-4 shrink-0" />
                     <span className="flex-1">{lastError}</span>
                     <Button
+                      className="text-destructive hover:text-destructive h-6 w-6 p-0"
+                      onClick={() => setLastError(null)}
                       size="sm"
                       variant="ghost"
-                      onClick={() => setLastError(null)}
-                      className="text-destructive hover:text-destructive h-6 w-6 p-0"
                     >
                       ×
                     </Button>
@@ -1295,48 +1295,52 @@ export default function ChatPage() {
                           {group.messages.map((message) =>
                             message.isCallMessage && message.callLogId ? (
                               <CallMessage
-                                key={message.id}
-                                content={message.content}
-                                callLogId={message.callLogId}
-                                senderName={message.senderName}
-                                isCurrentUser={message.senderId === currentUserId}
-                                createdAt={message.createdAt}
-                                callType={message.callType}
-                                callStatus={message.callStatus}
                                 callDurationSeconds={message.callDurationSeconds}
                                 callInitiatorId={message.callInitiatorId}
                                 callInitiatorName={message.callInitiatorName}
-                                onJoinCall={() => handleJoinActiveCall(message.callLogId!)}
-                                onAnswerCall={() => handleJoinActiveCall(message.callLogId!)}
-                                onDeclineCall={() => handleDeclineCall(message.callLogId!)}
+                                callLogId={message.callLogId}
+                                callStatus={message.callStatus}
+                                callType={message.callType}
                                 canJoinCall={!isInCall && activeCallId === message.callLogId}
+                                content={message.content}
+                                createdAt={message.createdAt}
+                                isCurrentUser={message.senderId === currentUserId}
+                                isInCall={isInCall && currentCall?.callId === message.callLogId}
                                 isRinging={
                                   !isInCall && activeCallId === message.callLogId && message.senderId !== currentUserId
                                 }
-                                isInCall={isInCall && currentCall?.callId === message.callLogId}
+                                key={message.id}
+                                onAnswerCall={() => handleJoinActiveCall(message.callLogId!)}
+                                onDeclineCall={() => handleDeclineCall(message.callLogId!)}
+                                onJoinCall={() => handleJoinActiveCall(message.callLogId!)}
+                                senderName={message.senderName}
                                 showAiCallNotes={true}
                               />
                             ) : (
                               <ChatMessage
-                                key={message.id}
-                                id={message.id}
                                 content={message.content}
-                                senderName={message.senderName}
-                                senderId={message.senderId}
-                                isCurrentUser={message.senderId === currentUserId}
-                                isRead={message.isRead}
-                                isEdited={message.isEdited}
-                                isDeleted={message.isDeleted}
                                 createdAt={message.createdAt}
                                 editedAt={message.editedAt}
-                                replyToContent={message.replyToContent}
-                                replyToSenderName={message.replyToSenderName}
-                                fileUrl={message.fileUrl}
                                 fileName={message.fileName}
-                                fileType={message.fileType}
                                 fileSize={message.fileSize}
-                                voiceMessageUrl={message.voiceMessageUrl}
-                                voiceMessageDuration={message.voiceMessageDuration}
+                                fileType={message.fileType}
+                                fileUrl={message.fileUrl}
+                                id={message.id}
+                                isCurrentUser={message.senderId === currentUserId}
+                                isDeleted={message.isDeleted}
+                                isEdited={message.isEdited}
+                                isRead={message.isRead}
+                                key={message.id}
+                                onDelete={
+                                  message.senderId === currentUserId && !message.isDeleted
+                                    ? () => handleDeleteMessage(message.id)
+                                    : undefined
+                                }
+                                onEdit={
+                                  message.senderId === currentUserId && !message.isDeleted
+                                    ? (content) => handleEditMessage(message.id, content)
+                                    : undefined
+                                }
                                 onReply={() =>
                                   setReplyTo({
                                     messageId: message.id,
@@ -1344,16 +1348,12 @@ export default function ChatPage() {
                                     content: message.content,
                                   })
                                 }
-                                onEdit={
-                                  message.senderId === currentUserId && !message.isDeleted
-                                    ? (content) => handleEditMessage(message.id, content)
-                                    : undefined
-                                }
-                                onDelete={
-                                  message.senderId === currentUserId && !message.isDeleted
-                                    ? () => handleDeleteMessage(message.id)
-                                    : undefined
-                                }
+                                replyToContent={message.replyToContent}
+                                replyToSenderName={message.replyToSenderName}
+                                senderId={message.senderId}
+                                senderName={message.senderName}
+                                voiceMessageDuration={message.voiceMessageDuration}
+                                voiceMessageUrl={message.voiceMessageUrl}
                               />
                             ),
                           )}
@@ -1379,16 +1379,16 @@ export default function ChatPage() {
                 ) : (
                   <div className="shrink-0 border-t p-4">
                     <MessageInput
+                      allowFileUpload
+                      allowVoiceMessage
+                      disabled={connectionState !== "connected" || isUploading}
+                      onCancelReply={() => setReplyTo(null)}
                       onSend={handleSendMessage}
                       onSendFile={handleSendFile}
                       onSendVoice={handleSendVoice}
                       onTypingStart={handleTypingStart}
                       onTypingStop={handleTypingStop}
-                      disabled={connectionState !== "connected" || isUploading}
                       replyTo={replyTo}
-                      onCancelReply={() => setReplyTo(null)}
-                      allowFileUpload
-                      allowVoiceMessage
                     />
                   </div>
                 )}
@@ -1407,23 +1407,23 @@ export default function ChatPage() {
       {/* AI Summary Dialog */}
       {selectedConversationId && (
         <ConversationSummaryDialog
+          authorizedFetch={authorizedFetch}
           conversationId={selectedConversationId}
           isOpen={summaryOpen}
           onClose={() => setSummaryOpen(false)}
-          authorizedFetch={authorizedFetch}
         />
       )}
 
       {/* Call Interface */}
       {isInCall && currentCall && (
         <CallInterface
-          token={currentCall.token}
-          serverUrl={currentCall.serverUrl}
+          accessToken={auth.tokens?.accessToken || ""}
+          callId={currentCall.callId}
           callType={currentCall.callType}
           onLeave={handleLeaveCall}
           participantName={auth.claims?.email || "Customer"}
-          callId={currentCall.callId}
-          accessToken={auth.tokens?.accessToken || ""}
+          serverUrl={currentCall.serverUrl}
+          token={currentCall.token}
         />
       )}
 

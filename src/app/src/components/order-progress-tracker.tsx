@@ -1,8 +1,8 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import { OrderStatus } from "@/lib/server/order";
 import { CheckCircle2, Circle, Clock, CreditCard, Package, RotateCcw, Truck, XCircle } from "lucide-react";
+import { OrderStatus } from "@/lib/server/order";
+import { cn } from "@/lib/utils";
 
 interface OrderProgressTrackerProps {
   status: OrderStatus;
@@ -157,7 +157,7 @@ export function OrderProgressTracker({ status, className }: OrderProgressTracker
             const StageIcon = stage.icon;
 
             return (
-              <div key={stage.status} className="flex flex-col items-center">
+              <div className="flex flex-col items-center" key={stage.status}>
                 <div
                   className={cn(
                     "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all duration-300",
@@ -181,7 +181,7 @@ export function OrderProgressTracker({ status, className }: OrderProgressTracker
           const isCurrent = index === currentStageIndex;
 
           return (
-            <div key={stage.status} className="flex flex-col items-center text-center" style={{ width: "60px" }}>
+            <div className="flex flex-col items-center text-center" key={stage.status} style={{ width: "60px" }}>
               <span
                 className={cn(
                   "text-xs font-medium transition-colors",

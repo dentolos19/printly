@@ -179,6 +179,9 @@ public class ChatService
         _notificationService = notificationService;
 
         var apiKey = configuration["OPENROUTER_API_KEY"];
+        var title = configuration["OPENROUTER_TITLE"] ?? "Printly";
+        var referer = configuration["OPENROUTER_REFERER"] ?? "https://dennise.me";
+
         if (string.IsNullOrEmpty(apiKey))
         {
             throw new InvalidOperationException("OPENROUTER_API_KEY is not configured");
@@ -186,8 +189,8 @@ public class ChatService
 
         _http = new HttpClient { Timeout = TimeSpan.FromSeconds(RequestTimeoutSeconds) };
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        _http.DefaultRequestHeaders.Add("HTTP-Referer", "https://printly.dennise.me");
-        _http.DefaultRequestHeaders.Add("X-Title", "Printly");
+        _http.DefaultRequestHeaders.Add("X-OpenRouter-Title", title);
+        _http.DefaultRequestHeaders.Add("HTTP-Referer", referer);
     }
 
     /// <summary>

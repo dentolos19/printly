@@ -1,13 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useServer } from "@/lib/providers/server";
-import type { Design } from "@/lib/server/design";
-import type { OrderSummaryResponse, UserOrderStatsResponse } from "@/lib/server/order";
-import { OrderStatusColors, OrderStatusLabels } from "@/lib/server/order";
-import { cn } from "@/lib/utils";
 import {
   ArrowRight,
   Box,
@@ -25,6 +17,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useServer } from "@/lib/providers/server";
+import type { Design } from "@/lib/server/design";
+import type { OrderSummaryResponse, UserOrderStatsResponse } from "@/lib/server/order";
+import { OrderStatusColors, OrderStatusLabels } from "@/lib/server/order";
+import { cn } from "@/lib/utils";
 
 type DesignWithPreview = Design & {
   preview?: string;
@@ -214,7 +214,7 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Button asChild variant="outline" className="h-auto flex-col gap-2 py-4">
+            <Button asChild className="h-auto flex-col gap-2 py-4" variant="outline">
               <Link href="/designer/new">
                 <Palette className="h-6 w-6" />
                 <span className="font-semibold">Create Design</span>
@@ -222,7 +222,7 @@ export default function DashboardPage() {
               </Link>
             </Button>
 
-            <Button asChild variant="outline" className="h-auto flex-col gap-2 py-4">
+            <Button asChild className="h-auto flex-col gap-2 py-4" variant="outline">
               <Link href="/imprinter/new">
                 <Box className="h-6 w-6" />
                 <span className="font-semibold">Create Imprint</span>
@@ -230,7 +230,7 @@ export default function DashboardPage() {
               </Link>
             </Button>
 
-            <Button asChild variant="outline" className="h-auto flex-col gap-2 py-4">
+            <Button asChild className="h-auto flex-col gap-2 py-4" variant="outline">
               <Link href="/products">
                 <ShoppingBag className="h-6 w-6" />
                 <span className="font-semibold">Browse Products</span>
@@ -238,7 +238,7 @@ export default function DashboardPage() {
               </Link>
             </Button>
 
-            <Button asChild variant="outline" className="h-auto flex-col gap-2 py-4">
+            <Button asChild className="h-auto flex-col gap-2 py-4" variant="outline">
               <Link href="/orders">
                 <Package className="h-6 w-6" />
                 <span className="font-semibold">View Orders</span>
@@ -257,7 +257,7 @@ export default function DashboardPage() {
               <FileImage className="h-5 w-5" />
               Recent Designs
             </CardTitle>
-            <Button asChild variant="ghost" size="sm">
+            <Button asChild size="sm" variant="ghost">
               <Link href="/library2">
                 View All
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -268,7 +268,7 @@ export default function DashboardPage() {
             {designsLoading ? (
               <div className="space-y-3">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-3">
+                  <div className="flex items-center gap-3" key={i}>
                     <Skeleton className="h-16 w-16 rounded" />
                     <div className="flex-1 space-y-2">
                       <Skeleton className="h-4 w-32" />
@@ -294,16 +294,16 @@ export default function DashboardPage() {
               <div className="space-y-3">
                 {recentDesigns.map((design) => (
                   <div
-                    key={design.id}
                     className="hover:bg-accent group flex cursor-pointer items-center gap-3 rounded-lg p-2 transition-colors"
+                    key={design.id}
                     onClick={() => router.push(`/designer/${design.id}`)}
                   >
                     <div className="bg-muted relative h-16 w-16 shrink-0 overflow-hidden rounded">
                       {design.preview ? (
                         <img
-                          src={design.preview}
                           alt={design.name}
                           className="size-full object-cover transition-transform group-hover:scale-110"
+                          src={design.preview}
                         />
                       ) : (
                         <div className="flex size-full items-center justify-center">
@@ -330,7 +330,7 @@ export default function DashboardPage() {
               <Clock className="h-5 w-5" />
               Recent Orders
             </CardTitle>
-            <Button asChild variant="ghost" size="sm">
+            <Button asChild size="sm" variant="ghost">
               <Link href="/orders">
                 View All
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -341,7 +341,7 @@ export default function DashboardPage() {
             {ordersLoading ? (
               <div className="space-y-3">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex items-center justify-between">
+                  <div className="flex items-center justify-between" key={i}>
                     <div className="flex-1 space-y-2">
                       <Skeleton className="h-4 w-32" />
                       <Skeleton className="h-3 w-24" />
@@ -367,8 +367,8 @@ export default function DashboardPage() {
               <div className="space-y-3">
                 {recentOrders.map((order) => (
                   <div
-                    key={order.id}
                     className="hover:bg-accent group flex cursor-pointer items-center justify-between rounded-lg p-2 transition-colors"
+                    key={order.id}
                     onClick={() => router.push(`/orders/${order.id}`)}
                   >
                     <div className="min-w-0 flex-1">

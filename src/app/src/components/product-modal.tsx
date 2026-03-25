@@ -1,5 +1,8 @@
 "use client";
 
+import { Minus, Package, Plus, ShoppingCart, Stamp } from "lucide-react";
+import Image from "next/image";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,9 +16,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCart } from "@/lib/providers/cart";
 import { ProductResponse, ProductSize, ProductSizeLabels, ProductVariantResponse } from "@/lib/server/product";
-import { Minus, Package, Stamp, Plus, ShoppingCart } from "lucide-react";
-import Image from "next/image";
-import { useMemo, useState } from "react";
 
 type ProductModalProps = {
   product: ProductResponse | null;
@@ -104,7 +104,7 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
   if (!product) return null;
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog onOpenChange={handleOpenChange} open={open}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{product.name}</DialogTitle>
@@ -118,10 +118,10 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
           <div className="bg-muted relative mx-auto aspect-square w-full max-w-[280px] overflow-hidden rounded-lg border">
             {displayImage ? (
               <Image
-                src={displayImage}
                 alt={product.name}
-                fill
                 className="object-cover transition-opacity duration-200"
+                fill
+                src={displayImage}
               />
             ) : (
               <div className="text-muted-foreground flex h-full w-full items-center justify-center">
@@ -139,8 +139,8 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
           <div className="space-y-2">
             <Label>Size</Label>
             <Select
-              value={selectedSize !== null ? String(selectedSize) : undefined}
               onValueChange={(value) => setSelectedSize(Number(value) as ProductSize)}
+              value={selectedSize !== null ? String(selectedSize) : undefined}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select size" />
@@ -158,7 +158,7 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
           {/* Color Selection */}
           <div className="space-y-2">
             <Label>Color</Label>
-            <Select value={selectedColor ?? undefined} onValueChange={(value) => setSelectedColor(value)}>
+            <Select onValueChange={(value) => setSelectedColor(value)} value={selectedColor ?? undefined}>
               <SelectTrigger>
                 <SelectValue placeholder="Select color" />
               </SelectTrigger>
@@ -177,11 +177,11 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
             <div className="space-y-2">
               <Label>Quantity</Label>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon" onClick={decrementQuantity} disabled={quantity <= 1}>
+                <Button disabled={quantity <= 1} onClick={decrementQuantity} size="icon" variant="outline">
                   <Minus className="h-4 w-4" />
                 </Button>
                 <span className="w-12 text-center font-medium">{quantity}</span>
-                <Button variant="outline" size="icon" onClick={incrementQuantity} disabled={quantity >= stock}>
+                <Button disabled={quantity >= stock} onClick={incrementQuantity} size="icon" variant="outline">
                   <Plus className="h-4 w-4" />
                 </Button>
                 <span className="text-muted-foreground text-sm">({stock} available)</span>
@@ -206,20 +206,20 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
 
         <DialogFooter className="grid grid-cols-2 gap-2 sm:grid-cols-2">
           <Button
-            variant="outline"
             className="gap-2"
+            disabled={!selectedVariant}
             onClick={() => {
               if (selectedVariant) {
                 handleOpenChange(false);
                 window.location.href = `/imprinter/new?product=${product.id}&variant=${selectedVariant.id}`;
               }
             }}
-            disabled={!selectedVariant}
+            variant="outline"
           >
             <Stamp className="h-4 w-4" />
             Create Imprint
           </Button>
-          <Button className="gap-2" onClick={handleAddToCart} disabled={!selectedVariant || !isInStock}>
+          <Button className="gap-2" disabled={!selectedVariant || !isInStock} onClick={handleAddToCart}>
             <ShoppingCart className="h-4 w-4" />
             Add to Cart
           </Button>

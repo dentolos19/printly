@@ -1,10 +1,10 @@
+import { Calculator, Check, Mail, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Calculator, Check, Mail, Users } from "lucide-react";
 
 export function BulkOrderSection() {
   return (
-    <section id="bulk" className="container mx-auto px-6 py-24 lg:px-12">
+    <section className="container mx-auto px-6 py-24 lg:px-12" id="bulk">
       <div className="relative overflow-hidden rounded-[2.5rem] bg-slate-950 text-white shadow-2xl">
         {/* Decorative Background Elements */}
         <div className="bg-primary/20 absolute -top-24 -right-24 size-96 rounded-full blur-3xl" />
@@ -36,7 +36,7 @@ export function BulkOrderSection() {
                 "Free design assistance",
                 "Global shipping logistics",
               ].map((item, idx) => (
-                <li key={idx} className="flex items-center gap-3 text-slate-300">
+                <li className="flex items-center gap-3 text-slate-300" key={idx}>
                   <div className="bg-primary/20 text-primary flex size-6 shrink-0 items-center justify-center rounded-full">
                     <Check className="size-4" />
                   </div>
@@ -77,8 +77,8 @@ export function BulkOrderSection() {
                     <Mail className="absolute top-1/2 left-4 size-4 -translate-y-1/2 text-slate-500" />
                     <Input
                       className="h-12 border-white/10 bg-white/5 pl-11 text-white placeholder:text-slate-600"
-                      type="email"
                       placeholder="john@company.com"
+                      type="email"
                     />
                   </div>
                 </div>
@@ -89,8 +89,8 @@ export function BulkOrderSection() {
                   </label>
                   <Input
                     className="h-12 border-white/10 bg-white/5 text-white placeholder:text-slate-600"
-                    type="number"
                     placeholder="100"
+                    type="number"
                   />
                 </div>
 

@@ -1,5 +1,8 @@
 "use client";
 
+import * as signalR from "@microsoft/signalr";
+import { ArrowLeft, Circle, Loader2, Send, Users, Wifi, WifiOff } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,9 +10,6 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { API_URL } from "@/environment";
 import { useAuth } from "@/lib/providers/auth";
-import * as signalR from "@microsoft/signalr";
-import { ArrowLeft, Circle, Loader2, Send, Users, Wifi, WifiOff } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
 import { formatMessageTime } from "@/lib/utils";
 
 interface Message {
@@ -196,9 +196,9 @@ export default function ChatInterface() {
                     const isOnline = onlineUsers.has(user.id);
                     return (
                       <button
+                        className="flex w-full items-center gap-3 rounded-lg p-3 text-left hover:bg-gray-100"
                         key={user.id}
                         onClick={() => setSelectedUser(user)}
-                        className="flex w-full items-center gap-3 rounded-lg p-3 text-left hover:bg-gray-100"
                       >
                         <div className="relative">
                           <Avatar>
@@ -256,7 +256,7 @@ export default function ChatInterface() {
   return (
     <Card className="mx-auto flex h-[600px] w-full max-w-2xl flex-col">
       <CardHeader className="flex flex-row items-center gap-3 border-b pb-3">
-        <Button variant="ghost" size="icon" onClick={() => setSelectedUser(null)}>
+        <Button onClick={() => setSelectedUser(null)} size="icon" variant="ghost">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <Avatar>
@@ -277,7 +277,7 @@ export default function ChatInterface() {
               messages.map((message) => {
                 const isMe = message.senderId === auth.claims?.id;
                 return (
-                  <div key={message.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                  <div className={`flex ${isMe ? "justify-end" : "justify-start"}`} key={message.id}>
                     <div
                       className={`max-w-[70%] rounded-2xl px-4 py-2.5 shadow-sm ${isMe ? "bg-primary text-primary-foreground" : "bg-muted"}`}
                     >
@@ -298,13 +298,13 @@ export default function ChatInterface() {
       <CardFooter className="border-t p-3">
         <div className="flex w-full gap-2">
           <Input
-            placeholder="Type a message..."
-            value={inputMessage}
+            disabled={connectionState !== "connected"}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-            disabled={connectionState !== "connected"}
+            placeholder="Type a message..."
+            value={inputMessage}
           />
-          <Button onClick={handleSendMessage} disabled={!inputMessage.trim() || connectionState !== "connected"}>
+          <Button disabled={!inputMessage.trim() || connectionState !== "connected"} onClick={handleSendMessage}>
             <Send className="h-4 w-4" />
           </Button>
         </div>

@@ -1,5 +1,7 @@
 "use client";
 
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { DesignerCanvas } from "@/app/(tools)/designer/components/canvas";
 import { DesignerProvider, useKeyboardShortcuts } from "@/app/(tools)/designer/components/hooks";
 import { IconToolbar } from "@/app/(tools)/designer/components/icon-toolbar";
@@ -10,8 +12,6 @@ import { ArtStyle, GeneratedImage } from "@/app/(tools)/designer/types";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useServer } from "@/lib/providers/server";
 import { cn } from "@/lib/utils";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
 
 function DesignerContent({ className }: { className?: string }) {
   useKeyboardShortcuts();
@@ -199,9 +199,9 @@ export default function Page() {
           initialDesignId={initialDesignId}
           initialDesignName={initialDesignName}
           initialGeneratedImages={initialGeneratedImages}
-          onSave={handleSave}
-          onLoad={handleLoad}
           onGenerateImage={handleGenerateImage}
+          onLoad={handleLoad}
+          onSave={handleSave}
         >
           <DesignerContent className={"size-full"} />
         </DesignerProvider>

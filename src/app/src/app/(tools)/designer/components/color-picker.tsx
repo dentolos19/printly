@@ -1,12 +1,12 @@
 "use client";
 
+import { Pipette } from "lucide-react";
+import { useState } from "react";
+import { HexColorInput, HexColorPicker } from "react-colorful";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { Pipette } from "lucide-react";
-import { useState } from "react";
-import { HexColorInput, HexColorPicker } from "react-colorful";
 
 type ColorPickerProps = {
   color: string;
@@ -59,12 +59,12 @@ export function ColorPicker({ color, onChange, label, className }: ColorPickerPr
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       {label && <Label className={"text-muted-foreground text-xs"}>{label}</Label>}
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <Popover onOpenChange={setIsOpen} open={isOpen}>
         <PopoverTrigger asChild>
           <Button
+            className={cn("h-8 w-full justify-start gap-2 px-2", !color && "text-muted-foreground")}
             type={"button"}
             variant={"outline"}
-            className={cn("h-8 w-full justify-start gap-2 px-2", !color && "text-muted-foreground")}
           >
             <div
               className={"border-border h-4 w-4 rounded border"}
@@ -73,29 +73,29 @@ export function ColorPicker({ color, onChange, label, className }: ColorPickerPr
             <span className={"flex-1 truncate text-left text-xs"}>{color || "No color"}</span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className={"w-64 p-3"} align={"start"}>
+        <PopoverContent align={"start"} className={"w-64 p-3"}>
           <div className={"flex flex-col gap-3"}>
-            <HexColorPicker color={color} onChange={onChange} className={"w-full!"} />
+            <HexColorPicker className={"w-full!"} color={color} onChange={onChange} />
 
             <div className={"flex items-center gap-2"}>
               <div className={"flex-1"}>
                 <HexColorInput
-                  color={color}
-                  onChange={onChange}
-                  prefixed
                   className={cn(
                     "border-input bg-background h-8 w-full rounded-md border px-2 text-xs",
                     "focus:ring-ring focus:ring-2 focus:ring-offset-2 focus:outline-none",
                   )}
+                  color={color}
+                  onChange={onChange}
+                  prefixed
                 />
               </div>
               {"EyeDropper" in window && (
                 <Button
-                  type={"button"}
-                  variant={"outline"}
-                  size={"icon"}
                   className={"h-8 w-8"}
                   onClick={handleEyeDropper}
+                  size={"icon"}
+                  type={"button"}
+                  variant={"outline"}
                 >
                   <Pipette className={"h-3.5 w-3.5"} />
                 </Button>
@@ -107,14 +107,14 @@ export function ColorPicker({ color, onChange, label, className }: ColorPickerPr
               <div className={"grid grid-cols-10 gap-1"}>
                 {PRESET_COLORS.map((presetColor) => (
                   <button
-                    key={presetColor}
-                    type={"button"}
                     className={cn(
                       "border-border h-5 w-5 rounded-sm border transition-transform hover:scale-110",
                       color === presetColor && "ring-ring ring-2 ring-offset-1",
                     )}
-                    style={{ backgroundColor: presetColor }}
+                    key={presetColor}
                     onClick={() => handlePresetClick(presetColor)}
+                    style={{ backgroundColor: presetColor }}
+                    type={"button"}
                   />
                 ))}
               </div>

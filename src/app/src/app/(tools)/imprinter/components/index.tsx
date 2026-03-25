@@ -1,11 +1,11 @@
 "use client";
 
+import { Box, Columns2, Grid3X3 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { Box, Columns2, Grid3X3 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
 import { FallbackImage } from "../../shared/components/fallback-image";
 import { useImprinter } from "./hooks/use-imprinter";
 import { useKeyboardShortcuts } from "./hooks/use-keyboard";
@@ -84,34 +84,34 @@ export function ImprinterContent() {
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
             {selectedProduct ? (
               <Tabs
-                value={viewMode}
-                onValueChange={(v) => setViewMode(v as "3d" | "2d" | "split")}
                 className="flex min-h-0 min-w-0 flex-1 flex-col"
+                onValueChange={(v) => setViewMode(v as "3d" | "2d" | "split")}
+                value={viewMode}
               >
                 <div className="absolute top-3 left-1/2 z-10 -translate-x-1/2">
                   <TabsList className="h-9">
-                    <TabsTrigger value="3d" className="gap-1.5 px-3">
+                    <TabsTrigger className="gap-1.5 px-3" value="3d">
                       <Box className="size-4" />
                       3D
                     </TabsTrigger>
-                    <TabsTrigger value="2d" className="gap-1.5 px-3">
+                    <TabsTrigger className="gap-1.5 px-3" value="2d">
                       <Grid3X3 className="size-4" />
                       2D
                     </TabsTrigger>
-                    <TabsTrigger value="split" className="gap-1.5 px-3">
+                    <TabsTrigger className="gap-1.5 px-3" value="split">
                       <Columns2 className="size-4" />
                       Split
                     </TabsTrigger>
                   </TabsList>
                 </div>
-                <TabsContent value="3d" className="mt-0 min-h-0 min-w-0 flex-1 overflow-hidden">
+                <TabsContent className="mt-0 min-h-0 min-w-0 flex-1 overflow-hidden" value="3d">
                   <ImprinterScene />
                 </TabsContent>
-                <TabsContent value="2d" className="mt-0 min-h-0 min-w-0 flex-1 overflow-hidden">
+                <TabsContent className="mt-0 min-h-0 min-w-0 flex-1 overflow-hidden" value="2d">
                   <Imprinter2DView />
                 </TabsContent>
-                <TabsContent value="split" className="mt-0 min-h-0 min-w-0 flex-1 overflow-hidden">
-                  <div ref={splitContainerRef} className="flex h-full min-h-0 min-w-0 overflow-hidden">
+                <TabsContent className="mt-0 min-h-0 min-w-0 flex-1 overflow-hidden" value="split">
+                  <div className="flex h-full min-h-0 min-w-0 overflow-hidden" ref={splitContainerRef}>
                     <div
                       className="h-full min-h-0 min-w-0 shrink-0 overflow-hidden"
                       style={{ flexBasis: `${splitRatio * 100}%` }}
@@ -160,11 +160,11 @@ export function ImprinterContent() {
             <div className="grid grid-cols-3 gap-3 p-1">
               {availableProducts.map((product) => (
                 <button
-                  key={product.id}
                   className={cn(
                     "group relative aspect-square overflow-hidden rounded-md border transition-all",
                     "bg-muted hover:border-primary hover:ring-primary/20 hover:ring-2",
                   )}
+                  key={product.id}
                   onClick={() => {
                     const firstVariant = product.variants[0] || null;
                     selectProduct(product, firstVariant);
@@ -172,9 +172,9 @@ export function ImprinterContent() {
                 >
                   {product.modelPreviewId || product.imageId ? (
                     <FallbackImage
-                      src={`/assets/${product.modelPreviewId ?? product.imageId}/view`}
                       alt={product.name}
                       className="h-full w-full object-cover"
+                      src={`/assets/${product.modelPreviewId ?? product.imageId}/view`}
                     />
                   ) : (
                     <div className="text-muted-foreground flex h-full w-full items-center justify-center text-xs">

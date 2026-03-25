@@ -1,10 +1,10 @@
 "use client";
 
+import { ShoppingCart } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/providers/auth";
 import { useCart } from "@/lib/providers/cart";
-import { ShoppingCart } from "lucide-react";
-import Link from "next/link";
 
 export function CartButton() {
   const { claims } = useAuth();
@@ -15,7 +15,7 @@ export function CartButton() {
   if (!claims) return null;
 
   return (
-    <Button variant="ghost" size="icon" className="relative" asChild>
+    <Button asChild className="relative" size="icon" variant="ghost">
       <Link href="/cart">
         <ShoppingCart className="h-5 w-5" />
         {itemCount > 0 && (

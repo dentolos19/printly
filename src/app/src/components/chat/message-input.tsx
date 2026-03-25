@@ -1,10 +1,10 @@
 "use client";
 
+import { CornerUpLeft, File, Mic, Paperclip, Send, Square, X } from "lucide-react";
+import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { CornerUpLeft, File, Mic, Paperclip, Send, Square, X } from "lucide-react";
-import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 
 export interface ReplyInfo {
   messageId: string;
@@ -289,7 +289,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
               <span className="text-primary text-xs font-medium">Replying to {replyTo.senderName}</span>
               <p className="text-muted-foreground truncate text-xs">{replyTo.content}</p>
             </div>
-            <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={onCancelReply}>
+            <Button className="h-6 w-6 shrink-0" onClick={onCancelReply} size="icon" variant="ghost">
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -298,7 +298,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
         {selectedFile && (
           <div className="bg-muted/50 mb-3 flex items-center gap-2 rounded-lg px-3 py-2">
             {filePreview ? (
-              <img src={filePreview} alt="Preview" className="h-12 w-12 rounded object-cover" />
+              <img alt="Preview" className="h-12 w-12 rounded object-cover" src={filePreview} />
             ) : (
               <div className="bg-muted flex h-12 w-12 items-center justify-center rounded">
                 <File className="text-muted-foreground h-6 w-6" />
@@ -308,7 +308,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
               <p className="truncate text-sm font-medium">{selectedFile.name}</p>
               <p className="text-muted-foreground text-xs">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
             </div>
-            <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={clearSelectedFile}>
+            <Button className="h-6 w-6 shrink-0" onClick={clearSelectedFile} size="icon" variant="ghost">
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -332,10 +332,10 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      variant="ghost"
-                      size="icon"
                       className="h-9 w-9 text-red-500 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30"
                       onClick={cancelRecording}
+                      size="icon"
+                      variant="ghost"
                     >
                       <X className="h-5 w-5" />
                     </Button>
@@ -346,9 +346,9 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
 
               {/* Send - stop recording and send it */}
               <Button
-                size="sm"
-                onClick={stopRecording}
                 className="gap-1.5 rounded-full bg-blue-600 px-4 hover:bg-blue-700"
+                onClick={stopRecording}
+                size="sm"
               >
                 <Send className="h-4 w-4" />
                 Send
@@ -362,11 +362,11 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      variant="ghost"
-                      size="icon"
                       className="h-10 w-10 shrink-0"
-                      onClick={() => fileInputRef.current?.click()}
                       disabled={disabled}
+                      onClick={() => fileInputRef.current?.click()}
+                      size="icon"
+                      variant="ghost"
                     >
                       <Paperclip className="h-5 w-5" />
                     </Button>
@@ -377,22 +377,22 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
             )}
 
             <input
+              accept={acceptedFileTypes}
+              className="hidden"
+              onChange={handleFileSelect}
               ref={fileInputRef}
               type="file"
-              accept={acceptedFileTypes}
-              onChange={handleFileSelect}
-              className="hidden"
             />
 
             <Textarea
-              ref={textareaRef}
-              value={content}
+              className="max-h-[120px] min-h-[44px] resize-none rounded-xl"
+              disabled={disabled}
               onChange={handleChange}
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
-              disabled={disabled}
-              className="max-h-[120px] min-h-[44px] resize-none rounded-xl"
+              ref={textareaRef}
               rows={1}
+              value={content}
             />
 
             {allowVoiceMessage && onSendVoice && !canSend && (
@@ -400,11 +400,11 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      variant="ghost"
-                      size="icon"
                       className="h-10 w-10 shrink-0"
-                      onClick={startRecording}
                       disabled={disabled}
+                      onClick={startRecording}
+                      size="icon"
+                      variant="ghost"
                     >
                       <Mic className="h-5 w-5" />
                     </Button>
@@ -416,10 +416,10 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
 
             {canSend && (
               <Button
-                size="icon"
-                onClick={handleSend}
-                disabled={disabled}
                 className="h-10 w-10 shrink-0 rounded-full bg-blue-600 hover:bg-blue-700"
+                disabled={disabled}
+                onClick={handleSend}
+                size="icon"
               >
                 <Send className="h-5 w-5" />
               </Button>

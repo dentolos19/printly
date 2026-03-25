@@ -2,8 +2,8 @@
  * Shared save status indicator component
  */
 
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertTriangle, Cloud, Loader2 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { SaveStatus } from "../hooks/use-auto-save";
 
 type SaveIndicatorProps = {

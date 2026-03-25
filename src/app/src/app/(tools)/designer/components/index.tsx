@@ -67,9 +67,9 @@ export function Designer({
       <DesignerProvider
         initialDesignId={designId}
         initialDesignName={designName}
-        onSave={onSave}
-        onLoad={onLoad}
         onGenerateImage={onGenerateImage}
+        onLoad={onLoad}
+        onSave={onSave}
       >
         <DesignerContent className={className} />
       </DesignerProvider>

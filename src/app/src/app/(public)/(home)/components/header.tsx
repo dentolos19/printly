@@ -9,16 +9,16 @@ export function Header() {
       </div>
 
       <nav className="hidden items-center gap-8 text-sm font-semibold md:flex">
-        <Link href="#products" className="text-muted-foreground hover:text-primary transition-colors">
+        <Link className="text-muted-foreground hover:text-primary transition-colors" href="#products">
           Products
         </Link>
-        <Link href="#bulk" className="text-muted-foreground hover:text-primary transition-colors">
+        <Link className="text-muted-foreground hover:text-primary transition-colors" href="#bulk">
           Bulk Orders
         </Link>
-        <Link href="/community" className="text-muted-foreground hover:text-primary transition-colors">
+        <Link className="text-muted-foreground hover:text-primary transition-colors" href="/community">
           Community
         </Link>
-        <Link href="#contact" className="text-muted-foreground hover:text-primary transition-colors">
+        <Link className="text-muted-foreground hover:text-primary transition-colors" href="#contact">
           Contact
         </Link>
       </nav>

@@ -1,11 +1,11 @@
 "use client";
 
+import { Check, ChevronDown, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Check, ChevronDown, Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
 import type { AIModel } from "@/lib/server/chatbot";
+import { cn } from "@/lib/utils";
 
 interface ModelSelectorProps {
   selectedModel: string;
@@ -20,14 +20,14 @@ export function ModelSelector({ selectedModel, onModelChange, models, isLoading 
   const currentModel = models.find((m) => m.id === selectedModel);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover onOpenChange={setOpen} open={open}>
       <PopoverTrigger asChild>
         <Button
-          variant="outline"
-          role="combobox"
           aria-expanded={open}
           className="h-9 w-full justify-between text-xs"
           disabled={isLoading}
+          role="combobox"
+          variant="outline"
         >
           <div className="flex items-center gap-2">
             <Sparkles className="h-3 w-3" />
@@ -36,7 +36,7 @@ export function ModelSelector({ selectedModel, onModelChange, models, isLoading 
           <ChevronDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[380px] p-0" align="start">
+      <PopoverContent align="start" className="w-[380px] p-0">
         <div className="border-b p-3">
           <h4 className="text-sm font-semibold">Choose AI Model</h4>
           <p className="text-muted-foreground mt-1 text-xs">
@@ -46,15 +46,15 @@ export function ModelSelector({ selectedModel, onModelChange, models, isLoading 
         <div className="max-h-[300px] overflow-y-auto p-2">
           {models.map((model) => (
             <button
+              className={cn(
+                "hover:bg-accent flex w-full flex-col items-start gap-1 rounded-md p-3 text-left transition-colors",
+                selectedModel === model.id && "bg-accent",
+              )}
               key={model.id}
               onClick={() => {
                 onModelChange(model.id);
                 setOpen(false);
               }}
-              className={cn(
-                "hover:bg-accent flex w-full flex-col items-start gap-1 rounded-md p-3 text-left transition-colors",
-                selectedModel === model.id && "bg-accent",
-              )}
             >
               <div className="flex w-full items-start justify-between gap-2">
                 <div className="flex-1">

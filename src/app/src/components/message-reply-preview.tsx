@@ -18,7 +18,7 @@ export function MessageReplyPreview({ replyToMessage, onCancel }: MessageReplyPr
         <p className="text-primary truncate text-xs font-medium">Replying to {replyToMessage.senderName}</p>
         <p className="text-muted-foreground truncate text-sm">{replyToMessage.content}</p>
       </div>
-      <Button variant="ghost" size="icon-sm" onClick={onCancel} className="shrink-0">
+      <Button className="shrink-0" onClick={onCancel} size="icon-sm" variant="ghost">
         <X className="h-4 w-4" />
       </Button>
     </div>

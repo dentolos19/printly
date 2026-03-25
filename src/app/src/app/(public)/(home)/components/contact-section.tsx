@@ -1,9 +1,9 @@
-import { Button } from "@/components/ui/button";
 import { HelpCircle, Mail, MessageCircle, Phone } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export function ContactSection() {
   return (
-    <section id="contact" className="container mx-auto px-6 py-24 lg:px-12">
+    <section className="container mx-auto px-6 py-24 lg:px-12" id="contact">
       <div className="bg-muted/50 relative overflow-hidden rounded-[3rem] p-8 text-center md:p-16 lg:p-20">
         <div className="pointer-events-none absolute top-0 right-0 p-12 opacity-5">
           <HelpCircle className="size-64" />
@@ -22,15 +22,15 @@ export function ContactSection() {
 
           <div className="flex flex-wrap justify-center gap-6 pt-4">
             <Button
-              size="lg"
               className="hover:shadow-primary/20 h-16 rounded-2xl px-10 font-bold shadow-lg transition-all"
+              size="lg"
             >
               Chat With Support
             </Button>
             <Button
-              variant="outline"
-              size="lg"
               className="bg-background h-16 rounded-2xl px-10 font-bold transition-all"
+              size="lg"
+              variant="outline"
             >
               View Knowledge Base
             </Button>

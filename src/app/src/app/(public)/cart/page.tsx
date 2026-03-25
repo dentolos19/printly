@@ -1,19 +1,19 @@
 "use client";
 
-import { CartButton } from "@/components/cart-button";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { useAuth, LoggedIn, LoggedOut } from "@/lib/providers/auth";
-import { CartItem, useCart } from "@/lib/providers/cart";
-import { useServer } from "@/lib/providers/server";
-import { ProductSizeLabels } from "@/lib/server/product";
 import { ArrowLeft, Minus, Package, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { CartButton } from "@/components/cart-button";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { LoggedIn, LoggedOut, useAuth } from "@/lib/providers/auth";
+import { CartItem, useCart } from "@/lib/providers/cart";
+import { useServer } from "@/lib/providers/server";
+import { ProductSizeLabels } from "@/lib/server/product";
 
 function CartItemRow({
   item,
@@ -46,27 +46,27 @@ function CartItemRow({
       </div>
       <div className="flex items-center gap-2">
         <Button
-          variant="outline"
-          size="icon"
           className="h-8 w-8"
-          onClick={() => onUpdateQuantity(item.quantity - 1)}
           disabled={item.quantity <= 1}
+          onClick={() => onUpdateQuantity(item.quantity - 1)}
+          size="icon"
+          variant="outline"
         >
           <Minus className="h-4 w-4" />
         </Button>
         <span className="w-8 text-center font-medium">{item.quantity}</span>
         <Button
-          variant="outline"
-          size="icon"
           className="h-8 w-8"
-          onClick={() => onUpdateQuantity(item.quantity + 1)}
           disabled={item.quantity >= item.maxStock}
+          onClick={() => onUpdateQuantity(item.quantity + 1)}
+          size="icon"
+          variant="outline"
         >
           <Plus className="h-4 w-4" />
         </Button>
       </div>
       <div className="w-24 text-right font-medium">${(itemPrice * item.quantity).toFixed(2)}</div>
-      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={onRemove}>
+      <Button className="text-destructive hover:text-destructive" onClick={onRemove} size="icon" variant="ghost">
         <Trash2 className="h-4 w-4" />
       </Button>
     </div>
@@ -154,20 +154,20 @@ export default function CartPage() {
       {/* Header */}
       <header className="bg-background/95 supports-backdrop-filter:bg-background/60 fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between border-b px-4 backdrop-blur lg:px-8">
         <div className="flex items-center gap-2">
-          <Link href="/" className="flex items-center gap-2">
-            <Image src={"/icon.png"} alt="Printly Logo" width={24} height={24} className="size-6" />
+          <Link className="flex items-center gap-2" href="/">
+            <Image alt="Printly Logo" className="size-6" height={24} src={"/icon.png"} width={24} />
             <h1 className="font-mono text-xl font-bold">Printly</h1>
           </Link>
         </div>
         <div className="flex items-center gap-2">
           <CartButton />
           <LoggedIn>
-            <Button variant="default" asChild>
+            <Button asChild variant="default">
               <Link href="/dashboard">Dashboard</Link>
             </Button>
           </LoggedIn>
           <LoggedOut>
-            <Button variant="default" asChild>
+            <Button asChild variant="default">
               <Link href="/auth">Login</Link>
             </Button>
           </LoggedOut>
@@ -177,7 +177,7 @@ export default function CartPage() {
       {/* Main Content */}
       <main className="container mx-auto px-4 pt-24 pb-16 lg:px-8">
         <div className="mb-6">
-          <Button variant="ghost" asChild className="mb-4">
+          <Button asChild className="mb-4" variant="ghost">
             <Link href="/#products">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Continue Shopping
@@ -203,7 +203,7 @@ export default function CartPage() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>Cart Items</CardTitle>
-                  <Button variant="ghost" size="sm" onClick={clearCart}>
+                  <Button onClick={clearCart} size="sm" variant="ghost">
                     Clear All
                   </Button>
                 </CardHeader>
@@ -211,10 +211,10 @@ export default function CartPage() {
                   <div className="divide-y">
                     {items.map((item) => (
                       <CartItemRow
-                        key={`${item.variantId}-${item.imprintId || "no-imprint"}`}
                         item={item}
-                        onUpdateQuantity={(qty) => updateQuantity(item.variantId, qty, item.imprintId)}
+                        key={`${item.variantId}-${item.imprintId || "no-imprint"}`}
                         onRemove={() => removeItem(item.variantId, item.imprintId)}
+                        onUpdateQuantity={(qty) => updateQuantity(item.variantId, qty, item.imprintId)}
                       />
                     ))}
                   </div>
@@ -246,9 +246,9 @@ export default function CartPage() {
                 <CardFooter>
                   <Button
                     className="w-full"
-                    size="lg"
-                    onClick={handleCheckout}
                     disabled={isCheckingOut || items.length === 0}
+                    onClick={handleCheckout}
+                    size="lg"
                   >
                     {isCheckingOut ? "Processing..." : "Complete Order"}
                   </Button>
@@ -257,7 +257,7 @@ export default function CartPage() {
 
               {!claims && (
                 <p className="text-muted-foreground mt-4 text-center text-sm">
-                  <Link href="/auth" className="text-primary underline">
+                  <Link className="text-primary underline" href="/auth">
                     Log in
                   </Link>{" "}
                   to complete your purchase

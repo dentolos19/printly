@@ -105,7 +105,8 @@ public class PrintAreaController(DatabaseContext context) : BaseController(conte
         Context.PrintAreas.RemoveRange(existingAreas);
 
         var printAreas = dto
-            .PrintAreas.Select((item, index) =>
+            .PrintAreas.Select(
+                (item, index) =>
                 {
                     var rayDirection = item.RayDirection ?? [0, 0, 1];
                     return new PrintArea

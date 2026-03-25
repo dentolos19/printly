@@ -1,5 +1,9 @@
 "use client";
 
+import * as signalR from "@microsoft/signalr";
+import { Archive, ArchiveIcon, Bell, CheckCheck, Inbox, RefreshCw, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,10 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { API_URL } from "@/environment";
 import { useAuth } from "@/lib/providers/auth";
 import { getNotificationIcon, type RealTimeNotification } from "@/lib/server/notification";
-import * as signalR from "@microsoft/signalr";
-import { Archive, ArchiveIcon, Bell, CheckCheck, Inbox, RefreshCw, Trash2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Notification {
   id: string;
@@ -230,10 +230,10 @@ export default function NotificationsPage() {
 
   const renderNotification = (notification: Notification, showArchive = true) => (
     <div
-      key={notification.id}
       className={`hover:bg-accent cursor-pointer rounded-lg border p-4 transition-colors ${
         !notification.isRead ? "border-blue-200 bg-blue-50 dark:bg-blue-950" : ""
       }`}
+      key={notification.id}
       onClick={() => handleNotificationClick(notification)}
     >
       <div className="flex items-start gap-3">
@@ -246,7 +246,7 @@ export default function NotificationsPage() {
               <p className="text-muted-foreground mt-2 text-xs">{formatTime(notification.createdAt)}</p>
             </div>
             {!notification.isRead && (
-              <Badge variant="default" className="flex-shrink-0">
+              <Badge className="flex-shrink-0" variant="default">
                 New
               </Badge>
             )}
@@ -255,23 +255,23 @@ export default function NotificationsPage() {
         <div className="flex flex-shrink-0 gap-2">
           {showArchive && (
             <Button
-              variant="ghost"
-              size="icon"
               onClick={(e) => {
                 e.stopPropagation();
                 archiveNotification(notification.id);
               }}
+              size="icon"
+              variant="ghost"
             >
               <Archive className="size-4" />
             </Button>
           )}
           <Button
-            variant="ghost"
-            size="icon"
             onClick={(e) => {
               e.stopPropagation();
               deleteNotification(notification.id);
             }}
+            size="icon"
+            variant="ghost"
           >
             <Trash2 className="size-4" />
           </Button>
@@ -291,17 +291,17 @@ export default function NotificationsPage() {
               {unreadCount > 0 && <Badge variant="destructive">{unreadCount}</Badge>}
             </CardTitle>
             <div className="flex gap-2">
-              <Button onClick={handleRefresh} variant="outline" size="sm" disabled={isRefreshing}>
+              <Button disabled={isRefreshing} onClick={handleRefresh} size="sm" variant="outline">
                 <RefreshCw className={`mr-2 size-4 ${isRefreshing ? "animate-spin" : ""}`} />
                 Refresh
               </Button>
               {unreadCount > 0 && (
-                <Button onClick={markAllAsRead} variant="outline" size="sm">
+                <Button onClick={markAllAsRead} size="sm" variant="outline">
                   <CheckCheck className="mr-2 size-4" />
                   Mark all read
                 </Button>
               )}
-              <Button onClick={deleteAll} variant="outline" size="sm">
+              <Button onClick={deleteAll} size="sm" variant="outline">
                 <Trash2 className="mr-2 size-4" />
                 Delete all
               </Button>
@@ -309,7 +309,7 @@ export default function NotificationsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <Tabs onValueChange={setActiveTab} value={activeTab}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="all">
                 <Inbox className="mr-2 size-4" />
@@ -321,7 +321,7 @@ export default function NotificationsPage() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="all" className="mt-4">
+            <TabsContent className="mt-4" value="all">
               <ScrollArea className="h-[600px]">
                 <div className="space-y-3">
                   {notifications.length === 0 ? (
@@ -336,7 +336,7 @@ export default function NotificationsPage() {
               </ScrollArea>
             </TabsContent>
 
-            <TabsContent value="archived" className="mt-4">
+            <TabsContent className="mt-4" value="archived">
               <ScrollArea className="h-[600px]">
                 <div className="space-y-3">
                   {archivedNotifications.length === 0 ? (

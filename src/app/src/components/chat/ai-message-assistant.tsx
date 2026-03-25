@@ -1,12 +1,12 @@
 "use client";
 
+import { Loader2, Sparkles } from "lucide-react";
+import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { API_URL } from "@/environment";
-import { Loader2, Sparkles } from "lucide-react";
-import { useCallback, useState } from "react";
 
 export interface AiMessageAssistantProps {
   isOpen: boolean;
@@ -100,7 +100,7 @@ export function AiMessageAssistant({ isOpen, onClose, onInsert, subject, authori
   }, [draft, onInsert]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+    <Dialog onOpenChange={(open) => !open && handleClose()} open={isOpen}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -122,19 +122,19 @@ export function AiMessageAssistant({ isOpen, onClose, onInsert, subject, authori
             <div className="flex gap-2">
               <Sparkles className="text-primary/40 mt-2.5 h-4 w-4 shrink-0" />
               <Textarea
-                id="ai-draft"
-                placeholder="Start typing what you want to say, or click Generate to let AI draft it for you..."
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                rows={5}
-                disabled={isGenerating}
                 className="border-primary/20 focus-visible:ring-primary/30"
+                disabled={isGenerating}
+                id="ai-draft"
+                onChange={(e) => setDraft(e.target.value)}
+                placeholder="Start typing what you want to say, or click Generate to let AI draft it for you..."
+                rows={5}
+                value={draft}
               />
             </div>
           </div>
 
           {/* Generate / Regenerate button */}
-          <Button variant="outline" size="sm" className="w-fit gap-2" onClick={handleGenerate} disabled={isGenerating}>
+          <Button className="w-fit gap-2" disabled={isGenerating} onClick={handleGenerate} size="sm" variant="outline">
             {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             {hasGenerated ? "Regenerate" : "Generate"}
           </Button>
@@ -145,17 +145,17 @@ export function AiMessageAssistant({ isOpen, onClose, onInsert, subject, authori
           {/* Refinement section — only after first generation */}
           {hasGenerated && (
             <div className="grid gap-2">
-              <Label htmlFor="ai-refine" className="text-muted-foreground text-sm">
+              <Label className="text-muted-foreground text-sm" htmlFor="ai-refine">
                 Want to refine? Provide additional instructions:
               </Label>
               <div className="flex gap-2">
                 <Textarea
-                  id="ai-refine"
-                  placeholder="E.g., Make it more formal, add urgency, mention we need this by Friday..."
-                  value={refinement}
-                  onChange={(e) => setRefinement(e.target.value)}
-                  rows={2}
                   disabled={isGenerating}
+                  id="ai-refine"
+                  onChange={(e) => setRefinement(e.target.value)}
+                  placeholder="E.g., Make it more formal, add urgency, mention we need this by Friday..."
+                  rows={2}
+                  value={refinement}
                 />
               </div>
             </div>
@@ -163,21 +163,21 @@ export function AiMessageAssistant({ isOpen, onClose, onInsert, subject, authori
         </div>
 
         <DialogFooter className="justify-end gap-3 px-6 py-4">
-          <Button variant="outline" onClick={handleClose}>
+          <Button onClick={handleClose} variant="outline">
             Cancel
           </Button>
           {hasGenerated && (
             <Button
-              variant="outline"
               className="text-primary"
-              onClick={handleRefine}
               disabled={isGenerating || !refinement.trim()}
+              onClick={handleRefine}
+              variant="outline"
             >
               {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Refine
             </Button>
           )}
-          <Button onClick={handleInsert} disabled={!draft.trim()} className="gap-1.5">
+          <Button className="gap-1.5" disabled={!draft.trim()} onClick={handleInsert}>
             Insert
             <Sparkles className="h-3.5 w-3.5" />
           </Button>

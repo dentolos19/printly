@@ -141,10 +141,10 @@ function DesignDecal({
       <Suspense fallback={null}>
         <DecalMesh
           design={design}
-          url={textureUrl}
-          targetMesh={targetMesh}
-          printAreaConfig={printAreaConfig}
           maxAnisotropy={maxAnisotropy}
+          printAreaConfig={printAreaConfig}
+          targetMesh={targetMesh}
+          url={textureUrl}
         />
       </Suspense>
     </AssetErrorBoundary>
@@ -232,13 +232,13 @@ function DecalMesh({
   return (
     <Decal position={position} rotation={finalOrientation} scale={scale}>
       <meshStandardMaterial
-        map={decalTexture}
-        transparent
-        opacity={design.opacity}
         depthTest={true}
         depthWrite={false}
+        map={decalTexture}
+        opacity={design.opacity}
         polygonOffset
         polygonOffsetFactor={-4}
+        transparent
       />
     </Decal>
   );
@@ -466,7 +466,7 @@ function CanvasModel() {
     <group ref={modelRef}>
       {modelUrl ? (
         <Suspense fallback={<NoModelPlaceholder />}>
-          <DynamicModel url={modelUrl} color={productColor} />
+          <DynamicModel color={productColor} url={modelUrl} />
         </Suspense>
       ) : (
         <NoModelPlaceholder />
@@ -483,11 +483,11 @@ function CanvasModel() {
               <>
                 {designs.map((design) => (
                   <DesignDecal
-                    key={design.id}
                     design={design}
-                    targetMesh={mesh}
-                    printAreaConfig={printAreaConfigMap.get(design.printArea)}
+                    key={design.id}
                     maxAnisotropy={maxAnisotropy}
+                    printAreaConfig={printAreaConfigMap.get(design.printArea)}
+                    targetMesh={mesh}
                   />
                 ))}
               </>,
@@ -598,8 +598,8 @@ export function ImprinterScene() {
     <ScreenshotContext.Provider value={contextValue}>
       <div
         className="relative h-full w-full"
-        onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
         onDrop={handleDrop}
       >
         {isDragging && (
@@ -612,23 +612,23 @@ export function ImprinterScene() {
             Click on the model to place a decal
           </div>
         )}
-        <Canvas shadows gl={{ antialias: true, preserveDrawingBuffer: true }}>
+        <Canvas gl={{ antialias: true, preserveDrawingBuffer: true }} shadows>
           <ScreenshotCapture onRegister={handleRegisterCapture} />
-          <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={50} />
+          <PerspectiveCamera fov={50} makeDefault position={[0, 0, 5]} />
           <ambientLight intensity={0.6} />
-          <spotLight position={[5, 5, 5]} angle={0.3} penumbra={1} intensity={1} castShadow />
-          <spotLight position={[-5, 5, 5]} angle={0.3} penumbra={1} intensity={0.5} />
-          <directionalLight position={[0, 5, 0]} intensity={0.3} />
+          <spotLight angle={0.3} castShadow intensity={1} penumbra={1} position={[5, 5, 5]} />
+          <spotLight angle={0.3} intensity={0.5} penumbra={1} position={[-5, 5, 5]} />
+          <directionalLight intensity={0.3} position={[0, 5, 0]} />
           <Environment preset="studio" />
           <Suspense fallback={null}>
             <CanvasModel />
           </Suspense>
           <OrbitControls
             enablePan={true}
-            enableZoom={true}
             enableRotate={true}
-            minDistance={0.5}
+            enableZoom={true}
             maxDistance={50}
+            minDistance={0.5}
             target={[0, 0, 0]}
           />
         </Canvas>

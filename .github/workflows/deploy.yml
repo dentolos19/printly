@@ -4,11 +4,6 @@ on:
     branches:
       - main
   workflow_dispatch:
-    inputs:
-      reset:
-        description: Reset Database
-        type: boolean
-        default: false
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: true
@@ -21,22 +16,20 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
 
       - name: Install Dependencies for App
         working-directory: src/app
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Install Dependencies for Server
         working-directory: src/server-worker
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Build App
         working-directory: src/app
-        run: pnpm opennextjs-cloudflare build
+        run: bun opennextjs-cloudflare build
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
@@ -46,30 +39,12 @@ jobs:
         run: dotnet build --configuration Release
 
       - name: Run Migrations
-        id: migrations
-        continue-on-error: ${{ github.event.inputs.reset == 'true' }}
         working-directory: src/server
         run: |
           dotnet tool restore
           dotnet ef database update
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Reset Database
-        if: steps.migrations.outcome == 'failure' && github.event.inputs.reset == 'true'
-        working-directory: src/server
-        run: |
-          echo "Migration failed. Dropping all tables..."
-          sudo apt update && sudo apt install -y postgresql-client
-          psql $DATABASE_URL -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
-          echo "Running migrations on clean schema..."
-          dotnet ef database update
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Post-Run Migrations
-        if: steps.migrations.outcome == 'failure' && github.event.inputs.reset != 'true'
-        run: exit 1
 
       - name: Deploy Server to Cloudflare
         uses: cloudflare/wrangler-action@v3

@@ -1,5 +1,24 @@
 "use client";
 
+import {
+  CheckCircle2,
+  Clock,
+  CreditCard,
+  ExternalLink,
+  Eye,
+  Loader2,
+  MessageSquare,
+  Package,
+  Paintbrush,
+  RefreshCcw,
+  RotateCcw,
+  ShoppingBag,
+  Truck,
+  XCircle,
+} from "lucide-react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { OrderProgressTracker } from "@/components/order-progress-tracker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,25 +56,6 @@ import {
   RefundStatusColors,
   RefundStatusLabels,
 } from "@/lib/server/refund";
-import {
-  CheckCircle2,
-  Clock,
-  CreditCard,
-  ExternalLink,
-  Eye,
-  Loader2,
-  MessageSquare,
-  Package,
-  Paintbrush,
-  RefreshCcw,
-  RotateCcw,
-  ShoppingBag,
-  Truck,
-  XCircle,
-} from "lucide-react";
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
 
 const StatusIcons: Record<OrderStatus, React.ElementType<{ className?: string }>> = {
   [OrderStatus.PendingPayment]: Clock,
@@ -142,18 +142,18 @@ function OrderCard({
 
           {/* Actions */}
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={onViewDetails} className="flex-1">
+            <Button className="flex-1" onClick={onViewDetails} size="sm" variant="outline">
               <Eye className="mr-2 h-4 w-4" />
               View Details
             </Button>
             {canPay && (
-              <Button size="sm" onClick={onPay} disabled={isPaying} className="flex-1">
+              <Button className="flex-1" disabled={isPaying} onClick={onPay} size="sm">
                 <CreditCard className="mr-2 h-4 w-4" />
                 {isPaying ? "Processing..." : "Pay Now"}
               </Button>
             )}
             {canCancel && (
-              <Button variant="ghost" size="sm" onClick={onCancel} className="text-destructive hover:text-destructive">
+              <Button className="text-destructive hover:text-destructive" onClick={onCancel} size="sm" variant="ghost">
                 <XCircle className="h-4 w-4" />
               </Button>
             )}
@@ -195,7 +195,7 @@ function OrderDetailsDialog({
     );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-8">
@@ -255,7 +255,7 @@ function OrderDetailsDialog({
                     {refund.adminNotes && <p className="mt-1 italic">Admin: {refund.adminNotes}</p>}
                   </div>
                   {hasActiveRefund && refund.conversationId && (
-                    <Button variant="outline" size="sm" className="mt-2" asChild>
+                    <Button asChild className="mt-2" size="sm" variant="outline">
                       <Link href={`/messages?conversation=${refund.conversationId}`}>
                         <MessageSquare className="mr-2 h-4 w-4" />
                         Continue in Chat
@@ -268,7 +268,7 @@ function OrderDetailsDialog({
               <div className="space-y-3">
                 <h4 className="font-medium">Order Items</h4>
                 {order.items.map((item) => (
-                  <div key={item.id} className="rounded-lg border p-3">
+                  <div className="rounded-lg border p-3" key={item.id}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="bg-muted flex h-12 w-12 items-center justify-center rounded-lg">
@@ -299,8 +299,8 @@ function OrderDetailsDialog({
                           )}
                         </span>
                         <Link
-                          href={`/imprinter/${item.imprintId}`}
                           className="text-xs text-blue-600 hover:underline dark:text-blue-400"
+                          href={`/imprinter/${item.imprintId}`}
                           onClick={(e) => e.stopPropagation()}
                         >
                           <ExternalLink className="h-3 w-3" />
@@ -331,7 +331,7 @@ function OrderDetailsDialog({
             </div>
 
             <DialogFooter className="flex-col gap-2 sm:flex-row">
-              <Button variant="default" asChild className="w-full sm:w-auto">
+              <Button asChild className="w-full sm:w-auto" variant="default">
                 <Link href={`/orders/${order.id}`}>
                   <ExternalLink className="mr-2 h-4 w-4" />
                   View Full Details
@@ -339,16 +339,16 @@ function OrderDetailsDialog({
               </Button>
               {canRequestRefund && (
                 <Button
-                  variant="outline"
-                  onClick={onRequestRefund}
-                  disabled={isLoadingRefund}
                   className="w-full sm:w-auto"
+                  disabled={isLoadingRefund}
+                  onClick={onRequestRefund}
+                  variant="outline"
                 >
                   <RefreshCcw className="mr-2 h-4 w-4" />
                   {isLoadingRefund ? "Loading..." : "Request Refund"}
                 </Button>
               )}
-              <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
+              <Button className="w-full sm:w-auto" onClick={() => onOpenChange(false)} variant="outline">
                 Close
               </Button>
             </DialogFooter>
@@ -375,7 +375,7 @@ function CancelConfirmDialog({
   if (!order) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Cancel Order</DialogTitle>
@@ -384,10 +384,10 @@ function CancelConfirmDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+          <Button disabled={isLoading} onClick={() => onOpenChange(false)} variant="outline">
             Keep Order
           </Button>
-          <Button variant="destructive" onClick={onConfirm} disabled={isLoading}>
+          <Button disabled={isLoading} onClick={onConfirm} variant="destructive">
             {isLoading ? "Cancelling..." : "Cancel Order"}
           </Button>
         </DialogFooter>
@@ -449,7 +449,7 @@ function RefundRequestDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Request Refund</DialogTitle>
@@ -463,20 +463,20 @@ function RefundRequestDialog({
             <Label htmlFor="refund-amount">Refund Amount ($)</Label>
             <Input
               id="refund-amount"
-              type="number"
-              step="0.01"
-              min="0.01"
               max={order.totalAmount}
-              value={requestedAmount}
+              min="0.01"
               onChange={(e) => setRequestedAmount(e.target.value)}
               placeholder={`Max: $${order.totalAmount.toFixed(2)}`}
+              step="0.01"
+              type="number"
+              value={requestedAmount}
             />
             <p className="text-muted-foreground text-xs">Order total: ${order.totalAmount.toFixed(2)}</p>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="refund-reason">Reason for Refund *</Label>
-            <Select value={reason.toString()} onValueChange={(v) => setReason(parseInt(v) as RefundReason)}>
+            <Select onValueChange={(v) => setReason(parseInt(v) as RefundReason)} value={reason.toString()}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a reason" />
               </SelectTrigger>
@@ -494,10 +494,10 @@ function RefundRequestDialog({
             <Label htmlFor="customer-notes">Additional Details (Optional)</Label>
             <Textarea
               id="customer-notes"
-              value={customerNotes}
               onChange={(e) => setCustomerNotes(e.target.value)}
               placeholder="Please provide any additional details about your refund request..."
               rows={3}
+              value={customerNotes}
             />
           </div>
 
@@ -516,10 +516,10 @@ function RefundRequestDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+          <Button disabled={isLoading} onClick={() => onOpenChange(false)} variant="outline">
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading || !reason}>
+          <Button disabled={isLoading || !reason} onClick={handleSubmit}>
             {isLoading ? "Submitting..." : "Submit Request"}
           </Button>
         </DialogFooter>
@@ -748,29 +748,29 @@ export default function OrdersPage() {
       ) : orders.length === 0 ? (
         <EmptyOrders />
       ) : (
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs onValueChange={setActiveTab} value={activeTab}>
           <TabsList className="mb-6 grid w-full grid-cols-4">
             <TabsTrigger value="all">
               All{" "}
-              <Badge variant="secondary" className="ml-2">
+              <Badge className="ml-2" variant="secondary">
                 {orderCounts.all}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="active">
               Active{" "}
-              <Badge variant="secondary" className="ml-2">
+              <Badge className="ml-2" variant="secondary">
                 {orderCounts.active}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="completed">
               Completed{" "}
-              <Badge variant="secondary" className="ml-2">
+              <Badge className="ml-2" variant="secondary">
                 {orderCounts.completed}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="cancelled">
               Cancelled{" "}
-              <Badge variant="secondary" className="ml-2">
+              <Badge className="ml-2" variant="secondary">
                 {orderCounts.cancelled}
               </Badge>
             </TabsTrigger>
@@ -788,12 +788,12 @@ export default function OrdersPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 {filteredOrders.map((order) => (
                   <OrderCard
+                    isPaying={isPaying === order.id}
                     key={order.id}
-                    order={order}
-                    onViewDetails={() => handleViewDetails(order)}
                     onCancel={() => handleCancelClick(order)}
                     onPay={() => handlePayOrder(order)}
-                    isPaying={isPaying === order.id}
+                    onViewDetails={() => handleViewDetails(order)}
+                    order={order}
                   />
                 ))}
               </div>
@@ -803,29 +803,29 @@ export default function OrdersPage() {
       )}
 
       <OrderDetailsDialog
-        order={selectedOrderDetails}
-        open={detailsOpen}
-        onOpenChange={setDetailsOpen}
         isLoading={isLoadingDetails}
-        refund={selectedOrderRefund}
-        onRequestRefund={handleRequestRefund}
         isLoadingRefund={isLoadingRefund}
+        onOpenChange={setDetailsOpen}
+        onRequestRefund={handleRequestRefund}
+        open={detailsOpen}
+        order={selectedOrderDetails}
+        refund={selectedOrderRefund}
       />
 
       <CancelConfirmDialog
-        order={selectedOrder}
-        open={cancelOpen}
-        onOpenChange={setCancelOpen}
-        onConfirm={handleCancelConfirm}
         isLoading={isCancelling}
+        onConfirm={handleCancelConfirm}
+        onOpenChange={setCancelOpen}
+        open={cancelOpen}
+        order={selectedOrder}
       />
 
       <RefundRequestDialog
-        order={selectedOrderDetails}
-        open={refundOpen}
-        onOpenChange={setRefundOpen}
-        onConfirm={handleRefundSubmit}
         isLoading={isRequestingRefund}
+        onConfirm={handleRefundSubmit}
+        onOpenChange={setRefundOpen}
+        open={refundOpen}
+        order={selectedOrderDetails}
       />
     </div>
   );

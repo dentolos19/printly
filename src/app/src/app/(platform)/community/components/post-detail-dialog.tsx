@@ -1,26 +1,5 @@
 ﻿"use client";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useAuth } from "@/lib/providers/auth";
-import { useServer } from "@/lib/providers/server";
-import {
-  PostCommentResponse,
-  PostDetailResponse,
-  PostStatus,
-  ReactionType,
-  ReactionTypeEmojis,
-} from "@/lib/server/community";
-import { cn } from "@/lib/utils";
 import {
   AlertTriangleIcon,
   ArchiveIcon,
@@ -39,6 +18,27 @@ import {
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { useAuth } from "@/lib/providers/auth";
+import { useServer } from "@/lib/providers/server";
+import {
+  PostCommentResponse,
+  PostDetailResponse,
+  PostStatus,
+  ReactionType,
+  ReactionTypeEmojis,
+} from "@/lib/server/community";
+import { cn } from "@/lib/utils";
 
 interface PostDetailDialogProps {
   postId: string | null;
@@ -290,7 +290,7 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         {loading ? (
           <div className="flex h-64 items-center justify-center">
@@ -320,14 +320,14 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                   </DialogDescription>
                 </div>
                 {post.isNsfw && (
-                  <Badge variant="destructive" className="text-xs">
+                  <Badge className="text-xs" variant="destructive">
                     NSFW
                   </Badge>
                 )}
                 {claims?.id === post.authorId && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Button className="h-8 w-8" size="icon" variant="ghost">
                         <MoreHorizontalIcon className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -336,7 +336,7 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                         <ArchiveIcon className="mr-2 h-4 w-4" />
                         {post.postStatus === PostStatus.Archived ? "Publish" : "Archive"}
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+                      <DropdownMenuItem className="text-destructive" onClick={handleDelete}>
                         <TrashIcon className="mr-2 h-4 w-4" />
                         Delete
                       </DropdownMenuItem>
@@ -351,18 +351,18 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
               {post.photoUrl && (
                 <div className="relative aspect-square w-full overflow-hidden rounded-lg">
                   <img
-                    src={post.photoUrl}
                     alt="Post"
                     className={cn(
                       "h-full w-full object-cover",
                       (post.isNsfw || post.contentWarning) && !nsfwRevealed && "blur-xl",
                     )}
+                    src={post.photoUrl}
                   />
                   {(post.isNsfw || post.contentWarning) && !nsfwRevealed && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60">
                       <AlertTriangleIcon className="h-8 w-8 text-yellow-400" />
                       <p className="text-sm font-medium text-white">{post.contentWarning || "Sensitive Content"}</p>
-                      <Button size="sm" variant="secondary" onClick={() => setNsfwRevealed(true)}>
+                      <Button onClick={() => setNsfwRevealed(true)} size="sm" variant="secondary">
                         Show Content
                       </Button>
                     </div>
@@ -377,10 +377,10 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                 <div className="flex flex-wrap gap-1">
                   {post.tags.map((tag) => (
                     <Badge
-                      key={tag}
-                      variant="secondary"
                       className="hover:bg-primary/20 cursor-pointer text-xs"
+                      key={tag}
                       onClick={() => onTagClick?.(tag)}
+                      variant="secondary"
                     >
                       #{tag}
                     </Badge>
@@ -393,11 +393,11 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                 <div className="flex gap-1">
                   {Object.entries(ReactionTypeEmojis).map(([type, emoji]) => (
                     <button
-                      key={type}
                       className={cn(
                         "rounded-full p-2 text-xl transition-transform hover:scale-110",
                         post.userReaction === Number(type) && "bg-muted ring-primary ring-2",
                       )}
+                      key={type}
                       onClick={() =>
                         handleReact(post.userReaction === Number(type) ? null : (Number(type) as ReactionType))
                       }
@@ -407,7 +407,7 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                   ))}
                 </div>
                 <div className="flex-1" />
-                <Button variant="ghost" size="sm" className="gap-1" onClick={handleShare}>
+                <Button className="gap-1" onClick={handleShare} size="sm" variant="ghost">
                   <Share2Icon className="h-4 w-4" />
                   {post.shareCount > 0 && post.shareCount}
                 </Button>
@@ -418,10 +418,10 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                   </span>
                 )}
                 <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleBookmark}
                   className={cn(post.isBookmarked && "text-yellow-500")}
+                  onClick={handleBookmark}
+                  size="sm"
+                  variant="ghost"
                 >
                   <BookmarkIcon className={cn("h-5 w-5", post.isBookmarked && "fill-current")} />
                 </Button>
@@ -445,12 +445,12 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                 {/* Add comment */}
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Add a comment..."
-                    value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleAddComment()}
+                    placeholder="Add a comment..."
+                    value={newComment}
                   />
-                  <Button onClick={handleAddComment} disabled={submitting || !newComment.trim()}>
+                  <Button disabled={submitting || !newComment.trim()} onClick={handleAddComment}>
                     {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendIcon className="h-4 w-4" />}
                   </Button>
                 </div>
@@ -460,7 +460,7 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                   {comments
                     .filter((c) => !c.parentId)
                     .map((comment) => (
-                      <div key={comment.id} className="space-y-1">
+                      <div className="space-y-1" key={comment.id}>
                         <div className="bg-muted space-y-2 rounded-lg p-3">
                           <div className="flex gap-3">
                             <Link href={`/user/${comment.authorId}`}>
@@ -477,8 +477,8 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                                 </Link>
                                 {comment.authorId === post.authorId && (
                                   <Badge
-                                    variant="outline"
                                     className="border-primary/40 text-primary px-1.5 py-0 text-[10px] font-medium"
+                                    variant="outline"
                                   >
                                     Owner
                                   </Badge>
@@ -491,10 +491,10 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                             </div>
                             {claims?.id === comment.authorId && (
                               <Button
-                                variant="ghost"
-                                size="icon"
                                 className="h-8 w-8"
                                 onClick={() => handleDeleteComment(comment.id)}
+                                size="icon"
+                                variant="ghost"
                               >
                                 <TrashIcon className="h-4 w-4" />
                               </Button>
@@ -504,11 +504,11 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                           <div className="flex items-center gap-1 pl-11">
                             {Object.entries(ReactionTypeEmojis).map(([type, emoji]) => (
                               <button
-                                key={type}
                                 className={cn(
                                   "rounded-full px-1.5 py-0.5 text-sm transition-transform hover:scale-110",
                                   comment.userReaction === Number(type) && "bg-primary/20 ring-primary/50 ring-1",
                                 )}
+                                key={type}
                                 onClick={() =>
                                   handleCommentReact(comment.id, comment.userReaction, Number(type) as ReactionType)
                                 }
@@ -534,8 +534,8 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                         {comment.replyCount > 0 && (
                           <button
                             className="text-muted-foreground hover:text-foreground ml-11 flex items-center gap-1 text-xs font-medium transition-colors"
-                            onClick={() => toggleReplies(comment.id)}
                             disabled={loadingReplies[comment.id]}
+                            onClick={() => toggleReplies(comment.id)}
                           >
                             {loadingReplies[comment.id] ? (
                               <Loader2 className="h-3 w-3 animate-spin" />
@@ -554,7 +554,7 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                         {expandedReplies[comment.id] && (
                           <div className="ml-8 space-y-2 border-l-2 pl-3">
                             {expandedReplies[comment.id].map((reply) => (
-                              <div key={reply.id} className="bg-muted/60 space-y-1.5 rounded-lg p-2.5">
+                              <div className="bg-muted/60 space-y-1.5 rounded-lg p-2.5" key={reply.id}>
                                 <div className="flex gap-2.5">
                                   <Link href={`/user/${reply.authorId}`}>
                                     <Avatar className="h-6 w-6 cursor-pointer transition-opacity hover:opacity-80">
@@ -572,8 +572,8 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                                       </Link>
                                       {reply.authorId === post.authorId && (
                                         <Badge
-                                          variant="outline"
                                           className="border-primary/40 text-primary px-1.5 py-0 text-[10px] font-medium"
+                                          variant="outline"
                                         >
                                           Owner
                                         </Badge>
@@ -586,10 +586,10 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                                   </div>
                                   {claims?.id === reply.authorId && (
                                     <Button
-                                      variant="ghost"
-                                      size="icon"
                                       className="h-6 w-6"
                                       onClick={() => handleDeleteComment(reply.id)}
+                                      size="icon"
+                                      variant="ghost"
                                     >
                                       <TrashIcon className="h-3 w-3" />
                                     </Button>
@@ -599,11 +599,11 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                                 <div className="flex items-center gap-1 pl-8">
                                   {Object.entries(ReactionTypeEmojis).map(([type, emoji]) => (
                                     <button
-                                      key={type}
                                       className={cn(
                                         "rounded-full px-1 py-0.5 text-xs transition-transform hover:scale-110",
                                         reply.userReaction === Number(type) && "bg-primary/20 ring-primary/50 ring-1",
                                       )}
+                                      key={type}
                                       onClick={() =>
                                         handleCommentReact(reply.id, reply.userReaction, Number(type) as ReactionType)
                                       }
@@ -633,18 +633,18 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                           <div className="ml-8 flex items-center gap-2 pt-1">
                             <CornerDownRightIcon className="text-muted-foreground h-4 w-4 flex-shrink-0" />
                             <Input
-                              ref={replyInputRef}
-                              placeholder={`Reply to ${replyTargetName}...`}
-                              value={replyContent}
+                              className="h-8 text-sm"
                               onChange={(e) => setReplyContent(e.target.value)}
                               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSubmitReply(comment.id)}
-                              className="h-8 text-sm"
+                              placeholder={`Reply to ${replyTargetName}...`}
+                              ref={replyInputRef}
+                              value={replyContent}
                             />
                             <Button
-                              size="sm"
                               className="h-8"
-                              onClick={() => handleSubmitReply(comment.id)}
                               disabled={replySubmitting || !replyContent.trim()}
+                              onClick={() => handleSubmitReply(comment.id)}
+                              size="sm"
                             >
                               {replySubmitting ? (
                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -653,8 +653,6 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                               )}
                             </Button>
                             <Button
-                              size="sm"
-                              variant="ghost"
                               className="h-8 px-2"
                               onClick={() => {
                                 setReplyingTo(null);
@@ -662,6 +660,8 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                                 setReplyTargetName("");
                                 setReplyContent("");
                               }}
+                              size="sm"
+                              variant="ghost"
                             >
                               ✕
                             </Button>

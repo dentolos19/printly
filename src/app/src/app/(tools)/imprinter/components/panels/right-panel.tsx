@@ -1,15 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Slider } from "@/components/ui/slider";
-import { cn } from "@/lib/utils";
 import {
   ArrowDown,
   ArrowUp,
@@ -27,6 +17,16 @@ import {
   Unlock,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Slider } from "@/components/ui/slider";
+import { cn } from "@/lib/utils";
 import { FallbackImage } from "../../../shared/components/fallback-image";
 import type { PrintArea } from "../../types";
 import { useImprinter } from "../hooks/use-imprinter";
@@ -89,8 +89,8 @@ export function RightPanel({ className }: RightPanelProps) {
 
   return (
     <div
-      ref={panelRef}
       className={cn("bg-background relative flex h-full flex-col border-l", className)}
+      ref={panelRef}
       style={{ width }}
     >
       <div
@@ -105,11 +105,11 @@ export function RightPanel({ className }: RightPanelProps) {
 
       <ScrollArea className="h-0 flex-1">
         <div className="space-y-1 p-2">
-          <PrintAreaSection open={printAreaOpen} onOpenChange={setPrintAreaOpen} />
+          <PrintAreaSection onOpenChange={setPrintAreaOpen} open={printAreaOpen} />
           <Separator className="my-2" />
-          <AppliedDesignsSection open={designsOpen} onOpenChange={setDesignsOpen} />
+          <AppliedDesignsSection onOpenChange={setDesignsOpen} open={designsOpen} />
           <Separator className="my-2" />
-          <TransformSection open={transformOpen} onOpenChange={setTransformOpen} />
+          <TransformSection onOpenChange={setTransformOpen} open={transformOpen} />
         </div>
       </ScrollArea>
     </div>
@@ -145,7 +145,7 @@ function PrintAreaSection({ open, onOpenChange }: PrintAreaSectionProps) {
     useImprinter();
 
   return (
-    <Collapsible open={open} onOpenChange={onOpenChange}>
+    <Collapsible onOpenChange={onOpenChange} open={open}>
       <CollapsibleTrigger className="hover:bg-accent flex w-full items-center justify-between rounded-md p-2">
         <div className="flex items-center gap-2">
           <MapPin className="h-4 w-4" />
@@ -160,7 +160,7 @@ function PrintAreaSection({ open, onOpenChange }: PrintAreaSectionProps) {
           <>
             <div className="space-y-2">
               <Label className="text-xs">Active Area</Label>
-              <Select value={activePrintArea} onValueChange={(v) => setActivePrintArea(v as PrintArea)}>
+              <Select onValueChange={(v) => setActivePrintArea(v as PrintArea)} value={activePrintArea}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -177,18 +177,18 @@ function PrintAreaSection({ open, onOpenChange }: PrintAreaSectionProps) {
               <Label className="text-xs">Placement Mode</Label>
               <div className="flex gap-1">
                 <Button
-                  variant={placementMode === "zone" ? "default" : "outline"}
-                  size="sm"
                   className="h-7 flex-1 text-xs"
                   onClick={() => setPlacementMode("zone")}
+                  size="sm"
+                  variant={placementMode === "zone" ? "default" : "outline"}
                 >
                   Zone
                 </Button>
                 <Button
-                  variant={placementMode === "free" ? "default" : "outline"}
-                  size="sm"
                   className="h-7 flex-1 text-xs"
                   onClick={() => setPlacementMode("free")}
+                  size="sm"
+                  variant={placementMode === "free" ? "default" : "outline"}
                 >
                   Free
                 </Button>
@@ -260,7 +260,7 @@ function AppliedDesignsSection({ open, onOpenChange }: AppliedDesignsSectionProp
   };
 
   return (
-    <Collapsible open={open} onOpenChange={onOpenChange}>
+    <Collapsible onOpenChange={onOpenChange} open={open}>
       <CollapsibleTrigger className="hover:bg-accent flex w-full items-center justify-between rounded-md p-2">
         <div className="flex items-center gap-2">
           <Layers className="h-4 w-4" />
@@ -277,12 +277,12 @@ function AppliedDesignsSection({ open, onOpenChange }: AppliedDesignsSectionProp
         ) : (
           [...appliedDesigns].reverse().map((design, _idx) => (
             <div
-              key={design.id}
               className={cn(
                 "hover:bg-accent group rounded-md border p-1.5 text-sm transition-colors",
                 selectedDesignId === design.id && "bg-accent border-primary",
                 !design.visible && "opacity-50",
               )}
+              key={design.id}
             >
               <div className="flex items-center gap-1.5">
                 <button
@@ -291,23 +291,23 @@ function AppliedDesignsSection({ open, onOpenChange }: AppliedDesignsSectionProp
                 >
                   {design.designData.coverId && (
                     <FallbackImage
+                      alt=""
+                      className="h-7 w-7 shrink-0 rounded border object-cover"
+                      showBadge={false}
                       src={
                         design.designData.coverId.startsWith("blob:") || design.designData.coverId.startsWith("data:")
                           ? design.designData.coverId
                           : `/assets/${design.designData.coverId}/view`
                       }
-                      alt=""
-                      className="h-7 w-7 shrink-0 rounded border object-cover"
-                      showBadge={false}
                     />
                   )}
                   <div className="flex min-w-0 flex-1 flex-col items-start">
                     {editingDesignId === design.id ? (
                       <Input
                         autoFocus
-                        value={editingName}
-                        onChange={(e) => setEditingName(e.target.value)}
+                        className="h-6 text-xs"
                         onBlur={() => commitRenaming(design.id, design.name || design.designData.name)}
+                        onChange={(e) => setEditingName(e.target.value)}
                         onClick={(e) => e.stopPropagation()}
                         onKeyDown={(e) => {
                           e.stopPropagation();
@@ -318,7 +318,7 @@ function AppliedDesignsSection({ open, onOpenChange }: AppliedDesignsSectionProp
                             cancelRenaming();
                           }
                         }}
-                        className="h-6 text-xs"
+                        value={editingName}
                       />
                     ) : (
                       <span
@@ -332,63 +332,63 @@ function AppliedDesignsSection({ open, onOpenChange }: AppliedDesignsSectionProp
                         {design.name || design.designData.name}
                       </span>
                     )}
-                    <Badge variant="secondary" className="h-4 px-1 text-[10px]">
+                    <Badge className="h-4 px-1 text-[10px]" variant="secondary">
                       {getPrintAreaName(design.printArea)}
                     </Badge>
                   </div>
                 </button>
                 <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
                   <Button
-                    variant="ghost"
-                    size="icon"
                     className="h-5 w-5"
                     onClick={() => toggleDesignVisibility(design.id)}
+                    size="icon"
                     title={design.visible ? "Hide" : "Show"}
+                    variant="ghost"
                   >
                     {design.visible ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
                   </Button>
                   <Button
-                    variant="ghost"
-                    size="icon"
                     className="h-5 w-5"
                     onClick={() => toggleDesignLock(design.id)}
+                    size="icon"
                     title={design.locked ? "Unlock" : "Lock"}
+                    variant="ghost"
                   >
                     {design.locked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
                   </Button>
                   <Button
-                    variant="ghost"
-                    size="icon"
                     className="h-5 w-5"
                     onClick={() => moveDesignUp(design.id)}
+                    size="icon"
                     title="Move up"
+                    variant="ghost"
                   >
                     <ArrowUp className="h-3 w-3" />
                   </Button>
                   <Button
-                    variant="ghost"
-                    size="icon"
                     className="h-5 w-5"
                     onClick={() => moveDesignDown(design.id)}
+                    size="icon"
                     title="Move down"
+                    variant="ghost"
                   >
                     <ArrowDown className="h-3 w-3" />
                   </Button>
                   <Button
-                    variant="ghost"
-                    size="icon"
                     className="h-5 w-5"
                     onClick={() => duplicateDesign(design.id)}
+                    size="icon"
                     title="Duplicate"
+                    variant="ghost"
                   >
                     <Copy className="h-3 w-3" />
                   </Button>
                   <Button
-                    variant="ghost"
-                    size="icon"
                     className="h-5 w-5"
                     onClick={() => removeDesign(design.id)}
+                    size="icon"
                     title="Delete"
+                    variant="ghost"
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
@@ -425,7 +425,7 @@ function TransformSection({ open, onOpenChange }: TransformSectionProps) {
 
   if (!selectedDesign) {
     return (
-      <Collapsible open={open} onOpenChange={onOpenChange}>
+      <Collapsible onOpenChange={onOpenChange} open={open}>
         <CollapsibleTrigger className="hover:bg-accent flex w-full items-center justify-between rounded-md p-2">
           <div className="flex items-center gap-2">
             <RotateCcw className="h-4 w-4" />
@@ -443,7 +443,7 @@ function TransformSection({ open, onOpenChange }: TransformSectionProps) {
   const isLocked = selectedDesign.locked;
 
   return (
-    <Collapsible open={open} onOpenChange={onOpenChange}>
+    <Collapsible onOpenChange={onOpenChange} open={open}>
       <CollapsibleTrigger className="hover:bg-accent flex w-full items-center justify-between rounded-md p-2">
         <div className="flex items-center gap-2">
           <RotateCcw className="h-4 w-4" />
@@ -456,9 +456,9 @@ function TransformSection({ open, onOpenChange }: TransformSectionProps) {
         <div className="space-y-2">
           <Label className="text-xs">Print Area</Label>
           <Select
-            value={selectedDesign.printArea}
-            onValueChange={(v) => updateDesignPrintArea(selectedDesign.id, v as PrintArea)}
             disabled={isLocked}
+            onValueChange={(v) => updateDesignPrintArea(selectedDesign.id, v as PrintArea)}
+            value={selectedDesign.printArea}
           >
             <SelectTrigger className="h-8">
               <SelectValue />
@@ -479,16 +479,16 @@ function TransformSection({ open, onOpenChange }: TransformSectionProps) {
             <span className="text-muted-foreground text-[10px]">{selectedDesign.transform.position[0].toFixed(2)}</span>
           </div>
           <Slider
-            value={[selectedDesign.transform.position[0]]}
+            disabled={isLocked}
+            max={1}
+            min={-1}
             onValueChange={([x]) =>
               updateDesignTransform(selectedDesign.id, {
                 position: [x, selectedDesign.transform.position[1], selectedDesign.transform.position[2]],
               })
             }
-            min={-1}
-            max={1}
             step={0.01}
-            disabled={isLocked}
+            value={[selectedDesign.transform.position[0]]}
           />
         </div>
 
@@ -498,16 +498,16 @@ function TransformSection({ open, onOpenChange }: TransformSectionProps) {
             <span className="text-muted-foreground text-[10px]">{selectedDesign.transform.position[1].toFixed(2)}</span>
           </div>
           <Slider
-            value={[selectedDesign.transform.position[1]]}
+            disabled={isLocked}
+            max={1}
+            min={-1}
             onValueChange={([y]) =>
               updateDesignTransform(selectedDesign.id, {
                 position: [selectedDesign.transform.position[0], y, selectedDesign.transform.position[2]],
               })
             }
-            min={-1}
-            max={1}
             step={0.01}
-            disabled={isLocked}
+            value={[selectedDesign.transform.position[1]]}
           />
         </div>
 
@@ -517,16 +517,16 @@ function TransformSection({ open, onOpenChange }: TransformSectionProps) {
             <span className="text-muted-foreground text-[10px]">{selectedDesign.transform.scale[0].toFixed(1)}x</span>
           </div>
           <Slider
-            value={[selectedDesign.transform.scale[0]]}
+            disabled={isLocked}
+            max={3}
+            min={0.1}
             onValueChange={([s]) =>
               updateDesignTransform(selectedDesign.id, {
                 scale: [s, s, s],
               })
             }
-            min={0.1}
-            max={3}
             step={0.1}
-            disabled={isLocked}
+            value={[selectedDesign.transform.scale[0]]}
           />
         </div>
 
@@ -538,16 +538,16 @@ function TransformSection({ open, onOpenChange }: TransformSectionProps) {
             </span>
           </div>
           <Slider
-            value={[selectedDesign.transform.rotation[2]]}
+            disabled={isLocked}
+            max={360}
+            min={0}
             onValueChange={([r]) =>
               updateDesignTransform(selectedDesign.id, {
                 rotation: [0, 0, r],
               })
             }
-            min={0}
-            max={360}
             step={1}
-            disabled={isLocked}
+            value={[selectedDesign.transform.rotation[2]]}
           />
         </div>
 
@@ -557,20 +557,18 @@ function TransformSection({ open, onOpenChange }: TransformSectionProps) {
             <span className="text-muted-foreground text-[10px]">{Math.round(selectedDesign.opacity * 100)}%</span>
           </div>
           <Slider
-            value={[selectedDesign.opacity * 100]}
+            disabled={isLocked}
+            max={100}
+            min={0}
             onValueChange={([o]) => {
               updateDesignOpacity(selectedDesign.id, o / 100);
             }}
-            min={0}
-            max={100}
             step={1}
-            disabled={isLocked}
+            value={[selectedDesign.opacity * 100]}
           />
         </div>
 
         <Button
-          variant="outline"
-          size="sm"
           className="w-full text-xs"
           disabled={isLocked}
           onClick={() =>
@@ -580,6 +578,8 @@ function TransformSection({ open, onOpenChange }: TransformSectionProps) {
               scale: [1, 1, 1],
             })
           }
+          size="sm"
+          variant="outline"
         >
           <RotateCcw className="mr-1.5 h-3 w-3" />
           Reset Transform

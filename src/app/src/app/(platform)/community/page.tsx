@@ -1,5 +1,9 @@
 ﻿"use client";
 
+import { BookmarkIcon, PlusIcon, TrendingUpIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/providers/auth";
@@ -7,16 +11,12 @@ import { useServer } from "@/lib/providers/server";
 import {
   BookmarkedPostResponse,
   CommunityStatsResponse,
-  PostSummaryResponse,
   PostStatus,
+  PostSummaryResponse,
   ReactionType,
   ReportReason,
   ReportType,
 } from "@/lib/server/community";
-import { BookmarkIcon, PlusIcon, TrendingUpIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
 import {
   CreatePostDialog,
   EmptyState,
@@ -259,7 +259,7 @@ export default function CommunityPage() {
       <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
         {/* Main content */}
         <div className="space-y-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <Tabs onValueChange={setActiveTab} value={activeTab}>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <TabsList>
                 <TabsTrigger value="feed">Feed</TabsTrigger>
@@ -273,103 +273,103 @@ export default function CommunityPage() {
               </TabsList>
 
               <div className="w-full sm:w-64">
-                {activeTab === "feed" && <SearchBar placeholder="Search posts..." onSearch={handleSearch} />}
+                {activeTab === "feed" && <SearchBar onSearch={handleSearch} placeholder="Search posts..." />}
               </div>
             </div>
 
-            <TabsContent value="feed" className="mt-6 space-y-6">
+            <TabsContent className="mt-6 space-y-6" value="feed">
               <PostGrid
-                posts={posts}
-                loading={loading}
                 currentUserId={claims?.id}
-                onReact={handleReact}
-                onBookmark={handleBookmark}
-                onComment={handleComment}
-                onShare={handleShare}
-                onArchive={handleArchive}
-                onReport={handleReport}
-                onTagClick={handleTagClick}
-                emptyTitle={searchTerm ? "No posts found" : "No posts yet"}
-                emptyDescription={searchTerm ? "Try a different search term" : undefined}
                 emptyActionLabel={searchTerm ? undefined : "Create your first post"}
-                onEmptyAction={searchTerm ? undefined : () => setCreateDialogOpen(true)}
-              />
-              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-            </TabsContent>
-
-            <TabsContent value="trending" className="mt-6 space-y-6">
-              <PostGrid
-                posts={trendingPosts}
+                emptyDescription={searchTerm ? "Try a different search term" : undefined}
+                emptyTitle={searchTerm ? "No posts found" : "No posts yet"}
                 loading={loading}
-                currentUserId={claims?.id}
-                onReact={handleReact}
-                onBookmark={handleBookmark}
-                onComment={handleComment}
-                onShare={handleShare}
-                onReport={handleReport}
-                onTagClick={handleTagClick}
-                emptyTitle="No trending posts"
-                emptyDescription="Check back later for trending content"
-              />
-              <Pagination page={trendingPage} totalPages={trendingTotalPages} onPageChange={setTrendingPage} />
-            </TabsContent>
-
-            <TabsContent value="explore" className="mt-6 space-y-6">
-              <PostGrid
-                posts={explorePosts}
-                loading={loading}
-                currentUserId={claims?.id}
-                onReact={handleReact}
-                onBookmark={handleBookmark}
-                onComment={handleComment}
-                onShare={handleShare}
-                onReport={handleReport}
-                onTagClick={handleTagClick}
-                emptyTitle="Nothing to explore"
-                emptyDescription="Follow more people to see content here"
-              />
-              <Pagination page={explorePage} totalPages={exploreTotalPages} onPageChange={setExplorePage} />
-            </TabsContent>
-
-            <TabsContent value="my-posts" className="mt-6">
-              <PostGrid
-                posts={myPosts}
-                currentUserId={claims?.id}
-                onReact={handleReact}
-                onBookmark={handleBookmark}
-                onComment={handleComment}
-                onShare={handleShare}
-                onDelete={handleDelete}
                 onArchive={handleArchive}
+                onBookmark={handleBookmark}
+                onComment={handleComment}
+                onEmptyAction={searchTerm ? undefined : () => setCreateDialogOpen(true)}
+                onReact={handleReact}
                 onReport={handleReport}
+                onShare={handleShare}
                 onTagClick={handleTagClick}
-                emptyTitle="No posts yet"
+                posts={posts}
+              />
+              <Pagination onPageChange={setPage} page={page} totalPages={totalPages} />
+            </TabsContent>
+
+            <TabsContent className="mt-6 space-y-6" value="trending">
+              <PostGrid
+                currentUserId={claims?.id}
+                emptyDescription="Check back later for trending content"
+                emptyTitle="No trending posts"
+                loading={loading}
+                onBookmark={handleBookmark}
+                onComment={handleComment}
+                onReact={handleReact}
+                onReport={handleReport}
+                onShare={handleShare}
+                onTagClick={handleTagClick}
+                posts={trendingPosts}
+              />
+              <Pagination onPageChange={setTrendingPage} page={trendingPage} totalPages={trendingTotalPages} />
+            </TabsContent>
+
+            <TabsContent className="mt-6 space-y-6" value="explore">
+              <PostGrid
+                currentUserId={claims?.id}
+                emptyDescription="Follow more people to see content here"
+                emptyTitle="Nothing to explore"
+                loading={loading}
+                onBookmark={handleBookmark}
+                onComment={handleComment}
+                onReact={handleReact}
+                onReport={handleReport}
+                onShare={handleShare}
+                onTagClick={handleTagClick}
+                posts={explorePosts}
+              />
+              <Pagination onPageChange={setExplorePage} page={explorePage} totalPages={exploreTotalPages} />
+            </TabsContent>
+
+            <TabsContent className="mt-6" value="my-posts">
+              <PostGrid
+                currentUserId={claims?.id}
                 emptyActionLabel="Create your first post"
+                emptyTitle="No posts yet"
+                onArchive={handleArchive}
+                onBookmark={handleBookmark}
+                onComment={handleComment}
+                onDelete={handleDelete}
                 onEmptyAction={() => setCreateDialogOpen(true)}
+                onReact={handleReact}
+                onReport={handleReport}
+                onShare={handleShare}
+                onTagClick={handleTagClick}
+                posts={myPosts}
               />
             </TabsContent>
 
-            <TabsContent value="bookmarks" className="mt-6">
+            <TabsContent className="mt-6" value="bookmarks">
               {bookmarks.length === 0 ? (
                 <EmptyState
+                  description="Save posts you like to view them later"
                   icon={BookmarkIcon}
                   title="No bookmarks yet"
-                  description="Save posts you like to view them later"
                 />
               ) : (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {bookmarks.map((bookmark) => (
                     <PostCard
+                      isOwner={claims?.id === bookmark.post.authorId}
                       key={bookmark.id}
-                      post={bookmark.post}
-                      onReact={handleReact}
+                      onArchive={handleArchive}
                       onBookmark={handleBookmark}
                       onComment={handleComment}
-                      onShare={handleShare}
-                      onArchive={handleArchive}
+                      onReact={handleReact}
                       onReport={handleReport}
+                      onShare={handleShare}
                       onTagClick={handleTagClick}
-                      isOwner={claims?.id === bookmark.post.authorId}
+                      post={bookmark.post}
                     />
                   ))}
                 </div>
@@ -380,27 +380,27 @@ export default function CommunityPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <StatsCard stats={stats} loading={statsLoading} />
+          <StatsCard loading={statsLoading} stats={stats} />
         </div>
       </div>
 
       {/* Dialogs */}
       <CreatePostDialog
-        open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         onPostCreated={() => {
           loadPosts();
           loadMyPosts();
           loadStats();
         }}
+        open={createDialogOpen}
       />
 
       <PostDetailDialog
-        postId={selectedPostId}
-        open={postDetailOpen}
         onOpenChange={setPostDetailOpen}
         onPostUpdated={handlePostUpdated}
         onTagClick={handleTagClick}
+        open={postDetailOpen}
+        postId={selectedPostId}
       />
     </div>
   );

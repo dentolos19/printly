@@ -1,11 +1,11 @@
 "use client";
 
+import { Magnet, Redo2, RotateCcw, Undo2, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Magnet, Redo2, RotateCcw, Undo2, ZoomIn, ZoomOut } from "lucide-react";
 import { useDesigner } from "./hooks";
 
 type StatusBarProps = {
@@ -43,7 +43,7 @@ export function StatusBar({ className }: StatusBarProps) {
         <span>
           Doc: {canvasSize.width} x {canvasSize.height} px
         </span>
-        <Separator orientation={"vertical"} className={"h-4"} />
+        <Separator className={"h-4"} orientation={"vertical"} />
         <span>RGB/8</span>
       </div>
 
@@ -52,12 +52,12 @@ export function StatusBar({ className }: StatusBarProps) {
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
+              className={"h-6 w-6"}
+              disabled={zoom <= 0.1}
+              onClick={handleZoomOut}
+              size={"icon"}
               type={"button"}
               variant={"ghost"}
-              size={"icon"}
-              className={"h-6 w-6"}
-              onClick={handleZoomOut}
-              disabled={zoom <= 0.1}
             >
               <ZoomOut className={"h-3.5 w-3.5"} />
             </Button>
@@ -66,7 +66,7 @@ export function StatusBar({ className }: StatusBarProps) {
         </Tooltip>
 
         <div className={"flex w-24 items-center gap-2"}>
-          <Slider value={[zoom]} onValueChange={handleZoomSlider} min={0.1} max={3} step={0.05} className={"flex-1"} />
+          <Slider className={"flex-1"} max={3} min={0.1} onValueChange={handleZoomSlider} step={0.05} value={[zoom]} />
         </div>
 
         <span className={"text-muted-foreground w-12 text-center text-xs"}>{Math.round(zoom * 100)}%</span>
@@ -74,12 +74,12 @@ export function StatusBar({ className }: StatusBarProps) {
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
+              className={"h-6 w-6"}
+              disabled={zoom >= 3}
+              onClick={handleZoomIn}
+              size={"icon"}
               type={"button"}
               variant={"ghost"}
-              size={"icon"}
-              className={"h-6 w-6"}
-              onClick={handleZoomIn}
-              disabled={zoom >= 3}
             >
               <ZoomIn className={"h-3.5 w-3.5"} />
             </Button>
@@ -93,11 +93,11 @@ export function StatusBar({ className }: StatusBarProps) {
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              type={"button"}
-              variant={snappingEnabled ? "secondary" : "ghost"}
-              size={"sm"}
               className={"h-6 gap-1.5 px-2"}
               onClick={() => setSnappingEnabled(!snappingEnabled)}
+              size={"sm"}
+              type={"button"}
+              variant={snappingEnabled ? "secondary" : "ghost"}
             >
               <Magnet className={"h-3.5 w-3.5"} />
               Snap
@@ -106,17 +106,17 @@ export function StatusBar({ className }: StatusBarProps) {
           <TooltipContent>Snap to canvas and nearby elements</TooltipContent>
         </Tooltip>
 
-        <Separator orientation={"vertical"} className={"mx-1 h-4"} />
+        <Separator className={"mx-1 h-4"} orientation={"vertical"} />
 
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
+              className={"h-6 w-6"}
+              disabled={!canUndo}
+              onClick={undo}
+              size={"icon"}
               type={"button"}
               variant={"ghost"}
-              size={"icon"}
-              className={"h-6 w-6"}
-              onClick={undo}
-              disabled={!canUndo}
             >
               <Undo2 className={"h-3.5 w-3.5"} />
             </Button>
@@ -127,12 +127,12 @@ export function StatusBar({ className }: StatusBarProps) {
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
+              className={"h-6 w-6"}
+              disabled={!canRedo}
+              onClick={redo}
+              size={"icon"}
               type={"button"}
               variant={"ghost"}
-              size={"icon"}
-              className={"h-6 w-6"}
-              onClick={redo}
-              disabled={!canRedo}
             >
               <Redo2 className={"h-3.5 w-3.5"} />
             </Button>
@@ -140,11 +140,11 @@ export function StatusBar({ className }: StatusBarProps) {
           <TooltipContent>Redo (Ctrl+Y)</TooltipContent>
         </Tooltip>
 
-        <Separator orientation={"vertical"} className={"mx-1 h-4"} />
+        <Separator className={"mx-1 h-4"} orientation={"vertical"} />
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button type={"button"} variant={"ghost"} size={"icon"} className={"h-6 w-6"} onClick={handleFitToScreen}>
+            <Button className={"h-6 w-6"} onClick={handleFitToScreen} size={"icon"} type={"button"} variant={"ghost"}>
               <RotateCcw className={"h-3.5 w-3.5"} />
             </Button>
           </TooltipTrigger>

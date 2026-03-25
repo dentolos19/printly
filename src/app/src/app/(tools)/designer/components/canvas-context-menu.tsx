@@ -1,17 +1,6 @@
 "use client";
 
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuShortcut,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu";
-import {
   AlignCenter,
   AlignHorizontalDistributeCenter,
   AlignLeft,
@@ -29,6 +18,17 @@ import {
   Ungroup,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuShortcut,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { useDesigner } from "./hooks";
 
 type CanvasContextMenuProps = {
@@ -62,12 +62,12 @@ export function CanvasContextMenu({ children }: CanvasContextMenuProps) {
     <ContextMenu>
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
       <ContextMenuContent className={"w-56"}>
-        <ContextMenuItem onClick={cutSelected} disabled={!hasSelection}>
+        <ContextMenuItem disabled={!hasSelection} onClick={cutSelected}>
           <Scissors className={"mr-2 h-4 w-4"} />
           Cut
           <ContextMenuShortcut>⌘X</ContextMenuShortcut>
         </ContextMenuItem>
-        <ContextMenuItem onClick={copySelected} disabled={!hasSelection}>
+        <ContextMenuItem disabled={!hasSelection} onClick={copySelected}>
           <Copy className={"mr-2 h-4 w-4"} />
           Copy
           <ContextMenuShortcut>⌘C</ContextMenuShortcut>
@@ -78,23 +78,23 @@ export function CanvasContextMenu({ children }: CanvasContextMenuProps) {
           <ContextMenuShortcut>⌘V</ContextMenuShortcut>
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem onClick={duplicateSelected} disabled={!hasSelection}>
+        <ContextMenuItem disabled={!hasSelection} onClick={duplicateSelected}>
           <Copy className={"mr-2 h-4 w-4"} />
           Duplicate
           <ContextMenuShortcut>⌘D</ContextMenuShortcut>
         </ContextMenuItem>
-        <ContextMenuItem onClick={deleteSelected} disabled={!hasSelection}>
+        <ContextMenuItem disabled={!hasSelection} onClick={deleteSelected}>
           <Trash2 className={"mr-2 h-4 w-4"} />
           Delete
           <ContextMenuShortcut>⌫</ContextMenuShortcut>
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem onClick={groupSelected} disabled={!canGroup}>
+        <ContextMenuItem disabled={!canGroup} onClick={groupSelected}>
           <Group className={"mr-2 h-4 w-4"} />
           Group
           <ContextMenuShortcut>⌘G</ContextMenuShortcut>
         </ContextMenuItem>
-        <ContextMenuItem onClick={ungroupSelected} disabled={!canUngroup}>
+        <ContextMenuItem disabled={!canUngroup} onClick={ungroupSelected}>
           <Ungroup className={"mr-2 h-4 w-4"} />
           Ungroup
           <ContextMenuShortcut>⌘⇧G</ContextMenuShortcut>

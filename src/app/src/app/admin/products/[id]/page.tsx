@@ -1,5 +1,12 @@
 "use client";
 
+import { ArrowLeft, Box, Edit, ImageIcon, MapPin, Package, Plus, Trash2 } from "lucide-react";
+import dynamic from "next/dynamic";
+import Image from "next/image";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,13 +37,6 @@ import { useServer } from "@/lib/providers/server";
 import type { PrintAreaResponse } from "@/lib/server/print-area";
 import type { ProductResponse, ProductVariantResponse } from "@/lib/server/product";
 import { CommonColors, ProductSize, ProductSizeLabels } from "@/lib/server/product";
-import { ArrowLeft, Box, Edit, ImageIcon, MapPin, Package, Plus, Trash2 } from "lucide-react";
-import dynamic from "next/dynamic";
-import Image from "next/image";
-import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 
 const ModelPreview = dynamic(() => import("./model-preview"), { ssr: false });
 
@@ -595,7 +595,7 @@ export default function ProductDetailPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
+        <Button asChild size="icon" variant="ghost">
           <Link href="/admin/products">
             <ArrowLeft className="size-4" />
           </Link>
@@ -655,7 +655,7 @@ export default function ProductDetailPage() {
               <CardTitle className="text-base">Product Image</CardTitle>
               <CardDescription>Generic product image (can be overridden by variant image)</CardDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={() => setProductImageDialogOpen(true)}>
+            <Button onClick={() => setProductImageDialogOpen(true)} size="sm" variant="outline">
               <ImageIcon className="mr-2 size-4" />
               {product.imageUrl ? "Change" : "Upload"}
             </Button>
@@ -663,7 +663,7 @@ export default function ProductDetailPage() {
           <CardContent>
             <div className="bg-muted relative aspect-square w-full max-w-[200px] overflow-hidden rounded-lg border">
               {product.imageUrl ? (
-                <Image src={product.imageUrl} alt={product.name} fill className="object-cover" />
+                <Image alt={product.name} className="object-cover" fill src={product.imageUrl} />
               ) : (
                 <div className="text-muted-foreground flex h-full w-full flex-col items-center justify-center">
                   <ImageIcon className="mb-2 size-8" />
@@ -679,7 +679,7 @@ export default function ProductDetailPage() {
               <CardTitle className="text-base">3D Model</CardTitle>
               <CardDescription>GLB file for 3D product preview</CardDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={() => setProductModelDialogOpen(true)}>
+            <Button onClick={() => setProductModelDialogOpen(true)} size="sm" variant="outline">
               <Box className="mr-2 size-4" />
               {product.modelUrl ? "Change" : "Upload"}
             </Button>
@@ -687,7 +687,7 @@ export default function ProductDetailPage() {
           <CardContent>
             <div className="bg-muted relative aspect-square w-full max-w-[200px] overflow-hidden rounded-lg border">
               {product.modelPreviewUrl ? (
-                <Image src={product.modelPreviewUrl} alt={`${product.name} 3D preview`} fill className="object-cover" />
+                <Image alt={`${product.name} 3D preview`} className="object-cover" fill src={product.modelPreviewUrl} />
               ) : product.modelUrl ? (
                 <div className="flex h-full flex-col items-center justify-center text-center">
                   <Box className="text-primary mx-auto mb-2 size-12" />
@@ -717,11 +717,11 @@ export default function ProductDetailPage() {
           </div>
           <div className="flex gap-2">
             {printAreas.length === 0 && (
-              <Button variant="outline" size="sm" onClick={addDefaultPrintAreas} disabled={printAreaSubmitting}>
+              <Button disabled={printAreaSubmitting} onClick={addDefaultPrintAreas} size="sm" variant="outline">
                 Add Default Areas
               </Button>
             )}
-            <Button size="sm" onClick={() => setPrintAreaDialogOpen(true)}>
+            <Button onClick={() => setPrintAreaDialogOpen(true)} size="sm">
               <Plus className="mr-2 size-4" />
               Add Area
             </Button>
@@ -767,10 +767,10 @@ export default function ProductDetailPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openEditPrintArea(area)}>
+                        <Button onClick={() => openEditPrintArea(area)} size="icon" variant="ghost">
                           <Edit className="size-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => openDeletePrintArea(area)}>
+                        <Button onClick={() => openDeletePrintArea(area)} size="icon" variant="ghost">
                           <Trash2 className="size-4" />
                         </Button>
                       </div>
@@ -811,7 +811,7 @@ export default function ProductDetailPage() {
             <TableBody>
               {product.variants.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-muted-foreground h-24 text-center">
+                  <TableCell className="text-muted-foreground h-24 text-center" colSpan={7}>
                     <Package className="mx-auto mb-2 size-8 opacity-50" />
                     No variants yet. Add one to get started.
                   </TableCell>
@@ -829,10 +829,10 @@ export default function ProductDetailPage() {
                         {variant.imageUrl ? (
                           <div className="relative h-12 w-12 overflow-hidden rounded-md border">
                             <Image
-                              src={variant.imageUrl}
                               alt={`${product.name} - ${variant.color}`}
-                              fill
                               className="object-cover"
+                              fill
+                              src={variant.imageUrl}
                             />
                           </div>
                         ) : (
@@ -851,11 +851,11 @@ export default function ProductDetailPage() {
                         {isOutOfStock ? (
                           <Badge variant="destructive">Out of Stock</Badge>
                         ) : isLowStock ? (
-                          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                          <Badge className="bg-yellow-100 text-yellow-800" variant="secondary">
                             Low Stock
                           </Badge>
                         ) : (
-                          <Badge variant="default" className="bg-green-100 text-green-800">
+                          <Badge className="bg-green-100 text-green-800" variant="default">
                             In Stock
                           </Badge>
                         )}
@@ -863,35 +863,35 @@ export default function ProductDetailPage() {
                       <TableCell>
                         <div className="flex gap-1">
                           <Button
-                            variant="ghost"
-                            size="icon"
                             onClick={() => openImageDialog(variant)}
+                            size="icon"
                             title="Manage Image"
+                            variant="ghost"
                           >
                             <ImageIcon className="size-4" />
                           </Button>
                           <Button
-                            variant="ghost"
-                            size="icon"
                             onClick={() => openEditInventory(variant)}
+                            size="icon"
                             title="Edit Inventory"
+                            variant="ghost"
                           >
                             <Package className="size-4" />
                           </Button>
                           <Button
-                            variant="ghost"
-                            size="icon"
                             onClick={() => openEditVariant(variant)}
+                            size="icon"
                             title="Edit Variant"
+                            variant="ghost"
                           >
                             <Edit className="size-4" />
                           </Button>
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openDeleteVariant(variant)}
-                            title="Delete Variant"
                             className="text-destructive hover:text-destructive"
+                            onClick={() => openDeleteVariant(variant)}
+                            size="icon"
+                            title="Delete Variant"
+                            variant="ghost"
                           >
                             <Trash2 className="size-4" />
                           </Button>
@@ -907,7 +907,7 @@ export default function ProductDetailPage() {
       </Card>
 
       {/* Create Variant Dialog */}
-      <Dialog open={createVariantOpen} onOpenChange={setCreateVariantOpen}>
+      <Dialog onOpenChange={setCreateVariantOpen} open={createVariantOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Variant</DialogTitle>
@@ -916,7 +916,7 @@ export default function ProductDetailPage() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Size *</Label>
-              <Select value={formSize} onValueChange={setFormSize}>
+              <Select onValueChange={setFormSize} value={formSize}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select size" />
                 </SelectTrigger>
@@ -932,19 +932,19 @@ export default function ProductDetailPage() {
             <div className="space-y-2">
               <Label>Color *</Label>
               <Input
+                onChange={(e) => setFormColor(e.target.value)}
                 placeholder="Enter color (e.g., Red, Navy Blue, Forest Green)"
                 value={formColor}
-                onChange={(e) => setFormColor(e.target.value)}
               />
               <div className="flex flex-wrap gap-1 pt-1">
                 {CommonColors.slice(0, 8).map((color) => (
                   <Button
+                    className="h-6 px-2 text-xs"
                     key={color}
+                    onClick={() => setFormColor(color)}
+                    size="sm"
                     type="button"
                     variant="outline"
-                    size="sm"
-                    className="h-6 px-2 text-xs"
-                    onClick={() => setFormColor(color)}
                   >
                     {color}
                   </Button>
@@ -953,10 +953,10 @@ export default function ProductDetailPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateVariantOpen(false)}>
+            <Button onClick={() => setCreateVariantOpen(false)} variant="outline">
               Cancel
             </Button>
-            <Button onClick={handleCreateVariant} disabled={formSubmitting}>
+            <Button disabled={formSubmitting} onClick={handleCreateVariant}>
               {formSubmitting ? "Creating..." : "Create"}
             </Button>
           </DialogFooter>
@@ -964,7 +964,7 @@ export default function ProductDetailPage() {
       </Dialog>
 
       {/* Edit Variant Dialog */}
-      <Dialog open={editVariantOpen} onOpenChange={setEditVariantOpen}>
+      <Dialog onOpenChange={setEditVariantOpen} open={editVariantOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Variant</DialogTitle>
@@ -973,7 +973,7 @@ export default function ProductDetailPage() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Size *</Label>
-              <Select value={formSize} onValueChange={setFormSize}>
+              <Select onValueChange={setFormSize} value={formSize}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select size" />
                 </SelectTrigger>
@@ -989,19 +989,19 @@ export default function ProductDetailPage() {
             <div className="space-y-2">
               <Label>Color *</Label>
               <Input
+                onChange={(e) => setFormColor(e.target.value)}
                 placeholder="Enter color (e.g., Red, Navy Blue, Forest Green)"
                 value={formColor}
-                onChange={(e) => setFormColor(e.target.value)}
               />
               <div className="flex flex-wrap gap-1 pt-1">
                 {CommonColors.slice(0, 8).map((color) => (
                   <Button
+                    className="h-6 px-2 text-xs"
                     key={color}
+                    onClick={() => setFormColor(color)}
+                    size="sm"
                     type="button"
                     variant="outline"
-                    size="sm"
-                    className="h-6 px-2 text-xs"
-                    onClick={() => setFormColor(color)}
                   >
                     {color}
                   </Button>
@@ -1010,10 +1010,10 @@ export default function ProductDetailPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditVariantOpen(false)}>
+            <Button onClick={() => setEditVariantOpen(false)} variant="outline">
               Cancel
             </Button>
-            <Button onClick={handleEditVariant} disabled={formSubmitting}>
+            <Button disabled={formSubmitting} onClick={handleEditVariant}>
               {formSubmitting ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
@@ -1021,7 +1021,7 @@ export default function ProductDetailPage() {
       </Dialog>
 
       {/* Delete Variant Dialog */}
-      <AlertDialog open={deleteVariantOpen} onOpenChange={setDeleteVariantOpen}>
+      <AlertDialog onOpenChange={setDeleteVariantOpen} open={deleteVariantOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Variant</AlertDialogTitle>
@@ -1033,8 +1033,8 @@ export default function ProductDetailPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteVariant}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDeleteVariant}
             >
               {formSubmitting ? "Deleting..." : "Delete"}
             </AlertDialogAction>
@@ -1043,7 +1043,7 @@ export default function ProductDetailPage() {
       </AlertDialog>
 
       {/* Edit Inventory Dialog */}
-      <Dialog open={editInventoryOpen} onOpenChange={setEditInventoryOpen}>
+      <Dialog onOpenChange={setEditInventoryOpen} open={editInventoryOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Update Inventory</DialogTitle>
@@ -1054,31 +1054,31 @@ export default function ProductDetailPage() {
               <Label htmlFor="quantity">Quantity</Label>
               <Input
                 id="quantity"
-                type="number"
                 min="0"
-                placeholder="0"
-                value={formQuantity}
                 onChange={(e) => setFormQuantity(e.target.value)}
+                placeholder="0"
+                type="number"
+                value={formQuantity}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="reorderLevel">Reorder Level</Label>
               <Input
                 id="reorderLevel"
-                type="number"
                 min="0"
-                placeholder="10"
-                value={formReorderLevel}
                 onChange={(e) => setFormReorderLevel(e.target.value)}
+                placeholder="10"
+                type="number"
+                value={formReorderLevel}
               />
               <p className="text-muted-foreground text-xs">You&apos;ll be alerted when stock falls below this level</p>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditInventoryOpen(false)}>
+            <Button onClick={() => setEditInventoryOpen(false)} variant="outline">
               Cancel
             </Button>
-            <Button onClick={handleUpdateInventory} disabled={formSubmitting}>
+            <Button disabled={formSubmitting} onClick={handleUpdateInventory}>
               {formSubmitting ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
@@ -1086,7 +1086,7 @@ export default function ProductDetailPage() {
       </Dialog>
 
       {/* Image Upload Dialog */}
-      <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
+      <Dialog onOpenChange={setImageDialogOpen} open={imageDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Variant Image</DialogTitle>
@@ -1102,14 +1102,14 @@ export default function ProductDetailPage() {
               <div className="space-y-2">
                 <Label>Current Image</Label>
                 <div className="relative aspect-square w-full overflow-hidden rounded-lg border">
-                  <Image src={selectedVariant.imageUrl} alt="Current variant image" fill className="object-cover" />
+                  <Image alt="Current variant image" className="object-cover" fill src={selectedVariant.imageUrl} />
                 </div>
                 <Button
-                  variant="destructive"
-                  size="sm"
                   className="w-full"
-                  onClick={handleRemoveImage}
                   disabled={uploadingImage}
+                  onClick={handleRemoveImage}
+                  size="sm"
+                  variant="destructive"
                 >
                   {uploadingImage ? "Removing..." : "Remove Image"}
                 </Button>
@@ -1121,7 +1121,7 @@ export default function ProductDetailPage() {
               <div className="space-y-2">
                 <Label>Preview</Label>
                 <div className="relative aspect-square w-full overflow-hidden rounded-lg border">
-                  <Image src={imagePreview} alt="Preview" fill className="object-cover" />
+                  <Image alt="Preview" className="object-cover" fill src={imagePreview} />
                 </div>
               </div>
             )}
@@ -1130,24 +1130,24 @@ export default function ProductDetailPage() {
             <div className="space-y-2">
               <Label>{selectedVariant?.imageUrl ? "Replace Image" : "Upload Image"}</Label>
               <input
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={handleImageSelect}
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                onChange={handleImageSelect}
-                className="hidden"
               />
               <div className="flex gap-2">
                 <Button
-                  variant="outline"
                   className="flex-1"
-                  onClick={() => fileInputRef.current?.click()}
                   disabled={uploadingImage}
+                  onClick={() => fileInputRef.current?.click()}
+                  variant="outline"
                 >
                   <ImageIcon className="mr-2 size-4" />
                   Choose File
                 </Button>
                 {selectedImage && (
-                  <Button onClick={handleImageUpload} disabled={uploadingImage}>
+                  <Button disabled={uploadingImage} onClick={handleImageUpload}>
                     {uploadingImage ? "Uploading..." : "Upload"}
                   </Button>
                 )}
@@ -1157,7 +1157,7 @@ export default function ProductDetailPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setImageDialogOpen(false)}>
+            <Button onClick={() => setImageDialogOpen(false)} variant="outline">
               Close
             </Button>
           </DialogFooter>
@@ -1165,7 +1165,7 @@ export default function ProductDetailPage() {
       </Dialog>
 
       {/* Product Image Upload Dialog */}
-      <Dialog open={productImageDialogOpen} onOpenChange={setProductImageDialogOpen}>
+      <Dialog onOpenChange={setProductImageDialogOpen} open={productImageDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Product Image</DialogTitle>
@@ -1179,14 +1179,14 @@ export default function ProductDetailPage() {
               <div className="space-y-2">
                 <Label>Current Image</Label>
                 <div className="relative aspect-square w-full overflow-hidden rounded-lg border">
-                  <Image src={product.imageUrl} alt="Current product image" fill className="object-cover" />
+                  <Image alt="Current product image" className="object-cover" fill src={product.imageUrl} />
                 </div>
                 <Button
-                  variant="destructive"
-                  size="sm"
                   className="w-full"
-                  onClick={handleRemoveProductImage}
                   disabled={uploadingProductMedia}
+                  onClick={handleRemoveProductImage}
+                  size="sm"
+                  variant="destructive"
                 >
                   {uploadingProductMedia ? "Removing..." : "Remove Image"}
                 </Button>
@@ -1198,7 +1198,7 @@ export default function ProductDetailPage() {
               <div className="space-y-2">
                 <Label>Preview</Label>
                 <div className="relative aspect-square w-full overflow-hidden rounded-lg border">
-                  <Image src={productImagePreview} alt="Preview" fill className="object-cover" />
+                  <Image alt="Preview" className="object-cover" fill src={productImagePreview} />
                 </div>
               </div>
             )}
@@ -1207,24 +1207,24 @@ export default function ProductDetailPage() {
             <div className="space-y-2">
               <Label>{product?.imageUrl ? "Replace Image" : "Upload Image"}</Label>
               <input
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={handleProductImageSelect}
                 ref={productImageInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                onChange={handleProductImageSelect}
-                className="hidden"
               />
               <div className="flex gap-2">
                 <Button
-                  variant="outline"
                   className="flex-1"
-                  onClick={() => productImageInputRef.current?.click()}
                   disabled={uploadingProductMedia}
+                  onClick={() => productImageInputRef.current?.click()}
+                  variant="outline"
                 >
                   <ImageIcon className="mr-2 size-4" />
                   Choose File
                 </Button>
                 {selectedProductImage && (
-                  <Button onClick={handleProductImageUpload} disabled={uploadingProductMedia}>
+                  <Button disabled={uploadingProductMedia} onClick={handleProductImageUpload}>
                     {uploadingProductMedia ? "Uploading..." : "Upload"}
                   </Button>
                 )}
@@ -1236,7 +1236,7 @@ export default function ProductDetailPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setProductImageDialogOpen(false)}>
+            <Button onClick={() => setProductImageDialogOpen(false)} variant="outline">
               Close
             </Button>
           </DialogFooter>
@@ -1244,7 +1244,7 @@ export default function ProductDetailPage() {
       </Dialog>
 
       {/* Product 3D Model Upload Dialog */}
-      <Dialog open={productModelDialogOpen} onOpenChange={setProductModelDialogOpen}>
+      <Dialog onOpenChange={setProductModelDialogOpen} open={productModelDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>3D Model</DialogTitle>
@@ -1257,7 +1257,7 @@ export default function ProductDetailPage() {
                 <Label>Current 3D Model</Label>
                 <div className="bg-muted relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg border">
                   {product.modelPreviewUrl ? (
-                    <Image src={product.modelPreviewUrl} alt="Current model preview" fill className="object-cover" />
+                    <Image alt="Current model preview" className="object-cover" fill src={product.modelPreviewUrl} />
                   ) : (
                     <div className="text-center">
                       <Box className="text-primary mx-auto mb-2 size-12" />
@@ -1266,11 +1266,11 @@ export default function ProductDetailPage() {
                   )}
                 </div>
                 <Button
-                  variant="destructive"
-                  size="sm"
                   className="w-full"
-                  onClick={handleRemoveProductModel}
                   disabled={uploadingProductMedia}
+                  onClick={handleRemoveProductModel}
+                  size="sm"
+                  variant="destructive"
                 >
                   {uploadingProductMedia ? "Removing..." : "Remove 3D Model"}
                 </Button>
@@ -1283,17 +1283,17 @@ export default function ProductDetailPage() {
                 <Label>3D Preview</Label>
                 <ModelPreview
                   file={selectedProductModel}
+                  onError={(msg) => toast.error(msg)}
                   onScreenshotReady={(file) => {
                     setModelPreviewScreenshot(file);
                     setModelPreviewImageUrl(URL.createObjectURL(file));
                   }}
-                  onError={(msg) => toast.error(msg)}
                 />
                 {modelPreviewImageUrl && (
                   <div className="space-y-1">
                     <Label className="text-muted-foreground text-xs">Auto-captured preview</Label>
                     <div className="relative aspect-video w-full overflow-hidden rounded-md border">
-                      <Image src={modelPreviewImageUrl} alt="Model screenshot" fill className="object-contain" />
+                      <Image alt="Model screenshot" className="object-contain" fill src={modelPreviewImageUrl} />
                     </div>
                   </div>
                 )}
@@ -1304,26 +1304,26 @@ export default function ProductDetailPage() {
             <div className="space-y-2">
               <Label>{product?.modelUrl ? "Replace 3D Model" : "Upload 3D Model"}</Label>
               <input
+                accept=".glb"
+                className="hidden"
+                onChange={handleProductModelSelect}
                 ref={productModelInputRef}
                 type="file"
-                accept=".glb"
-                onChange={handleProductModelSelect}
-                className="hidden"
               />
               <div className="flex gap-2">
                 <Button
-                  variant="outline"
                   className="flex-1"
-                  onClick={() => productModelInputRef.current?.click()}
                   disabled={uploadingProductMedia}
+                  onClick={() => productModelInputRef.current?.click()}
+                  variant="outline"
                 >
                   <Box className="mr-2 size-4" />
                   Choose File
                 </Button>
                 {selectedProductModel && (
                   <Button
-                    onClick={handleProductModelUpload}
                     disabled={uploadingProductMedia || !modelPreviewScreenshot}
+                    onClick={handleProductModelUpload}
                   >
                     {uploadingProductMedia
                       ? "Uploading..."
@@ -1340,7 +1340,7 @@ export default function ProductDetailPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setProductModelDialogOpen(false)}>
+            <Button onClick={() => setProductModelDialogOpen(false)} variant="outline">
               Close
             </Button>
           </DialogFooter>
@@ -1348,7 +1348,7 @@ export default function ProductDetailPage() {
       </Dialog>
 
       {/* Create Print Area Dialog */}
-      <Dialog open={printAreaDialogOpen} onOpenChange={setPrintAreaDialogOpen}>
+      <Dialog onOpenChange={setPrintAreaDialogOpen} open={printAreaDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Print Area</DialogTitle>
@@ -1359,26 +1359,26 @@ export default function ProductDetailPage() {
               <div className="space-y-2">
                 <Label>Area ID</Label>
                 <Input
+                  onChange={(e) => setPrintAreaFormData((p) => ({ ...p, areaId: e.target.value }))}
                   placeholder="e.g., front, back, left-sleeve"
                   value={printAreaFormData.areaId}
-                  onChange={(e) => setPrintAreaFormData((p) => ({ ...p, areaId: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Display Name</Label>
                 <Input
+                  onChange={(e) => setPrintAreaFormData((p) => ({ ...p, name: e.target.value }))}
                   placeholder="e.g., Front, Back, Left Sleeve"
                   value={printAreaFormData.name}
-                  onChange={(e) => setPrintAreaFormData((p) => ({ ...p, name: e.target.value }))}
                 />
               </div>
             </div>
             <div className="space-y-2">
               <Label>Mesh Name (Optional)</Label>
               <Input
+                onChange={(e) => setPrintAreaFormData((p) => ({ ...p, meshName: e.target.value }))}
                 placeholder="Name of the mesh in the GLB model"
                 value={printAreaFormData.meshName}
-                onChange={(e) => setPrintAreaFormData((p) => ({ ...p, meshName: e.target.value }))}
               />
               <p className="text-muted-foreground text-xs">
                 If specified, designs will be placed on this specific mesh in the 3D model.
@@ -1390,28 +1390,28 @@ export default function ProductDetailPage() {
                 <div>
                   <Label className="text-muted-foreground text-xs">X</Label>
                   <Input
-                    type="number"
-                    step="0.1"
-                    value={printAreaFormData.rayDirectionX}
                     onChange={(e) => setPrintAreaFormData((p) => ({ ...p, rayDirectionX: e.target.value }))}
+                    step="0.1"
+                    type="number"
+                    value={printAreaFormData.rayDirectionX}
                   />
                 </div>
                 <div>
                   <Label className="text-muted-foreground text-xs">Y</Label>
                   <Input
-                    type="number"
-                    step="0.1"
-                    value={printAreaFormData.rayDirectionY}
                     onChange={(e) => setPrintAreaFormData((p) => ({ ...p, rayDirectionY: e.target.value }))}
+                    step="0.1"
+                    type="number"
+                    value={printAreaFormData.rayDirectionY}
                   />
                 </div>
                 <div>
                   <Label className="text-muted-foreground text-xs">Z</Label>
                   <Input
-                    type="number"
-                    step="0.1"
-                    value={printAreaFormData.rayDirectionZ}
                     onChange={(e) => setPrintAreaFormData((p) => ({ ...p, rayDirectionZ: e.target.value }))}
+                    step="0.1"
+                    type="number"
+                    value={printAreaFormData.rayDirectionZ}
                   />
                 </div>
               </div>
@@ -1421,10 +1421,10 @@ export default function ProductDetailPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPrintAreaDialogOpen(false)}>
+            <Button onClick={() => setPrintAreaDialogOpen(false)} variant="outline">
               Cancel
             </Button>
-            <Button onClick={handleCreatePrintArea} disabled={printAreaSubmitting}>
+            <Button disabled={printAreaSubmitting} onClick={handleCreatePrintArea}>
               {printAreaSubmitting ? "Creating..." : "Create"}
             </Button>
           </DialogFooter>
@@ -1432,7 +1432,7 @@ export default function ProductDetailPage() {
       </Dialog>
 
       {/* Edit Print Area Dialog */}
-      <Dialog open={editPrintAreaDialogOpen} onOpenChange={setEditPrintAreaDialogOpen}>
+      <Dialog onOpenChange={setEditPrintAreaDialogOpen} open={editPrintAreaDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Print Area</DialogTitle>
@@ -1443,26 +1443,26 @@ export default function ProductDetailPage() {
               <div className="space-y-2">
                 <Label>Area ID</Label>
                 <Input
+                  onChange={(e) => setPrintAreaFormData((p) => ({ ...p, areaId: e.target.value }))}
                   placeholder="e.g., front, back, left-sleeve"
                   value={printAreaFormData.areaId}
-                  onChange={(e) => setPrintAreaFormData((p) => ({ ...p, areaId: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Display Name</Label>
                 <Input
+                  onChange={(e) => setPrintAreaFormData((p) => ({ ...p, name: e.target.value }))}
                   placeholder="e.g., Front, Back, Left Sleeve"
                   value={printAreaFormData.name}
-                  onChange={(e) => setPrintAreaFormData((p) => ({ ...p, name: e.target.value }))}
                 />
               </div>
             </div>
             <div className="space-y-2">
               <Label>Mesh Name (Optional)</Label>
               <Input
+                onChange={(e) => setPrintAreaFormData((p) => ({ ...p, meshName: e.target.value }))}
                 placeholder="Name of the mesh in the GLB model"
                 value={printAreaFormData.meshName}
-                onChange={(e) => setPrintAreaFormData((p) => ({ ...p, meshName: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
@@ -1471,38 +1471,38 @@ export default function ProductDetailPage() {
                 <div>
                   <Label className="text-muted-foreground text-xs">X</Label>
                   <Input
-                    type="number"
-                    step="0.1"
-                    value={printAreaFormData.rayDirectionX}
                     onChange={(e) => setPrintAreaFormData((p) => ({ ...p, rayDirectionX: e.target.value }))}
+                    step="0.1"
+                    type="number"
+                    value={printAreaFormData.rayDirectionX}
                   />
                 </div>
                 <div>
                   <Label className="text-muted-foreground text-xs">Y</Label>
                   <Input
-                    type="number"
-                    step="0.1"
-                    value={printAreaFormData.rayDirectionY}
                     onChange={(e) => setPrintAreaFormData((p) => ({ ...p, rayDirectionY: e.target.value }))}
+                    step="0.1"
+                    type="number"
+                    value={printAreaFormData.rayDirectionY}
                   />
                 </div>
                 <div>
                   <Label className="text-muted-foreground text-xs">Z</Label>
                   <Input
-                    type="number"
-                    step="0.1"
-                    value={printAreaFormData.rayDirectionZ}
                     onChange={(e) => setPrintAreaFormData((p) => ({ ...p, rayDirectionZ: e.target.value }))}
+                    step="0.1"
+                    type="number"
+                    value={printAreaFormData.rayDirectionZ}
                   />
                 </div>
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditPrintAreaDialogOpen(false)}>
+            <Button onClick={() => setEditPrintAreaDialogOpen(false)} variant="outline">
               Cancel
             </Button>
-            <Button onClick={handleUpdatePrintArea} disabled={printAreaSubmitting}>
+            <Button disabled={printAreaSubmitting} onClick={handleUpdatePrintArea}>
               {printAreaSubmitting ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
@@ -1510,7 +1510,7 @@ export default function ProductDetailPage() {
       </Dialog>
 
       {/* Delete Print Area Dialog */}
-      <AlertDialog open={deletePrintAreaDialogOpen} onOpenChange={setDeletePrintAreaDialogOpen}>
+      <AlertDialog onOpenChange={setDeletePrintAreaDialogOpen} open={deletePrintAreaDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Print Area</AlertDialogTitle>
@@ -1522,9 +1522,9 @@ export default function ProductDetailPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeletePrintArea}
-              disabled={printAreaSubmitting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={printAreaSubmitting}
+              onClick={handleDeletePrintArea}
             >
               {printAreaSubmitting ? "Deleting..." : "Delete"}
             </AlertDialogAction>

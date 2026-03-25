@@ -1,12 +1,12 @@
 "use client";
 
+import { Package } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { ProductModal } from "@/components/product-modal";
 import { Button } from "@/components/ui/button";
 import { useServer } from "@/lib/providers/server";
 import { ProductResponse } from "@/lib/server/product";
-import { Package } from "lucide-react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import { ProductCard } from "./product-card";
 import { ProductsSkeleton } from "./products-skeleton";
 
@@ -58,19 +58,19 @@ export function ProductsSection() {
         <>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {displayedProducts.map((product) => (
-              <ProductCard key={product.id} product={product} onClick={() => handleProductClick(product)} />
+              <ProductCard key={product.id} onClick={() => handleProductClick(product)} product={product} />
             ))}
           </div>
           {products.length > 4 && !showAll && (
             <div className="mt-8 flex justify-center">
-              <Button size="lg" variant="outline" onClick={() => setShowAll(true)}>
+              <Button onClick={() => setShowAll(true)} size="lg" variant="outline">
                 Show All Products ({products.length})
               </Button>
             </div>
           )}
           {showAll && products.length > 4 && (
             <div className="mt-8 flex justify-center">
-              <Button size="lg" variant="outline" onClick={() => setShowAll(false)}>
+              <Button onClick={() => setShowAll(false)} size="lg" variant="outline">
                 Show Less
               </Button>
             </div>
@@ -78,7 +78,7 @@ export function ProductsSection() {
         </>
       )}
 
-      <ProductModal product={selectedProduct} open={modalOpen} onOpenChange={setModalOpen} />
+      <ProductModal onOpenChange={setModalOpen} open={modalOpen} product={selectedProduct} />
     </>
   );
 }

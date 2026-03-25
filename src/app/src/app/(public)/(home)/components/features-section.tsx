@@ -34,8 +34,8 @@ export function FeaturesSection() {
       <div className="grid gap-8 md:grid-cols-3">
         {features.map((feature, idx) => (
           <div
-            key={idx}
             className="group border-border bg-card hover:shadow-primary/5 relative rounded-3xl border p-8 transition-all hover:-translate-y-1 hover:shadow-2xl"
+            key={idx}
           >
             <div
               className={`mb-6 inline-flex rounded-2xl p-4 transition-transform group-hover:scale-110 ${feature.color}`}

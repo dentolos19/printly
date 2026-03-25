@@ -1,10 +1,10 @@
 "use client";
 
-import LoadingSpinner from "@/components/loading-spinner";
-import { useAuth } from "@/lib/providers/auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import LoadingSpinner from "@/components/loading-spinner";
+import { useAuth } from "@/lib/providers/auth";
 
 export default function Page() {
   const router = useRouter();

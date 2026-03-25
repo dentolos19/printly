@@ -123,25 +123,25 @@ const ModelPreview = forwardRef<ModelPreviewHandle, ModelPreviewProps>(function 
       ) : (
         <>
           <Canvas
-            ref={canvasRef}
-            gl={{ preserveDrawingBuffer: true, antialias: true }}
             camera={{ fov: 45, near: 0.01, far: 1000 }}
+            gl={{ preserveDrawingBuffer: true, antialias: true }}
+            ref={canvasRef}
             style={{ background: "transparent" }}
           >
             <Suspense fallback={null}>
               <ambientLight intensity={0.6} />
-              <directionalLight position={[5, 5, 5]} intensity={0.8} />
-              <directionalLight position={[-3, 3, -3]} intensity={0.3} />
+              <directionalLight intensity={0.8} position={[5, 5, 5]} />
+              <directionalLight intensity={0.3} position={[-3, 3, -3]} />
               <Environment preset="studio" />
               <ModelLoader
-                url={objectUrl}
-                onLoaded={() => setLoaded(true)}
                 onError={(msg) => {
                   setHasError(true);
                   onError?.(msg);
                 }}
+                onLoaded={() => setLoaded(true)}
+                url={objectUrl}
               />
-              <OrbitControls makeDefault enablePan={false} />
+              <OrbitControls enablePan={false} makeDefault />
             </Suspense>
           </Canvas>
           {!loaded && !hasError && (
@@ -173,13 +173,13 @@ function ModelLoader({
   try {
     return (
       <AutoFramedModelWithCallback
-        url={url}
         onLoaded={() => {
           if (!hasCalledRef.current) {
             hasCalledRef.current = true;
             onLoaded();
           }
         }}
+        url={url}
       />
     );
   } catch {

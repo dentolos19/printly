@@ -1,33 +1,5 @@
 "use client";
 
-import { CallInterface, IncomingCallNotification } from "@/components/call-interface";
-import {
-  CallMessage,
-  ChatDateSeparator,
-  ChatMessage,
-  ConversationList,
-  ConversationSummary as ConversationSummaryDialog,
-  MessageInput,
-  TypingIndicator,
-  type ReplyInfo,
-} from "@/components/chat";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { API_URL } from "@/environment";
-import { useAuth } from "@/lib/providers/auth";
-import {
-  type AdminInfo,
-  type ConversationMessage,
-  type ConversationPriority,
-  type ConversationStatus,
-  type ConversationSummary,
-} from "@/lib/server/conversation";
-import { CallType, type CallTokenResponse, type IncomingCallData } from "@/lib/types/call";
-import { cn } from "@/lib/utils";
 import * as signalR from "@microsoft/signalr";
 import {
   CheckCircle2,
@@ -46,6 +18,34 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CallInterface, IncomingCallNotification } from "@/components/call-interface";
+import {
+  CallMessage,
+  ChatDateSeparator,
+  ChatMessage,
+  ConversationList,
+  ConversationSummary as ConversationSummaryDialog,
+  MessageInput,
+  type ReplyInfo,
+  TypingIndicator,
+} from "@/components/chat";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { API_URL } from "@/environment";
+import { useAuth } from "@/lib/providers/auth";
+import {
+  type AdminInfo,
+  type ConversationMessage,
+  type ConversationPriority,
+  type ConversationStatus,
+  type ConversationSummary,
+} from "@/lib/server/conversation";
+import { type CallTokenResponse, CallType, type IncomingCallData } from "@/lib/types/call";
+import { cn } from "@/lib/utils";
 
 const HUB_URL = `${API_URL}/hubs/conversation`;
 
@@ -1087,10 +1087,10 @@ export default function AdminChatPage() {
       <div className="bg-card flex shrink-0 items-center justify-between rounded-lg border px-3 py-2 shadow-sm">
         <div className="flex items-center gap-3">
           <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="hover:bg-accent h-8 gap-1.5 px-2"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            size="sm"
+            variant="outline"
           >
             {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
             <span className="hidden font-medium sm:inline">{sidebarCollapsed ? "Show" : "Hide"}</span>
@@ -1099,6 +1099,7 @@ export default function AdminChatPage() {
         </div>
         <div className="flex items-center gap-2">
           <Badge
+            className="gap-1 px-2 py-0.5 text-xs"
             variant={
               connectionState === "connected"
                 ? "default"
@@ -1106,16 +1107,15 @@ export default function AdminChatPage() {
                   ? "secondary"
                   : "destructive"
             }
-            className="gap-1 px-2 py-0.5 text-xs"
           >
             {connectionState === "connected" ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
           </Badge>
           <Button
-            variant="ghost"
-            size="icon"
-            onClick={fetchConversations}
-            disabled={isLoadingConversations}
             className="hover:bg-accent h-7 w-7"
+            disabled={isLoadingConversations}
+            onClick={fetchConversations}
+            size="icon"
+            variant="ghost"
           >
             <RefreshCw className={cn("h-3.5 w-3.5", isLoadingConversations && "animate-spin")} />
           </Button>
@@ -1135,21 +1135,21 @@ export default function AdminChatPage() {
             <CardTitle className="text-sm font-semibold">Conversations</CardTitle>
           </CardHeader>
           <div className="shrink-0 border-b p-3">
-            <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+            <Tabs onValueChange={setStatusFilter} value={statusFilter}>
               <TabsList className="grid h-8 w-full grid-cols-5">
-                <TabsTrigger value="all" className="px-1.5 text-[11px] font-medium">
+                <TabsTrigger className="px-1.5 text-[11px] font-medium" value="all">
                   All
                 </TabsTrigger>
-                <TabsTrigger value="0" className="px-1.5 text-[11px] font-medium">
+                <TabsTrigger className="px-1.5 text-[11px] font-medium" value="0">
                   Pending
                 </TabsTrigger>
-                <TabsTrigger value="1" className="px-1.5 text-[11px] font-medium">
+                <TabsTrigger className="px-1.5 text-[11px] font-medium" value="1">
                   Active
                 </TabsTrigger>
-                <TabsTrigger value="2" className="px-1.5 text-[11px] font-medium">
+                <TabsTrigger className="px-1.5 text-[11px] font-medium" value="2">
                   Resolved
                 </TabsTrigger>
-                <TabsTrigger value="3" className="px-1.5 text-[11px] font-medium">
+                <TabsTrigger className="px-1.5 text-[11px] font-medium" value="3">
                   Closed
                 </TabsTrigger>
               </TabsList>
@@ -1158,15 +1158,15 @@ export default function AdminChatPage() {
           <ScrollArea className="min-h-0 flex-1">
             <ConversationList
               conversations={filteredConversations}
-              selectedId={selectedConversationId}
-              onSelect={setSelectedConversationId}
+              emptyMessage="No support conversations found"
               isLoading={isLoadingConversations}
-              showStatus
-              showPriority
+              onSelect={setSelectedConversationId}
+              selectedId={selectedConversationId}
               showAssignment
               showCustomerName
               showHeader={false}
-              emptyMessage="No support conversations found"
+              showPriority
+              showStatus
             />
           </ScrollArea>
         </Card>
@@ -1189,7 +1189,7 @@ export default function AdminChatPage() {
                         {selectedConversation.subject || "Support Conversation"}
                       </CardTitle>
                       <div className="flex items-center gap-1.5 pt-0">
-                        <Badge variant="outline" className="gap-1 px-1.5 py-0 text-[10px] font-medium">
+                        <Badge className="gap-1 px-1.5 py-0 text-[10px] font-medium" variant="outline">
                           <User className="h-2.5 w-2.5" />
                           <span title={selectedConversation.participants.find((p) => p.role === 0)?.name || "Unknown"}>
                             {selectedConversation.participants.find((p) => p.role === 0)?.name || "Unknown"}
@@ -1200,11 +1200,11 @@ export default function AdminChatPage() {
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <Select
-                      value={String(selectedConversation.status)}
                       onValueChange={(v) => {
                         const statusValue = parseInt(v, 10) as ConversationStatus;
                         updateConversationStatus(selectedConversation.id, statusValue);
                       }}
+                      value={String(selectedConversation.status)}
                     >
                       <SelectTrigger className="h-7 w-[90px] text-[11px] font-medium">
                         <SelectValue placeholder="Status" />
@@ -1217,11 +1217,11 @@ export default function AdminChatPage() {
                     </Select>
 
                     <Select
-                      value={String(selectedConversation.priority)}
                       onValueChange={(v) => {
                         const priorityValue = parseInt(v, 10) as ConversationPriority;
                         updateConversationPriority(selectedConversation.id, priorityValue);
                       }}
+                      value={String(selectedConversation.priority)}
                     >
                       <SelectTrigger className="h-7 w-[80px] text-[11px] font-medium">
                         <SelectValue placeholder="Priority" />
@@ -1237,21 +1237,20 @@ export default function AdminChatPage() {
                     {/* Call buttons */}
                     <div className="ml-1.5 flex items-center gap-1 border-l pl-1.5">
                       <Button
-                        variant="outline"
-                        size="icon"
                         className="h-7 w-7"
-                        onClick={() => setSummaryOpen(true)}
                         disabled={messages.length === 0}
+                        onClick={() => setSummaryOpen(true)}
+                        size="icon"
                         title="AI Conversation Summary"
+                        variant="outline"
                       >
                         <Sparkles className="h-3.5 w-3.5" />
                       </Button>
                       <Button
-                        variant="outline"
-                        size="icon"
                         className="h-7 w-7"
-                        onClick={() => handleInitiateCall(CallType.Audio)}
                         disabled={connectionState !== "connected" || isInCall || selectedConversation.status === 3}
+                        onClick={() => handleInitiateCall(CallType.Audio)}
+                        size="icon"
                         title={
                           connectionState !== "connected"
                             ? "Connect to chat to enable calls"
@@ -1261,15 +1260,15 @@ export default function AdminChatPage() {
                                 ? "Cannot call closed conversations"
                                 : "Start voice call"
                         }
+                        variant="outline"
                       >
                         <Phone className="h-3.5 w-3.5" />
                       </Button>
                       <Button
-                        variant="outline"
-                        size="icon"
                         className="h-7 w-7"
-                        onClick={() => handleInitiateCall(CallType.Video)}
                         disabled={connectionState !== "connected" || isInCall || selectedConversation.status === 3}
+                        onClick={() => handleInitiateCall(CallType.Video)}
+                        size="icon"
                         title={
                           connectionState !== "connected"
                             ? "Connect to chat to enable calls"
@@ -1279,6 +1278,7 @@ export default function AdminChatPage() {
                                 ? "Cannot call closed conversations"
                                 : "Start video call"
                         }
+                        variant="outline"
                       >
                         <Video className="h-3.5 w-3.5" />
                       </Button>
@@ -1290,10 +1290,10 @@ export default function AdminChatPage() {
                     <WifiOff className="h-4 w-4 shrink-0" />
                     <span className="flex-1 font-medium">{lastError}</span>
                     <Button
+                      className="text-destructive hover:text-destructive hover:bg-destructive/20 h-7 w-7 rounded-full p-0"
+                      onClick={() => setLastError(null)}
                       size="sm"
                       variant="ghost"
-                      onClick={() => setLastError(null)}
-                      className="text-destructive hover:text-destructive hover:bg-destructive/20 h-7 w-7 rounded-full p-0"
                     >
                       ×
                     </Button>
@@ -1321,48 +1321,52 @@ export default function AdminChatPage() {
                           {group.messages.map((message) =>
                             message.isCallMessage && message.callLogId ? (
                               <CallMessage
-                                key={message.id}
-                                content={message.content}
-                                callLogId={message.callLogId}
-                                senderName={message.senderName}
-                                isCurrentUser={message.senderId === currentUserId}
-                                createdAt={message.createdAt}
-                                callType={message.callType}
-                                callStatus={message.callStatus}
                                 callDurationSeconds={message.callDurationSeconds}
                                 callInitiatorId={message.callInitiatorId}
                                 callInitiatorName={message.callInitiatorName}
-                                onJoinCall={() => handleJoinActiveCall(message.callLogId!)}
-                                onAnswerCall={() => handleJoinActiveCall(message.callLogId!)}
-                                onDeclineCall={() => handleDeclineCall(message.callLogId!)}
+                                callLogId={message.callLogId}
+                                callStatus={message.callStatus}
+                                callType={message.callType}
                                 canJoinCall={!isInCall && activeCallId === message.callLogId}
+                                content={message.content}
+                                createdAt={message.createdAt}
+                                isCurrentUser={message.senderId === currentUserId}
+                                isInCall={isInCall && currentCall?.callId === message.callLogId}
                                 isRinging={
                                   !isInCall && activeCallId === message.callLogId && message.senderId !== currentUserId
                                 }
-                                isInCall={isInCall && currentCall?.callId === message.callLogId}
+                                key={message.id}
+                                onAnswerCall={() => handleJoinActiveCall(message.callLogId!)}
+                                onDeclineCall={() => handleDeclineCall(message.callLogId!)}
+                                onJoinCall={() => handleJoinActiveCall(message.callLogId!)}
+                                senderName={message.senderName}
                                 showAiCallNotes={true}
                               />
                             ) : (
                               <ChatMessage
-                                key={message.id}
-                                id={message.id}
                                 content={message.content}
-                                senderName={message.senderName}
-                                senderId={message.senderId}
-                                isCurrentUser={message.senderId === currentUserId}
-                                isRead={message.isRead}
-                                isEdited={message.isEdited}
-                                isDeleted={message.isDeleted}
                                 createdAt={message.createdAt}
                                 editedAt={message.editedAt}
-                                replyToContent={message.replyToContent}
-                                replyToSenderName={message.replyToSenderName}
-                                fileUrl={message.fileUrl}
                                 fileName={message.fileName}
-                                fileType={message.fileType}
                                 fileSize={message.fileSize}
-                                voiceMessageUrl={message.voiceMessageUrl}
-                                voiceMessageDuration={message.voiceMessageDuration}
+                                fileType={message.fileType}
+                                fileUrl={message.fileUrl}
+                                id={message.id}
+                                isCurrentUser={message.senderId === currentUserId}
+                                isDeleted={message.isDeleted}
+                                isEdited={message.isEdited}
+                                isRead={message.isRead}
+                                key={message.id}
+                                onDelete={
+                                  message.senderId === currentUserId && !message.isDeleted
+                                    ? () => handleDeleteMessage(message.id)
+                                    : undefined
+                                }
+                                onEdit={
+                                  message.senderId === currentUserId && !message.isDeleted
+                                    ? (content) => handleEditMessage(message.id, content)
+                                    : undefined
+                                }
                                 onReply={() =>
                                   setReplyTo({
                                     messageId: message.id,
@@ -1370,16 +1374,12 @@ export default function AdminChatPage() {
                                     content: message.content,
                                   })
                                 }
-                                onEdit={
-                                  message.senderId === currentUserId && !message.isDeleted
-                                    ? (content) => handleEditMessage(message.id, content)
-                                    : undefined
-                                }
-                                onDelete={
-                                  message.senderId === currentUserId && !message.isDeleted
-                                    ? () => handleDeleteMessage(message.id)
-                                    : undefined
-                                }
+                                replyToContent={message.replyToContent}
+                                replyToSenderName={message.replyToSenderName}
+                                senderId={message.senderId}
+                                senderName={message.senderName}
+                                voiceMessageDuration={message.voiceMessageDuration}
+                                voiceMessageUrl={message.voiceMessageUrl}
                               />
                             ),
                           )}
@@ -1402,16 +1402,16 @@ export default function AdminChatPage() {
                 ) : (
                   <div className="shrink-0 border-t p-2">
                     <MessageInput
+                      allowFileUpload
+                      allowVoiceMessage
+                      disabled={connectionState !== "connected" || isUploading}
+                      onCancelReply={() => setReplyTo(null)}
                       onSend={handleSendMessage}
                       onSendFile={handleSendFile}
                       onSendVoice={handleSendVoice}
                       onTypingStart={handleTypingStart}
                       onTypingStop={handleTypingStop}
-                      disabled={connectionState !== "connected" || isUploading}
                       replyTo={replyTo}
-                      onCancelReply={() => setReplyTo(null)}
-                      allowFileUpload
-                      allowVoiceMessage
                     />
                   </div>
                 )}
@@ -1434,23 +1434,23 @@ export default function AdminChatPage() {
       {/* AI Summary Dialog */}
       {selectedConversationId && (
         <ConversationSummaryDialog
+          authorizedFetch={authorizedFetch}
           conversationId={selectedConversationId}
           isOpen={summaryOpen}
           onClose={() => setSummaryOpen(false)}
-          authorizedFetch={authorizedFetch}
         />
       )}
 
       {/* Call Interface */}
       {isInCall && currentCall && (
         <CallInterface
-          token={currentCall.token}
-          serverUrl={currentCall.serverUrl}
+          accessToken={auth.tokens?.accessToken || ""}
+          callId={currentCall.callId}
           callType={currentCall.callType}
           onLeave={handleLeaveCall}
           participantName={auth.claims?.email || "Admin"}
-          callId={currentCall.callId}
-          accessToken={auth.tokens?.accessToken || ""}
+          serverUrl={currentCall.serverUrl}
+          token={currentCall.token}
         />
       )}
 

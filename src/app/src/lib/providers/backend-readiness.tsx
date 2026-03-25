@@ -1,7 +1,7 @@
 "use client";
 
-import { API_URL } from "@/environment";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { API_URL } from "@/environment";
 
 type BackendReadinessStatus = "checking" | "ready" | "unavailable";
 

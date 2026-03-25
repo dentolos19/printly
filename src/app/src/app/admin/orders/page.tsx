@@ -1,5 +1,20 @@
 "use client";
 
+import {
+  CheckCircle2,
+  ExternalLink,
+  Eye,
+  MoreHorizontal,
+  Package,
+  Paintbrush,
+  RefreshCw,
+  Search,
+  Trash2,
+  Truck,
+} from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,34 +43,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useServer } from "@/lib/providers/server";
 import {
   OrderResponse,
-  OrderSummaryResponse,
   OrderStatus,
   OrderStatusColors,
   OrderStatusLabels,
+  OrderSummaryResponse,
 } from "@/lib/server/order";
 import { ProductSizeLabels } from "@/lib/server/product";
-import {
-  CheckCircle2,
-  ExternalLink,
-  Eye,
-  MoreHorizontal,
-  Package,
-  Paintbrush,
-  RefreshCw,
-  Search,
-  Trash2,
-  Truck,
-} from "lucide-react";
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
 
 function OrdersTableSkeleton() {
   return (
     <div className="space-y-4">
       <Skeleton className="h-10 w-full" />
       {[1, 2, 3, 4, 5].map((i) => (
-        <Skeleton key={i} className="h-16 w-full" />
+        <Skeleton className="h-16 w-full" key={i} />
       ))}
     </div>
   );
@@ -105,7 +105,7 @@ function UpdateStatusDialog({
   const availableStatuses = validTransitions[order.status];
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Update Order Status</DialogTitle>
@@ -124,8 +124,8 @@ function UpdateStatusDialog({
               <p className="text-muted-foreground text-sm">No status changes available for this order.</p>
             ) : (
               <Select
-                value={newStatus !== null ? String(newStatus) : undefined}
                 onValueChange={(value) => setNewStatus(Number(value) as OrderStatus)}
+                value={newStatus !== null ? String(newStatus) : undefined}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select new status" />
@@ -143,10 +143,10 @@ function UpdateStatusDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+          <Button disabled={isLoading} onClick={() => onOpenChange(false)} variant="outline">
             Cancel
           </Button>
-          <Button onClick={() => newStatus !== null && onConfirm(newStatus)} disabled={isLoading || newStatus === null}>
+          <Button disabled={isLoading || newStatus === null} onClick={() => newStatus !== null && onConfirm(newStatus)}>
             {isLoading ? "Updating..." : "Update Status"}
           </Button>
         </DialogFooter>
@@ -169,7 +169,7 @@ function OrderDetailsDialog({
   if (!order && !isLoading) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="max-w-2xl">
         {isLoading ? (
           <>
@@ -216,7 +216,7 @@ function OrderDetailsDialog({
                 <Label className="text-muted-foreground">Order Items ({order.items.length})</Label>
                 <div className="mt-2 space-y-2">
                   {order.items.map((item) => (
-                    <div key={item.id} className="rounded-lg border p-3">
+                    <div className="rounded-lg border p-3" key={item.id}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="bg-muted flex h-10 w-10 items-center justify-center rounded">
@@ -252,10 +252,10 @@ function OrderDetailsDialog({
                             )}
                           </span>
                           <Link
-                            href={`/imprinter/${item.imprintId}`}
-                            target="_blank"
                             className="text-xs text-blue-600 hover:underline dark:text-blue-400"
+                            href={`/imprinter/${item.imprintId}`}
                             onClick={(e) => e.stopPropagation()}
+                            target="_blank"
                           >
                             <ExternalLink className="h-3 w-3" />
                           </Link>
@@ -268,13 +268,13 @@ function OrderDetailsDialog({
             </div>
 
             <DialogFooter className="flex-col gap-2 sm:flex-row">
-              <Button variant="default" asChild className="w-full sm:w-auto">
+              <Button asChild className="w-full sm:w-auto" variant="default">
                 <Link href={`/admin/orders/${order.id}`}>
                   <ExternalLink className="mr-2 h-4 w-4" />
                   View Full Details
                 </Link>
               </Button>
-              <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
+              <Button className="w-full sm:w-auto" onClick={() => onOpenChange(false)} variant="outline">
                 Close
               </Button>
             </DialogFooter>
@@ -301,7 +301,7 @@ function DeleteConfirmDialog({
   if (!order) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Delete Order</DialogTitle>
@@ -310,10 +310,10 @@ function DeleteConfirmDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+          <Button disabled={isLoading} onClick={() => onOpenChange(false)} variant="outline">
             Cancel
           </Button>
-          <Button variant="destructive" onClick={onConfirm} disabled={isLoading}>
+          <Button disabled={isLoading} onClick={onConfirm} variant="destructive">
             {isLoading ? "Deleting..." : "Delete Order"}
           </Button>
         </DialogFooter>
@@ -470,7 +470,7 @@ export default function AdminOrdersPage() {
           <h1 className="text-3xl font-bold">Orders</h1>
           <p className="text-muted-foreground">Manage customer orders</p>
         </div>
-        <Button onClick={fetchOrders} variant="outline" disabled={loading}>
+        <Button disabled={loading} onClick={fetchOrders} variant="outline">
           <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           Refresh
         </Button>
@@ -486,13 +486,13 @@ export default function AdminOrdersPage() {
             <div className="relative flex-1">
               <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <Input
+                className="pl-9"
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by order ID or user ID..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select onValueChange={setStatusFilter} value={statusFilter}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
@@ -555,7 +555,7 @@ export default function AdminOrdersPage() {
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button size="icon" variant="ghost">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -567,8 +567,8 @@ export default function AdminOrdersPage() {
                             View Details
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleUpdateStatus(order)}
                             disabled={validTransitions[order.status].length === 0}
+                            onClick={() => handleUpdateStatus(order)}
                           >
                             <RefreshCw className="mr-2 h-4 w-4" />
                             Update Status
@@ -588,7 +588,7 @@ export default function AdminOrdersPage() {
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleDeleteClick(order)} className="text-destructive">
+                          <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(order)}>
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete
                           </DropdownMenuItem>
@@ -605,26 +605,26 @@ export default function AdminOrdersPage() {
 
       {/* Dialogs */}
       <OrderDetailsDialog
-        order={selectedOrderDetails}
-        open={detailsOpen}
-        onOpenChange={setDetailsOpen}
         isLoading={isLoadingDetails}
+        onOpenChange={setDetailsOpen}
+        open={detailsOpen}
+        order={selectedOrderDetails}
       />
 
       <UpdateStatusDialog
-        order={selectedOrder}
-        open={statusOpen}
-        onOpenChange={setStatusOpen}
-        onConfirm={handleStatusConfirm}
         isLoading={isUpdating}
+        onConfirm={handleStatusConfirm}
+        onOpenChange={setStatusOpen}
+        open={statusOpen}
+        order={selectedOrder}
       />
 
       <DeleteConfirmDialog
-        order={selectedOrder}
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        onConfirm={handleDeleteConfirm}
         isLoading={isDeleting}
+        onConfirm={handleDeleteConfirm}
+        onOpenChange={setDeleteOpen}
+        open={deleteOpen}
+        order={selectedOrder}
       />
     </div>
   );

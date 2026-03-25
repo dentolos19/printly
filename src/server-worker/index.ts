@@ -1,24 +1,19 @@
-import { Container as CloudflareContainer } from "@cloudflare/containers";
+import { Container as CloudflareContainer, getContainer } from "@cloudflare/containers";
 import { Hono } from "hono";
 
-export class Container extends CloudflareContainer<CloudflareEnv> {
-  defaultPort = 8080;
-  sleepAfter = "10m";
+export class Container extends CloudflareContainer<Env> {
+	defaultPort = 8080;
+	sleepAfter = "10m";
+	envVars = Object.fromEntries(
+		Object.entries(this.env).filter(([, value]) => typeof value === "string" && !!value),
+	) as Record<string, string>;
 }
 
-const app = new Hono<{ Bindings: CloudflareEnv }>();
+const app = new Hono<{ Bindings: Env }>();
 
 app.all("*", async (c) => {
-  const instance = c.env.CONTAINER.getByName("singleton");
-  const variables = Object.fromEntries(Object.entries(process.env)) as Record<string, string>;
-
-  await instance.startAndWaitForPorts({
-    startOptions: {
-      envVars: variables,
-    },
-  });
-
-  return await instance.fetch(c.req.raw);
+	const instance = getContainer<Container>(c.env.CONTAINER, "singleton");
+	return instance.fetch(c.req.raw);
 });
 
 export default app;
