@@ -14,11 +14,11 @@ packages/
 .env*
 !.env*.template
 
-# Project files
-*.db*
-
 # Miscellaneous files
 .DS_Store
 Desktop.ini
 Thumbs.db
 !.gitkeep
+
+# SQLite database (no longer used)
+data.db

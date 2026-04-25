@@ -1,4 +1,4 @@
-import { ServerFetch } from "@/types";
+import type { ServerFetch } from "#/types";
 
 export type ConversationParticipantRole = 0 | 1; // 0 = Member, 1 = Admin
 

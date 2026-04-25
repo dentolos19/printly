@@ -1,11 +1,10 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useRef } from "react";
-import { API_URL } from "@/environment";
-import { useAuth } from "@/lib/providers/auth";
-import { useBackendReadiness } from "@/lib/providers/backend-readiness";
-import generateServerFunctions from "@/lib/server";
-import { ServerFetch, ServerFunctions } from "@/types";
+import { API_URL } from "#/environment";
+import { useAuth } from "#/lib/providers/auth";
+import generateServerFunctions from "#/lib/server";
+import type { ServerFetch, ServerFunctions } from "#/types";
 
 const RETRYABLE_BACKEND_STATUS = new Set([502, 503, 504, 520, 521, 522, 523, 524, 525, 526]);
 
@@ -23,7 +22,6 @@ export function useServer() {
 
 export default function ServerProvider({ children }: { children: React.ReactNode }) {
   const { tokens, refreshAccess, logout } = useAuth();
-  const { markUnavailable, reportResponse, waitUntilReady } = useBackendReadiness();
   const isRefreshing = useRef(false);
   const refreshPromise = useRef<Promise<void> | null>(null);
 
@@ -62,21 +60,14 @@ export default function ServerProvider({ children }: { children: React.ReactNode
           headers: [...headers, ...authHeaders],
         });
       } catch (error) {
-        markUnavailable();
-
         if (retryWhenBackendReady) {
-          await waitUntilReady();
           return requestWithAuth(endpoint, init, retryAuth, accessTokenOverride, false);
         }
 
         throw error;
       }
 
-      reportResponse(response);
-
       if (RETRYABLE_BACKEND_STATUS.has(response.status) && retryWhenBackendReady) {
-        markUnavailable();
-        await waitUntilReady();
         return requestWithAuth(endpoint, init, retryAuth, accessTokenOverride, false);
       }
 
@@ -112,7 +103,7 @@ export default function ServerProvider({ children }: { children: React.ReactNode
 
       return response;
     },
-    [logout, markUnavailable, refreshAccess, reportResponse, tokens?.accessToken, tokens?.refreshToken, waitUntilReady],
+    [logout, refreshAccess, tokens?.accessToken, tokens?.refreshToken],
   );
 
   const fetch = useCallback<ServerFetch>(

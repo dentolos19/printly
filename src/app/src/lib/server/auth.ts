@@ -1,4 +1,4 @@
-import { ServerFetch } from "@/types";
+import type { ServerFetch } from "#/types";
 
 export type RegisterDto = {
   name: string;

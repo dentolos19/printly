@@ -17,12 +17,12 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { API_URL } from "@/environment";
-import { useAuth } from "@/lib/providers/auth";
-import { cn } from "@/lib/utils";
+import { Button } from "#/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "#/components/ui/dialog";
+import { ScrollArea } from "#/components/ui/scroll-area";
+import { API_URL } from "#/environment";
+import { useAuth } from "#/lib/providers/auth";
+import { cn } from "#/lib/utils";
 
 // Call status enum matching backend
 export enum CallStatus {
@@ -221,7 +221,7 @@ function AiCallNotesDialog({
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center gap-3 py-12">
-            <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             <p className="text-muted-foreground text-sm">Generating call notes...</p>
             <p className="text-muted-foreground text-xs">This may take a moment on first use</p>
           </div>
@@ -234,27 +234,27 @@ function AiCallNotesDialog({
             <div className="space-y-4 pr-4">
               {/* Notes section */}
               <div>
-                <h4 className="text-muted-foreground mb-2 text-sm font-semibold tracking-wide uppercase">Notes</h4>
-                <div className="text-sm leading-relaxed whitespace-pre-wrap">{notes}</div>
+                <h4 className="mb-2 font-semibold text-muted-foreground text-sm uppercase tracking-wide">Notes</h4>
+                <div className="whitespace-pre-wrap text-sm leading-relaxed">{notes}</div>
               </div>
 
               {/* Transcript collapsible */}
               {transcript && (
                 <div className="border-t pt-4 pb-4">
                   <button
-                    className="text-muted-foreground hover:text-foreground flex w-full items-center justify-between text-sm font-semibold tracking-wide uppercase transition-colors"
+                    className="flex w-full items-center justify-between font-semibold text-muted-foreground text-sm uppercase tracking-wide transition-colors hover:text-foreground"
                     onClick={() => setShowTranscript(!showTranscript)}
                   >
                     <span>Transcript</span>
                     {showTranscript ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </button>
                   {showTranscript && (
-                    <div className="text-muted-foreground prose prose-sm dark:prose-invert mt-3 max-w-none text-sm leading-relaxed">
+                    <div className="prose prose-sm dark:prose-invert mt-3 max-w-none text-muted-foreground text-sm leading-relaxed">
                       <ReactMarkdown
                         components={{
                           p: ({ node, ...props }) => <p className="mb-2" {...props} />,
                           strong: ({ node, ...props }) => (
-                            <strong className="text-foreground font-semibold" {...props} />
+                            <strong className="font-semibold text-foreground" {...props} />
                           ),
                           em: ({ node, ...props }) => <em className="italic" {...props} />,
                         }}
@@ -331,7 +331,7 @@ export function CallMessage({
         <p className="font-semibold">{isVideo ? "Video Call" : "Voice Call"}</p>
 
         {/* Initiator Info */}
-        <div className="text-muted-foreground flex items-center gap-1 text-xs">
+        <div className="flex items-center gap-1 text-muted-foreground text-xs">
           <User className="h-3 w-3" />
           <span>{wasInitiatedByCurrentUser ? "You" : initiatorDisplay} started the call</span>
         </div>
@@ -340,7 +340,7 @@ export function CallMessage({
         <div className="flex items-center gap-2">
           <span
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
+              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-medium text-xs",
               statusConfig.badgeBg,
               statusConfig.badgeText,
             )}
@@ -360,7 +360,7 @@ export function CallMessage({
 
         {/* Duration (for completed calls) */}
         {duration && (
-          <div className="text-muted-foreground flex items-center gap-1 text-xs">
+          <div className="flex items-center gap-1 text-muted-foreground text-xs">
             <Clock className="h-3 w-3" />
             <span>Duration: {duration}</span>
           </div>
@@ -414,10 +414,10 @@ export function CallMessage({
         )}
 
         {/* In call indicator */}
-        {isInCall && <div className="text-primary text-xs font-medium">You are in this call</div>}
+        {isInCall && <div className="font-medium text-primary text-xs">You are in this call</div>}
 
         {/* Timestamp */}
-        <p className="text-muted-foreground text-[10px]">{formatTime(createdAt)}</p>
+        <p className="text-[10px] text-muted-foreground">{formatTime(createdAt)}</p>
       </div>
     </div>
   );

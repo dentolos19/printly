@@ -1,8 +1,8 @@
 "use client";
 
-import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ProductResponse, ProductSizeLabels, ProductVariantResponse } from "@/lib/server/product";
+import { type ProductResponse, ProductSizeLabels, type ProductVariantResponse } from "#/lib/server/product";
 
 export type CartItem = {
   variantId: string;

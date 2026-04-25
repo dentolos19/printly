@@ -9,12 +9,12 @@ import {
   useRoomContext,
   useTracks,
 } from "@livekit/components-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { API_URL } from "@/environment";
-import { CallType } from "@/lib/types/call";
-import { cn } from "@/lib/utils";
+import { Button } from "#/components/ui/button";
+import { Card } from "#/components/ui/card";
+import { Input } from "#/components/ui/input";
+import { API_URL } from "#/environment";
+import { CallType } from "#/lib/types/call";
+import { cn } from "#/lib/utils";
 import "@livekit/components-styles";
 import { RoomEvent, Track } from "livekit-client";
 import { MessageSquare, Phone, PhoneOff, Send, Video, X } from "lucide-react";
@@ -42,9 +42,9 @@ function AudioCallLayout({ isChatOpen, onChatToggle, unreadCount }: AudioCallLay
   return (
     <div className="flex h-full flex-col items-center justify-center gap-8 p-8">
       <div className="text-center">
-        <Phone className="text-primary mx-auto h-24 w-24 animate-pulse" />
-        <h2 className="mt-4 text-2xl font-semibold">Voice Call</h2>
-        <p className="text-muted-foreground mt-2">
+        <Phone className="mx-auto h-24 w-24 animate-pulse text-primary" />
+        <h2 className="mt-4 font-semibold text-2xl">Voice Call</h2>
+        <p className="mt-2 text-muted-foreground">
           {tracks.length} participant{tracks.length !== 1 ? "s" : ""} in call
         </p>
       </div>
@@ -60,7 +60,7 @@ function AudioCallLayout({ isChatOpen, onChatToggle, unreadCount }: AudioCallLay
         >
           <MessageSquare className="h-5 w-5" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 font-bold text-white text-xs">
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
@@ -113,7 +113,7 @@ function VideoCallLayout({
           >
             <MessageSquare className="h-5 w-5" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 font-bold text-white text-xs">
                 {unreadCount > 99 ? "99+" : unreadCount}
               </span>
             )}
@@ -248,11 +248,11 @@ function CallChat({ participantName, isOpen, onOpen, onClose, onUnreadChange }: 
     <>
       {/* Chat panel */}
       {isOpen && (
-        <div className="bg-card text-card-foreground border-border fixed top-0 right-0 bottom-0 z-[60] flex w-80 flex-col overflow-hidden border-l shadow-xl">
+        <div className="fixed top-0 right-0 bottom-0 z-[60] flex w-80 flex-col overflow-hidden border-border border-l bg-card text-card-foreground shadow-xl">
           {/* Header */}
-          <div className="border-border flex shrink-0 items-center justify-between border-b px-4 py-3">
-            <h3 className="text-sm font-semibold">In-Call Chat</h3>
-            <Button className="hover:bg-muted h-7 w-7" onClick={onClose} size="icon" variant="ghost">
+          <div className="flex shrink-0 items-center justify-between border-border border-b px-4 py-3">
+            <h3 className="font-semibold text-sm">In-Call Chat</h3>
+            <Button className="h-7 w-7 hover:bg-muted" onClick={onClose} size="icon" variant="ghost">
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -261,7 +261,7 @@ function CallChat({ participantName, isOpen, onOpen, onClose, onUnreadChange }: 
           <div className="min-h-0 flex-1 overflow-y-auto">
             <div className="p-3">
               {messages.length === 0 ? (
-                <div className="text-muted-foreground flex h-full items-center justify-center text-center">
+                <div className="flex h-full items-center justify-center text-center text-muted-foreground">
                   <p className="text-sm">Send a message while on the call</p>
                 </div>
               ) : (
@@ -271,13 +271,13 @@ function CallChat({ participantName, isOpen, onOpen, onClose, onUnreadChange }: 
                       className={cn(
                         "rounded-lg px-3 py-2 text-sm",
                         msg.sender === "You"
-                          ? "bg-primary text-primary-foreground ml-8"
-                          : "bg-muted text-foreground mr-8",
+                          ? "ml-8 bg-primary text-primary-foreground"
+                          : "mr-8 bg-muted text-foreground",
                       )}
                       key={msg.id}
                     >
                       {msg.sender !== "You" && (
-                        <p className="text-muted-foreground mb-0.5 text-[10px] font-semibold">{msg.sender}</p>
+                        <p className="mb-0.5 font-semibold text-[10px] text-muted-foreground">{msg.sender}</p>
                       )}
                       <p className="break-words">{msg.text}</p>
                     </div>
@@ -289,7 +289,7 @@ function CallChat({ participantName, isOpen, onOpen, onClose, onUnreadChange }: 
           </div>
 
           {/* Input */}
-          <div className="border-border shrink-0 border-t p-3">
+          <div className="shrink-0 border-border border-t p-3">
             <div className="flex gap-2">
               <Input
                 className="text-sm"
@@ -452,7 +452,7 @@ export function CallInterface({
   const [unreadCount, setUnreadCount] = useState(0);
 
   return (
-    <div className="bg-background fixed inset-0 z-50 flex flex-col">
+    <div className="fixed inset-0 z-50 flex flex-col bg-background">
       <LiveKitRoom
         audio={true}
         connect={true}
@@ -467,9 +467,9 @@ export function CallInterface({
         token={token}
         video={callType === CallType.Video}
       >
-        <div className="bg-card flex shrink-0 items-center justify-between border-b p-4">
+        <div className="flex shrink-0 items-center justify-between border-b bg-card p-4">
           <div>
-            <h2 className="text-lg font-semibold">{callType === CallType.Audio ? "Voice Call" : "Video Call"}</h2>
+            <h2 className="font-semibold text-lg">{callType === CallType.Audio ? "Voice Call" : "Video Call"}</h2>
             <p className="text-muted-foreground text-sm">{isConnected ? "Connected" : "Connecting..."}</p>
           </div>
           <Button className="gap-2" onClick={onLeave} variant="destructive">
@@ -516,13 +516,13 @@ interface IncomingCallNotificationProps {
 
 export function IncomingCallNotification({ callerName, callType, onAnswer, onDecline }: IncomingCallNotificationProps) {
   return (
-    <Card className="animate-in slide-in-from-top-5 fixed top-20 right-4 z-50 w-96 p-6 shadow-lg">
+    <Card className="slide-in-from-top-5 fixed top-20 right-4 z-50 w-96 animate-in p-6 shadow-lg">
       <div className="flex items-center gap-4">
-        <div className="bg-primary/10 flex h-14 w-14 items-center justify-center rounded-full">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
           {callType === CallType.Video ? (
-            <Video className="text-primary h-8 w-8" />
+            <Video className="h-8 w-8 text-primary" />
           ) : (
-            <Phone className="text-primary h-8 w-8 animate-pulse" />
+            <Phone className="h-8 w-8 animate-pulse text-primary" />
           )}
         </div>
         <div className="flex-1">

@@ -66,14 +66,10 @@ public static class AppExtensions
         if (!app.Environment.IsProduction())
             return app;
 
-        // Enforce secure HTTP connections in production
         app.UseHttpsRedirection();
 
         using var scope = app.Services.CreateScope();
-
-        // Apply migrations to database for production
-        var database = scope.ServiceProvider.GetRequiredService<DatabaseContext>().Database;
-        await database.MigrateAsync(); // NOTE: This doesn't work for some reason, alternatively run the migration task manually.
+        await scope.ServiceProvider.GetRequiredService<DatabaseContext>().Database.MigrateAsync();
 
         return app;
     }
@@ -86,19 +82,13 @@ public static class AppExtensions
         if (!app.Environment.IsDevelopment())
             return app;
 
-        // Use the developer exception page for detailed error information during development
         app.UseDeveloperExceptionPage();
 
         using var scope = app.Services.CreateScope();
-
-        // Ensure database is created for development
         var db = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
-        await db.Database.EnsureCreatedAsync();
+        await db.Database.MigrateAsync();
 
-        // Seed sample product data
         await SeedProductDataAsync(db);
-
-        // Seed sample order data
         await SeedOrderDataAsync(db);
 
         return app;

@@ -94,6 +94,7 @@ public static class ServiceExtensions
                 options.ClientSecret = googleClientSecret;
                 options.SignInScheme = IdentityConstants.ExternalScheme;
                 options.CallbackPath = "/auth/google/callback";
+                options.CorrelationCookie.SameSite = SameSiteMode.Lax;
             })
             .AddJwtBearer(options =>
             {

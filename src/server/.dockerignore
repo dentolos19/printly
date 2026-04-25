@@ -1,19 +1,18 @@
 # Editor configurations
 .vs/
 .idea/
+*.iml
 
 # Environment files
 bin/
 obj/
+packages/
 *.user
 *.suo
 
 # User files
 .env*
 !.env*.template
-
-# Project files
-*.db*
 
 # Miscellaneous files
 .DS_Store

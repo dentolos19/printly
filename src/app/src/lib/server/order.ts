@@ -1,5 +1,5 @@
-import { ServerFetch } from "@/types";
-import { ProductSize } from "./product";
+import type { ServerFetch } from "#/types";
+import type { ProductSize } from "./product";
 
 // Enums matching backend
 export enum OrderStatus {

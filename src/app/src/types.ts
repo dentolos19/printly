@@ -1,4 +1,4 @@
-import generateServerFunctions from "@/lib/server";
+import type generateServerFunctions from "#/lib/server";
 
 export type ServerFetch = (endpoint: string, init?: RequestInit) => Promise<Response>;
 export type ServerFunctions = ReturnType<typeof generateServerFunctions>;

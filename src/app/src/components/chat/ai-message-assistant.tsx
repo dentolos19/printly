@@ -2,11 +2,11 @@
 
 import { Loader2, Sparkles } from "lucide-react";
 import { useCallback, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { API_URL } from "@/environment";
+import { Button } from "#/components/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "#/components/ui/dialog";
+import { Label } from "#/components/ui/label";
+import { Textarea } from "#/components/ui/textarea";
+import { API_URL } from "#/environment";
 
 export interface AiMessageAssistantProps {
   isOpen: boolean;
@@ -104,7 +104,7 @@ export function AiMessageAssistant({ isOpen, onClose, onInsert, subject, authori
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="text-primary h-5 w-5" />
+            <Sparkles className="h-5 w-5 text-primary" />
             AI Assistant
           </DialogTitle>
           <p className="text-muted-foreground text-sm">Draft a support message with AI help</p>
@@ -112,7 +112,7 @@ export function AiMessageAssistant({ isOpen, onClose, onInsert, subject, authori
 
         <div className="grid gap-4 py-2">
           {/* Context */}
-          <div className="bg-muted rounded-md px-3 py-2 text-sm">
+          <div className="rounded-md bg-muted px-3 py-2 text-sm">
             <span className="text-muted-foreground">Subject:</span> <span className="font-medium">{subject}</span>
           </div>
 
@@ -120,7 +120,7 @@ export function AiMessageAssistant({ isOpen, onClose, onInsert, subject, authori
           <div className="grid gap-2">
             <Label htmlFor="ai-draft">Your message</Label>
             <div className="flex gap-2">
-              <Sparkles className="text-primary/40 mt-2.5 h-4 w-4 shrink-0" />
+              <Sparkles className="mt-2.5 h-4 w-4 shrink-0 text-primary/40" />
               <Textarea
                 className="border-primary/20 focus-visible:ring-primary/30"
                 disabled={isGenerating}

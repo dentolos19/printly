@@ -1,4 +1,4 @@
-import type { ConversationPriority, ConversationStatus } from "@/lib/server/conversation";
+import type { ConversationPriority, ConversationStatus } from "#/lib/server/conversation";
 
 /**
  * Color mapping for conversation status

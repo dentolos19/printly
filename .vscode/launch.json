@@ -12,21 +12,6 @@
         "uriFormat": "%s",
         "action": "openExternally"
       }
-    },
-    {
-      "name": "Server",
-      "request": "launch",
-      "type": "coreclr",
-      "cwd": "${workspaceFolder}/src/server",
-      "program": "dotnet",
-      "args": ["watch", "run"]
-    }
-  ],
-  "compounds": [
-    {
-      "name": "App + Server",
-      "configurations": ["App", "Server"],
-      "stopAll": true
     }
   ]
 }

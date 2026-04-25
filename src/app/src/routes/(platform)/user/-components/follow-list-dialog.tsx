@@ -1,0 +1,192 @@
+"use client";
+
+import { useNavigate } from "@tanstack/react-router";
+import { Loader2, UserIcon } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Avatar, AvatarFallback } from "#/components/ui/avatar";
+import { Button } from "#/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "#/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "#/components/ui/tabs";
+import { useServer } from "#/lib/providers/server";
+import type { FollowUserResponse } from "#/lib/server/community";
+
+type Tab = "followers" | "following";
+
+interface FollowListDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  userId: string;
+  defaultTab?: Tab;
+  followerCount: number;
+  followingCount: number;
+}
+
+export function FollowListDialog({
+  open,
+  onOpenChange,
+  userId,
+  defaultTab = "followers",
+  followerCount,
+  followingCount,
+}: FollowListDialogProps) {
+  const { api } = useServer();
+  const navigate = useNavigate();
+
+  const [activeTab, setActiveTab] = useState<Tab>(defaultTab);
+  const [followers, setFollowers] = useState<FollowUserResponse[]>([]);
+  const [following, setFollowing] = useState<FollowUserResponse[]>([]);
+  const [followersPage, setFollowersPage] = useState(1);
+  const [followingPage, setFollowingPage] = useState(1);
+  const [followersTotalPages, setFollowersTotalPages] = useState(1);
+  const [followingTotalPages, setFollowingTotalPages] = useState(1);
+  const [loadingFollowers, setLoadingFollowers] = useState(false);
+  const [loadingFollowing, setLoadingFollowing] = useState(false);
+
+  const pageSize = 20;
+
+  const loadFollowers = useCallback(
+    async (page: number) => {
+      setLoadingFollowers(true);
+      try {
+        const res = await api.community.getFollowers(userId, { page, pageSize });
+        setFollowers(res.users);
+        setFollowersTotalPages(res.totalPages);
+        setFollowersPage(res.page);
+      } catch {
+        // silently fail
+      } finally {
+        setLoadingFollowers(false);
+      }
+    },
+    [api.community, userId],
+  );
+
+  const loadFollowing = useCallback(
+    async (page: number) => {
+      setLoadingFollowing(true);
+      try {
+        const res = await api.community.getFollowing(userId, { page, pageSize });
+        setFollowing(res.users);
+        setFollowingTotalPages(res.totalPages);
+        setFollowingPage(res.page);
+      } catch {
+        // silently fail
+      } finally {
+        setLoadingFollowing(false);
+      }
+    },
+    [api.community, userId],
+  );
+
+  // Reset and load when dialog opens or tab changes
+  useEffect(() => {
+    if (!open) return;
+    if (activeTab === "followers") {
+      loadFollowers(1);
+    } else {
+      loadFollowing(1);
+    }
+  }, [open, activeTab, loadFollowers, loadFollowing]);
+
+  // Sync defaultTab when dialog opens
+  useEffect(() => {
+    if (open) {
+      setActiveTab(defaultTab);
+    }
+  }, [open, defaultTab]);
+
+  const extractUsername = (name: string) => {
+    if (name.includes("@")) return name.split("@")[0];
+    return name;
+  };
+
+  const renderUserList = (
+    users: FollowUserResponse[],
+    loading: boolean,
+    page: number,
+    totalPages: number,
+    onPageChange: (p: number) => void,
+  ) => {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
+      );
+    }
+
+    if (users.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center gap-2 py-8">
+          <UserIcon className="h-10 w-10 text-muted-foreground" />
+          <p className="text-muted-foreground text-sm">No users to show</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col gap-1">
+        {users.map((user) => {
+          const displayName = extractUsername(user.userName);
+          return (
+            <button
+              className="flex items-center gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-muted"
+              key={user.userId}
+              onClick={() => {
+                onOpenChange(false);
+                navigate({ to: "/user/$userId", params: { userId: user.userId } });
+              }}
+            >
+              <Avatar className="h-10 w-10">
+                <AvatarFallback>{displayName.charAt(0).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium text-sm">{displayName}</p>
+              </div>
+            </button>
+          );
+        })}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-2 flex items-center justify-center gap-2">
+            <Button disabled={page <= 1} onClick={() => onPageChange(page - 1)} size="sm" variant="outline">
+              Previous
+            </Button>
+            <span className="text-muted-foreground text-sm">
+              {page} / {totalPages}
+            </span>
+            <Button disabled={page >= totalPages} onClick={() => onPageChange(page + 1)} size="sm" variant="outline">
+              Next
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <Dialog onOpenChange={onOpenChange} open={open}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            <Tabs onValueChange={(v) => setActiveTab(v as Tab)} value={activeTab}>
+              <TabsList className="w-full">
+                <TabsTrigger className="flex-1" value="followers">
+                  Followers <span className="ml-1 text-muted-foreground text-xs">({followerCount})</span>
+                </TabsTrigger>
+                <TabsTrigger className="flex-1" value="following">
+                  Following <span className="ml-1 text-muted-foreground text-xs">({followingCount})</span>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </DialogTitle>
+        </DialogHeader>
+
+        {activeTab === "followers"
+          ? renderUserList(followers, loadingFollowers, followersPage, followersTotalPages, loadFollowers)
+          : renderUserList(following, loadingFollowing, followingPage, followingTotalPages, loadFollowing)}
+      </DialogContent>
+    </Dialog>
+  );
+}

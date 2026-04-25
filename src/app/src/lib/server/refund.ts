@@ -1,4 +1,4 @@
-import { ServerFetch } from "@/types";
+import type { ServerFetch } from "#/types";
 import { OrderStatus } from "./order";
 
 // Enums matching backend

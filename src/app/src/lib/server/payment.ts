@@ -1,4 +1,4 @@
-import { ServerFetch } from "@/types";
+import type { ServerFetch } from "#/types";
 
 // Enums matching backend
 export enum PaymentStatus {

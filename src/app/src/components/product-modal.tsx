@@ -1,9 +1,9 @@
 "use client";
 
+import { Image } from "@unpic/react";
 import { Minus, Package, Plus, ShoppingCart, Stamp } from "lucide-react";
-import Image from "next/image";
 import { useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "#/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -11,11 +11,16 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useCart } from "@/lib/providers/cart";
-import { ProductResponse, ProductSize, ProductSizeLabels, ProductVariantResponse } from "@/lib/server/product";
+} from "#/components/ui/dialog";
+import { Label } from "#/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "#/components/ui/select";
+import { useCart } from "#/lib/providers/cart";
+import {
+  type ProductResponse,
+  type ProductSize,
+  ProductSizeLabels,
+  type ProductVariantResponse,
+} from "#/lib/server/product";
 
 type ProductModalProps = {
   product: ProductResponse | null;
@@ -115,7 +120,7 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
 
         <div className="space-y-4 py-4">
           {/* Product Image */}
-          <div className="bg-muted relative mx-auto aspect-square w-full max-w-[280px] overflow-hidden rounded-lg border">
+          <div className="relative mx-auto aspect-square w-full max-w-[280px] overflow-hidden rounded-lg border bg-muted">
             {displayImage ? (
               <Image
                 alt={product.name}
@@ -124,7 +129,7 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
                 src={displayImage}
               />
             ) : (
-              <div className="text-muted-foreground flex h-full w-full items-center justify-center">
+              <div className="flex h-full w-full items-center justify-center text-muted-foreground">
                 <Package className="h-16 w-16" />
               </div>
             )}
@@ -132,7 +137,7 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
 
           {/* Price Display */}
           <div className="text-center">
-            <span className="text-3xl font-bold">${product.basePrice.toFixed(2)}</span>
+            <span className="font-bold text-3xl">${product.basePrice.toFixed(2)}</span>
           </div>
 
           {/* Size Selection */}

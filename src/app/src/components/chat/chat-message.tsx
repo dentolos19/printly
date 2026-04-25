@@ -13,18 +13,18 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+} from "#/components/ui/alert-dialog";
+import { Avatar, AvatarFallback } from "#/components/ui/avatar";
+import { Badge } from "#/components/ui/badge";
+import { Button } from "#/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Textarea } from "@/components/ui/textarea";
-import { cn, formatMessageTime } from "@/lib/utils";
+} from "#/components/ui/dropdown-menu";
+import { Textarea } from "#/components/ui/textarea";
+import { cn, formatMessageTime } from "#/lib/utils";
 import { FileAttachment } from "./file-attachment";
 import { VoiceMessagePlayer } from "./voice-message-player";
 
@@ -138,13 +138,13 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
             {replyToContent && (
               <div
                 className={cn(
-                  "bg-muted/50 mb-1 flex items-start gap-2 rounded-lg border-l-2 px-3 py-1.5 text-sm",
+                  "mb-1 flex items-start gap-2 rounded-lg border-l-2 bg-muted/50 px-3 py-1.5 text-sm",
                   isCurrentUser ? "border-l-primary" : "border-l-muted-foreground",
                 )}
               >
-                <CornerUpLeft className="text-muted-foreground h-3 w-3 shrink-0" />
+                <CornerUpLeft className="h-3 w-3 shrink-0 text-muted-foreground" />
                 <div className="min-w-0">
-                  <span className="text-muted-foreground font-medium">{replyToSenderName}: </span>
+                  <span className="font-medium text-muted-foreground">{replyToSenderName}: </span>
                   <span className="text-muted-foreground">{replyToContent.slice(0, 100)}...</span>
                 </div>
               </div>
@@ -197,7 +197,7 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                         <ReactMarkdown
                           components={{
                             p: ({ children }) => (
-                              <p className="mb-1 wrap-break-word whitespace-pre-wrap last:mb-0">{children}</p>
+                              <p className="wrap-break-word mb-1 whitespace-pre-wrap last:mb-0">{children}</p>
                             ),
                             strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
                             em: ({ children }) => <em className="italic">{children}</em>,
@@ -333,7 +333,7 @@ export interface ChatDateSeparatorProps {
 export function ChatDateSeparator({ date }: ChatDateSeparatorProps) {
   return (
     <div className="flex items-center justify-center py-4">
-      <Badge className="text-xs font-normal" variant="secondary">
+      <Badge className="font-normal text-xs" variant="secondary">
         {formatDate(date)}
       </Badge>
     </div>

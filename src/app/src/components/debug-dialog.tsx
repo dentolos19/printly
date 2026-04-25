@@ -3,7 +3,7 @@
 import { BugIcon, RefreshCwIcon, ShuffleIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button } from "#/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -11,11 +11,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { useAuth } from "@/lib/providers/auth";
-import { useServer } from "@/lib/providers/server";
+} from "#/components/ui/dialog";
+import { Label } from "#/components/ui/label";
+import { Separator } from "#/components/ui/separator";
+import { useAuth } from "#/lib/providers/auth";
+import { useServer } from "#/lib/providers/server";
 
 export default function DebugDialog() {
   const { claims, refreshAccess } = useAuth();
@@ -74,7 +74,7 @@ export default function DebugDialog() {
   return (
     <Dialog onOpenChange={setIsOpen} open={isOpen}>
       <DialogTrigger asChild>
-        <button className="hover:bg-accent focus:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none">
+        <button className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent focus:bg-accent">
           <BugIcon className="size-4" />
           <span>Debug Tools</span>
         </button>
@@ -90,8 +90,8 @@ export default function DebugDialog() {
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label className="text-muted-foreground text-xs font-medium uppercase">User Information</Label>
-            <div className="bg-muted rounded-md p-3 font-mono text-sm">
+            <Label className="font-medium text-muted-foreground text-xs uppercase">User Information</Label>
+            <div className="rounded-md bg-muted p-3 font-mono text-sm">
               <div className="grid gap-1">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">User ID:</span>
@@ -112,7 +112,7 @@ export default function DebugDialog() {
           <Separator />
 
           <div className="space-y-3">
-            <Label className="text-muted-foreground text-xs font-medium uppercase">Actions</Label>
+            <Label className="font-medium text-muted-foreground text-xs uppercase">Actions</Label>
 
             <div className="space-y-2">
               <Button

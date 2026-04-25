@@ -2,8 +2,8 @@
 
 import { jwtDecode } from "jwt-decode";
 import { createContext, useContext, useEffect, useState } from "react";
-import { API_URL } from "@/environment";
-import { UserClaims } from "@/types";
+import { API_URL } from "#/environment";
+import type { UserClaims } from "#/types";
 
 const AuthContext = createContext<{
   claims: UserClaims | null;

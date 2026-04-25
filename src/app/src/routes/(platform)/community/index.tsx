@@ -1,0 +1,411 @@
+"use client";
+
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { BookmarkIcon, PlusIcon, TrendingUpIcon } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { Button } from "#/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
+import { useAuth } from "#/lib/providers/auth";
+import { useServer } from "#/lib/providers/server";
+import {
+  type BookmarkedPostResponse,
+  type CommunityStatsResponse,
+  PostStatus,
+  type PostSummaryResponse,
+  type ReactionType,
+  type ReportReason,
+  ReportType,
+} from "#/lib/server/community";
+import {
+  CreatePostDialog,
+  EmptyState,
+  Pagination,
+  PostCard,
+  PostDetailDialog,
+  PostGrid,
+  SearchBar,
+  StatsCard,
+} from "#/routes/(platform)/community/-components";
+
+// ==================== Main Page Component ====================
+function CommunityPage() {
+  const { api } = useServer();
+  const { claims } = useAuth();
+  const navigate = useNavigate();
+
+  const [activeTab, setActiveTab] = useState("feed");
+  const [posts, setPosts] = useState<PostSummaryResponse[]>([]);
+  const [myPosts, setMyPosts] = useState<PostSummaryResponse[]>([]);
+  const [bookmarks, setBookmarks] = useState<BookmarkedPostResponse[]>([]);
+  const [trendingPosts, setTrendingPosts] = useState<PostSummaryResponse[]>([]);
+  const [explorePosts, setExplorePosts] = useState<PostSummaryResponse[]>([]);
+  const [stats, setStats] = useState<CommunityStatsResponse | null>(null);
+
+  const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [trendingPage, setTrendingPage] = useState(1);
+  const [trendingTotalPages, setTrendingTotalPages] = useState(1);
+  const [explorePage, setExplorePage] = useState(1);
+  const [exploreTotalPages, setExploreTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [postDetailOpen, setPostDetailOpen] = useState(false);
+
+  const loadPosts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api.community.getPosts({ page, pageSize: 12, searchTerm: searchTerm || undefined });
+      setPosts(data.posts);
+      setTotalPages(data.totalPages);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to load posts");
+    } finally {
+      setLoading(false);
+    }
+  }, [api.community, page, searchTerm]);
+
+  const loadMyPosts = useCallback(async () => {
+    try {
+      const data = await api.community.getMyPosts();
+      setMyPosts(data);
+    } catch (error) {
+      console.error("Failed to load my posts:", error);
+    }
+  }, [api.community]);
+
+  const loadBookmarks = useCallback(async () => {
+    try {
+      const data = await api.community.getBookmarks();
+      setBookmarks(data);
+    } catch (error) {
+      console.error("Failed to load bookmarks:", error);
+    }
+  }, [api.community]);
+
+  const loadTrending = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api.community.getTrendingPosts(trendingPage, 12);
+      setTrendingPosts(data.posts);
+      setTrendingTotalPages(data.totalPages);
+    } catch (error) {
+      console.error("Failed to load trending:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [api.community, trendingPage]);
+
+  const loadExplore = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api.community.getExploreFeed(explorePage, 12);
+      setExplorePosts(data.posts);
+      setExploreTotalPages(data.totalPages);
+    } catch (error) {
+      console.error("Failed to load explore:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [api.community, explorePage]);
+
+  const loadStats = useCallback(async () => {
+    setStatsLoading(true);
+    try {
+      const data = await api.community.getStats();
+      setStats(data);
+    } catch (error) {
+      console.error("Failed to load stats:", error);
+    } finally {
+      setStatsLoading(false);
+    }
+  }, [api.community]);
+
+  useEffect(() => {
+    loadPosts();
+    loadStats();
+  }, [loadPosts, loadStats]);
+
+  useEffect(() => {
+    if (activeTab === "my-posts") {
+      loadMyPosts();
+    } else if (activeTab === "bookmarks") {
+      loadBookmarks();
+    } else if (activeTab === "trending") {
+      loadTrending();
+    } else if (activeTab === "explore") {
+      loadExplore();
+    }
+  }, [activeTab, loadMyPosts, loadBookmarks, loadTrending, loadExplore]);
+
+  const handleReact = async (postId: string, reaction: ReactionType | null) => {
+    try {
+      if (reaction === null) {
+        await api.community.deleteReaction(postId);
+      } else {
+        await api.community.createOrUpdateReaction({ postId, reactionType: reaction });
+      }
+      loadPosts();
+      if (activeTab === "my-posts") loadMyPosts();
+      if (activeTab === "bookmarks") loadBookmarks();
+      if (activeTab === "trending") loadTrending();
+      if (activeTab === "explore") loadExplore();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update reaction");
+    }
+  };
+
+  const handleBookmark = async (postId: string) => {
+    try {
+      await api.community.toggleBookmark(postId);
+      loadPosts();
+      if (activeTab === "my-posts") loadMyPosts();
+      if (activeTab === "bookmarks") loadBookmarks();
+      if (activeTab === "trending") loadTrending();
+      if (activeTab === "explore") loadExplore();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update bookmark");
+    }
+  };
+
+  const handleShare = async (postId: string) => {
+    try {
+      await api.community.sharePost(postId);
+      toast.success("Post shared!");
+      loadPosts();
+      if (activeTab === "trending") loadTrending();
+      if (activeTab === "explore") loadExplore();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to share post");
+    }
+  };
+
+  const handleDelete = async (postId: string) => {
+    try {
+      await api.community.deletePost(postId);
+      toast.success("Post deleted");
+      loadPosts();
+      loadMyPosts();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete post");
+    }
+  };
+
+  const handleArchive = async (postId: string, newStatus: PostStatus) => {
+    try {
+      await api.community.updatePost(postId, { postStatus: newStatus });
+      toast.success(newStatus === PostStatus.Archived ? "Post archived" : "Post published");
+      loadPosts();
+      loadMyPosts();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update post");
+    }
+  };
+
+  const handleReport = async (postId: string, reason: ReportReason, description?: string) => {
+    try {
+      await api.community.createReport({
+        reportType: ReportType.Post,
+        postId,
+        reason,
+        description,
+      });
+      toast.success("Report submitted. Thank you for helping keep our community safe.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to submit report");
+    }
+  };
+
+  const handleComment = (postId: string) => {
+    setSelectedPostId(postId);
+    setPostDetailOpen(true);
+  };
+
+  const handleTagClick = (tag: string) => {
+    navigate({ to: "/community/tags/$tag", params: { tag } });
+  };
+
+  const handlePostUpdated = () => {
+    loadPosts();
+    if (activeTab === "my-posts") loadMyPosts();
+    if (activeTab === "bookmarks") loadBookmarks();
+    if (activeTab === "trending") loadTrending();
+    if (activeTab === "explore") loadExplore();
+  };
+
+  const handleSearch = useCallback((query: string) => {
+    setSearchTerm(query);
+    setPage(1); // Reset to first page when searching
+  }, []);
+
+  return (
+    <div className="container mx-auto max-w-7xl space-y-6 p-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="font-bold text-3xl">Community</h1>
+          <p className="text-muted-foreground">Share and discover amazing designs</p>
+        </div>
+        <Button onClick={() => setCreateDialogOpen(true)}>
+          <PlusIcon className="mr-2 h-4 w-4" />
+          Create Post
+        </Button>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+        {/* Main content */}
+        <div className="space-y-6">
+          <Tabs onValueChange={setActiveTab} value={activeTab}>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <TabsList>
+                <TabsTrigger value="feed">Feed</TabsTrigger>
+                <TabsTrigger value="trending">
+                  <TrendingUpIcon className="mr-1.5 h-3.5 w-3.5" />
+                  Trending
+                </TabsTrigger>
+                <TabsTrigger value="explore">Explore</TabsTrigger>
+                <TabsTrigger value="my-posts">My Posts</TabsTrigger>
+                <TabsTrigger value="bookmarks">Bookmarks</TabsTrigger>
+              </TabsList>
+
+              <div className="w-full sm:w-64">
+                {activeTab === "feed" && <SearchBar onSearch={handleSearch} placeholder="Search posts..." />}
+              </div>
+            </div>
+
+            <TabsContent className="mt-6 space-y-6" value="feed">
+              <PostGrid
+                currentUserId={claims?.id}
+                emptyActionLabel={searchTerm ? undefined : "Create your first post"}
+                emptyDescription={searchTerm ? "Try a different search term" : undefined}
+                emptyTitle={searchTerm ? "No posts found" : "No posts yet"}
+                loading={loading}
+                onArchive={handleArchive}
+                onBookmark={handleBookmark}
+                onComment={handleComment}
+                onEmptyAction={searchTerm ? undefined : () => setCreateDialogOpen(true)}
+                onReact={handleReact}
+                onReport={handleReport}
+                onShare={handleShare}
+                onTagClick={handleTagClick}
+                posts={posts}
+              />
+              <Pagination onPageChange={setPage} page={page} totalPages={totalPages} />
+            </TabsContent>
+
+            <TabsContent className="mt-6 space-y-6" value="trending">
+              <PostGrid
+                currentUserId={claims?.id}
+                emptyDescription="Check back later for trending content"
+                emptyTitle="No trending posts"
+                loading={loading}
+                onBookmark={handleBookmark}
+                onComment={handleComment}
+                onReact={handleReact}
+                onReport={handleReport}
+                onShare={handleShare}
+                onTagClick={handleTagClick}
+                posts={trendingPosts}
+              />
+              <Pagination onPageChange={setTrendingPage} page={trendingPage} totalPages={trendingTotalPages} />
+            </TabsContent>
+
+            <TabsContent className="mt-6 space-y-6" value="explore">
+              <PostGrid
+                currentUserId={claims?.id}
+                emptyDescription="Follow more people to see content here"
+                emptyTitle="Nothing to explore"
+                loading={loading}
+                onBookmark={handleBookmark}
+                onComment={handleComment}
+                onReact={handleReact}
+                onReport={handleReport}
+                onShare={handleShare}
+                onTagClick={handleTagClick}
+                posts={explorePosts}
+              />
+              <Pagination onPageChange={setExplorePage} page={explorePage} totalPages={exploreTotalPages} />
+            </TabsContent>
+
+            <TabsContent className="mt-6" value="my-posts">
+              <PostGrid
+                currentUserId={claims?.id}
+                emptyActionLabel="Create your first post"
+                emptyTitle="No posts yet"
+                onArchive={handleArchive}
+                onBookmark={handleBookmark}
+                onComment={handleComment}
+                onDelete={handleDelete}
+                onEmptyAction={() => setCreateDialogOpen(true)}
+                onReact={handleReact}
+                onReport={handleReport}
+                onShare={handleShare}
+                onTagClick={handleTagClick}
+                posts={myPosts}
+              />
+            </TabsContent>
+
+            <TabsContent className="mt-6" value="bookmarks">
+              {bookmarks.length === 0 ? (
+                <EmptyState
+                  description="Save posts you like to view them later"
+                  icon={BookmarkIcon}
+                  title="No bookmarks yet"
+                />
+              ) : (
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {bookmarks.map((bookmark) => (
+                    <PostCard
+                      isOwner={claims?.id === bookmark.post.authorId}
+                      key={bookmark.id}
+                      onArchive={handleArchive}
+                      onBookmark={handleBookmark}
+                      onComment={handleComment}
+                      onReact={handleReact}
+                      onReport={handleReport}
+                      onShare={handleShare}
+                      onTagClick={handleTagClick}
+                      post={bookmark.post}
+                    />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          <StatsCard loading={statsLoading} stats={stats} />
+        </div>
+      </div>
+
+      {/* Dialogs */}
+      <CreatePostDialog
+        onOpenChange={setCreateDialogOpen}
+        onPostCreated={() => {
+          loadPosts();
+          loadMyPosts();
+          loadStats();
+        }}
+        open={createDialogOpen}
+      />
+
+      <PostDetailDialog
+        onOpenChange={setPostDetailOpen}
+        onPostUpdated={handlePostUpdated}
+        onTagClick={handleTagClick}
+        open={postDetailOpen}
+        postId={selectedPostId}
+      />
+    </div>
+  );
+}
+
+export const Route = createFileRoute("/(platform)/community/")({
+  component: CommunityPage,
+});

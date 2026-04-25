@@ -28,6 +28,8 @@ builder.Services.AddHostedService<NotificationCleanupService>();
 
 var app = builder.Build();
 
+app.UsePathBase("/api");
+
 app.SetupMiddlewares();
 app.SetupCors();
 app.SetupAuth();

@@ -1,8 +1,8 @@
 "use client";
 
-import { CheckCircle2, Circle, Clock, CreditCard, Package, RotateCcw, Truck, XCircle } from "lucide-react";
-import { OrderStatus } from "@/lib/server/order";
-import { cn } from "@/lib/utils";
+import { CheckCircle2, Clock, CreditCard, Package, RotateCcw, Truck, XCircle } from "lucide-react";
+import { OrderStatus } from "#/lib/server/order";
+import { cn } from "#/lib/utils";
 
 interface OrderProgressTrackerProps {
   status: OrderStatus;
@@ -58,7 +58,7 @@ export function OrderProgressTracker({ status, className }: OrderProgressTracker
           </div>
           <div>
             <p className="font-medium text-red-800 dark:text-red-300">Order Cancelled</p>
-            <p className="text-sm text-red-600 dark:text-red-400">This order has been cancelled</p>
+            <p className="text-red-600 text-sm dark:text-red-400">This order has been cancelled</p>
           </div>
         </div>
       </div>
@@ -80,7 +80,7 @@ export function OrderProgressTracker({ status, className }: OrderProgressTracker
           </div>
           <div>
             <p className="font-medium text-orange-800 dark:text-orange-300">Refund Requested</p>
-            <p className="text-sm text-orange-600 dark:text-orange-400">Your refund request is being reviewed</p>
+            <p className="text-orange-600 text-sm dark:text-orange-400">Your refund request is being reviewed</p>
           </div>
         </div>
       </div>
@@ -101,7 +101,7 @@ export function OrderProgressTracker({ status, className }: OrderProgressTracker
           </div>
           <div>
             <p className="font-medium text-amber-800 dark:text-amber-300">Refund Approved</p>
-            <p className="text-sm text-amber-600 dark:text-amber-400">
+            <p className="text-amber-600 text-sm dark:text-amber-400">
               Your refund has been approved and is being processed
             </p>
           </div>
@@ -124,7 +124,7 @@ export function OrderProgressTracker({ status, className }: OrderProgressTracker
           </div>
           <div>
             <p className="font-medium text-gray-800 dark:text-gray-200">Refunded</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">This order has been refunded</p>
+            <p className="text-gray-600 text-sm dark:text-gray-400">This order has been refunded</p>
           </div>
         </div>
       </div>
@@ -135,14 +135,14 @@ export function OrderProgressTracker({ status, className }: OrderProgressTracker
   const currentStageIndex = orderStages.findIndex((stage) => stage.status === status);
 
   return (
-    <div className={cn("bg-card rounded-lg border p-4", className)}>
-      <h4 className="text-muted-foreground mb-4 text-sm font-medium">Order Progress</h4>
+    <div className={cn("rounded-lg border bg-card p-4", className)}>
+      <h4 className="mb-4 font-medium text-muted-foreground text-sm">Order Progress</h4>
 
       {/* Progress bar */}
       <div className="relative mb-6">
-        <div className="bg-muted absolute top-1/2 left-0 h-1 w-full -translate-y-1/2 rounded-full" />
+        <div className="absolute top-1/2 left-0 h-1 w-full -translate-y-1/2 rounded-full bg-muted" />
         <div
-          className="bg-primary absolute top-1/2 left-0 h-1 -translate-y-1/2 rounded-full transition-all duration-500"
+          className="absolute top-1/2 left-0 h-1 -translate-y-1/2 rounded-full bg-primary transition-all duration-500"
           style={{
             width: `${(currentStageIndex / (orderStages.length - 1)) * 100}%`,
           }}
@@ -162,7 +162,7 @@ export function OrderProgressTracker({ status, className }: OrderProgressTracker
                   className={cn(
                     "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all duration-300",
                     isCompleted && "border-primary bg-primary text-primary-foreground",
-                    isCurrent && "border-primary bg-primary text-primary-foreground ring-primary/20 ring-4",
+                    isCurrent && "border-primary bg-primary text-primary-foreground ring-4 ring-primary/20",
                     isPending && "border-muted-foreground/30 bg-background text-muted-foreground/50",
                   )}
                 >
@@ -184,13 +184,13 @@ export function OrderProgressTracker({ status, className }: OrderProgressTracker
             <div className="flex flex-col items-center text-center" key={stage.status} style={{ width: "60px" }}>
               <span
                 className={cn(
-                  "text-xs font-medium transition-colors",
+                  "font-medium text-xs transition-colors",
                   isCompleted || isCurrent ? "text-foreground" : "text-muted-foreground/50",
                 )}
               >
                 {stage.label}
               </span>
-              {isCurrent && <span className="text-muted-foreground mt-0.5 text-[10px]">{stage.description}</span>}
+              {isCurrent && <span className="mt-0.5 text-[10px] text-muted-foreground">{stage.description}</span>}
             </div>
           );
         })}

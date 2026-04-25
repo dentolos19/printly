@@ -1,8 +1,8 @@
 "use client";
 
 import { Download, ExternalLink, File, FileAudio, FileImage, FileText, FileVideo } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Button } from "#/components/ui/button";
+import { cn } from "#/lib/utils";
 
 export interface FileAttachmentProps {
   url: string;
@@ -52,7 +52,7 @@ export function FileAttachment({ url, fileName, fileType, fileSize, className }:
             <ExternalLink className="h-6 w-6 text-white" />
           </div>
         </a>
-        <div className="text-muted-foreground mt-1 flex items-center gap-2 text-xs">
+        <div className="mt-1 flex items-center gap-2 text-muted-foreground text-xs">
           <span className="truncate">{fileName}</span>
           <span>•</span>
           <span>{formatFileSize(fileSize)}</span>
@@ -68,7 +68,7 @@ export function FileAttachment({ url, fileName, fileType, fileSize, className }:
         <video className="max-h-60 w-auto rounded-lg" controls preload="metadata" src={url}>
           Your browser does not support the video tag.
         </video>
-        <div className="text-muted-foreground mt-1 flex items-center gap-2 text-xs">
+        <div className="mt-1 flex items-center gap-2 text-muted-foreground text-xs">
           <span className="truncate">{fileName}</span>
           <span>•</span>
           <span>{formatFileSize(fileSize)}</span>
@@ -79,12 +79,12 @@ export function FileAttachment({ url, fileName, fileType, fileSize, className }:
 
   // Generic file
   return (
-    <div className={cn("bg-muted/30 flex items-center gap-3 rounded-lg border p-3", className)}>
-      <div className="bg-primary/10 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg">
-        <Icon className="text-primary h-5 w-5" />
+    <div className={cn("flex items-center gap-3 rounded-lg border bg-muted/30 p-3", className)}>
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+        <Icon className="h-5 w-5 text-primary" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{fileName}</p>
+        <p className="truncate font-medium text-sm">{fileName}</p>
         <p className="text-muted-foreground text-xs">{formatFileSize(fileSize)}</p>
       </div>
       <Button asChild className="shrink-0" size="icon" variant="ghost">

@@ -1,0 +1,77 @@
+"use client";
+
+import { Check, ChevronDown, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { Button } from "#/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "#/components/ui/popover";
+import type { AIModel } from "#/lib/server/chatbot";
+import { cn } from "#/lib/utils";
+
+interface ModelSelectorProps {
+  selectedModel: string;
+  onModelChange: (modelId: string) => void;
+  models: AIModel[];
+  isLoading?: boolean;
+}
+
+export function ModelSelector({ selectedModel, onModelChange, models, isLoading = false }: ModelSelectorProps) {
+  const [open, setOpen] = useState(false);
+
+  const currentModel = models.find((m) => m.id === selectedModel);
+
+  return (
+    <Popover onOpenChange={setOpen} open={open}>
+      <PopoverTrigger asChild>
+        <Button
+          aria-expanded={open}
+          className="h-9 w-full justify-between text-xs"
+          disabled={isLoading}
+          role="combobox"
+          variant="outline"
+        >
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-3 w-3" />
+            <span className="truncate">{currentModel?.displayName || "Select model"}</span>
+          </div>
+          <ChevronDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[380px] p-0">
+        <div className="border-b p-3">
+          <h4 className="font-semibold text-sm">Choose AI Model</h4>
+          <p className="mt-1 text-muted-foreground text-xs">
+            Select which AI model to use for your chat. Changing models mid-conversation may affect context.
+          </p>
+        </div>
+        <div className="max-h-[300px] overflow-y-auto p-2">
+          {models.map((model) => (
+            <button
+              className={cn(
+                "flex w-full flex-col items-start gap-1 rounded-md p-3 text-left transition-colors hover:bg-accent",
+                selectedModel === model.id && "bg-accent",
+              )}
+              key={model.id}
+              onClick={() => {
+                onModelChange(model.id);
+                setOpen(false);
+              }}
+            >
+              <div className="flex w-full items-start justify-between gap-2">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm">{model.displayName}</span>
+                    {model.isDefault && (
+                      <span className="rounded bg-primary/10 px-1.5 py-0.5 text-primary text-xs">Default</span>
+                    )}
+                  </div>
+                  <p className="mt-0.5 text-muted-foreground text-xs">{model.description}</p>
+                </div>
+                {selectedModel === model.id && <Check className="h-4 w-4 shrink-0 text-primary" />}
+              </div>
+            </button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}

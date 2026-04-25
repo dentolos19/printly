@@ -19,20 +19,15 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
-      - name: Install Dependencies for App
+      - name: Install Dependencies
         working-directory: src/app
-        run: bun install --frozen-lockfile
-
-      - name: Install Dependencies for Server
-        working-directory: src/server-worker
         run: bun install --frozen-lockfile
 
       - name: Build App
         working-directory: src/app
-        run: bun opennextjs-cloudflare build
+        run: bun run build
         env:
-          NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
-          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+          VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
 
       - name: Build Server
         working-directory: src/server
@@ -46,15 +41,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Deploy Server to Cloudflare
-        uses: cloudflare/wrangler-action@v3
-        with:
-          accountId: ${{ secrets.CLOUDFLARE_ID }}
-          apiToken: ${{ secrets.CLOUDFLARE_TOKEN }}
-          command: deploy
-          workingDirectory: src/server-worker
-
-      - name: Deploy App to Cloudflare
+      - name: Deploy to Cloudflare
         uses: cloudflare/wrangler-action@v3
         with:
           accountId: ${{ secrets.CLOUDFLARE_ID }}

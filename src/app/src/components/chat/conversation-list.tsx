@@ -2,14 +2,14 @@
 
 import { AlertCircle, CheckCircle, Clock, Flag, MessageSquare, Plus, Search, User, XCircle } from "lucide-react";
 import { forwardRef, useState } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ConversationPriority, ConversationStatus, type ConversationSummary } from "@/lib/server/conversation";
-import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback } from "#/components/ui/avatar";
+import { Badge } from "#/components/ui/badge";
+import { Button } from "#/components/ui/button";
+import { Input } from "#/components/ui/input";
+import { ScrollArea } from "#/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "#/components/ui/select";
+import type { ConversationPriority, ConversationStatus, ConversationSummary } from "#/lib/server/conversation";
+import { cn } from "#/lib/utils";
 
 export interface ConversationListProps {
   conversations: ConversationSummary[];
@@ -224,9 +224,9 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
     if (isLoading) {
       return (
         <div className="flex h-full items-center justify-center p-12">
-          <div className="text-muted-foreground flex flex-col items-center gap-3">
+          <div className="flex flex-col items-center gap-3 text-muted-foreground">
             <div className="h-10 w-10 animate-spin rounded-full border-3 border-current border-t-transparent" />
-            <span className="text-sm font-medium">Loading conversations...</span>
+            <span className="font-medium text-sm">Loading conversations...</span>
           </div>
         </div>
       );
@@ -234,21 +234,21 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
 
     if (conversations.length === 0) {
       return (
-        <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-3 p-12">
-          <div className="bg-muted/50 rounded-full p-4">
+        <div className="flex h-full flex-col items-center justify-center gap-3 p-12 text-muted-foreground">
+          <div className="rounded-full bg-muted/50 p-4">
             <MessageSquare className="h-10 w-10 opacity-40" />
           </div>
-          <p className="text-foreground text-sm font-medium">{emptyMessage}</p>
+          <p className="font-medium text-foreground text-sm">{emptyMessage}</p>
         </div>
       );
     }
 
     return (
-      <div className="bg-background flex h-full flex-col border-r">
+      <div className="flex h-full flex-col border-r bg-background">
         {showHeader && (
           <div className="border-b px-3 py-2">
             <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-sm font-semibold">Messages</h2>
+              <h2 className="font-semibold text-sm">Messages</h2>
               {onCreateNew && (
                 <Button className="h-7 w-7 rounded-full" onClick={onCreateNew} size="icon" variant="default">
                   <Plus className="h-3 w-3" />
@@ -258,7 +258,7 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
 
             {showSearch && (
               <div className="relative mb-2">
-                <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+                <Search className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   className="h-8 pl-8 text-xs"
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -286,11 +286,11 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
         )}
 
         {filteredConversations.length === 0 ? (
-          <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-3 p-12">
-            <div className="bg-muted/50 rounded-full p-4">
+          <div className="flex h-full flex-col items-center justify-center gap-3 p-12 text-muted-foreground">
+            <div className="rounded-full bg-muted/50 p-4">
               <MessageSquare className="h-10 w-10 opacity-40" />
             </div>
-            <p className="text-foreground text-sm font-medium">
+            <p className="font-medium text-foreground text-sm">
               {searchQuery ? "No conversations found" : emptyMessage}
             </p>
           </div>
@@ -309,7 +309,7 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                 return (
                   <button
                     className={cn(
-                      "hover:bg-accent/50 flex w-full items-start gap-2.5 border-b py-3.5 pr-6 pl-3 text-left transition-all duration-200",
+                      "flex w-full items-start gap-2.5 border-b py-3.5 pr-6 pl-3 text-left transition-all duration-200 hover:bg-accent/50",
                       "border-l-4 hover:shadow-sm",
                       showPriority ? getPriorityCardBorder(conversation.priority) : "border-l-transparent",
                       isSelected && "bg-accent shadow-sm",
@@ -317,26 +317,26 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                     key={conversation.id}
                     onClick={() => onSelect(conversation.id)}
                   >
-                    <Avatar className="ring-border/5 h-11 w-11 shrink-0 ring-2">
+                    <Avatar className="h-11 w-11 shrink-0 ring-2 ring-border/5">
                       <AvatarFallback
-                        className={cn("text-sm font-semibold", showPriority && getPriorityColor(conversation.priority))}
+                        className={cn("font-semibold text-sm", showPriority && getPriorityColor(conversation.priority))}
                       >
                         {getInitials(displayName)}
                       </AvatarFallback>
                     </Avatar>
 
-                    <div className="max-w-sm min-w-0 flex-1 space-y-1 overflow-hidden">
+                    <div className="min-w-0 max-w-sm flex-1 space-y-1 overflow-hidden">
                       <div className="flex min-w-0 items-center gap-2 overflow-hidden">
                         <span
                           className={cn(
-                            "min-w-0 flex-1 truncate text-sm font-semibold",
+                            "min-w-0 flex-1 truncate font-semibold text-sm",
                             showPriority && getPriorityColor(conversation.priority),
                           )}
                           title={displayName}
                         >
                           {displayName}
                         </span>
-                        <span className="text-muted-foreground shrink-0 text-xs font-medium">
+                        <span className="shrink-0 font-medium text-muted-foreground text-xs">
                           {formatRelativeTime(conversation.lastMessageAt || conversation.createdAt)}
                         </span>
                       </div>
@@ -346,7 +346,7 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                           {showStatus && (
                             <Badge
                               className={cn(
-                                "gap-1 px-2 py-0.5 text-[10px] font-medium",
+                                "gap-1 px-2 py-0.5 font-medium text-[10px]",
                                 getStatusBadgeClasses(conversation.status),
                               )}
                               variant="outline"
@@ -358,7 +358,7 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                           {showPriority && conversation.priority >= 2 && (
                             <Badge
                               className={cn(
-                                "gap-1 px-2 py-0.5 text-[10px] font-medium",
+                                "gap-1 px-2 py-0.5 font-medium text-[10px]",
                                 getPriorityBadgeClasses(conversation.priority),
                               )}
                               variant="outline"
@@ -369,7 +369,7 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                           )}
                           {showAssignment && conversation.assignedToAdminName && (
                             <Badge
-                              className="gap-1 border-blue-200 bg-blue-50/50 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:border-blue-800 dark:bg-blue-950/20 dark:text-blue-400"
+                              className="gap-1 border-blue-200 bg-blue-50/50 px-2 py-0.5 font-medium text-[10px] text-blue-700 dark:border-blue-800 dark:bg-blue-950/20 dark:text-blue-400"
                               title={conversation.assignedToAdminName}
                               variant="outline"
                             >
@@ -381,11 +381,11 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                       )}
 
                       <div className="flex min-w-0 items-center gap-2">
-                        <div className="text-muted-foreground min-w-0 flex-1 text-xs leading-relaxed">
+                        <div className="min-w-0 flex-1 text-muted-foreground text-xs leading-relaxed">
                           {conversation.lastMessage ? (
                             <>
                               <span
-                                className="text-foreground/70 truncate font-medium"
+                                className="truncate font-medium text-foreground/70"
                                 title={conversation.lastMessage.senderName}
                               >
                                 {conversation.lastMessage.senderName}
@@ -402,7 +402,7 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                           )}
                         </div>
                         {conversation.unreadCount > 0 && (
-                          <Badge className="h-5 min-w-[20px] shrink-0 justify-center rounded-full bg-blue-600 px-1.5 text-[10px] font-semibold hover:bg-blue-600">
+                          <Badge className="h-5 min-w-[20px] shrink-0 justify-center rounded-full bg-blue-600 px-1.5 font-semibold text-[10px] hover:bg-blue-600">
                             {conversation.unreadCount > 99 ? "99+" : conversation.unreadCount}
                           </Badge>
                         )}

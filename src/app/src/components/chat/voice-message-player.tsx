@@ -2,9 +2,9 @@
 
 import { Pause, Play } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { cn } from "@/lib/utils";
+import { Button } from "#/components/ui/button";
+import { Slider } from "#/components/ui/slider";
+import { cn } from "#/lib/utils";
 
 export interface VoiceMessagePlayerProps {
   url: string;
@@ -76,7 +76,7 @@ export function VoiceMessagePlayer({ url, duration, className }: VoiceMessagePla
   }, [url]);
 
   return (
-    <div className={cn("bg-muted/50 flex items-center gap-3 rounded-lg p-3", className)}>
+    <div className={cn("flex items-center gap-3 rounded-lg bg-muted/50 p-3", className)}>
       <Button className="h-9 w-9 shrink-0" disabled={!isLoaded} onClick={handlePlayPause} size="icon" variant="ghost">
         {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
       </Button>

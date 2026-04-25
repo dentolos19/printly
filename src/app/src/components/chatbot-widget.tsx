@@ -19,14 +19,14 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Textarea } from "@/components/ui/textarea";
-import { API_URL } from "@/environment";
-import { useVoiceChat, type VoiceMessage } from "@/hooks/use-voice-chat";
-import { useAuth } from "@/lib/providers/auth";
-import type { AIModel, ToolAction } from "@/lib/server/chatbot";
-import { cn, formatMessageTime } from "@/lib/utils";
+import { Button } from "#/components/ui/button";
+import { ScrollArea } from "#/components/ui/scroll-area";
+import { Textarea } from "#/components/ui/textarea";
+import { API_URL } from "#/environment";
+import { useVoiceChat, type VoiceMessage } from "#/hooks/use-voice-chat";
+import { useAuth } from "#/lib/providers/auth";
+import type { AIModel, ToolAction } from "#/lib/server/chatbot";
+import { cn, formatMessageTime } from "#/lib/utils";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -379,19 +379,19 @@ export function ChatbotWidget() {
       {isOpen && (
         <div
           className={cn(
-            "bg-background fixed right-6 bottom-6 z-50 flex flex-col rounded-lg border shadow-2xl transition-all duration-200",
+            "fixed right-6 bottom-6 z-50 flex flex-col rounded-lg border bg-background shadow-2xl transition-all duration-200",
             isMinimized ? "h-14 w-80" : "h-[600px] max-h-[85vh] w-[420px] max-w-[calc(100vw-2rem)]",
           )}
         >
           {/* Header */}
-          <div className="bg-primary text-primary-foreground flex items-center justify-between rounded-t-lg border-b px-4 py-3">
+          <div className="flex items-center justify-between rounded-t-lg border-b bg-primary px-4 py-3 text-primary-foreground">
             <div className="flex items-center gap-2">
               <Bot className="h-5 w-5" />
               <span className="font-semibold">Printly Assistant</span>
               {voiceActive && (
                 <span
                   className={cn(
-                    "rounded-full px-2 py-0.5 text-[10px] font-medium",
+                    "rounded-full px-2 py-0.5 font-medium text-[10px]",
                     isListening
                       ? "bg-green-500/20 text-green-100"
                       : isSpeaking
@@ -442,9 +442,9 @@ export function ChatbotWidget() {
                           )}
                         >
                           {message.error ? (
-                            <AlertCircle className="text-destructive h-4 w-4" />
+                            <AlertCircle className="h-4 w-4 text-destructive" />
                           ) : (
-                            <Bot className="text-primary h-4 w-4" />
+                            <Bot className="h-4 w-4 text-primary" />
                           )}
                         </div>
                       )}
@@ -459,7 +459,7 @@ export function ChatbotWidget() {
                         )}
                       >
                         {message.role === "user" ? (
-                          <p className="break-words whitespace-pre-wrap">{message.content}</p>
+                          <p className="whitespace-pre-wrap break-words">{message.content}</p>
                         ) : (
                           <div className="prose prose-sm dark:prose-invert max-w-none">
                             <ReactMarkdown
@@ -468,7 +468,7 @@ export function ChatbotWidget() {
                                 code: ({ className, children, ...props }) => {
                                   const isInline = !className;
                                   return isInline ? (
-                                    <code className="bg-muted/50 rounded px-1 py-0.5 font-mono text-xs" {...props}>
+                                    <code className="rounded bg-muted/50 px-1 py-0.5 font-mono text-xs" {...props}>
                                       {children}
                                     </code>
                                   ) : (
@@ -479,7 +479,7 @@ export function ChatbotWidget() {
                                 },
                                 // Style code blocks
                                 pre: ({ children }) => (
-                                  <pre className="bg-muted/50 my-2 overflow-x-auto rounded-md p-2 text-xs">
+                                  <pre className="my-2 overflow-x-auto rounded-md bg-muted/50 p-2 text-xs">
                                     {children}
                                   </pre>
                                 ),
@@ -513,20 +513,20 @@ export function ChatbotWidget() {
                           <div className="mt-2 space-y-2">
                             {message.actions.map((action, actionIdx) => (
                               <div
-                                className="bg-primary/5 border-primary/20 flex items-center gap-2 rounded-lg border p-2"
+                                className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 p-2"
                                 key={actionIdx}
                               >
                                 {action.type === "create_support_ticket" && (
                                   <>
-                                    <TicketCheck className="text-primary h-4 w-4 shrink-0" />
+                                    <TicketCheck className="h-4 w-4 shrink-0 text-primary" />
                                     <div className="min-w-0 flex-1">
-                                      <p className="text-xs font-medium">Support ticket created</p>
+                                      <p className="font-medium text-xs">Support ticket created</p>
                                       {action.subject && (
-                                        <p className="text-muted-foreground truncate text-xs">{action.subject}</p>
+                                        <p className="truncate text-muted-foreground text-xs">{action.subject}</p>
                                       )}
                                     </div>
                                     <a
-                                      className="text-primary hover:text-primary/80 shrink-0"
+                                      className="shrink-0 text-primary hover:text-primary/80"
                                       href="/chat"
                                       title="Open Chat"
                                     >
@@ -548,7 +548,7 @@ export function ChatbotWidget() {
                         </p>
                       </div>
                       {message.role === "user" && (
-                        <div className="bg-secondary flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary">
                           <User className="h-4 w-4" />
                         </div>
                       )}
@@ -563,7 +563,7 @@ export function ChatbotWidget() {
                       </div>
                       <div className="rounded-2xl bg-green-500/10 px-4 py-2.5">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-green-600 dark:text-green-400">Listening...</span>
+                          <span className="text-green-600 text-sm dark:text-green-400">Listening...</span>
                         </div>
                       </div>
                     </div>
@@ -575,7 +575,7 @@ export function ChatbotWidget() {
                       </div>
                       <div className="rounded-2xl bg-blue-500/10 px-4 py-2.5">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-blue-600 dark:text-blue-400">AI is speaking...</span>
+                          <span className="text-blue-600 text-sm dark:text-blue-400">AI is speaking...</span>
                         </div>
                       </div>
                     </div>
@@ -584,10 +584,10 @@ export function ChatbotWidget() {
                   {/* Loading indicator */}
                   {isLoading && (
                     <div className="flex justify-start gap-3">
-                      <div className="bg-primary/10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
-                        <Bot className="text-primary h-4 w-4" />
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                        <Bot className="h-4 w-4 text-primary" />
                       </div>
-                      <div className="bg-muted rounded-2xl px-4 py-2.5">
+                      <div className="rounded-2xl bg-muted px-4 py-2.5">
                         <div className="flex items-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin" />
                           <span className="text-muted-foreground text-sm">Thinking...</span>
@@ -601,7 +601,7 @@ export function ChatbotWidget() {
 
               {/* Error banner */}
               {error && (
-                <div className="bg-destructive/10 border-destructive/20 border-t px-4 py-2">
+                <div className="border-destructive/20 border-t bg-destructive/10 px-4 py-2">
                   <p className="text-destructive text-xs">{error}</p>
                 </div>
               )}
@@ -632,9 +632,9 @@ export function ChatbotWidget() {
                         <Cpu className="h-4 w-4" />
                       </Button>
                       {isModelMenuOpen && (
-                        <div className="border-input bg-popover absolute right-0 bottom-full z-50 mb-2 w-56 rounded-lg border shadow-lg">
+                        <div className="absolute right-0 bottom-full z-50 mb-2 w-56 rounded-lg border border-input bg-popover shadow-lg">
                           <div className="p-3">
-                            <p className="text-muted-foreground mb-2 text-xs font-semibold">AI Model</p>
+                            <p className="mb-2 font-semibold text-muted-foreground text-xs">AI Model</p>
                             <div className="max-h-64 space-y-1 overflow-y-auto">
                               {models.map((model) => (
                                 <button
@@ -642,7 +642,7 @@ export function ChatbotWidget() {
                                     "w-full rounded-md px-3 py-2 text-left text-sm transition-colors",
                                     selectedModel === model.id
                                       ? "bg-primary text-primary-foreground"
-                                      : "hover:bg-muted text-foreground",
+                                      : "text-foreground hover:bg-muted",
                                   )}
                                   key={model.id}
                                   onClick={() => {
@@ -685,7 +685,7 @@ export function ChatbotWidget() {
                     {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   </Button>
                 </div>
-                <p className="text-muted-foreground mt-2 text-center text-xs">
+                <p className="mt-2 text-center text-muted-foreground text-xs">
                   Press Enter to send, Shift+Enter for new line
                 </p>
               </div>

@@ -3,14 +3,14 @@
 import * as signalR from "@microsoft/signalr";
 import { ArrowLeft, Circle, Loader2, Send, Users, Wifi, WifiOff } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { API_URL } from "@/environment";
-import { useAuth } from "@/lib/providers/auth";
-import { formatMessageTime } from "@/lib/utils";
+import { Avatar, AvatarFallback } from "#/components/ui/avatar";
+import { Button } from "#/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "#/components/ui/card";
+import { Input } from "#/components/ui/input";
+import { ScrollArea } from "#/components/ui/scroll-area";
+import { API_URL } from "#/environment";
+import { useAuth } from "#/lib/providers/auth";
+import { formatMessageTime } from "#/lib/utils";
 
 interface Message {
   id: string;
@@ -178,7 +178,7 @@ export default function ChatInterface() {
           {connectionState === "disconnected" && (
             <div className="flex flex-col items-center justify-center gap-2 py-8">
               <WifiOff className="h-8 w-8 text-gray-400" />
-              <p className="text-sm text-gray-500">Connecting...</p>
+              <p className="text-gray-500 text-sm">Connecting...</p>
             </div>
           )}
 
@@ -189,7 +189,7 @@ export default function ChatInterface() {
                   <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
               ) : users.length === 0 ? (
-                <div className="py-8 text-center text-sm text-gray-500">No users available</div>
+                <div className="py-8 text-center text-gray-500 text-sm">No users available</div>
               ) : (
                 <div className="space-y-2">
                   {users.map((user) => {
@@ -212,10 +212,10 @@ export default function ChatInterface() {
                         </div>
                         <div className="flex-1">
                           <p className="font-medium">{user.name || user.email.split("@")[0]}</p>
-                          <p className="text-sm text-gray-500">{user.email}</p>
+                          <p className="text-gray-500 text-sm">{user.email}</p>
                         </div>
                         {user.unreadCount > 0 && (
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white text-xs">
                             {user.unreadCount}
                           </div>
                         )}
@@ -229,7 +229,7 @@ export default function ChatInterface() {
         </CardContent>
 
         <CardFooter className="border-t p-3">
-          <div className="flex w-full items-center justify-between text-xs text-gray-500">
+          <div className="flex w-full items-center justify-between text-gray-500 text-xs">
             <span>
               {users.length} user{users.length !== 1 ? "s" : ""}
             </span>
@@ -264,7 +264,7 @@ export default function ChatInterface() {
         </Avatar>
         <div className="flex-1">
           <CardTitle className="text-base">{selectedUser.name || selectedUser.email.split("@")[0]}</CardTitle>
-          <p className="text-xs text-gray-500">{selectedUser.email}</p>
+          <p className="text-gray-500 text-xs">{selectedUser.email}</p>
         </div>
       </CardHeader>
 
@@ -272,7 +272,7 @@ export default function ChatInterface() {
         <ScrollArea className="h-full px-4">
           <div className="space-y-4 py-4">
             {messages.length === 0 ? (
-              <p className="py-8 text-center text-sm text-gray-500">No messages yet. Start the conversation!</p>
+              <p className="py-8 text-center text-gray-500 text-sm">No messages yet. Start the conversation!</p>
             ) : (
               messages.map((message) => {
                 const isMe = message.senderId === auth.claims?.id;
