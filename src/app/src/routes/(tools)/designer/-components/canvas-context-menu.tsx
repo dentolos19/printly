@@ -1,5 +1,3 @@
-"use client";
-
 import {
   AlignCenter,
   AlignHorizontalDistributeCenter,
@@ -18,6 +16,7 @@ import {
   Ungroup,
 } from "lucide-react";
 import type { ReactNode } from "react";
+
 import {
   ContextMenu,
   ContextMenuContent,
@@ -29,6 +28,7 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "#/components/ui/context-menu";
+
 import { useDesigner } from "./hooks";
 
 type CanvasContextMenuProps = {

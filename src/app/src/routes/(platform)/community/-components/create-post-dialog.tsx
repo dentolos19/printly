@@ -1,8 +1,7 @@
-﻿"use client";
-
 import { Loader2, PlusIcon, SparklesIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import {
@@ -29,7 +28,7 @@ interface CreatePostDialogProps {
 export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePostDialogProps) {
   const { api } = useServer();
   const [caption, setCaption] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [_file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [uploadedAssetId, setUploadedAssetId] = useState<string | null>(null);
@@ -67,7 +66,7 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
       try {
         const asset = await api.asset.uploadAsset(selectedFile);
         setUploadedAssetId(asset.id);
-      } catch (error) {
+      } catch {
         toast.error("Failed to upload image");
         setFile(null);
         setPreview(null);
@@ -160,8 +159,8 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
                 </Button>
               </div>
             ) : (
-              <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-muted-foreground/25 border-dashed transition-colors hover:border-muted-foreground/50">
-                <PlusIcon className="h-10 w-10 text-muted-foreground" />
+              <label className="border-muted-foreground/25 hover:border-muted-foreground/50 flex aspect-square cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed transition-colors">
+                <PlusIcon className="text-muted-foreground h-10 w-10" />
                 <span className="text-muted-foreground text-sm">Click to upload</span>
                 <input accept="image/*" className="hidden" onChange={handleFileChange} type="file" />
               </label>
@@ -242,7 +241,7 @@ export function CreatePostDialog({ open, onOpenChange, onPostCreated }: CreatePo
                 {tags.map((tag) => (
                   <Badge className="gap-1" key={tag} variant="secondary">
                     #{tag}
-                    <button className="ml-0.5 hover:text-destructive" onClick={() => handleRemoveTag(tag)}>
+                    <button className="hover:text-destructive ml-0.5" onClick={() => handleRemoveTag(tag)}>
                       <XIcon className="h-3 w-3" />
                     </button>
                   </Badge>

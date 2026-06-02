@@ -1,7 +1,6 @@
-"use client";
-
 import { CornerUpLeft, File, Mic, Paperclip, Send, X } from "lucide-react";
 import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
+
 import { Button } from "#/components/ui/button";
 import { Textarea } from "#/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "#/components/ui/tooltip";
@@ -281,13 +280,13 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
     const canSend = content.trim() || selectedFile;
 
     return (
-      <div className="border-t bg-background p-4">
+      <div className="bg-background border-t p-4">
         {replyTo && (
-          <div className="mb-3 flex items-center gap-2 rounded-lg border-l-2 border-l-primary bg-muted/50 px-3 py-2">
-            <CornerUpLeft className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <div className="border-l-primary bg-muted/50 mb-3 flex items-center gap-2 rounded-lg border-l-2 px-3 py-2">
+            <CornerUpLeft className="text-muted-foreground h-4 w-4 shrink-0" />
             <div className="min-w-0 flex-1">
-              <span className="font-medium text-primary text-xs">Replying to {replyTo.senderName}</span>
-              <p className="truncate text-muted-foreground text-xs">{replyTo.content}</p>
+              <span className="text-primary text-xs font-medium">Replying to {replyTo.senderName}</span>
+              <p className="text-muted-foreground truncate text-xs">{replyTo.content}</p>
             </div>
             <Button className="h-6 w-6 shrink-0" onClick={onCancelReply} size="icon" variant="ghost">
               <X className="h-4 w-4" />
@@ -296,16 +295,16 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
         )}
 
         {selectedFile && (
-          <div className="mb-3 flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2">
+          <div className="bg-muted/50 mb-3 flex items-center gap-2 rounded-lg px-3 py-2">
             {filePreview ? (
               <img alt="Preview" className="h-12 w-12 rounded object-cover" src={filePreview} />
             ) : (
-              <div className="flex h-12 w-12 items-center justify-center rounded bg-muted">
-                <File className="h-6 w-6 text-muted-foreground" />
+              <div className="bg-muted flex h-12 w-12 items-center justify-center rounded">
+                <File className="text-muted-foreground h-6 w-6" />
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium text-sm">{selectedFile.name}</p>
+              <p className="truncate text-sm font-medium">{selectedFile.name}</p>
               <p className="text-muted-foreground text-xs">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
             </div>
             <Button className="h-6 w-6 shrink-0" onClick={clearSelectedFile} size="icon" variant="ghost">
@@ -314,14 +313,14 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
           </div>
         )}
 
-        {recordingError && <div className="mb-3 text-destructive text-sm">{recordingError}</div>}
+        {recordingError && <div className="text-destructive mb-3 text-sm">{recordingError}</div>}
 
         {isRecording ? (
           <div className="flex w-full items-center justify-between gap-3 rounded-xl bg-red-50 px-4 py-3 dark:bg-red-950/30">
             {/* Recording indicator */}
             <div className="flex items-center gap-2">
               <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
-              <span className="font-medium text-red-600 text-sm dark:text-red-400">
+              <span className="text-sm font-medium text-red-600 dark:text-red-400">
                 {formatRecordingTime(recordingDuration)}
               </span>
             </div>

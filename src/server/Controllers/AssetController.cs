@@ -107,7 +107,7 @@ public class AssetController(DatabaseContext context, StorageService storageServ
         asset.UpdatedAt = DateTime.UtcNow;
 
         // Check uploaded images for copyrighted material
-        if (asset.Type.StartsWith("image/"))
+        if (asset.Type.StartsWith("image/", StringComparison.Ordinal))
         {
             try
             {
@@ -135,7 +135,7 @@ public class AssetController(DatabaseContext context, StorageService storageServ
         }
 
         // Generate inline thumbnail for image assets (keeps previews fast and resilient)
-        if (asset.Type.StartsWith("image/") && file.Length < 10_000_000)
+        if (asset.Type.StartsWith("image/", StringComparison.Ordinal) && file.Length < 10_000_000)
         {
             try
             {
@@ -187,6 +187,25 @@ public class AssetController(DatabaseContext context, StorageService storageServ
         var downloadUrl = await storageService.DownloadFileAsync(asset);
 
         return Ok(new { url = downloadUrl });
+    }
+
+    /// <summary>
+    /// Streams the full asset file directly from storage.
+    /// </summary>
+    [HttpGet("{id}/file")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetAssetFile(string id)
+    {
+        if (!Guid.TryParse(id, out var assetId))
+            return BadRequest(new { message = "Invalid asset ID format" });
+
+        var asset = await Context.Assets.FirstOrDefaultAsync(a => a.Id == assetId && !a.IsDeleted);
+
+        if (asset is null)
+            return NotFound();
+
+        var stream = await storageService.StreamFileAsync(asset);
+        return File(stream, asset.Type);
     }
 
     /// <summary>

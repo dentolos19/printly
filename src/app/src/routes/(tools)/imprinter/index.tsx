@@ -1,5 +1,3 @@
-"use client";
-
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 
@@ -11,7 +9,7 @@ function Page() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    navigate({ to: "/imprinter/new", replace: true });
+    navigate({ to: "/imprinter/$id", params: { id: "new" }, replace: true });
   }, [navigate]);
 
   return (

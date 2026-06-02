@@ -12,12 +12,23 @@ jobs:
     name: Deploy
     environment: Production
     runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     steps:
       - name: Checkout Source
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: latest
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
+
+      - name: Setup Just
+        uses: extractions/setup-just@v4
 
       - name: Install Dependencies
         working-directory: src/app
@@ -26,25 +37,55 @@ jobs:
       - name: Build App
         working-directory: src/app
         run: bun run build
-        env:
-          VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
 
       - name: Build Server
         working-directory: src/server
         run: dotnet build --configuration Release
 
-      - name: Run Migrations
-        working-directory: src/server
-        run: |
-          dotnet tool restore
-          dotnet ef database update
+      - name: Migrate Database
+        run: just migrate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Deploy to Cloudflare
-        uses: cloudflare/wrangler-action@v3
+      - name: Deploy Worker
+        uses: cloudflare/wrangler-action@v4
         with:
-          accountId: ${{ secrets.CLOUDFLARE_ID }}
-          apiToken: ${{ secrets.CLOUDFLARE_TOKEN }}
-          command: deploy
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           workingDirectory: src/app
+          secrets: |
+            SECRET_KEY
+            APP_URL
+            DATABASE_URL
+            GOOGLE_CLIENT_ID
+            GOOGLE_CLIENT_SECRET
+            LIVEKIT_URL
+            LIVEKIT_API_KEY
+            LIVEKIT_API_SECRET
+            OPENROUTER_API_KEY
+            OPENROUTER_TITLE
+            OPENROUTER_REFERER
+            OPENROUTER_MODEL
+            OPENROUTER_IMAGE_MODEL
+            ELEVENLABS_API_KEY
+            ELEVENLABS_AGENT_ID
+            RESEND_API_KEY
+            RESEND_FROM_EMAIL
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          APP_URL: ${{ vars.APP_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
+          LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
+          LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_TITLE: ${{ vars.OPENROUTER_TITLE }}
+          OPENROUTER_REFERER: ${{ vars.OPENROUTER_REFERER }}
+          OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
+          OPENROUTER_IMAGE_MODEL: ${{ vars.OPENROUTER_IMAGE_MODEL }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_AGENT_ID: ${{ secrets.ELEVENLABS_AGENT_ID }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM_EMAIL: ${{ vars.RESEND_FROM_EMAIL }}

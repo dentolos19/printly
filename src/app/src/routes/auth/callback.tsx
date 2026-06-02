@@ -1,8 +1,7 @@
-"use client";
-
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { toast } from "sonner";
+
 import Loading from "#/components/loading";
 import { useAuth } from "#/lib/providers/auth";
 

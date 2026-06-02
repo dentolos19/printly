@@ -4,8 +4,12 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
+  <PropertyGroup>
+    <AnalysisMode>Recommended</AnalysisMode>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="AWSSDK.S3" Version="4.0.19.1" />
     <PackageReference Include="DotNetEnv" Version="3.1.1" />
     <PackageReference Include="Livekit.Server.Sdk.Dotnet" Version="1.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.5" />
@@ -20,7 +24,6 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
     <PackageReference Include="Resend" Version="0.2.2" />
     <PackageReference Include="SharpGLTF.Core" Version="1.0.6" />
-    <PackageReference Include="Stripe.net" Version="50.4.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.6" />
   </ItemGroup>
 </Project>

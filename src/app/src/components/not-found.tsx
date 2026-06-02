@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { SearchXIcon } from "lucide-react";
 import type { ComponentProps } from "react";
+
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
 import { cn } from "#/lib/utils";
@@ -13,11 +14,11 @@ export default function NotFound(props: ComponentProps<"div">) {
           <div className={"mx-auto flex size-16 items-center justify-center rounded-full bg-orange-200"}>
             <SearchXIcon className={"size-8 text-orange-600"} />
           </div>
-          <CardTitle className={"font-bold text-2xl"}>Not Found</CardTitle>
+          <CardTitle className={"text-2xl font-bold"}>Not Found</CardTitle>
           <CardDescription>The resource you are looking for does not exist.</CardDescription>
         </CardHeader>
         <CardContent className={"space-y-4"}>
-          <p className={"text-center text-muted-foreground text-sm"}>
+          <p className={"text-muted-foreground text-center text-sm"}>
             The page or resource you requested could not be found. It may have been moved, deleted, or the URL might be
             incorrect.
           </p>

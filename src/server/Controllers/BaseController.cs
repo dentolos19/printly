@@ -31,5 +31,5 @@ namespace PrintlyServer.Controllers;
 [Route("[controller]")]
 public class BaseController(DatabaseContext context) : ControllerBase
 {
-    protected readonly DatabaseContext Context = context;
+    protected DatabaseContext Context { get; } = context;
 }

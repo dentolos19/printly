@@ -1,6 +1,5 @@
-"use client";
-
 import { useState } from "react";
+
 import { Button } from "#/components/ui/button";
 import { Checkbox } from "#/components/ui/checkbox";
 import {
@@ -81,7 +80,7 @@ export function ResizeDesignDialog({ open, onOpenChange, currentSize, onResize }
             <ScrollArea className={"h-64 pr-4"}>
               <div className={"space-y-4"}>
                 <div>
-                  <h4 className={"mb-2 font-medium text-muted-foreground text-sm"}>Social Media</h4>
+                  <h4 className={"text-muted-foreground mb-2 text-sm font-medium"}>Social Media</h4>
                   <div className={"grid grid-cols-2 gap-2"}>
                     {socialPresets.map((preset) => (
                       <Button
@@ -95,7 +94,7 @@ export function ResizeDesignDialog({ open, onOpenChange, currentSize, onResize }
                         variant={"outline"}
                       >
                         <div className={"text-left"}>
-                          <div className={"font-medium text-sm"}>{preset.name}</div>
+                          <div className={"text-sm font-medium"}>{preset.name}</div>
                           <div className={"text-muted-foreground text-xs"}>
                             {preset.width} × {preset.height}
                           </div>
@@ -106,7 +105,7 @@ export function ResizeDesignDialog({ open, onOpenChange, currentSize, onResize }
                 </div>
 
                 <div>
-                  <h4 className={"mb-2 font-medium text-muted-foreground text-sm"}>Print</h4>
+                  <h4 className={"text-muted-foreground mb-2 text-sm font-medium"}>Print</h4>
                   <div className={"grid grid-cols-2 gap-2"}>
                     {printPresets.map((preset) => (
                       <Button
@@ -120,7 +119,7 @@ export function ResizeDesignDialog({ open, onOpenChange, currentSize, onResize }
                         variant={"outline"}
                       >
                         <div className={"text-left"}>
-                          <div className={"font-medium text-sm"}>{preset.name}</div>
+                          <div className={"text-sm font-medium"}>{preset.name}</div>
                           <div className={"text-muted-foreground text-xs"}>
                             {preset.width} × {preset.height}
                           </div>
@@ -131,7 +130,7 @@ export function ResizeDesignDialog({ open, onOpenChange, currentSize, onResize }
                 </div>
 
                 <div>
-                  <h4 className={"mb-2 font-medium text-muted-foreground text-sm"}>Presentation</h4>
+                  <h4 className={"text-muted-foreground mb-2 text-sm font-medium"}>Presentation</h4>
                   <div className={"grid grid-cols-2 gap-2"}>
                     {presentationPresets.map((preset) => (
                       <Button
@@ -145,7 +144,7 @@ export function ResizeDesignDialog({ open, onOpenChange, currentSize, onResize }
                         variant={"outline"}
                       >
                         <div className={"text-left"}>
-                          <div className={"font-medium text-sm"}>{preset.name}</div>
+                          <div className={"text-sm font-medium"}>{preset.name}</div>
                           <div className={"text-muted-foreground text-xs"}>
                             {preset.width} × {preset.height}
                           </div>
@@ -198,7 +197,7 @@ export function ResizeDesignDialog({ open, onOpenChange, currentSize, onResize }
             id={"scale-content"}
             onCheckedChange={(checked) => setScaleContent(checked === true)}
           />
-          <Label className={"font-normal text-sm"} htmlFor={"scale-content"}>
+          <Label className={"text-sm font-normal"} htmlFor={"scale-content"}>
             Scale content proportionally
           </Label>
         </div>

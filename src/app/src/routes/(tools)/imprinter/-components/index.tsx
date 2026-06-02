@@ -1,12 +1,12 @@
-"use client";
-
 import { Box, Columns2, Grid3X3 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "#/components/ui/dialog";
 import { ScrollArea } from "#/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
 import { cn } from "#/lib/utils";
 import { FallbackImage } from "#/routes/(tools)/-shared/components/fallback-image";
+
 import { useImprinter } from "./hooks/use-imprinter";
 import { useKeyboardShortcuts } from "./hooks/use-keyboard";
 import { IconToolbar } from "./icon-toolbar";
@@ -75,7 +75,7 @@ export function ImprinterContent() {
 
   return (
     <>
-      <div className="flex h-screen flex-col bg-background">
+      <div className="bg-background flex h-screen flex-col">
         <ToolbarHeader />
         <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
           <IconToolbar />
@@ -136,7 +136,7 @@ export function ImprinterContent() {
               </Tabs>
             ) : (
               <div className="flex h-full w-full items-center justify-center">
-                <div className="flex flex-col items-center gap-2 text-center text-muted-foreground">
+                <div className="text-muted-foreground flex flex-col items-center gap-2 text-center">
                   <p className="text-sm">No product selected</p>
                   <p className="text-xs">Select a product from the left panel to get started</p>
                 </div>
@@ -177,14 +177,14 @@ export function ImprinterContent() {
                       src={`/assets/${product.modelPreviewId ?? product.imageId}/view`}
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-muted-foreground text-xs">
+                    <div className="text-muted-foreground flex h-full w-full items-center justify-center text-xs">
                       No image
                     </div>
                   )}
                   <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/70 to-transparent p-2">
-                    <p className="truncate font-medium text-white text-xs">{product.name}</p>
+                    <p className="truncate text-xs font-medium text-white">{product.name}</p>
                     {product.variants.length > 0 && (
-                      <p className="truncate text-white/80 text-xs">
+                      <p className="truncate text-xs text-white/80">
                         {product.variants.length} variant{product.variants.length > 1 ? "s" : ""}
                       </p>
                     )}

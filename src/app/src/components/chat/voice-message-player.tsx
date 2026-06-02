@@ -1,7 +1,6 @@
-"use client";
-
 import { Pause, Play } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+
 import { Button } from "#/components/ui/button";
 import { Slider } from "#/components/ui/slider";
 import { cn } from "#/lib/utils";

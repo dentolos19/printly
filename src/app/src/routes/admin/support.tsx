@@ -1,6 +1,5 @@
-"use client";
-
 import { createFileRoute } from "@tanstack/react-router";
+
 import TicketInterface from "#/components/ticket-interface";
 
 export const Route = createFileRoute("/admin/support")({

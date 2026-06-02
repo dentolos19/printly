@@ -1,4 +1,4 @@
-import type { ServerFetch } from "#/types";
+import type { ServerFetch } from "#/lib/types";
 
 // Notification types matching backend enum
 export enum NotificationType {

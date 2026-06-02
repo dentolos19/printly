@@ -1,4 +1,4 @@
-﻿namespace PrintlyServer.Data.Entities;
+namespace PrintlyServer.Data.Entities;
 
 public enum PostVisibility
 {
@@ -25,20 +25,20 @@ public class Post : BaseEntity
     public string AuthorId { get; set; } = null!;
     public User Author { get; set; } = null!;
 
-    public string Caption { get; set; }
+    public string? Caption { get; set; }
 
     public Guid PhotoId { get; set; }
-    public Asset Photo { get; set; }
+    public Asset? Photo { get; set; }
 
     public PostVisibility Visibility { get; set; } = PostVisibility.Visible;
     public PostStatus PostStatus { get; set; } = PostStatus.Draft;
 
     // Pinned post support
-    public bool IsPinned { get; set; } = false;
+    public bool IsPinned { get; set; }
     public DateTime? PinnedAt { get; set; }
 
     // Content moderation
-    public bool IsNsfw { get; set; } = false;
+    public bool IsNsfw { get; set; }
     public string? ContentWarning { get; set; }
 
     public ICollection<PostComment> Comments { get; set; } = new List<PostComment>();

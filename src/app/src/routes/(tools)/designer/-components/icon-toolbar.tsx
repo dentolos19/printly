@@ -1,5 +1,3 @@
-"use client";
-
 import {
   Circle,
   Image,
@@ -13,6 +11,7 @@ import {
   Triangle,
   Type,
 } from "lucide-react";
+
 import { Button } from "#/components/ui/button";
 import { Separator } from "#/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "#/components/ui/tooltip";
@@ -110,7 +109,7 @@ export function IconToolbar({ className }: IconToolbarProps) {
         <TooltipContent side={"right"}>
           <p>
             {tool.label}
-            {tool.shortcut && <span className={"ml-2 text-muted-foreground"}>({tool.shortcut})</span>}
+            {tool.shortcut && <span className={"text-muted-foreground ml-2"}>({tool.shortcut})</span>}
           </p>
         </TooltipContent>
       </Tooltip>

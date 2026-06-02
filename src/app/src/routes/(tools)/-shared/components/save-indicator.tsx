@@ -3,6 +3,7 @@
  */
 
 import { AlertTriangle, Cloud, Loader2 } from "lucide-react";
+
 import { Tooltip, TooltipContent, TooltipTrigger } from "#/components/ui/tooltip";
 import type { SaveStatus } from "#/routes/(tools)/-shared/hooks/use-auto-save";
 
@@ -17,7 +18,7 @@ export function SaveIndicator({ status, lastSavedAt, isDirty }: SaveIndicatorPro
     idle: null,
     saving: <Loader2 className="h-3 w-3 animate-spin" />,
     saved: <Cloud className="h-3 w-3" />,
-    error: <AlertTriangle className="h-3 w-3 text-destructive" />,
+    error: <AlertTriangle className="text-destructive h-3 w-3" />,
   };
 
   const saveStatusText = {
@@ -30,7 +31,7 @@ export function SaveIndicator({ status, lastSavedAt, isDirty }: SaveIndicatorPro
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div className="flex items-center gap-1 text-muted-foreground text-xs">
+        <div className="text-muted-foreground flex items-center gap-1 text-xs">
           {saveStatusIcon[status]}
           <span>{saveStatusText[status]}</span>
         </div>

@@ -1,4 +1,5 @@
-import type { ServerFetch } from "#/types";
+import type { ServerFetch } from "#/lib/types";
+
 import type { InventoryResponse, ProductSize } from "./product";
 
 export type ProductVariantWithProductResponse = {

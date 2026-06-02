@@ -17,7 +17,7 @@ namespace PrintlyServer.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.3")
+                .HasAnnotation("ProductVersion", "10.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -922,10 +922,6 @@ namespace PrintlyServer.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<string>("StripeCheckoutSessionId")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -935,9 +931,6 @@ namespace PrintlyServer.Migrations
                         .IsUnique();
 
                     b.HasIndex("Status");
-
-                    b.HasIndex("StripeCheckoutSessionId")
-                        .IsUnique();
 
                     b.ToTable("Payments");
                 });
@@ -953,7 +946,6 @@ namespace PrintlyServer.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Caption")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("ContentWarning")
@@ -1434,10 +1426,6 @@ namespace PrintlyServer.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<string>("StripeRefundId")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1456,9 +1444,6 @@ namespace PrintlyServer.Migrations
                     b.HasIndex("RequestedByUserId");
 
                     b.HasIndex("Status");
-
-                    b.HasIndex("StripeRefundId")
-                        .IsUnique();
 
                     b.ToTable("Refunds");
                 });

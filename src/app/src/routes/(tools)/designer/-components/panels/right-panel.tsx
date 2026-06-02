@@ -1,5 +1,3 @@
-"use client";
-
 import type { FabricObject } from "fabric";
 import {
   AlertTriangle,
@@ -34,6 +32,7 @@ import {
   Unlock,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+
 import { Button } from "#/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "#/components/ui/collapsible";
 import { Input } from "#/components/ui/input";
@@ -46,6 +45,7 @@ import { ToggleGroup, ToggleGroupItem } from "#/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "#/components/ui/tooltip";
 import { cn } from "#/lib/utils";
 import { BLEND_MODES, type BlendMode, type LayerItem } from "#/routes/(tools)/designer/-types";
+
 import { ColorPicker } from "../color-picker";
 import { useDesigner } from "../hooks";
 
@@ -186,7 +186,7 @@ export function RightPanel({ className }: RightPanelProps) {
     >
       {/* Collapse button */}
       <div className={"flex shrink-0 items-center justify-between border-b px-3 py-2"}>
-        <span className={"font-medium text-sm"}>Manage</span>
+        <span className={"text-sm font-medium"}>Manage</span>
         <Button
           className={"h-7 w-7"}
           onClick={() => setIsExpanded(false)}
@@ -201,10 +201,10 @@ export function RightPanel({ className }: RightPanelProps) {
       <ScrollArea className={"h-0 flex-1"}>
         {/* Layers Section */}
         <Collapsible onOpenChange={setLayersOpen} open={layersOpen}>
-          <CollapsibleTrigger className={"flex w-full items-center justify-between px-3 py-2 hover:bg-accent"}>
+          <CollapsibleTrigger className={"hover:bg-accent flex w-full items-center justify-between px-3 py-2"}>
             <div className={"flex items-center gap-2"}>
               <Layers className={"h-4 w-4"} />
-              <span className={"font-medium text-sm"}>Layers</span>
+              <span className={"text-sm font-medium"}>Layers</span>
             </div>
             {layersOpen ? <ChevronDown className={"h-4 w-4"} /> : <ChevronRight className={"h-4 w-4"} />}
           </CollapsibleTrigger>
@@ -217,8 +217,8 @@ export function RightPanel({ className }: RightPanelProps) {
 
         {/* Properties Section */}
         <Collapsible onOpenChange={setPropertiesOpen} open={propertiesOpen}>
-          <CollapsibleTrigger className={"flex w-full items-center justify-between px-3 py-2 hover:bg-accent"}>
-            <span className={"font-medium text-sm"}>Properties</span>
+          <CollapsibleTrigger className={"hover:bg-accent flex w-full items-center justify-between px-3 py-2"}>
+            <span className={"text-sm font-medium"}>Properties</span>
             {propertiesOpen ? <ChevronDown className={"h-4 w-4"} /> : <ChevronRight className={"h-4 w-4"} />}
           </CollapsibleTrigger>
           <CollapsibleContent>
@@ -230,8 +230,8 @@ export function RightPanel({ className }: RightPanelProps) {
 
         {/* Adjustments Section */}
         <Collapsible onOpenChange={setAdjustmentsOpen} open={adjustmentsOpen}>
-          <CollapsibleTrigger className={"flex w-full items-center justify-between px-3 py-2 hover:bg-accent"}>
-            <span className={"font-medium text-sm"}>Adjustments</span>
+          <CollapsibleTrigger className={"hover:bg-accent flex w-full items-center justify-between px-3 py-2"}>
+            <span className={"text-sm font-medium"}>Adjustments</span>
             {adjustmentsOpen ? <ChevronDown className={"h-4 w-4"} /> : <ChevronRight className={"h-4 w-4"} />}
           </CollapsibleTrigger>
           <CollapsibleContent>
@@ -402,8 +402,8 @@ function LayersSection() {
   if (layers.length === 0) {
     return (
       <div className={"flex flex-col items-center justify-center py-8 text-center"}>
-        <Layers className={"h-10 w-10 text-muted-foreground/50"} />
-        <p className={"mt-2 text-muted-foreground text-sm"}>No layers yet</p>
+        <Layers className={"text-muted-foreground/50 h-10 w-10"} />
+        <p className={"text-muted-foreground mt-2 text-sm"}>No layers yet</p>
         <p className={"text-muted-foreground text-xs"}>Add elements to see them here</p>
       </div>
     );
@@ -469,23 +469,23 @@ function LayersSection() {
               onDragStart={(e) => handleDragStart(e, index)}
               onDrop={(e) => handleDrop(e, index)}
             >
-              <GripVertical className={"h-3 w-3 cursor-grab text-muted-foreground opacity-0 group-hover:opacity-100"} />
+              <GripVertical className={"text-muted-foreground h-3 w-3 cursor-grab opacity-0 group-hover:opacity-100"} />
 
               {/* Visibility toggle */}
               <button
-                className={"rounded p-0.5 hover:bg-muted"}
+                className={"hover:bg-muted rounded p-0.5"}
                 onClick={(e) => handleVisibilityToggle(layer, e)}
                 type={"button"}
               >
                 {layer.visible ? (
-                  <Eye className={"h-3.5 w-3.5 text-muted-foreground"} />
+                  <Eye className={"text-muted-foreground h-3.5 w-3.5"} />
                 ) : (
-                  <EyeOff className={"h-3.5 w-3.5 text-muted-foreground"} />
+                  <EyeOff className={"text-muted-foreground h-3.5 w-3.5"} />
                 )}
               </button>
 
               {/* Layer icon and name */}
-              <Icon className={"h-4 w-4 text-muted-foreground"} />
+              <Icon className={"text-muted-foreground h-4 w-4"} />
               {editingLayerId === layer.id ? (
                 <Input
                   autoFocus
@@ -519,14 +519,14 @@ function LayersSection() {
 
               {/* Lock toggle */}
               <button
-                className={"rounded p-0.5 opacity-0 hover:bg-muted group-hover:opacity-100"}
+                className={"hover:bg-muted rounded p-0.5 opacity-0 group-hover:opacity-100"}
                 onClick={(e) => handleLockToggle(layer, e)}
                 type={"button"}
               >
                 {layer.locked ? (
-                  <Lock className={"h-3.5 w-3.5 text-muted-foreground"} />
+                  <Lock className={"text-muted-foreground h-3.5 w-3.5"} />
                 ) : (
-                  <Unlock className={"h-3.5 w-3.5 text-muted-foreground"} />
+                  <Unlock className={"text-muted-foreground h-3.5 w-3.5"} />
                 )}
               </button>
             </div>
@@ -738,8 +738,8 @@ function PropertiesSection() {
   if (!selectedObject || !properties) {
     return (
       <div className={"flex flex-col items-center justify-center py-8 text-center"}>
-        <Square className={"h-10 w-10 text-muted-foreground/50"} />
-        <p className={"mt-2 text-muted-foreground text-sm"}>No selection</p>
+        <Square className={"text-muted-foreground/50 h-10 w-10"} />
+        <p className={"text-muted-foreground mt-2 text-sm"}>No selection</p>
         <p className={"text-muted-foreground text-xs"}>Select an element to edit</p>
       </div>
     );
@@ -759,7 +759,7 @@ function PropertiesSection() {
     <div className={"flex flex-col gap-4 p-3"}>
       {/* General Properties */}
       <div className={"flex flex-col gap-4"}>
-        <Label className={"font-semibold text-muted-foreground text-xs uppercase tracking-wide"}>General</Label>
+        <Label className={"text-muted-foreground text-xs font-semibold tracking-wide uppercase"}>General</Label>
 
         {/* Position */}
         <div className={"grid grid-cols-2 gap-2"}>
@@ -894,7 +894,7 @@ function PropertiesSection() {
         <>
           <Separator />
           <div className={"flex flex-col gap-4"}>
-            <Label className={"font-semibold text-muted-foreground text-xs uppercase tracking-wide"}>Typography</Label>
+            <Label className={"text-muted-foreground text-xs font-semibold tracking-wide uppercase"}>Typography</Label>
 
             {/* Text Color */}
             <ColorPicker
@@ -1077,7 +1077,7 @@ function PropertiesSection() {
         <>
           <Separator />
           <div className={"flex flex-col gap-4"}>
-            <Label className={"font-semibold text-muted-foreground text-xs uppercase tracking-wide"}>
+            <Label className={"text-muted-foreground text-xs font-semibold tracking-wide uppercase"}>
               {isLine ? "Line" : "Shape"}
             </Label>
 
@@ -1164,7 +1164,7 @@ function PropertiesSection() {
       {/* Shadow Effects */}
       <Separator />
       <div className={"flex flex-col gap-4"}>
-        <Label className={"font-semibold text-muted-foreground text-xs uppercase tracking-wide"}>Shadow</Label>
+        <Label className={"text-muted-foreground text-xs font-semibold tracking-wide uppercase"}>Shadow</Label>
 
         {/* Shadow Color */}
         <ColorPicker
@@ -1279,7 +1279,7 @@ function AdjustmentsSection() {
     });
 
     setFilters(newFilters);
-  }, [selectedObject]);
+  }, [selectedObject, filters]);
 
   function applyFilter(filterType: string, value: unknown) {
     if (!canvas || !selectedObject || selectedObject.type !== "image") return;
@@ -1363,8 +1363,8 @@ function AdjustmentsSection() {
   if (!selectedObject) {
     return (
       <div className={"flex flex-col items-center justify-center py-8 text-center"}>
-        <AlertTriangle className={"h-10 w-10 text-muted-foreground/50"} />
-        <p className={"mt-2 text-muted-foreground text-sm"}>No selection</p>
+        <AlertTriangle className={"text-muted-foreground/50 h-10 w-10"} />
+        <p className={"text-muted-foreground mt-2 text-sm"}>No selection</p>
         <p className={"text-muted-foreground text-xs"}>Select an image to adjust</p>
       </div>
     );
@@ -1374,8 +1374,8 @@ function AdjustmentsSection() {
   if (selectedObject.type !== "image") {
     return (
       <div className={"flex flex-col items-center justify-center py-8 text-center"}>
-        <Image className={"h-10 w-10 text-muted-foreground/50"} />
-        <p className={"mt-2 text-muted-foreground text-sm"}>Image adjustments only</p>
+        <Image className={"text-muted-foreground/50 h-10 w-10"} />
+        <p className={"text-muted-foreground mt-2 text-sm"}>Image adjustments only</p>
         <p className={"text-muted-foreground text-xs"}>Select an image to see adjustments</p>
       </div>
     );

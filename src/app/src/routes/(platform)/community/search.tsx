@@ -1,22 +1,19 @@
-"use client";
-
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckIcon, ClockIcon, LockIcon, SearchIcon, UserPlusIcon, UsersIcon, XIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+
 import { Avatar, AvatarFallback } from "#/components/ui/avatar";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
 import { Skeleton } from "#/components/ui/skeleton";
 import { useDebounce } from "#/hooks/use-debounce";
-import { useAuth } from "#/lib/providers/auth";
 import { useServer } from "#/lib/providers/server";
 import type { UserSearchResponse } from "#/lib/server/community";
 
 function UserSearchPage() {
   const { api } = useServer();
-  const { claims } = useAuth();
 
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 300);
@@ -134,7 +131,7 @@ function UserSearchPage() {
               <Link className="truncate font-semibold hover:underline" params={{ userId: user.id }} to="/user/$userId">
                 {extractUsername(user.userName)}
               </Link>
-              {isPrivate && <LockIcon className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />}
+              {isPrivate && <LockIcon className="text-muted-foreground h-3.5 w-3.5 flex-shrink-0" />}
             </div>
             <p className="text-muted-foreground text-sm">
               {user.followerCount} {user.followerCount === 1 ? "follower" : "followers"}
@@ -175,13 +172,13 @@ function UserSearchPage() {
     <div className="container mx-auto max-w-2xl space-y-6 p-6">
       {/* Header */}
       <div>
-        <h1 className="font-bold text-2xl">Find Users</h1>
+        <h1 className="text-2xl font-bold">Find Users</h1>
         <p className="text-muted-foreground text-sm">Search for users to follow and connect with</p>
       </div>
 
       {/* Search Input */}
       <div className="relative">
-        <SearchIcon className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <SearchIcon className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
         <Input
           className="pr-9 pl-9"
           onChange={(e) => setQuery(e.target.value)}
@@ -203,7 +200,7 @@ function UserSearchPage() {
       {/* Search Results */}
       {hasSearchQuery && (
         <div className="space-y-3">
-          <h2 className="font-semibold text-lg">Search Results</h2>
+          <h2 className="text-lg font-semibold">Search Results</h2>
           {loading ? (
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
@@ -221,7 +218,7 @@ function UserSearchPage() {
             </div>
           ) : users.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-12">
-              <UsersIcon className="h-10 w-10 text-muted-foreground" />
+              <UsersIcon className="text-muted-foreground h-10 w-10" />
               <p className="text-muted-foreground">No users found for &quot;{debouncedQuery}&quot;</p>
             </div>
           ) : (
@@ -253,7 +250,7 @@ function UserSearchPage() {
       {/* Suggested Users (shown when not searching) */}
       {!hasSearchQuery && (
         <div className="space-y-3">
-          <h2 className="font-semibold text-lg">Suggested Users</h2>
+          <h2 className="text-lg font-semibold">Suggested Users</h2>
           {suggestedLoading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
@@ -271,7 +268,7 @@ function UserSearchPage() {
             </div>
           ) : suggested.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-12">
-              <UsersIcon className="h-10 w-10 text-muted-foreground" />
+              <UsersIcon className="text-muted-foreground h-10 w-10" />
               <p className="text-muted-foreground">No suggestions right now</p>
             </div>
           ) : (

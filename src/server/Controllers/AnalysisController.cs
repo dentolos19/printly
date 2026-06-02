@@ -100,7 +100,7 @@ public class AnalysisController(DatabaseContext context, GenerativeService gener
 
         // Build comprehensive prompt
         var prompt =
-            $@"You are a business analyst for Printly, an e-commerce company selling customizable printed products (t-shirts, hoodies, etc.). 
+            $@"You are a business analyst for Printly, an e-commerce company selling customizable printed products (t-shirts, hoodies, etc.).
 
 Analyze the following business data and provide a CONCISE analysis:
 

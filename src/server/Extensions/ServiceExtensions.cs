@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using System.Text;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -20,6 +20,8 @@ public static class ServiceExtensions
     /// </summary>
     public static IServiceCollection SetupCors(this IServiceCollection services)
     {
+        var appUrl = Environment.GetEnvironmentVariable("APP_URL") ?? "http://localhost:3000";
+
         services.AddCors(options =>
         {
             options.AddPolicy(
@@ -27,13 +29,7 @@ public static class ServiceExtensions
                 policy =>
                 {
                     policy
-                        .WithOrigins(
-                            "https://printly.dennise.me", // Production
-                            "http://localhost:3000", // Development Frontend
-                            "https://localhost:3000", // Development with HTTPS
-                            "http://localhost:3001", // Development API
-                            "https://localhost:3001" // Development API with HTTPS
-                        )
+                        .WithOrigins(appUrl, "http://localhost:3000")
                         .AllowAnyMethod()
                         .AllowAnyHeader()
                         .AllowCredentials()

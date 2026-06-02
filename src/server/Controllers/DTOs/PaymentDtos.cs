@@ -16,7 +16,6 @@ public enum PaymentStatusDto
 public record PaymentResponse(
     Guid Id,
     Guid OrderId,
-    string? StripeCheckoutSessionId,
     decimal Amount,
     string Currency,
     PaymentStatusDto Status,
@@ -24,9 +23,9 @@ public record PaymentResponse(
     DateTime UpdatedAt
 );
 
-public record CreateCheckoutSessionRequest(Guid OrderId);
+public record CreateCheckoutRequest(Guid OrderId);
 
-public record CheckoutSessionResponse(string CheckoutUrl, string SessionId);
+public record CheckoutResponse(string CheckoutUrl);
 
 public record PaymentSummaryResponse(
     Guid Id,

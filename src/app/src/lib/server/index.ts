@@ -16,7 +16,7 @@ import initRefundController from "#/lib/server/refund";
 import initTicketController from "#/lib/server/ticket";
 import initUserController from "#/lib/server/user";
 import initVariantController from "#/lib/server/variant";
-import type { ServerFetch } from "#/types";
+import type { ServerFetch } from "#/lib/types";
 
 export default function generateServerFunctions(fetch: ServerFetch) {
   return {

@@ -1,46 +1,29 @@
-using Amazon.Runtime;
-using Amazon.S3;
-using Amazon.S3.Model;
+using System.Net.Http.Headers;
 using PrintlyServer.Data;
 using PrintlyServer.Data.Entities;
 
 namespace PrintlyServer.Services;
 
-public class StorageService
+public class StorageService : IDisposable
 {
     private readonly DatabaseContext _context;
 
-    private readonly IAmazonS3 _client;
-    private readonly string _bucketName;
-    private readonly string _bucketPrefix;
+    private readonly HttpClient _client;
+    private readonly string _appUrl;
 
     public StorageService(IConfiguration configuration, DatabaseContext context)
     {
         _context = context;
 
-        // Load environment variables
-        var bucketEndpointUrl = configuration["BUCKET_ENDPOINT_URL"]!;
-        var bucketAccessId = configuration["BUCKET_ACCESS_KEY"]!;
-        var bucketSecretKey = configuration["BUCKET_SECRET_KEY"]!;
-        var bucketName = configuration["BUCKET_NAME"]!;
-        var bucketPrefix = configuration["BUCKET_PREFIX"]!;
+        _appUrl = (configuration["APP_URL"] ?? "http://localhost:3000").TrimEnd('/');
+        _client = new HttpClient { BaseAddress = new Uri(_appUrl) };
+        _client.DefaultRequestHeaders.Add("X-Storage-Key", configuration["SECRET_KEY"]);
+    }
 
-        // Initialize S3 client
-        _client = new AmazonS3Client(
-            new BasicAWSCredentials(bucketAccessId, bucketSecretKey),
-            new AmazonS3Config
-            {
-                ServiceURL = bucketEndpointUrl,
-                AuthenticationRegion = "auto",
-                ForcePathStyle = true,
-                RequestChecksumCalculation = RequestChecksumCalculation.WHEN_REQUIRED,
-                ResponseChecksumValidation = ResponseChecksumValidation.WHEN_REQUIRED,
-            }
-        );
-
-        // Assign bucket details
-        _bucketName = bucketName;
-        _bucketPrefix = bucketPrefix;
+    public void Dispose()
+    {
+        _client?.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     public async Task<Asset> UploadFileAsync(Stream file, string name, string? category = null)
@@ -52,19 +35,10 @@ public class StorageService
 
         file.Seek(0, SeekOrigin.Begin);
 
-        var request = new PutObjectRequest
-        {
-            BucketName = _bucketName,
-            Key = $"{_bucketPrefix}/{fileId}",
-            InputStream = file,
-            ContentType = fileType,
-            DisablePayloadSigning = true,
-            DisableDefaultChecksumValidation = true,
-            UseChunkEncoding = false,
-        };
-
-        // Execute upload request
-        await _client.PutObjectAsync(request);
+        using var content = new StreamContent(file);
+        content.Headers.ContentType = new MediaTypeHeaderValue(fileType);
+        using var response = await _client.PutAsync($"/internal/storage/{fileId}", content);
+        response.EnsureSuccessStatusCode();
 
         // Record file in the database
         var asset = _context.Add(
@@ -84,26 +58,11 @@ public class StorageService
         return asset.Entity;
     }
 
-    public async Task<string> DownloadFileAsync(Asset file)
-    {
-        var request = new GetPreSignedUrlRequest
-        {
-            BucketName = _bucketName,
-            Key = $"{_bucketPrefix}/{file.Id}",
-            Expires = DateTime.UtcNow.AddMinutes(60),
-        };
-
-        // Generate and return the pre-signed URL
-        return _client.GetPreSignedURL(request);
-    }
+    public Task<string> DownloadFileAsync(Asset file) => Task.FromResult($"{_appUrl}/assets/{file.Id}/view");
 
     public async Task<Stream> StreamFileAsync(Asset file)
     {
-        var request = new GetObjectRequest { BucketName = _bucketName, Key = $"{_bucketPrefix}/{file.Id}" };
-
-        // Execute request and return download stream
-        var response = await _client.GetObjectAsync(request);
-        return response.ResponseStream;
+        return await _client.GetStreamAsync($"/internal/storage/{file.Id}");
     }
 
     public async Task DeleteFileAsync(Asset file)

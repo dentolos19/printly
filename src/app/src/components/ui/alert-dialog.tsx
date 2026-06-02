@@ -1,5 +1,5 @@
 import { AlertDialog as AlertDialogPrimitive } from "radix-ui";
-import * as React from "react";
+import type * as React from "react";
 import { Button } from "#/components/ui/button";
 import { cn } from "#/lib/utils";
 
@@ -19,7 +19,7 @@ function AlertDialogOverlay({ className, ...props }: React.ComponentProps<typeof
   return (
     <AlertDialogPrimitive.Overlay
       className={cn(
-        "fixed inset-0 z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        "data-open:fade-in-0 data-closed:fade-out-0 fixed inset-0 z-50 bg-black/10 duration-100 data-closed:animate-out data-open:animate-in supports-backdrop-filter:backdrop-blur-xs",
         className,
       )}
       data-slot="alert-dialog-overlay"
@@ -40,7 +40,7 @@ function AlertDialogContent({
       <AlertDialogOverlay />
       <AlertDialogPrimitive.Content
         className={cn(
-          "group/alert-dialog-content fixed top-1/2 left-1/2 z-50 grid w-full -translate-x-1/2 -translate-y-1/2 gap-6 rounded-xl bg-popover p-6 text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-lg data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "group/alert-dialog-content data-open:fade-in-0 data-open:zoom-in-95 data-closed:fade-out-0 data-closed:zoom-out-95 fixed top-1/2 left-1/2 z-50 grid w-full -translate-x-1/2 -translate-y-1/2 gap-6 rounded-xl bg-popover p-6 text-popover-foreground outline-none ring-1 ring-foreground/10 duration-100 data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-closed:animate-out data-open:animate-in data-[size=default]:sm:max-w-lg",
           className,
         )}
         data-size={size}
@@ -94,7 +94,7 @@ function AlertDialogTitle({ className, ...props }: React.ComponentProps<typeof A
   return (
     <AlertDialogPrimitive.Title
       className={cn(
-        "font-heading text-lg font-medium sm:group-data-[size=default]/alert-dialog-content:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2",
+        "font-heading font-medium text-lg sm:group-data-[size=default]/alert-dialog-content:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2",
         className,
       )}
       data-slot="alert-dialog-title"
@@ -110,7 +110,7 @@ function AlertDialogDescription({
   return (
     <AlertDialogPrimitive.Description
       className={cn(
-        "text-sm text-balance text-muted-foreground md:text-pretty *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
+        "text-balance text-muted-foreground text-sm md:text-pretty *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
         className,
       )}
       data-slot="alert-dialog-description"

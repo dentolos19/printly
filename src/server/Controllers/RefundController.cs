@@ -9,7 +9,6 @@ using PrintlyServer.Data.Auth;
 using PrintlyServer.Data.Entities;
 using PrintlyServer.Hubs;
 using PrintlyServer.Services;
-using Stripe;
 using Refund = PrintlyServer.Data.Entities.Refund;
 
 namespace PrintlyServer.Controllers;
@@ -18,18 +17,12 @@ namespace PrintlyServer.Controllers;
 [Authorize]
 public class RefundController(
     DatabaseContext context,
-    IConfiguration configuration,
     INotificationService notificationService,
     IHubContext<ConversationHub> hubContext
 ) : BaseController(context)
 {
     private readonly INotificationService _notificationService = notificationService;
     private readonly IHubContext<ConversationHub> _hubContext = hubContext;
-
-    private readonly string _stripeSecretKey =
-        Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY")
-        ?? configuration["Stripe:SecretKey"]
-        ?? throw new InvalidOperationException("Stripe secret key not configured");
 
     // ==================== User Endpoints ====================
 
@@ -308,7 +301,6 @@ public class RefundController(
                 (RefundStatusDto)r.Status,
                 r.RequestedAt,
                 r.ProcessedAt,
-                r.StripeRefundId,
                 r.ConversationId,
                 r.CreatedAt,
                 r.UpdatedAt,
@@ -503,7 +495,7 @@ public class RefundController(
     }
 
     /// <summary>
-    /// Process an approved refund through Stripe (admin only)
+    /// Process an approved refund (admin only)
     /// </summary>
     [HttpPost("{id:guid}/process")]
     [Authorize(Roles = Roles.Admin)]
@@ -529,98 +521,39 @@ public class RefundController(
         if (!refund.ApprovedAmount.HasValue)
             return BadRequest(new { message = "No approved amount set" });
 
-        // Mark as processing
-        refund.Status = RefundStatus.Processing;
+        refund.Payment.Status = PaymentStatus.Refunded;
+        refund.Order.Status = OrderStatus.Refunded;
+        refund.ProcessedAt = DateTime.UtcNow;
+        refund.ProcessedByUserId = userId;
+        refund.Status = RefundStatus.Completed;
         await Context.SaveChangesAsync();
 
-        // Process through Stripe
-        StripeConfiguration.ApiKey = _stripeSecretKey;
+        await _notificationService.CreateNotificationAsync(
+            refund.RequestedByUserId,
+            NotificationType.RefundCompleted,
+            "Refund Completed",
+            $"Your refund of ${refund.ApprovedAmount:F2} for Order #{refund.OrderId.ToString()[..8]} has been processed.",
+            refund.ConversationId,
+            priority: NotificationPriority.High
+        );
 
-        try
+        if (refund.ConversationId.HasValue)
         {
-            // Get the checkout session to find the payment intent
-            var sessionService = new Stripe.Checkout.SessionService();
-            var session = await sessionService.GetAsync(refund.Payment.StripeCheckoutSessionId);
-
-            if (string.IsNullOrEmpty(session.PaymentIntentId))
-            {
-                refund.Status = RefundStatus.Failed;
-                refund.AdminNotes = (refund.AdminNotes ?? "") + "\nFailed: No payment intent found for this session.";
-                await Context.SaveChangesAsync();
-                return BadRequest(new { message = "No payment intent found for this session" });
-            }
-
-            // Create refund
-            var refundService = new RefundService();
-            var stripeRefund = await refundService.CreateAsync(
-                new RefundCreateOptions
-                {
-                    PaymentIntent = session.PaymentIntentId,
-                    Amount = (long)(refund.ApprovedAmount.Value * 100), // Convert to cents
-                    Reason = RefundReasons.RequestedByCustomer,
-                }
+            await AddSystemMessageToConversation(
+                refund.ConversationId.Value,
+                $"💰 **Refund Processed**\n\nAmount: ${refund.ApprovedAmount:F2}"
             );
 
-            if (stripeRefund.Status == "succeeded" || stripeRefund.Status == "pending")
+            var conversation = await Context.Conversations.FindAsync(refund.ConversationId.Value);
+            if (conversation != null)
             {
-                refund.Status = RefundStatus.Completed;
-                refund.StripeRefundId = stripeRefund.Id;
-
-                // Update payment status
-                refund.Payment.Status = PaymentStatus.Refunded;
-
-                // Update order status to Refunded
-                refund.Order.Status = OrderStatus.Refunded;
-
-                await Context.SaveChangesAsync();
-
-                // Send notification to customer
-                await _notificationService.CreateNotificationAsync(
-                    refund.RequestedByUserId,
-                    NotificationType.RefundCompleted,
-                    "Refund Completed",
-                    $"Your refund of ${refund.ApprovedAmount:F2} for Order #{refund.OrderId.ToString()[..8]} has been processed. The funds will appear in your account within 5-10 business days.",
-                    refund.ConversationId,
-                    priority: NotificationPriority.High
-                );
-
-                // Add system message to conversation if linked
-                if (refund.ConversationId.HasValue)
-                {
-                    await AddSystemMessageToConversation(
-                        refund.ConversationId.Value,
-                        $"💰 **Refund Processed**\n\nAmount: ${refund.ApprovedAmount:F2}\nThe funds will appear in your account within 5-10 business days."
-                    );
-
-                    // Close the conversation
-                    var conversation = await Context.Conversations.FindAsync(refund.ConversationId.Value);
-                    if (conversation != null)
-                    {
-                        conversation.Status = ConversationStatus.Resolved;
-                        await Context.SaveChangesAsync();
-                    }
-                }
-            }
-            else
-            {
-                refund.Status = RefundStatus.Failed;
-                refund.AdminNotes = (refund.AdminNotes ?? "") + $"\nStripe refund status: {stripeRefund.Status}";
+                conversation.Status = ConversationStatus.Resolved;
                 await Context.SaveChangesAsync();
             }
-
-            // Reload with navigation properties
-            await Context.Entry(refund).Reference(r => r.ProcessedByUser).LoadAsync();
-
-            return Ok(MapToRefundResponse(refund));
         }
-        catch (StripeException ex)
-        {
-            refund.Status = RefundStatus.Failed;
-            refund.AdminNotes = (refund.AdminNotes ?? "") + $"\nStripe error: {ex.Message}";
-            await Context.SaveChangesAsync();
 
-            return BadRequest(new { message = $"Refund processing failed: {ex.Message}" });
-        }
+        await Context.Entry(refund).Reference(r => r.ProcessedByUser).LoadAsync();
+        return Ok(MapToRefundResponse(refund));
     }
 
     /// <summary>
@@ -713,7 +646,6 @@ public class RefundController(
             (RefundStatusDto)refund.Status,
             refund.RequestedAt,
             refund.ProcessedAt,
-            refund.StripeRefundId,
             refund.ConversationId,
             refund.CreatedAt,
             refund.UpdatedAt

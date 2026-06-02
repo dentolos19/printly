@@ -4,20 +4,28 @@ using System.Text.Json;
 
 namespace PrintlyServer.Services;
 
-public class CopyrightService
+public class CopyrightService : IDisposable
 {
     private readonly HttpClient _http;
+    private readonly string _model;
 
     public CopyrightService(IConfiguration configuration)
     {
         var apiKey = configuration["OPENROUTER_API_KEY"]!;
         var title = configuration["OPENROUTER_TITLE"] ?? "Printly";
         var referer = configuration["OPENROUTER_REFERER"] ?? "https://dennise.me";
+        _model = configuration["OPENROUTER_MODEL"] ?? "openrouter/auto";
 
         _http = new HttpClient();
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
         _http.DefaultRequestHeaders.Add("X-OpenRouter-Title", title);
         _http.DefaultRequestHeaders.Add("HTTP-Referer", referer);
+    }
+
+    public void Dispose()
+    {
+        _http?.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -54,7 +62,7 @@ public class CopyrightService
 
         var requestBody = new
         {
-            model = "google/gemini-2.5-flash",
+            model = _model,
             messages = new object[]
             {
                 new { role = "system", content = systemInstruction },
@@ -93,10 +101,10 @@ public class CopyrightService
 
             // Strip markdown code fences if the model wraps the JSON
             content = content.Trim();
-            if (content.StartsWith("```"))
+            if (content.StartsWith("```", StringComparison.Ordinal))
             {
                 var firstNewline = content.IndexOf('\n');
-                var lastFence = content.LastIndexOf("```");
+                var lastFence = content.LastIndexOf("```", StringComparison.Ordinal);
                 if (firstNewline >= 0 && lastFence > firstNewline)
                     content = content[(firstNewline + 1)..lastFence].Trim();
             }
@@ -180,7 +188,7 @@ public class CopyrightService
 
         var requestBody = new
         {
-            model = "google/gemini-2.5-flash",
+            model = _model,
             messages = new object[]
             {
                 new { role = "system", content = systemInstruction },
@@ -210,10 +218,10 @@ public class CopyrightService
                 ?? "{}";
 
             content = content.Trim();
-            if (content.StartsWith("```"))
+            if (content.StartsWith("```", StringComparison.Ordinal))
             {
                 var firstNewline = content.IndexOf('\n');
-                var lastFence = content.LastIndexOf("```");
+                var lastFence = content.LastIndexOf("```", StringComparison.Ordinal);
                 if (firstNewline >= 0 && lastFence > firstNewline)
                     content = content[(firstNewline + 1)..lastFence].Trim();
             }

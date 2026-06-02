@@ -1,5 +1,3 @@
-"use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
@@ -18,6 +16,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+
 import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "#/components/ui/card";
@@ -96,7 +95,7 @@ function ProfileSkeleton() {
 function Page() {
   const navigate = useNavigate();
   const { api } = useServer();
-  const { claims, logout } = useAuth();
+  const { logout } = useAuth();
   const [profile, setProfile] = useState<UserProfileResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -146,7 +145,7 @@ function Page() {
         website: data.website || "",
         dateOfBirth: data.dateOfBirth || "",
       });
-    } catch (error) {
+    } catch {
       toast.error("Failed to load profile");
     } finally {
       setIsLoading(false);
@@ -169,7 +168,7 @@ function Page() {
       });
       setProfile(updated);
       toast.success("Profile updated successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to update profile");
     } finally {
       setIsSaving(false);
@@ -186,7 +185,7 @@ function Page() {
       toast.success("Email updated successfully. Please log in again.");
       logout();
       navigate({ to: "/auth" });
-    } catch (error) {
+    } catch {
       toast.error("Failed to update email. Check your password.");
     } finally {
       setIsChangingEmail(false);
@@ -202,7 +201,7 @@ function Page() {
       });
       toast.success("Password updated successfully");
       passwordForm.reset();
-    } catch (error) {
+    } catch {
       toast.error("Failed to update password. Check your current password.");
     } finally {
       setIsChangingPassword(false);
@@ -216,7 +215,7 @@ function Page() {
       toast.success("Account deleted successfully");
       logout();
       navigate({ to: "/" });
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete account");
     } finally {
       setIsDeleting(false);
@@ -244,7 +243,7 @@ function Page() {
       const updated = await api.user.updateProfile({ avatarId: asset.id });
       setProfile(updated);
       toast.success("Avatar updated successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to upload avatar");
     } finally {
       setIsUploadingAvatar(false);
@@ -274,7 +273,7 @@ function Page() {
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
       <div className="mb-8 text-center">
-        <h1 className="font-bold text-3xl">Account Settings</h1>
+        <h1 className="text-3xl font-bold">Account Settings</h1>
         <p className="text-muted-foreground">Manage your profile, security, and account preferences</p>
       </div>
 
@@ -338,7 +337,7 @@ function Page() {
                         </Button>
                       </div>
                       <div className="space-y-1">
-                        <p className="font-semibold text-lg">{profile?.displayName || profile?.email}</p>
+                        <p className="text-lg font-semibold">{profile?.displayName || profile?.email}</p>
                         <p className="text-muted-foreground text-sm">{profile?.email}</p>
                         <p className="text-muted-foreground text-xs">
                           Member since {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : "N/A"}
@@ -634,12 +633,12 @@ function Page() {
                 <CardDescription>Your account is linked to Google</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="rounded-lg bg-muted p-4">
+                <div className="bg-muted rounded-lg p-4">
                   <p className="text-muted-foreground text-sm">
                     You signed in with Google, so you don&apos;t have a password set for this account. Your email and
                     authentication are managed through your Google account.
                   </p>
-                  <p className="mt-2 text-muted-foreground text-sm">
+                  <p className="text-muted-foreground mt-2 text-sm">
                     To change your email or password, please update your Google account settings directly.
                   </p>
                 </div>
@@ -651,7 +650,7 @@ function Page() {
         <TabsContent value="danger">
           <Card className="border-destructive">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-destructive">
+              <CardTitle className="text-destructive flex items-center gap-2">
                 <Trash2Icon className="h-5 w-5" />
                 Delete Account
               </CardTitle>
@@ -660,9 +659,9 @@ function Page() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="rounded-lg bg-destructive/10 p-4">
+              <div className="bg-destructive/10 rounded-lg p-4">
                 <h4 className="font-medium">Before you delete your account:</h4>
-                <ul className="mt-2 list-inside list-disc space-y-1 text-muted-foreground text-sm">
+                <ul className="text-muted-foreground mt-2 list-inside list-disc space-y-1 text-sm">
                   <li>All your designs and files will be permanently removed</li>
                   <li>Your order history will be deleted</li>
                   <li>You will lose access to any ongoing orders</li>

@@ -1,8 +1,7 @@
-"use client";
-
 import { Pipette } from "lucide-react";
 import { useState } from "react";
 import { HexColorInput, HexColorPicker } from "react-colorful";
+
 import { Button } from "#/components/ui/button";
 import { Label } from "#/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "#/components/ui/popover";
@@ -67,7 +66,7 @@ export function ColorPicker({ color, onChange, label, className }: ColorPickerPr
             variant={"outline"}
           >
             <div
-              className={"h-4 w-4 rounded border border-border"}
+              className={"border-border h-4 w-4 rounded border"}
               style={{ backgroundColor: color || "transparent" }}
             />
             <span className={"flex-1 truncate text-left text-xs"}>{color || "No color"}</span>

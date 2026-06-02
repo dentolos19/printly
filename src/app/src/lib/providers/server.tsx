@@ -1,10 +1,9 @@
-"use client";
-
 import { createContext, useCallback, useContext, useMemo, useRef } from "react";
+
 import { API_URL } from "#/environment";
 import { useAuth } from "#/lib/providers/auth";
 import generateServerFunctions from "#/lib/server";
-import type { ServerFetch, ServerFunctions } from "#/types";
+import type { ServerFetch, ServerFunctions } from "#/lib/types";
 
 const RETRYABLE_BACKEND_STATUS = new Set([502, 503, 504, 520, 521, 522, 523, 524, 525, 526]);
 

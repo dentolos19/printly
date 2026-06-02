@@ -1,5 +1,3 @@
-"use client";
-
 export function TypingIndicator({ userName }: { userName?: string }) {
   return (
     <div className="text-muted-foreground flex items-center gap-2 px-4 py-2 text-sm">

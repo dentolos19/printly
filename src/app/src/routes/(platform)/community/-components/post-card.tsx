@@ -1,5 +1,3 @@
-﻿"use client";
-
 import { Link } from "@tanstack/react-router";
 import {
   AlertTriangleIcon,
@@ -16,6 +14,7 @@ import {
   UndoIcon,
 } from "lucide-react";
 import { useState } from "react";
+
 import { Avatar, AvatarFallback } from "#/components/ui/avatar";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
@@ -194,7 +193,7 @@ export function PostCard({
             {(post.isNsfw || post.contentWarning) && !nsfwRevealed && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60">
                 <AlertTriangleIcon className="h-8 w-8 text-yellow-400" />
-                <p className="font-medium text-sm text-white">{post.contentWarning || "Sensitive Content"}</p>
+                <p className="text-sm font-medium text-white">{post.contentWarning || "Sensitive Content"}</p>
                 <Button onClick={() => setNsfwRevealed(true)} size="sm" variant="secondary">
                   Show Content
                 </Button>
@@ -209,7 +208,7 @@ export function PostCard({
           <div className="flex flex-wrap gap-1">
             {post.tags.map((tag) => (
               <Badge
-                className="cursor-pointer text-xs hover:bg-primary/20"
+                className="hover:bg-primary/20 cursor-pointer text-xs"
                 key={tag}
                 onClick={() => onTagClick?.(tag)}
                 variant="secondary"
@@ -238,7 +237,7 @@ export function PostCard({
             </Button>
             {showReactions && (
               <div className="absolute bottom-full left-0 pb-2">
-                <div className="flex gap-1 rounded-full border bg-popover p-1 shadow-lg">
+                <div className="bg-popover flex gap-1 rounded-full border p-1 shadow-lg">
                   {Object.entries(ReactionTypeEmojis).map(([type, emoji]) => (
                     <button
                       className={cn(
@@ -271,7 +270,7 @@ export function PostCard({
         </div>
         <div className="flex items-center gap-1">
           {post.viewCount > 0 && (
-            <span className="flex items-center gap-1 text-muted-foreground text-xs">
+            <span className="text-muted-foreground flex items-center gap-1 text-xs">
               <EyeIcon className="h-3.5 w-3.5" />
               {post.viewCount}
             </span>

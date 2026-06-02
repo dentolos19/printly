@@ -1,21 +1,18 @@
-"use client";
-
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowLeftIcon, Loader2, ShieldIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
 import { Label } from "#/components/ui/label";
 import { Skeleton } from "#/components/ui/skeleton";
 import { Switch } from "#/components/ui/switch";
-import { useAuth } from "#/lib/providers/auth";
 import { useServer } from "#/lib/providers/server";
 import type { UserProfileResponse } from "#/lib/server/user";
 
 function UserSettingsPage() {
   const { api } = useServer();
-  const { claims } = useAuth();
 
   const [profile, setProfile] = useState<UserProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -78,7 +75,7 @@ function UserSettingsPage() {
         <Button onClick={() => window.history.back()} size="icon" variant="ghost">
           <ArrowLeftIcon className="h-5 w-5" />
         </Button>
-        <h1 className="font-bold text-2xl">Settings</h1>
+        <h1 className="text-2xl font-bold">Settings</h1>
       </div>
 
       {/* Privacy Settings */}
@@ -93,7 +90,7 @@ function UserSettingsPage() {
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-1">
-              <Label className="font-medium text-base" htmlFor="private-profile">
+              <Label className="text-base font-medium" htmlFor="private-profile">
                 Private Profile
               </Label>
               <p className="text-muted-foreground text-sm">
