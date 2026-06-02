@@ -1,9 +1,8 @@
-"use client";
-
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowUpDown, Edit, Eye, EyeOff, MoreHorizontal, Plus, Search, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -260,7 +259,7 @@ function ProductsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-bold text-3xl">Products</h1>
+          <h1 className="text-3xl font-bold">Products</h1>
           <p className="text-muted-foreground">Manage your product catalog</p>
         </div>
         <Button onClick={() => setCreateDialogOpen(true)}>
@@ -278,7 +277,7 @@ function ProductsPage() {
         <CardContent>
           <div className="flex flex-wrap gap-4">
             <div className="relative min-w-[200px] flex-1">
-              <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
               <Input
                 className="pl-9"
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -369,7 +368,7 @@ function ProductsPage() {
                 ))
               ) : filteredProducts.length === 0 ? (
                 <TableRow>
-                  <TableCell className="h-24 text-center text-muted-foreground" colSpan={7}>
+                  <TableCell className="text-muted-foreground h-24 text-center" colSpan={7}>
                     No products found
                   </TableCell>
                 </TableRow>

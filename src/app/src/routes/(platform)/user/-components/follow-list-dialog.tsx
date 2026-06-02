@@ -1,8 +1,7 @@
-"use client";
-
 import { useNavigate } from "@tanstack/react-router";
 import { Loader2, UserIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+
 import { Avatar, AvatarFallback } from "#/components/ui/avatar";
 import { Button } from "#/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "#/components/ui/dialog";
@@ -118,7 +117,7 @@ export function FollowListDialog({
     if (users.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center gap-2 py-8">
-          <UserIcon className="h-10 w-10 text-muted-foreground" />
+          <UserIcon className="text-muted-foreground h-10 w-10" />
           <p className="text-muted-foreground text-sm">No users to show</p>
         </div>
       );
@@ -130,7 +129,7 @@ export function FollowListDialog({
           const displayName = extractUsername(user.userName);
           return (
             <button
-              className="flex items-center gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-muted"
+              className="hover:bg-muted flex items-center gap-3 rounded-md px-3 py-2.5 text-left transition-colors"
               key={user.userId}
               onClick={() => {
                 onOpenChange(false);
@@ -141,7 +140,7 @@ export function FollowListDialog({
                 <AvatarFallback>{displayName.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <p className="truncate font-medium text-sm">{displayName}</p>
+                <p className="truncate text-sm font-medium">{displayName}</p>
               </div>
             </button>
           );
@@ -173,10 +172,10 @@ export function FollowListDialog({
             <Tabs onValueChange={(v) => setActiveTab(v as Tab)} value={activeTab}>
               <TabsList className="w-full">
                 <TabsTrigger className="flex-1" value="followers">
-                  Followers <span className="ml-1 text-muted-foreground text-xs">({followerCount})</span>
+                  Followers <span className="text-muted-foreground ml-1 text-xs">({followerCount})</span>
                 </TabsTrigger>
                 <TabsTrigger className="flex-1" value="following">
-                  Following <span className="ml-1 text-muted-foreground text-xs">({followingCount})</span>
+                  Following <span className="text-muted-foreground ml-1 text-xs">({followingCount})</span>
                 </TabsTrigger>
               </TabsList>
             </Tabs>

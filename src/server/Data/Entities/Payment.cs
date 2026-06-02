@@ -18,10 +18,6 @@ public class Payment : BaseEntity
     [Required]
     public Guid OrderId { get; set; }
 
-    // Stripe Checkout Session ID
-    [MaxLength(255)]
-    public string? StripeCheckoutSessionId { get; set; }
-
     // Snapshot of the amount at time of payment
     [Required]
     [Column(TypeName = "decimal(10,2)")]

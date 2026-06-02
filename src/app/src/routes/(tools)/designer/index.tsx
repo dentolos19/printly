@@ -1,5 +1,3 @@
-"use client";
-
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 
@@ -12,7 +10,7 @@ function Page() {
 
   // Redirect to the new designer with [id] route
   useEffect(() => {
-    navigate({ to: "/designer/new", replace: true });
+    navigate({ to: "/designer/$id", params: { id: "new" }, replace: true });
   }, [navigate]);
 
   return (

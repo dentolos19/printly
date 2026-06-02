@@ -1,4 +1,4 @@
-import type { ServerFetch } from "#/types";
+import type { ServerFetch } from "#/lib/types";
 
 // Enums matching backend
 export enum PaymentStatus {
@@ -29,7 +29,6 @@ export const PaymentStatusColors: Record<PaymentStatus, string> = {
 export type PaymentResponse = {
   id: string;
   orderId: string;
-  stripeCheckoutSessionId: string | null;
   amount: number;
   currency: string;
   status: PaymentStatus;
@@ -46,21 +45,20 @@ export type PaymentSummaryResponse = {
   createdAt: string;
 };
 
-export type CreateCheckoutSessionRequest = {
+export type CreateCheckoutRequest = {
   orderId: string;
 };
 
-export type CheckoutSessionResponse = {
+export type CheckoutResponse = {
   checkoutUrl: string;
-  sessionId: string;
 };
 
 export default function initPaymentController(fetch: ServerFetch) {
   return {
     // ==================== User Endpoints ====================
 
-    // Create a checkout session for an order
-    createCheckoutSession: async (orderId: string): Promise<CheckoutSessionResponse> => {
+    // Complete checkout for an order
+    createCheckout: async (orderId: string): Promise<CheckoutResponse> => {
       const response = await fetch("/payments/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -68,20 +66,38 @@ export default function initPaymentController(fetch: ServerFetch) {
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Failed to create checkout session" }));
+        const error = await response.json().catch(() => ({ message: "Failed to complete checkout" }));
         throw new Error(
           typeof error === "object" && error !== null && "message" in error
             ? (error as { message: string }).message
-            : "Failed to create checkout session",
+            : "Failed to complete checkout",
         );
       }
 
       return response.json();
     },
 
-    // Verify checkout session after redirect
-    verifyCheckoutSession: async (sessionId: string): Promise<PaymentResponse> => {
-      const response = await fetch(`/payments/verify?sessionId=${encodeURIComponent(sessionId)}`, {
+    // Complete a payment from the in-app checkout
+    completePayment: async (paymentId: string): Promise<PaymentResponse> => {
+      const response = await fetch(`/payments/${paymentId}/complete`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: "Failed to complete payment" }));
+        throw new Error(
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Failed to complete payment",
+        );
+      }
+
+      return response.json();
+    },
+
+    // Verify payment after redirect
+    verifyPayment: async (paymentId: string): Promise<PaymentResponse> => {
+      const response = await fetch(`/payments/verify?paymentId=${encodeURIComponent(paymentId)}`, {
         method: "POST",
       });
 

@@ -1,5 +1,3 @@
-"use client";
-
 import * as signalR from "@microsoft/signalr";
 import { createFileRoute } from "@tanstack/react-router";
 import {
@@ -19,6 +17,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
 import { CallInterface, IncomingCallNotification } from "#/components/call-interface";
 import {
   CallMessage,
@@ -63,13 +62,6 @@ const STATUS_ICONS: Record<ConversationStatus, typeof Clock> = {
   3: XCircle, // Closed
 };
 
-const STATUS_COLORS: Record<ConversationStatus, string> = {
-  0: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400",
-  1: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400",
-  2: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-400",
-  3: "bg-gray-50 text-gray-500 border-gray-200 dark:bg-gray-900/50 dark:text-gray-400",
-};
-
 const PRIORITY_COLORS: Record<ConversationPriority, string> = {
   0: "text-slate-500", // Low
   1: "text-sky-600", // Normal
@@ -97,7 +89,7 @@ function AdminChatPage() {
   const [admins, setAdmins] = useState<AdminInfo[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
-  const [pendingOptimisticMessages, setPendingOptimisticMessages] = useState<Set<string>>(new Set());
+  const [_pendingOptimisticMessages, setPendingOptimisticMessages] = useState<Set<string>>(new Set());
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
 
@@ -255,7 +247,7 @@ function AdminChatPage() {
     }
   }, [authorizedFetch, auth.tokens?.accessToken]);
 
-  const assignConversation = useCallback(
+  const _assignConversation = useCallback(
     async (conversationId: string, adminId: string | null) => {
       try {
         const response = await authorizedFetch(`${API_URL}/conversation/${conversationId}/assign`, {
@@ -607,7 +599,14 @@ function AdminChatPage() {
       console.error("[Admin Chat] Connection failed", error);
       setConnectionState("error");
     }
-  }, [auth.tokens?.accessToken, currentUserId, markConversationRead]);
+  }, [
+    auth.tokens?.accessToken,
+    currentUserId,
+    markConversationRead,
+    activeCallId,
+    currentCall?.callId,
+    incomingCall?.callId,
+  ]);
 
   useEffect(() => {
     if (auth.tokens?.accessToken) {
@@ -618,7 +617,7 @@ function AdminChatPage() {
     return () => {
       connectionRef.current?.stop();
     };
-  }, [auth.tokens?.accessToken, startConnection]);
+  }, [auth.tokens?.accessToken, startConnection, fetchConversations, fetchAdmins]);
 
   useEffect(() => {
     fetchConversations();
@@ -1089,10 +1088,10 @@ function AdminChatPage() {
   return (
     <main className="flex h-full w-full flex-col gap-3 overflow-hidden p-3">
       {/* Header Bar - Compact */}
-      <div className="flex shrink-0 items-center justify-between rounded-lg border bg-card px-3 py-2 shadow-sm">
+      <div className="bg-card flex shrink-0 items-center justify-between rounded-lg border px-3 py-2 shadow-sm">
         <div className="flex items-center gap-3">
           <Button
-            className="h-8 gap-1.5 px-2 hover:bg-accent"
+            className="hover:bg-accent h-8 gap-1.5 px-2"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             size="sm"
             variant="outline"
@@ -1100,7 +1099,7 @@ function AdminChatPage() {
             {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
             <span className="hidden font-medium sm:inline">{sidebarCollapsed ? "Show" : "Hide"}</span>
           </Button>
-          <h1 className="font-bold text-lg tracking-tight">Support Inbox</h1>
+          <h1 className="text-lg font-bold tracking-tight">Support Inbox</h1>
         </div>
         <div className="flex items-center gap-2">
           <Badge
@@ -1116,7 +1115,7 @@ function AdminChatPage() {
             {connectionState === "connected" ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
           </Badge>
           <Button
-            className="h-7 w-7 hover:bg-accent"
+            className="hover:bg-accent h-7 w-7"
             disabled={isLoadingConversations}
             onClick={fetchConversations}
             size="icon"
@@ -1137,24 +1136,24 @@ function AdminChatPage() {
           )}
         >
           <CardHeader className="border-b px-3 py-2">
-            <CardTitle className="font-semibold text-sm">Conversations</CardTitle>
+            <CardTitle className="text-sm font-semibold">Conversations</CardTitle>
           </CardHeader>
           <div className="shrink-0 border-b p-3">
             <Tabs onValueChange={setStatusFilter} value={statusFilter}>
               <TabsList className="grid h-8 w-full grid-cols-5">
-                <TabsTrigger className="px-1.5 font-medium text-[11px]" value="all">
+                <TabsTrigger className="px-1.5 text-[11px] font-medium" value="all">
                   All
                 </TabsTrigger>
-                <TabsTrigger className="px-1.5 font-medium text-[11px]" value="0">
+                <TabsTrigger className="px-1.5 text-[11px] font-medium" value="0">
                   Pending
                 </TabsTrigger>
-                <TabsTrigger className="px-1.5 font-medium text-[11px]" value="1">
+                <TabsTrigger className="px-1.5 text-[11px] font-medium" value="1">
                   Active
                 </TabsTrigger>
-                <TabsTrigger className="px-1.5 font-medium text-[11px]" value="2">
+                <TabsTrigger className="px-1.5 text-[11px] font-medium" value="2">
                   Resolved
                 </TabsTrigger>
-                <TabsTrigger className="px-1.5 font-medium text-[11px]" value="3">
+                <TabsTrigger className="px-1.5 text-[11px] font-medium" value="3">
                   Closed
                 </TabsTrigger>
               </TabsList>
@@ -1180,7 +1179,7 @@ function AdminChatPage() {
         <Card className="flex min-w-0 flex-1 flex-col overflow-hidden shadow-sm">
           {selectedConversation ? (
             <>
-              <CardHeader className="shrink-0 gap-0 space-y-0 border-b bg-muted/30 px-3 py-1.5">
+              <CardHeader className="bg-muted/30 shrink-0 gap-0 space-y-0 border-b px-3 py-1.5">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex min-w-0 flex-1 items-start gap-2">
                     <StatusIcon
@@ -1188,13 +1187,13 @@ function AdminChatPage() {
                     />
                     <div className="min-w-0 flex-1 space-y-0.5 overflow-hidden">
                       <CardTitle
-                        className="truncate font-semibold text-sm leading-tight"
+                        className="truncate text-sm leading-tight font-semibold"
                         title={selectedConversation.subject || "Support Conversation"}
                       >
                         {selectedConversation.subject || "Support Conversation"}
                       </CardTitle>
                       <div className="flex items-center gap-1.5 pt-0">
-                        <Badge className="gap-1 px-1.5 py-0 font-medium text-[10px]" variant="outline">
+                        <Badge className="gap-1 px-1.5 py-0 text-[10px] font-medium" variant="outline">
                           <User className="h-2.5 w-2.5" />
                           <span title={selectedConversation.participants.find((p) => p.role === 0)?.name || "Unknown"}>
                             {selectedConversation.participants.find((p) => p.role === 0)?.name || "Unknown"}
@@ -1211,7 +1210,7 @@ function AdminChatPage() {
                       }}
                       value={String(selectedConversation.status)}
                     >
-                      <SelectTrigger className="h-7 w-[90px] font-medium text-[11px]">
+                      <SelectTrigger className="h-7 w-[90px] text-[11px] font-medium">
                         <SelectValue placeholder="Status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1228,7 +1227,7 @@ function AdminChatPage() {
                       }}
                       value={String(selectedConversation.priority)}
                     >
-                      <SelectTrigger className="h-7 w-[80px] font-medium text-[11px]">
+                      <SelectTrigger className="h-7 w-[80px] text-[11px] font-medium">
                         <SelectValue placeholder="Priority" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1291,11 +1290,11 @@ function AdminChatPage() {
                   </div>
                 </div>
                 {lastError && (
-                  <div className="mt-3 flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2.5 text-destructive text-sm">
+                  <div className="border-destructive/20 bg-destructive/10 text-destructive mt-3 flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm">
                     <WifiOff className="h-4 w-4 shrink-0" />
                     <span className="flex-1 font-medium">{lastError}</span>
                     <Button
-                      className="h-7 w-7 rounded-full p-0 text-destructive hover:bg-destructive/20 hover:text-destructive"
+                      className="text-destructive hover:bg-destructive/20 hover:text-destructive h-7 w-7 rounded-full p-0"
                       onClick={() => setLastError(null)}
                       size="sm"
                       variant="ghost"
@@ -1310,10 +1309,10 @@ function AdminChatPage() {
                 <ScrollArea className="min-h-0 flex-1 px-2 py-1">
                   {isLoadingMessages ? (
                     <div className="flex h-40 items-center justify-center">
-                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                      <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
                     </div>
                   ) : messages.length === 0 ? (
-                    <div className="flex h-40 flex-col items-center justify-center text-muted-foreground">
+                    <div className="text-muted-foreground flex h-40 flex-col items-center justify-center">
                       <MessageSquare className="h-16 w-16" />
                       <p className="mt-4">No messages in this conversation.</p>
                       <p className="text-sm">The customer hasn&apos;t sent any messages yet.</p>
@@ -1398,10 +1397,10 @@ function AdminChatPage() {
                 <TypingIndicator users={typingUsers} />
 
                 {selectedConversation.status === 3 ? (
-                  <div className="shrink-0 border-t bg-muted/30 p-4">
-                    <div className="flex items-center justify-center gap-2 py-2 text-muted-foreground">
+                  <div className="bg-muted/30 shrink-0 border-t p-4">
+                    <div className="text-muted-foreground flex items-center justify-center gap-2 py-2">
                       <XCircle className="h-4 w-4" />
-                      <span className="font-medium text-sm">This conversation has been closed</span>
+                      <span className="text-sm font-medium">This conversation has been closed</span>
                     </div>
                   </div>
                 ) : (
@@ -1423,12 +1422,12 @@ function AdminChatPage() {
               </CardContent>
             </>
           ) : (
-            <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-muted-foreground">
-              <div className="rounded-full bg-muted/50 p-6">
+            <div className="text-muted-foreground flex flex-1 flex-col items-center justify-center gap-3 p-12">
+              <div className="bg-muted/50 rounded-full p-6">
                 <MessageSquare className="h-12 w-12 opacity-40" />
               </div>
               <div className="space-y-1 text-center">
-                <p className="font-semibold text-foreground text-lg">Select a conversation</p>
+                <p className="text-foreground text-lg font-semibold">Select a conversation</p>
                 <p className="text-sm">Choose a conversation from the list to view and respond to messages</p>
               </div>
             </div>

@@ -1,12 +1,12 @@
-"use client";
-
 import { X } from "lucide-react";
 import { useCallback, useState } from "react";
+
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "#/components/ui/select";
 import { Slider } from "#/components/ui/slider";
+
 import { useImprinter } from "../hooks/use-imprinter";
 
 const FONT_OPTIONS = [
@@ -34,9 +34,9 @@ export function TextPanel() {
   }, [text, fontFamily, fontSize, color, activePrintArea, addTextToProduct]);
 
   return (
-    <div className="absolute top-14 left-14 z-50 w-72 rounded-lg border bg-popover p-4 shadow-lg">
+    <div className="bg-popover absolute top-14 left-14 z-50 w-72 rounded-lg border p-4 shadow-lg">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="font-semibold text-sm">Add Text</h3>
+        <h3 className="text-sm font-semibold">Add Text</h3>
         <Button className="size-7" onClick={() => setActiveTool("select")} size="icon" variant="ghost">
           <X className="size-4" />
         </Button>

@@ -1,7 +1,6 @@
-"use client";
-
 import { Check, ChevronDown, Sparkles } from "lucide-react";
 import { useState } from "react";
+
 import { Button } from "#/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "#/components/ui/popover";
 import type { AIModel } from "#/lib/server/chatbot";
@@ -38,8 +37,8 @@ export function ModelSelector({ selectedModel, onModelChange, models, isLoading 
       </PopoverTrigger>
       <PopoverContent align="start" className="w-[380px] p-0">
         <div className="border-b p-3">
-          <h4 className="font-semibold text-sm">Choose AI Model</h4>
-          <p className="mt-1 text-muted-foreground text-xs">
+          <h4 className="text-sm font-semibold">Choose AI Model</h4>
+          <p className="text-muted-foreground mt-1 text-xs">
             Select which AI model to use for your chat. Changing models mid-conversation may affect context.
           </p>
         </div>
@@ -59,14 +58,14 @@ export function ModelSelector({ selectedModel, onModelChange, models, isLoading 
               <div className="flex w-full items-start justify-between gap-2">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm">{model.displayName}</span>
+                    <span className="text-sm font-medium">{model.displayName}</span>
                     {model.isDefault && (
-                      <span className="rounded bg-primary/10 px-1.5 py-0.5 text-primary text-xs">Default</span>
+                      <span className="bg-primary/10 text-primary rounded px-1.5 py-0.5 text-xs">Default</span>
                     )}
                   </div>
-                  <p className="mt-0.5 text-muted-foreground text-xs">{model.description}</p>
+                  <p className="text-muted-foreground mt-0.5 text-xs">{model.description}</p>
                 </div>
-                {selectedModel === model.id && <Check className="h-4 w-4 shrink-0 text-primary" />}
+                {selectedModel === model.id && <Check className="text-primary h-4 w-4 shrink-0" />}
               </div>
             </button>
           ))}

@@ -1,12 +1,12 @@
-"use client";
-
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+
 import type { Design } from "#/lib/server/design";
 import type { PrintAreaResponse } from "#/lib/server/print-area";
 import type { ProductResponse, ProductVariantResponse } from "#/lib/server/product";
 import { useAutoSave } from "#/routes/(tools)/-shared/hooks/use-auto-save";
+
 import type {
   AppliedDesign,
   CameraState,
@@ -22,7 +22,7 @@ import type {
   SelectedProduct,
   Tool,
   Transform3D,
-} from "../../types";
+} from "../../-types";
 
 const IMPRINTER_DATA_VERSION = "1.1";
 
@@ -230,11 +230,11 @@ export function ImprinterProvider({
   // Dynamic product state
   const [selectedProduct, setSelectedProduct] = useState<SelectedProduct>(null);
   const [availableProducts, setAvailableProducts] = useState<ProductResponse[]>([]);
-  const [productsLoaded, setProductsLoaded] = useState(false);
+  const [_productsLoaded, setProductsLoaded] = useState(false);
 
   // Print areas state (loaded from API or fallback)
   const [loadedPrintAreas, setLoadedPrintAreas] = useState<PrintAreaConfig[] | null>(null);
-  const [printAreasLoading, setPrintAreasLoading] = useState(false);
+  const [_printAreasLoading, setPrintAreasLoading] = useState(false);
 
   // UI state
   const [activeTool, setActiveTool] = useState<Tool>("select");

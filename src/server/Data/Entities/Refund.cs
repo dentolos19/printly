@@ -82,10 +82,6 @@ public class Refund : BaseEntity
     public DateTime RequestedAt { get; set; } = DateTime.UtcNow;
     public DateTime? ProcessedAt { get; set; }
 
-    // Stripe refund ID (once processed)
-    [MaxLength(255)]
-    public string? StripeRefundId { get; set; }
-
     // Link to conversation/chat ticket (optional)
     public Guid? ConversationId { get; set; }
 

@@ -1,5 +1,3 @@
-"use client";
-
 import { createFileRoute } from "@tanstack/react-router";
 import {
   AlertTriangleIcon,
@@ -18,6 +16,7 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
+
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
@@ -53,14 +52,14 @@ function StatCard({
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="font-medium text-sm">{title}</CardTitle>
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
         <Icon className={`size-4 ${color}`} />
       </CardHeader>
       <CardContent>
         {loading ? (
           <Skeleton className="h-8 w-20" />
         ) : (
-          <div className="font-bold text-2xl">{value.toLocaleString()}</div>
+          <div className="text-2xl font-bold">{value.toLocaleString()}</div>
         )}
       </CardContent>
     </Card>
@@ -183,7 +182,7 @@ function AdminCommunityPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="font-bold text-3xl">Community Management</h1>
+        <h1 className="text-3xl font-bold">Community Management</h1>
         <p className="text-muted-foreground">Manage community content, users, and moderation</p>
       </div>
 
@@ -209,7 +208,7 @@ function AdminCommunityPage() {
             {loadingTags ? (
               <Skeleton className="h-[250px] w-full" />
             ) : trendingTags.length === 0 ? (
-              <div className="flex h-[250px] items-center justify-center text-muted-foreground">No tags yet</div>
+              <div className="text-muted-foreground flex h-[250px] items-center justify-center">No tags yet</div>
             ) : (
               <ResponsiveContainer height={250} width="100%">
                 <BarChart data={trendingTags}>
@@ -235,7 +234,7 @@ function AdminCommunityPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid gap-3 sm:grid-cols-2">
-              <Card className="cursor-pointer transition-colors hover:bg-muted/50">
+              <Card className="hover:bg-muted/50 cursor-pointer transition-colors">
                 <CardContent className="flex items-center gap-3 p-4">
                   <FlagIcon className="h-5 w-5 text-orange-500" />
                   <div>
@@ -244,7 +243,7 @@ function AdminCommunityPage() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="cursor-pointer transition-colors hover:bg-muted/50">
+              <Card className="hover:bg-muted/50 cursor-pointer transition-colors">
                 <CardContent className="flex items-center gap-3 p-4">
                   <AlertTriangleIcon className="h-5 w-5 text-red-500" />
                   <div>
@@ -253,7 +252,7 @@ function AdminCommunityPage() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="cursor-pointer transition-colors hover:bg-muted/50">
+              <Card className="hover:bg-muted/50 cursor-pointer transition-colors">
                 <CardContent className="flex items-center gap-3 p-4">
                   <BanIcon className="h-5 w-5 text-red-600" />
                   <div>
@@ -262,7 +261,7 @@ function AdminCommunityPage() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="cursor-pointer transition-colors hover:bg-muted/50">
+              <Card className="hover:bg-muted/50 cursor-pointer transition-colors">
                 <CardContent className="flex items-center gap-3 p-4">
                   <HashIcon className="h-5 w-5 text-blue-500" />
                   <div>
@@ -288,7 +287,7 @@ function AdminCommunityPage() {
               <CardDescription>Search and manage community users</CardDescription>
             </div>
             <div className="relative w-full sm:w-64">
-              <SearchIcon className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <SearchIcon className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <Input
                 className="pl-9"
                 onChange={(e) => {
@@ -323,7 +322,7 @@ function AdminCommunityPage() {
               <TableBody>
                 {users.length === 0 ? (
                   <TableRow>
-                    <TableCell className="text-center text-muted-foreground" colSpan={6}>
+                    <TableCell className="text-muted-foreground text-center" colSpan={6}>
                       No users found
                     </TableCell>
                   </TableRow>

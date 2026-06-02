@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -931,7 +931,7 @@ public class CommunityController(
             return Forbid();
 
         // Remove all replies first (cascading delete)
-        if (comment.Replies.Any())
+        if (comment.Replies is { Count: > 0 })
             Context.PostComments.RemoveRange(comment.Replies);
 
         Context.PostComments.Remove(comment);
@@ -953,7 +953,7 @@ public class CommunityController(
             return NotFound(new { message = "Comment not found" });
 
         // Remove all replies first
-        if (comment.Replies.Any())
+        if (comment.Replies is { Count: > 0 })
             Context.PostComments.RemoveRange(comment.Replies);
 
         Context.PostComments.Remove(comment);

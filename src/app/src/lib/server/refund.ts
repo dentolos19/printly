@@ -1,4 +1,5 @@
-import type { ServerFetch } from "#/types";
+import type { ServerFetch } from "#/lib/types";
+
 import { OrderStatus } from "./order";
 
 // Enums matching backend
@@ -124,7 +125,6 @@ export type RefundResponse = {
   status: RefundStatus;
   requestedAt: string;
   processedAt: string | null;
-  stripeRefundId: string | null;
   conversationId: string | null;
   createdAt: string;
   updatedAt: string;
@@ -331,7 +331,7 @@ export default function initRefundController(fetch: ServerFetch) {
       return response.json();
     },
 
-    // Process an approved refund through Stripe (admin only)
+    // Process an approved refund (admin only)
     processRefund: async (id: string): Promise<RefundResponse> => {
       const response = await fetch(`/refunds/${id}/process`, {
         method: "POST",

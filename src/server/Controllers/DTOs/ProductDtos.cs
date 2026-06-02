@@ -37,8 +37,8 @@ public record ProductSummaryResponse(
 );
 
 public record CreateProductDto(
-    [Required] [StringLength(255, MinimumLength = 1)] string Name,
-    [Required] [Range(0.01, double.MaxValue)] decimal BasePrice,
+    [Required][StringLength(255, MinimumLength = 1)] string Name,
+    [Required][Range(0.01, double.MaxValue)] decimal BasePrice,
     bool IsActive = true
 );
 
@@ -76,7 +76,7 @@ public record ProductVariantWithProductResponse(
 public record CreateProductVariantDto(
     [Required] Guid ProductId,
     [Required] ProductSize Size,
-    [Required] [StringLength(50, MinimumLength = 1)] string Color
+    [Required][StringLength(50, MinimumLength = 1)] string Color
 );
 
 public record UpdateProductVariantDto(ProductSize? Size, [StringLength(50, MinimumLength = 1)] string? Color);
@@ -105,8 +105,8 @@ public record InventoryWithVariantResponse(
 
 public record CreateInventoryDto(
     [Required] Guid VariantId,
-    [Required] [Range(0, int.MaxValue)] int Quantity,
-    [Required] [Range(0, int.MaxValue)] int ReorderLevel
+    [Required][Range(0, int.MaxValue)] int Quantity,
+    [Required][Range(0, int.MaxValue)] int ReorderLevel
 );
 
 public record UpdateInventoryDto([Range(0, int.MaxValue)] int? Quantity, [Range(0, int.MaxValue)] int? ReorderLevel);
@@ -115,15 +115,15 @@ public record UpdateInventoryDto([Range(0, int.MaxValue)] int? Quantity, [Range(
 /// DTO for creating a product with its variants in one request
 /// </summary>
 public record CreateProductWithVariantsDto(
-    [Required] [StringLength(255, MinimumLength = 1)] string Name,
-    [Required] [Range(0.01, double.MaxValue)] decimal BasePrice,
+    [Required][StringLength(255, MinimumLength = 1)] string Name,
+    [Required][Range(0.01, double.MaxValue)] decimal BasePrice,
     bool IsActive = true,
     List<CreateVariantForProductDto>? Variants = null
 );
 
 public record CreateVariantForProductDto(
     [Required] ProductSize Size,
-    [Required] [StringLength(50, MinimumLength = 1)] string Color,
+    [Required][StringLength(50, MinimumLength = 1)] string Color,
     int InitialQuantity = 0,
     int ReorderLevel = 10
 );

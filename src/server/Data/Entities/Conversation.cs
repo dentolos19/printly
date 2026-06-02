@@ -22,7 +22,7 @@ public class Conversation : BaseEntity
 
     // When true, any admin can view and participate in this conversation
     // When false, only explicit participants can access the conversation
-    public bool SupportMode { get; set; } = false;
+    public bool SupportMode { get; set; }
 
     // Status tracking for support workflow
     public ConversationStatus Status { get; set; } = ConversationStatus.Pending;
@@ -34,7 +34,7 @@ public class Conversation : BaseEntity
     public DateTime? LastMessageAt { get; set; }
 
     // Number of unread messages for quick badge display
-    public int UnreadCount { get; set; } = 0;
+    public int UnreadCount { get; set; }
 
     // Assigned admin for this conversation (optional)
     public string? AssignedToAdminId { get; set; }

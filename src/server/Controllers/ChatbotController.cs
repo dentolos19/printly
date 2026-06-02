@@ -11,11 +11,23 @@ namespace PrintlyServer.Controllers;
 /// <summary>
 /// Controller for AI-powered support chatbot
 /// </summary>
-public class ChatbotController(DatabaseContext context, ChatService chatbotService, ElevenLabsService elevenLabsService)
-    : BaseController(context)
+public class ChatbotController(
+    DatabaseContext context,
+    ChatService chatbotService,
+    ElevenLabsService elevenLabsService,
+    IConfiguration configuration
+) : BaseController(context)
 {
     private readonly ChatService _chatbotService = chatbotService;
     private readonly ElevenLabsService _elevenLabsService = elevenLabsService;
+
+    private static readonly string[] ChatbotFeatures =
+    [
+        "Multi-turn conversations",
+        "Platform navigation help",
+        "Feature explanations",
+        "General support",
+    ];
 
     /// <summary>
     /// Send a message to the chatbot
@@ -37,8 +49,10 @@ public class ChatbotController(DatabaseContext context, ChatService chatbotServi
             return BadRequest(new { error = "Message is required" });
         }
 
-        // Use selected model or default to Gemini 2.5 Flash
-        var model = string.IsNullOrWhiteSpace(request.Model) ? "google/gemini-2.5-flash" : request.Model;
+        // Use selected model or default from OPENROUTER_MODEL (ChatService handles the fallback)
+        var model = string.IsNullOrWhiteSpace(request.Model)
+            ? configuration["OPENROUTER_MODEL"] ?? "openrouter/auto"
+            : request.Model;
 
         // Save user message to database
         var userMessage = new ChatbotMessage
@@ -92,13 +106,7 @@ public class ChatbotController(DatabaseContext context, ChatService chatbotServi
             new
             {
                 available = true,
-                features = new[]
-                {
-                    "Multi-turn conversations",
-                    "Platform navigation help",
-                    "Feature explanations",
-                    "General support",
-                },
+                features = ChatbotFeatures,
             }
         );
     }

@@ -1,9 +1,8 @@
-"use client";
-
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { BookmarkIcon, PlusIcon, TrendingUpIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+
 import { Button } from "#/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
 import { useAuth } from "#/lib/providers/auth";
@@ -247,7 +246,7 @@ function CommunityPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-bold text-3xl">Community</h1>
+          <h1 className="text-3xl font-bold">Community</h1>
           <p className="text-muted-foreground">Share and discover amazing designs</p>
         </div>
         <Button onClick={() => setCreateDialogOpen(true)}>

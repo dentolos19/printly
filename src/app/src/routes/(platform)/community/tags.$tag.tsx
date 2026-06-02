@@ -1,9 +1,8 @@
-"use client";
-
-import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeftIcon, HashIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+
 import { Button } from "#/components/ui/button";
 import { useAuth } from "#/lib/providers/auth";
 import { useServer } from "#/lib/providers/server";
@@ -14,8 +13,7 @@ function TagPage() {
   const { api } = useServer();
   const { claims } = useAuth();
   const navigate = useNavigate();
-  const params = useParams();
-  const tag = decodeURIComponent(params.tag as string);
+  const tag = decodeURIComponent(Route.useParams().tag);
 
   const [posts, setPosts] = useState<PostSummaryResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,11 +100,11 @@ function TagPage() {
         </Link>
         <div>
           <div className="flex items-center gap-2">
-            <HashIcon className="h-6 w-6 text-primary" />
-            <h1 className="font-bold text-3xl">{tag}</h1>
+            <HashIcon className="text-primary h-6 w-6" />
+            <h1 className="text-3xl font-bold">{tag}</h1>
           </div>
           {!loading && (
-            <p className="mt-1 text-muted-foreground">
+            <p className="text-muted-foreground mt-1">
               {posts.length > 0 ? `Showing posts tagged with #${tag}` : `No posts tagged with #${tag}`}
             </p>
           )}

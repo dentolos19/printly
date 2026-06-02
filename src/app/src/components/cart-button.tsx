@@ -1,7 +1,6 @@
-"use client";
-
 import { Link } from "@tanstack/react-router";
 import { ShoppingCart } from "lucide-react";
+
 import { Button } from "#/components/ui/button";
 import { useAuth } from "#/lib/providers/auth";
 import { useCart } from "#/lib/providers/cart";
@@ -19,7 +18,7 @@ export function CartButton() {
       <Link to="/cart">
         <ShoppingCart className="h-5 w-5" />
         {itemCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground text-xs">
+          <span className="bg-primary text-primary-foreground absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold">
             {itemCount > 99 ? "99+" : itemCount}
           </span>
         )}

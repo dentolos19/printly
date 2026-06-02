@@ -5,8 +5,9 @@
       "name": "App",
       "request": "launch",
       "type": "node-terminal",
-      "cwd": "${workspaceFolder}/src/app",
-      "command": "bun run dev",
+      "command": "make start",
+      "preLaunchTask": "Setup",
+      "postDebugTask": "Decompose",
       "serverReadyAction": {
         "pattern": "Local:.+(https?://.+)",
         "uriFormat": "%s",

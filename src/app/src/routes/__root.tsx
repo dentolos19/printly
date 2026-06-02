@@ -1,9 +1,8 @@
-"use client";
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { ThemeProvider } from "next-themes";
 import type { ReactNode } from "react";
+
 import ErrorOccurred from "#/components/error-occurred";
 import Loading from "#/components/loading";
 import NotFound from "#/components/not-found";
@@ -11,6 +10,7 @@ import { Toaster } from "#/components/ui/sonner";
 import AuthProvider from "#/lib/providers/auth";
 import CartProvider from "#/lib/providers/cart";
 import ServerProvider from "#/lib/providers/server";
+
 import appCss from "../styles.css?url";
 
 const queryClient = new QueryClient({

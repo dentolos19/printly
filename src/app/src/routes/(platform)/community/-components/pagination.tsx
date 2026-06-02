@@ -1,6 +1,5 @@
-﻿"use client";
-
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+
 import { Button } from "#/components/ui/button";
 
 interface PaginationProps {
@@ -18,7 +17,7 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
         <ChevronLeftIcon className="mr-1 h-4 w-4" />
         Previous
       </Button>
-      <span className="flex items-center px-4 text-muted-foreground text-sm">
+      <span className="text-muted-foreground flex items-center px-4 text-sm">
         Page {page} of {totalPages}
       </span>
       <Button disabled={page === totalPages} onClick={() => onPageChange(page + 1)} size="sm" variant="outline">

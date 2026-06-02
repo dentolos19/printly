@@ -1,9 +1,8 @@
-"use client";
-
 import * as signalR from "@microsoft/signalr";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { Archive, ArchiveIcon, Bell, CheckCheck, Inbox, RefreshCw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
@@ -29,7 +28,6 @@ interface Notification {
 
 function NotificationsPage() {
   const { tokens, isInitialized } = useAuth();
-  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [archivedNotifications, setArchivedNotifications] = useState<Notification[]>([]);
   const [activeTab, setActiveTab] = useState("all");
@@ -151,7 +149,7 @@ function NotificationsPage() {
     }
 
     if (notification.actionUrl) {
-      navigate(notification.actionUrl);
+      window.location.href = notification.actionUrl;
     }
   };
 
@@ -230,7 +228,7 @@ function NotificationsPage() {
 
   const renderNotification = (notification: Notification, showArchive = true) => (
     <div
-      className={`cursor-pointer rounded-lg border p-4 transition-colors hover:bg-accent ${
+      className={`hover:bg-accent cursor-pointer rounded-lg border p-4 transition-colors ${
         !notification.isRead ? "border-blue-200 bg-blue-50 dark:bg-blue-950" : ""
       }`}
       key={notification.id}
@@ -242,8 +240,8 @@ function NotificationsPage() {
           <div className="flex items-start justify-between gap-2">
             <div>
               <p className="font-medium">{notification.title}</p>
-              <p className="mt-1 text-muted-foreground text-sm">{notification.message}</p>
-              <p className="mt-2 text-muted-foreground text-xs">{formatTime(notification.createdAt)}</p>
+              <p className="text-muted-foreground mt-1 text-sm">{notification.message}</p>
+              <p className="text-muted-foreground mt-2 text-xs">{formatTime(notification.createdAt)}</p>
             </div>
             {!notification.isRead && (
               <Badge className="flex-shrink-0" variant="default">
@@ -325,7 +323,7 @@ function NotificationsPage() {
               <ScrollArea className="h-[600px]">
                 <div className="space-y-3">
                   {notifications.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                    <div className="text-muted-foreground flex flex-col items-center justify-center py-12">
                       <Bell className="mb-4 size-16 opacity-50" />
                       <p>No notifications</p>
                     </div>
@@ -340,7 +338,7 @@ function NotificationsPage() {
               <ScrollArea className="h-[600px]">
                 <div className="space-y-3">
                   {archivedNotifications.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                    <div className="text-muted-foreground flex flex-col items-center justify-center py-12">
                       <ArchiveIcon className="mb-4 size-16 opacity-50" />
                       <p>No archived notifications</p>
                     </div>

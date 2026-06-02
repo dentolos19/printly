@@ -60,7 +60,6 @@ public record RefundResponse(
     RefundStatusDto Status,
     DateTime RequestedAt,
     DateTime? ProcessedAt,
-    string? StripeRefundId,
     Guid? ConversationId,
     DateTime CreatedAt,
     DateTime UpdatedAt
@@ -93,7 +92,6 @@ public record RefundWithOrderResponse(
     RefundStatusDto Status,
     DateTime RequestedAt,
     DateTime? ProcessedAt,
-    string? StripeRefundId,
     Guid? ConversationId,
     DateTime CreatedAt,
     DateTime UpdatedAt,

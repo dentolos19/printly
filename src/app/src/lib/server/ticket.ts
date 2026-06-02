@@ -1,4 +1,4 @@
-import type { ServerFetch } from "#/types";
+import type { ServerFetch } from "#/lib/types";
 
 // ===== Enums =====
 export enum TicketStatus {

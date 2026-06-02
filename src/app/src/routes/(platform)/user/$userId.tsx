@@ -1,6 +1,4 @@
-"use client";
-
-import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   BanIcon,
   CheckIcon,
@@ -22,6 +20,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+
 import { Avatar, AvatarFallback } from "#/components/ui/avatar";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
@@ -47,9 +46,8 @@ import { ManagedUsersCard } from "#/routes/(platform)/user/-components/managed-u
 function UserProfilePage() {
   const { api } = useServer();
   const { claims } = useAuth();
-  const params = useParams();
   const navigate = useNavigate();
-  const userId = params.userId as string;
+  const userId = Route.useParams().userId;
 
   const [userPosts, setUserPosts] = useState<PostSummaryResponse[]>([]);
   const [pinnedPosts, setPinnedPosts] = useState<PostSummaryResponse[]>([]);
@@ -187,7 +185,7 @@ function UserProfilePage() {
   const isPrivateAndNotFollowing = followStatus?.isPrivate && !isOwnProfile && !following;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background min-h-screen">
       {/* Profile Header */}
       <div className="border-b">
         <div className="container mx-auto max-w-4xl space-y-6 p-6">
@@ -205,9 +203,9 @@ function UserProfilePage() {
               <div>
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-2">
-                    <h1 className="font-bold text-2xl md:text-3xl">{username}</h1>
+                    <h1 className="text-2xl font-bold md:text-3xl">{username}</h1>
                     {followStatus?.isPrivate && (
-                      <LockIcon aria-label="Private account" className="h-5 w-5 text-muted-foreground" />
+                      <LockIcon aria-label="Private account" className="text-muted-foreground h-5 w-5" />
                     )}
                   </div>
                   <div className="flex items-center gap-2">
@@ -286,7 +284,7 @@ function UserProfilePage() {
               {/* Stats */}
               <div className="flex gap-8">
                 <div className="flex flex-col">
-                  <span className="font-bold text-xl md:text-2xl">{userPosts.length}</span>
+                  <span className="text-xl font-bold md:text-2xl">{userPosts.length}</span>
                   <span className="text-muted-foreground text-sm">Posts</span>
                 </div>
                 <button
@@ -296,7 +294,7 @@ function UserProfilePage() {
                     setFollowListOpen(true);
                   }}
                 >
-                  <span className="font-bold text-xl md:text-2xl">{followerCount}</span>
+                  <span className="text-xl font-bold md:text-2xl">{followerCount}</span>
                   <span className="text-muted-foreground text-sm">Followers</span>
                 </button>
                 <button
@@ -306,7 +304,7 @@ function UserProfilePage() {
                     setFollowListOpen(true);
                   }}
                 >
-                  <span className="font-bold text-xl md:text-2xl">{followingCount}</span>
+                  <span className="text-xl font-bold md:text-2xl">{followingCount}</span>
                   <span className="text-muted-foreground text-sm">Following</span>
                 </button>
               </div>
@@ -320,7 +318,7 @@ function UserProfilePage() {
         <div className="border-b bg-blue-50 dark:bg-blue-950/30">
           <div className="container mx-auto flex max-w-4xl items-center gap-3 px-6 py-3">
             <UserPlusIcon className="h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400" />
-            <p className="flex-1 font-medium text-sm">
+            <p className="flex-1 text-sm font-medium">
               <span className="font-semibold">{username}</span> has requested to follow you
             </p>
             <div className="flex items-center gap-2">
@@ -376,35 +374,35 @@ function UserProfilePage() {
         {profileStats && !isPrivateAndNotFollowing && (
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="font-semibold text-sm">Profile Stats</CardTitle>
+              <CardTitle className="text-sm font-semibold">Profile Stats</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <div className="flex items-center gap-2">
-                  <EyeIcon className="h-4 w-4 text-muted-foreground" />
+                  <EyeIcon className="text-muted-foreground h-4 w-4" />
                   <div>
-                    <p className="font-bold text-lg">{profileStats.totalViews}</p>
+                    <p className="text-lg font-bold">{profileStats.totalViews}</p>
                     <p className="text-muted-foreground text-xs">Views</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <HeartIcon className="h-4 w-4 text-muted-foreground" />
+                  <HeartIcon className="text-muted-foreground h-4 w-4" />
                   <div>
-                    <p className="font-bold text-lg">{profileStats.totalReactions}</p>
+                    <p className="text-lg font-bold">{profileStats.totalReactions}</p>
                     <p className="text-muted-foreground text-xs">Reactions</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <MessageCircleIcon className="h-4 w-4 text-muted-foreground" />
+                  <MessageCircleIcon className="text-muted-foreground h-4 w-4" />
                   <div>
-                    <p className="font-bold text-lg">{profileStats.totalComments}</p>
+                    <p className="text-lg font-bold">{profileStats.totalComments}</p>
                     <p className="text-muted-foreground text-xs">Comments</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Share2Icon className="h-4 w-4 text-muted-foreground" />
+                  <Share2Icon className="text-muted-foreground h-4 w-4" />
                   <div>
-                    <p className="font-bold text-lg">{profileStats.totalShares}</p>
+                    <p className="text-lg font-bold">{profileStats.totalShares}</p>
                     <p className="text-muted-foreground text-xs">Shares</p>
                   </div>
                 </div>
@@ -419,7 +417,7 @@ function UserProfilePage() {
         {/* Pinned Posts */}
         {pinnedPosts.length > 0 && !isPrivateAndNotFollowing && (
           <div className="space-y-3">
-            <h3 className="font-semibold text-lg">📌 Pinned Posts</h3>
+            <h3 className="text-lg font-semibold">📌 Pinned Posts</h3>
             <PostGrid
               currentUserId={claims?.id}
               emptyTitle="No pinned posts"
@@ -427,7 +425,7 @@ function UserProfilePage() {
                 try {
                   await api.community.toggleBookmark(postId);
                   loadUserData();
-                } catch (error) {
+                } catch {
                   toast.error("Failed to update bookmark");
                 }
               }}
@@ -443,7 +441,7 @@ function UserProfilePage() {
                     await api.community.createOrUpdateReaction({ postId, reactionType: reaction });
                   }
                   loadUserData();
-                } catch (error) {
+                } catch {
                   toast.error("Failed to update reaction");
                 }
               }}
@@ -456,13 +454,13 @@ function UserProfilePage() {
         {/* All Posts */}
         {followStatus?.isPrivate && !isOwnProfile && !following ? (
           <div className="flex flex-col items-center justify-center gap-4 py-16">
-            <LockIcon className="h-16 w-16 text-muted-foreground" />
-            <h3 className="font-semibold text-xl">This account is private</h3>
-            <p className="text-center text-muted-foreground text-sm">Follow this account to see their posts.</p>
+            <LockIcon className="text-muted-foreground h-16 w-16" />
+            <h3 className="text-xl font-semibold">This account is private</h3>
+            <p className="text-muted-foreground text-center text-sm">Follow this account to see their posts.</p>
           </div>
         ) : userPosts.length > 0 ? (
           <div className="space-y-3">
-            <h3 className="font-semibold text-lg">Posts</h3>
+            <h3 className="text-lg font-semibold">Posts</h3>
             <PostGrid
               currentUserId={claims?.id}
               emptyTitle="No posts yet"
@@ -470,7 +468,7 @@ function UserProfilePage() {
                 try {
                   await api.community.toggleBookmark(postId);
                   loadUserData();
-                } catch (error) {
+                } catch {
                   toast.error("Failed to update bookmark");
                 }
               }}
@@ -486,7 +484,7 @@ function UserProfilePage() {
                     await api.community.createOrUpdateReaction({ postId, reactionType: reaction });
                   }
                   loadUserData();
-                } catch (error) {
+                } catch {
                   toast.error("Failed to update reaction");
                 }
               }}
@@ -496,8 +494,8 @@ function UserProfilePage() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center gap-4 py-12">
-            <UserIcon className="h-12 w-12 text-muted-foreground" />
-            <p className="text-lg text-muted-foreground">No posts yet</p>
+            <UserIcon className="text-muted-foreground h-12 w-12" />
+            <p className="text-muted-foreground text-lg">No posts yet</p>
           </div>
         )}
       </div>

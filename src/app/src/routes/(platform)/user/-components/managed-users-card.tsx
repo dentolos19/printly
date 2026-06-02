@@ -1,9 +1,8 @@
-"use client";
-
 import { useNavigate } from "@tanstack/react-router";
 import { BanIcon, EyeOffIcon, Loader2, UserIcon, UserXIcon, VolumeXIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+
 import { Avatar, AvatarFallback } from "#/components/ui/avatar";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
@@ -80,7 +79,7 @@ export function ManagedUsersCard() {
 
   const renderEmpty = (label: string) => (
     <div className="flex flex-col items-center justify-center gap-2 py-8">
-      <UserIcon className="h-10 w-10 text-muted-foreground" />
+      <UserIcon className="text-muted-foreground h-10 w-10" />
       <p className="text-muted-foreground text-sm">No {label} users</p>
     </div>
   );
@@ -88,7 +87,7 @@ export function ManagedUsersCard() {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="font-semibold text-sm">Managed Users</CardTitle>
+        <CardTitle className="text-sm font-semibold">Managed Users</CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs onValueChange={setActiveTab} value={activeTab}>
@@ -97,14 +96,14 @@ export function ManagedUsersCard() {
               <VolumeXIcon className="mr-1.5 h-3.5 w-3.5" />
               Muted
               {mutedUsers.length > 0 && (
-                <span className="ml-1 text-muted-foreground text-xs">({mutedUsers.length})</span>
+                <span className="text-muted-foreground ml-1 text-xs">({mutedUsers.length})</span>
               )}
             </TabsTrigger>
             <TabsTrigger className="flex-1" value="blocked">
               <BanIcon className="mr-1.5 h-3.5 w-3.5" />
               Blocked
               {blockedUsers.length > 0 && (
-                <span className="ml-1 text-muted-foreground text-xs">({blockedUsers.length})</span>
+                <span className="text-muted-foreground ml-1 text-xs">({blockedUsers.length})</span>
               )}
             </TabsTrigger>
           </TabsList>
@@ -129,7 +128,7 @@ export function ManagedUsersCard() {
                         <Avatar className="h-9 w-9">
                           <AvatarFallback className="text-sm">{displayName.charAt(0).toUpperCase()}</AvatarFallback>
                         </Avatar>
-                        <span className="truncate font-medium text-sm">{displayName}</span>
+                        <span className="truncate text-sm font-medium">{displayName}</span>
                       </button>
                       <Button onClick={() => handleUnmute(user.userId)} size="sm" variant="outline">
                         <EyeOffIcon className="mr-1.5 h-3.5 w-3.5" />
@@ -162,7 +161,7 @@ export function ManagedUsersCard() {
                         <Avatar className="h-9 w-9">
                           <AvatarFallback className="text-sm">{displayName.charAt(0).toUpperCase()}</AvatarFallback>
                         </Avatar>
-                        <span className="truncate font-medium text-sm">{displayName}</span>
+                        <span className="truncate text-sm font-medium">{displayName}</span>
                       </button>
                       <Button onClick={() => handleUnblock(user.userId)} size="sm" variant="outline">
                         <UserXIcon className="mr-1.5 h-3.5 w-3.5" />

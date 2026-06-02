@@ -1,8 +1,6 @@
-"use client";
-
-import { Image } from "@unpic/react";
 import { Minus, Package, Plus, ShoppingCart, Stamp } from "lucide-react";
 import { useMemo, useState } from "react";
+
 import { Button } from "#/components/ui/button";
 import {
   Dialog,
@@ -120,16 +118,15 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
 
         <div className="space-y-4 py-4">
           {/* Product Image */}
-          <div className="relative mx-auto aspect-square w-full max-w-[280px] overflow-hidden rounded-lg border bg-muted">
+          <div className="bg-muted relative mx-auto aspect-square w-full max-w-[280px] overflow-hidden rounded-lg border">
             {displayImage ? (
-              <Image
+              <img
                 alt={product.name}
-                className="object-cover transition-opacity duration-200"
-                fill
+                className="absolute inset-0 size-full object-cover transition-opacity duration-200"
                 src={displayImage}
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+              <div className="text-muted-foreground flex h-full w-full items-center justify-center">
                 <Package className="h-16 w-16" />
               </div>
             )}
@@ -137,7 +134,7 @@ export function ProductModal({ product, open, onOpenChange }: ProductModalProps)
 
           {/* Price Display */}
           <div className="text-center">
-            <span className="font-bold text-3xl">${product.basePrice.toFixed(2)}</span>
+            <span className="text-3xl font-bold">${product.basePrice.toFixed(2)}</span>
           </div>
 
           {/* Size Selection */}

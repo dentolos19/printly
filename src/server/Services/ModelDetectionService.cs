@@ -198,7 +198,7 @@ public partial class ModelDetectionService
         return null;
     }
 
-    private List<DetectedArea> DetectByGeometry(ModelRoot model)
+    private static List<DetectedArea> DetectByGeometry(ModelRoot model)
     {
         var areas = new List<DetectedArea>();
         var seenAreaIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

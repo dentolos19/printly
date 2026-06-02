@@ -1,6 +1,5 @@
-"use client";
-
 import { useEffect } from "react";
+
 import { useDesigner } from "./use-designer";
 
 export function useKeyboardShortcuts() {

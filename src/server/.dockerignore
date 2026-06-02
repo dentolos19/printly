@@ -2,19 +2,25 @@
 .vs/
 .idea/
 *.iml
+*.user
+*.suo
 
-# Environment files
+# Build files
 bin/
 obj/
 packages/
-*.user
-*.suo
 
 # User files
 .env*
 !.env*.template
 
+# Docker-specific rules
+.git/
+.gitignore
+Dockerfile
+
 # Miscellaneous files
+.tmp/
 .DS_Store
 Desktop.ini
 Thumbs.db

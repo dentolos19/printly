@@ -1,7 +1,6 @@
-"use client";
-
 import { ChevronLeft, Loader2, Upload } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+
 import { Button } from "#/components/ui/button";
 import { ScrollArea } from "#/components/ui/scroll-area";
 import { Skeleton } from "#/components/ui/skeleton";
@@ -12,6 +11,7 @@ import type { Design } from "#/lib/server/design";
 import type { ProductVariantResponse } from "#/lib/server/product";
 import { cn } from "#/lib/utils";
 import { FallbackImage } from "#/routes/(tools)/-shared/components/fallback-image";
+
 import { useImprinter } from "../hooks/use-imprinter";
 
 type LeftPanelProps = {
@@ -114,7 +114,7 @@ function PanelHeader({ view, onClose }: PanelHeaderProps) {
 
   return (
     <div className="flex shrink-0 items-center justify-between border-b px-3 py-2">
-      <span className="font-medium text-sm">{titles[view]}</span>
+      <span className="text-sm font-medium">{titles[view]}</span>
       <Button className="h-7 w-7" onClick={onClose} size="icon" variant="ghost">
         <ChevronLeft className="h-4 w-4" />
       </Button>
@@ -150,7 +150,7 @@ function ProductsPanel() {
     return (
       <div className="flex flex-col items-center justify-center p-6 text-center">
         <p className="text-muted-foreground text-sm">No products with 3D models available</p>
-        <p className="mt-1 text-muted-foreground text-xs">Contact admin to add products</p>
+        <p className="text-muted-foreground mt-1 text-xs">Contact admin to add products</p>
       </div>
     );
   }
@@ -159,7 +159,7 @@ function ProductsPanel() {
     <div className="flex flex-col gap-4 p-3">
       {/* Product Grid */}
       <div className="space-y-2">
-        <span className="font-medium text-muted-foreground text-xs uppercase">Products</span>
+        <span className="text-muted-foreground text-xs font-medium uppercase">Products</span>
         <div className="grid grid-cols-2 gap-2">
           {availableProducts.map((product) => (
             <button
@@ -179,12 +179,12 @@ function ProductsPanel() {
                   src={`/assets/${product.modelPreviewId ?? product.imageId}/view`}
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-muted-foreground text-xs">
+                <div className="text-muted-foreground flex h-full w-full items-center justify-center text-xs">
                   No image
                 </div>
               )}
               <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/60 to-transparent p-2">
-                <p className="truncate font-medium text-white text-xs">{product.name}</p>
+                <p className="truncate text-xs font-medium text-white">{product.name}</p>
               </div>
             </button>
           ))}
@@ -194,7 +194,7 @@ function ProductsPanel() {
       {/* Variant Colors */}
       {selectedProduct && availableColors.length > 0 && (
         <div className="space-y-2">
-          <span className="font-medium text-muted-foreground text-xs uppercase">Variant</span>
+          <span className="text-muted-foreground text-xs font-medium uppercase">Variant</span>
           <div className="flex flex-wrap gap-2">
             {selectedProduct.product.variants.map((variant) => (
               <button
@@ -217,7 +217,7 @@ function ProductsPanel() {
       {/* Model Color Picker */}
       {selectedProduct && (
         <div className="space-y-2">
-          <span className="font-medium text-muted-foreground text-xs uppercase">Model Color</span>
+          <span className="text-muted-foreground text-xs font-medium uppercase">Model Color</span>
           <div className="flex gap-2">
             <input
               className="h-8 w-8 cursor-pointer rounded border"
@@ -226,7 +226,7 @@ function ProductsPanel() {
               value={productColor}
             />
             <input
-              className="flex-1 rounded-md border border-input bg-background px-2 text-xs"
+              className="border-input bg-background flex-1 rounded-md border px-2 text-xs"
               onChange={(e) => changeProductColor(e.target.value)}
               type="text"
               value={productColor}
@@ -274,7 +274,7 @@ function DesignsPanel() {
     return (
       <div className="flex flex-col items-center justify-center p-6 text-center">
         <p className="text-muted-foreground text-sm">No designs found</p>
-        <p className="mt-1 text-muted-foreground text-xs">Create designs in the Designer first</p>
+        <p className="text-muted-foreground mt-1 text-xs">Create designs in the Designer first</p>
       </div>
     );
   }
@@ -283,7 +283,7 @@ function DesignsPanel() {
     <div className="grid grid-cols-2 gap-2 p-3">
       {designs.map((design) => (
         <button
-          className="group relative aspect-square w-full overflow-hidden rounded-md border bg-muted transition-colors hover:border-primary"
+          className="group bg-muted hover:border-primary relative aspect-square w-full overflow-hidden rounded-md border transition-colors"
           key={design.id}
           onClick={() => handleDesignClick(design)}
         >
@@ -294,12 +294,12 @@ function DesignsPanel() {
               src={`/assets/${design.coverId}/view`}
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-muted-foreground text-xs">
+            <div className="text-muted-foreground flex h-full w-full items-center justify-center text-xs">
               No preview
             </div>
           )}
           <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/60 to-transparent p-2">
-            <p className="truncate font-medium text-white text-xs">{design.name}</p>
+            <p className="truncate text-xs font-medium text-white">{design.name}</p>
           </div>
         </button>
       ))}
@@ -382,13 +382,13 @@ function AssetsPanel() {
         ) : assets.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-6 text-center">
             <p className="text-muted-foreground text-sm">No assets found</p>
-            <p className="mt-1 text-muted-foreground text-xs">Upload images to use them</p>
+            <p className="text-muted-foreground mt-1 text-xs">Upload images to use them</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-2 p-3">
             {assets.map((asset) => (
               <button
-                className="group relative aspect-square w-full overflow-hidden rounded-md border bg-muted transition-colors hover:border-primary"
+                className="group bg-muted hover:border-primary relative aspect-square w-full overflow-hidden rounded-md border transition-colors"
                 key={asset.id}
                 onClick={() => handleAssetClick(asset)}
               >
@@ -398,7 +398,7 @@ function AssetsPanel() {
                   src={`/assets/${asset.id}/view`}
                 />
                 <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/60 to-transparent p-2">
-                  <p className="truncate font-medium text-white text-xs">{asset.name}</p>
+                  <p className="truncate text-xs font-medium text-white">{asset.name}</p>
                 </div>
               </button>
             ))}

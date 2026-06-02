@@ -2,29 +2,31 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "printly",
   "main": "src/server.ts",
-  "compatibility_date": "2026-01-01",
+  "compatibility_date": "2026-05-01",
   "compatibility_flags": ["nodejs_compat"],
-  "keep_vars": true,
-  "observability": {
-    "logs": {
-      "enabled": true
-    },
-    "traces": {
-      "enabled": true
-    }
+  "dev": {
+    "enable_containers": false
   },
-  "routes": [
+  "observability": {
+    "enabled": true
+  },
+  "r2_buckets": [
     {
-      "pattern": "printly.dennise.me",
-      "custom_domain": true
+      "binding": "ASSETS",
+      "bucket_name": "printly"
     }
   ],
+  "route": {
+    "pattern": "printly.dennise.me",
+    "custom_domain": true
+  },
   "containers": [
     {
+      "name": "printly-server",
       "class_name": "Server",
       "image": "../server/Dockerfile",
       "max_instances": 1,
-      "instance_type": "basic"
+      "instance_type": "standard-1"
     }
   ],
   "durable_objects": {

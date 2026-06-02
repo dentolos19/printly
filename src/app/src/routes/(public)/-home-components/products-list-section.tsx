@@ -1,4 +1,5 @@
 import { Sparkles } from "lucide-react";
+
 import { ProductsSection } from "./products-section";
 
 export function ProductsListSection() {

@@ -1,6 +1,5 @@
-"use client";
-
 import { createFileRoute } from "@tanstack/react-router";
+
 import { BulkOrderSection } from "#/routes/(public)/-home-components/bulk-order-section";
 import { ContactSection } from "#/routes/(public)/-home-components/contact-section";
 import { FeaturesSection } from "#/routes/(public)/-home-components/features-section";
@@ -15,7 +14,7 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
   return (
-    <main className={"flex flex-col bg-background"}>
+    <main className={"bg-background flex flex-col"}>
       <Header />
       <HeroSection />
       <FeaturesSection />

@@ -1,7 +1,6 @@
-"use client";
-
 import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
+
 import { type ProductResponse, ProductSizeLabels, type ProductVariantResponse } from "#/lib/server/product";
 
 export type CartItem = {

@@ -2,23 +2,21 @@
 .vs/
 .idea/
 *.iml
+*.user
+*.suo
 
-# Environment files
+# Build files
 bin/
 obj/
 packages/
-*.user
-*.suo
 
 # User files
 .env*
 !.env*.template
 
 # Miscellaneous files
+.tmp/
 .DS_Store
 Desktop.ini
 Thumbs.db
 !.gitkeep
-
-# SQLite database (no longer used)
-data.db

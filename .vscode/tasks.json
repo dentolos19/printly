@@ -1,0 +1,21 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Setup",
+      "type": "shell",
+      "command": "make setup",
+      "presentation": {
+        "close": true
+      }
+    },
+    {
+      "label": "Decompose",
+      "type": "shell",
+      "command": "make decompose",
+      "presentation": {
+        "close": true
+      }
+    }
+  ]
+}

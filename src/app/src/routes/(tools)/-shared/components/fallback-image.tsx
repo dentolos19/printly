@@ -1,5 +1,3 @@
-"use client";
-
 import { AlertTriangle } from "lucide-react";
 import { type ImgHTMLAttributes, useCallback, useState } from "react";
 

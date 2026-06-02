@@ -1,5 +1,3 @@
-"use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Check, Loader2, X } from "lucide-react";
@@ -7,6 +5,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "#/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "#/components/ui/form";
@@ -30,7 +29,7 @@ type RegisterForm = z.infer<typeof registerSchema>;
 function PasswordRequirement({ met, text }: { met: boolean; text: string }) {
   return (
     <div className={"flex items-center gap-2 text-xs"}>
-      {met ? <Check className="h-3 w-3 text-green-600" /> : <X className="h-3 w-3 text-muted-foreground" />}
+      {met ? <Check className="h-3 w-3 text-green-600" /> : <X className="text-muted-foreground h-3 w-3" />}
       <span className={met ? "text-green-600" : "text-muted-foreground"}>{text}</span>
     </div>
   );
@@ -69,7 +68,7 @@ function RegistrationPage() {
       await auth.register(data.name, data.email, data.password);
       toast.success("Account created successfully! Please log in.");
       navigate({ to: "/auth" });
-    } catch (error) {
+    } catch {
       toast.error("Registration failed. Email may already be in use.");
       form.setError("root", {
         message: "Failed to create account",
@@ -148,9 +147,9 @@ function RegistrationPage() {
                 "Create account"
               )}
             </Button>
-            <p className={"text-center text-muted-foreground text-sm"}>
+            <p className={"text-muted-foreground text-center text-sm"}>
               Already have an account?{" "}
-              <Link className={"font-medium underline underline-offset-4 hover:text-foreground"} to="/auth">
+              <Link className={"hover:text-foreground font-medium underline underline-offset-4"} to="/auth">
                 Login
               </Link>
             </p>
