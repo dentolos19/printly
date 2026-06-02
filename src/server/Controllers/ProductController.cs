@@ -514,7 +514,7 @@ public class ProductController(
 
         // Validate file type (images only)
         var allowedTypes = new[] { "image/jpeg", "image/png", "image/gif", "image/webp" };
-        if (!allowedTypes.Contains(file.ContentType.ToLower()))
+        if (!allowedTypes.Contains(file.ContentType, StringComparer.OrdinalIgnoreCase))
         {
             return BadRequest(new { message = "Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed." });
         }
@@ -580,8 +580,8 @@ public class ProductController(
             return NotFound(new { message = "Product not found" });
 
         // Validate file type (.glb only)
-        var fileName = file.FileName.ToLower();
-        if (!fileName.EndsWith(".glb") && file.ContentType != "model/gltf-binary")
+        var fileName = file.FileName.ToLowerInvariant();
+        if (!fileName.EndsWith(".glb", StringComparison.Ordinal) && file.ContentType != "model/gltf-binary")
         {
             return BadRequest(new { message = "Invalid file type. Only .glb files are allowed." });
         }
@@ -609,7 +609,7 @@ public class ProductController(
         if (modelPreview != null)
         {
             var previewAllowedTypes = new[] { "image/jpeg", "image/png", "image/webp" };
-            if (!previewAllowedTypes.Contains(modelPreview.ContentType.ToLower()))
+            if (!previewAllowedTypes.Contains(modelPreview.ContentType, StringComparer.OrdinalIgnoreCase))
             {
                 return BadRequest(new { message = "Invalid preview file type. Only JPEG, PNG, and WebP are allowed." });
             }

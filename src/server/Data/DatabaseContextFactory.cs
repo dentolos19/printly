@@ -1,3 +1,4 @@
+using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using PrintlyServer.Extensions;
@@ -8,6 +9,7 @@ public class DatabaseContextFactory : IDesignTimeDbContextFactory<DatabaseContex
 {
     public DatabaseContext CreateDbContext(string[] args)
     {
+        Env.Load();
         var options = new DbContextOptionsBuilder<DatabaseContext>();
         if (!options.IsConfigured)
             options.UseDatabase();

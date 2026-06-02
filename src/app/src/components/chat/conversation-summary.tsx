@@ -1,5 +1,3 @@
-"use client";
-
 import {
   AlertTriangle,
   CheckCircle2,
@@ -12,6 +10,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+
 import { Button } from "#/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "#/components/ui/dialog";
 import { ScrollArea } from "#/components/ui/scroll-area";
@@ -86,7 +85,7 @@ export function ConversationSummary({ conversationId, isOpen, onClose, authorize
       <DialogContent className="flex h-[80vh] flex-col p-0 sm:max-w-lg">
         <DialogHeader className="border-b px-6 pt-5 pb-3">
           <DialogTitle className="flex items-center gap-2 text-lg">
-            <Sparkles className="h-5 w-5 text-primary" />
+            <Sparkles className="text-primary h-5 w-5" />
             AI Summary
           </DialogTitle>
         </DialogHeader>
@@ -116,10 +115,10 @@ export function ConversationSummary({ conversationId, isOpen, onClose, authorize
 
             {error && (
               <div className="flex flex-col items-center gap-3 py-8 text-center">
-                <AlertTriangle className="h-10 w-10 text-destructive opacity-70" />
+                <AlertTriangle className="text-destructive h-10 w-10 opacity-70" />
                 <div>
-                  <p className="font-medium text-destructive">Failed to generate summary</p>
-                  <p className="mt-1 text-muted-foreground text-sm">{error}</p>
+                  <p className="text-destructive font-medium">Failed to generate summary</p>
+                  <p className="text-muted-foreground mt-1 text-sm">{error}</p>
                 </div>
                 <Button onClick={fetchSummary} size="sm" variant="outline">
                   Try again
@@ -131,40 +130,40 @@ export function ConversationSummary({ conversationId, isOpen, onClose, authorize
               <div className="space-y-3">
                 {/* Summary */}
                 <div>
-                  <h4 className="mb-1 font-semibold text-foreground text-xs uppercase tracking-tight">Summary</h4>
+                  <h4 className="text-foreground mb-1 text-xs font-semibold tracking-tight uppercase">Summary</h4>
                   <p className="text-muted-foreground text-xs leading-relaxed">{summary.summary}</p>
                 </div>
 
                 {/* Conversation Overview */}
                 <div>
-                  <h4 className="mb-1.5 font-semibold text-foreground text-xs uppercase tracking-tight">Overview</h4>
+                  <h4 className="text-foreground mb-1.5 text-xs font-semibold tracking-tight uppercase">Overview</h4>
                   <div className="grid grid-cols-2 gap-1.5">
-                    <div className="flex items-center gap-2 rounded-md bg-muted/50 p-2">
-                      <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                    <div className="bg-muted/50 flex items-center gap-2 rounded-md p-2">
+                      <MessageSquare className="text-muted-foreground h-4 w-4" />
                       <div>
                         <p className="text-muted-foreground text-xs">Messages</p>
-                        <p className="font-semibold text-xs">{summary.messageCount}</p>
+                        <p className="text-xs font-semibold">{summary.messageCount}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 rounded-md bg-muted/50 p-2">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
+                    <div className="bg-muted/50 flex items-center gap-2 rounded-md p-2">
+                      <Clock className="text-muted-foreground h-4 w-4" />
                       <div>
                         <p className="text-muted-foreground text-xs">Duration</p>
-                        <p className="font-semibold text-xs">
+                        <p className="text-xs font-semibold">
                           {summary.durationMinutes < 1 ? "<1 min" : `${summary.durationMinutes} min`}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 rounded-md bg-muted/50 p-2">
+                    <div className="bg-muted/50 flex items-center gap-2 rounded-md p-2">
                       <div className={`flex h-8 w-8 items-center justify-center rounded-full ${sentimentInfo?.icon}`}>
                         <span className="text-base">{sentimentInfo?.emoji}</span>
                       </div>
                       <div>
                         <p className="text-muted-foreground text-xs">Sentiment</p>
-                        <p className="font-semibold text-xs">{sentimentInfo?.label}</p>
+                        <p className="text-xs font-semibold">{sentimentInfo?.label}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 rounded-md bg-muted/50 p-2">
+                    <div className="bg-muted/50 flex items-center gap-2 rounded-md p-2">
                       {summary.resolved ? (
                         <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                       ) : (
@@ -172,7 +171,7 @@ export function ConversationSummary({ conversationId, isOpen, onClose, authorize
                       )}
                       <div>
                         <p className="text-muted-foreground text-xs">Status</p>
-                        <p className="font-semibold text-xs">{summary.resolved ? "Resolved" : "Unresolved"}</p>
+                        <p className="text-xs font-semibold">{summary.resolved ? "Resolved" : "Unresolved"}</p>
                       </div>
                     </div>
                   </div>
@@ -181,14 +180,14 @@ export function ConversationSummary({ conversationId, isOpen, onClose, authorize
                 {/* Key Discussion Points */}
                 {summary.keyPoints.length > 0 && (
                   <div>
-                    <h4 className="mb-1 flex items-center gap-1 font-semibold text-foreground text-xs uppercase tracking-tight">
+                    <h4 className="text-foreground mb-1 flex items-center gap-1 text-xs font-semibold tracking-tight uppercase">
                       <Lightbulb className="h-3 w-3" />
                       Key Points
                     </h4>
                     <ul className="space-y-0.5">
                       {summary.keyPoints.map((point, i) => (
-                        <li className="flex items-start gap-1.5 text-muted-foreground text-xs" key={i}>
-                          <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-primary" />
+                        <li className="text-muted-foreground flex items-start gap-1.5 text-xs" key={i}>
+                          <span className="bg-primary mt-1 h-1 w-1 shrink-0 rounded-full" />
                           {point}
                         </li>
                       ))}
@@ -199,13 +198,13 @@ export function ConversationSummary({ conversationId, isOpen, onClose, authorize
                 {/* Action Items */}
                 {summary.actionItems.length > 0 && (
                   <div>
-                    <h4 className="mb-1 flex items-center gap-1 font-semibold text-foreground text-xs uppercase tracking-tight">
+                    <h4 className="text-foreground mb-1 flex items-center gap-1 text-xs font-semibold tracking-tight uppercase">
                       <ListChecks className="h-3 w-3" />
                       Actions
                     </h4>
                     <ul className="space-y-0.5 pb-2">
                       {summary.actionItems.map((item, i) => (
-                        <li className="flex items-start gap-1.5 text-amber-700 text-xs dark:text-amber-400" key={i}>
+                        <li className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400" key={i}>
                           <XCircle className="mt-0.5 h-3 w-3 shrink-0" />
                           {item}
                         </li>

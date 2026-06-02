@@ -1,8 +1,7 @@
-"use client";
-
 import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
 import { Loader2, XCircle } from "lucide-react";
 import { Suspense } from "react";
+
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
 
@@ -49,8 +48,8 @@ function CheckoutCancelPage() {
         <div className="flex min-h-[60vh] items-center justify-center">
           <Card className="w-full max-w-md">
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <Loader2 className="mb-4 h-12 w-12 animate-spin text-primary" />
-              <p className="text-lg text-muted-foreground">Loading...</p>
+              <Loader2 className="text-primary mb-4 h-12 w-12 animate-spin" />
+              <p className="text-muted-foreground text-lg">Loading...</p>
             </CardContent>
           </Card>
         </div>

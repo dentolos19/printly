@@ -1,8 +1,7 @@
-"use client";
-
 import { BugIcon, RefreshCwIcon, ShuffleIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+
 import { Button } from "#/components/ui/button";
 import {
   Dialog,
@@ -24,9 +23,10 @@ export default function DebugDialog() {
   const [isTogglingRole, setIsTogglingRole] = useState(false);
   const [isRefreshingToken, setIsRefreshingToken] = useState(false);
 
-  // if (process.env.NODE_ENV === "production") {
-  //   return null;
-  // }
+  // Visible to anyone in development; in production, restricted to admins.
+  if (process.env.NODE_ENV === "production" && claims?.role?.toLowerCase() !== "admin") {
+    return null;
+  }
 
   const handleToggleRole = async () => {
     try {
@@ -74,7 +74,7 @@ export default function DebugDialog() {
   return (
     <Dialog onOpenChange={setIsOpen} open={isOpen}>
       <DialogTrigger asChild>
-        <button className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent focus:bg-accent">
+        <button className="hover:bg-accent focus:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none">
           <BugIcon className="size-4" />
           <span>Debug Tools</span>
         </button>
@@ -90,8 +90,8 @@ export default function DebugDialog() {
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label className="font-medium text-muted-foreground text-xs uppercase">User Information</Label>
-            <div className="rounded-md bg-muted p-3 font-mono text-sm">
+            <Label className="text-muted-foreground text-xs font-medium uppercase">User Information</Label>
+            <div className="bg-muted rounded-md p-3 font-mono text-sm">
               <div className="grid gap-1">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">User ID:</span>
@@ -112,7 +112,7 @@ export default function DebugDialog() {
           <Separator />
 
           <div className="space-y-3">
-            <Label className="font-medium text-muted-foreground text-xs uppercase">Actions</Label>
+            <Label className="text-muted-foreground text-xs font-medium uppercase">Actions</Label>
 
             <div className="space-y-2">
               <Button
@@ -159,8 +159,8 @@ export default function DebugDialog() {
 
           <div className="rounded-md border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-900 dark:bg-yellow-950/20">
             <p className="text-xs text-yellow-800 dark:text-yellow-200">
-              <strong>Note:</strong> These tools are only available in development mode and will be hidden in production
-              builds.
+              <strong>Note:</strong> These tools are available to everyone in development. In production, they are
+              restricted to admin accounts.
             </p>
           </div>
         </div>

@@ -1395,6 +1395,7 @@ public class ConversationHub(
             ConversationPriority.Normal => "normal",
             ConversationPriority.High => "high",
             ConversationPriority.Urgent => "urgent",
+            _ => "normal",
         };
 
         var notificationPriority =

@@ -8,7 +8,7 @@ using PrintlyServer.Data.Entities;
 
 namespace PrintlyServer.Services;
 
-public class ChatService
+public class ChatService : IDisposable
 {
     private readonly HttpClient _http;
     private readonly ILogger<ChatService> _logger;
@@ -31,12 +31,12 @@ public class ChatService
     // supported ai models - users can choose from these options
     private static readonly HashSet<string> SupportedModels =
     [
-        "google/gemini-2.5-flash", // Default - fast and efficient
+        "google/gemini-2.5-flash", // Fast and efficient
         "openai/gpt-4o", // Advanced reasoning
         "meta-llama/llama-3.1-70b-instruct", // Open source option
     ];
 
-    private const string DefaultModel = "google/gemini-2.5-flash";
+    private readonly string _defaultModel;
 
     // system prompt that defines the chatbot's behavior
     private static readonly string SystemPrompt = """
@@ -181,10 +181,19 @@ public class ChatService
         var apiKey = configuration["OPENROUTER_API_KEY"];
         var title = configuration["OPENROUTER_TITLE"] ?? "Printly";
         var referer = configuration["OPENROUTER_REFERER"] ?? "https://dennise.me";
+        var modelFromConfig = configuration["OPENROUTER_MODEL"];
 
         if (string.IsNullOrEmpty(apiKey))
         {
             throw new InvalidOperationException("OPENROUTER_API_KEY is not configured");
+        }
+
+        _defaultModel = modelFromConfig ?? "openrouter/auto";
+
+        // If OPENROUTER_MODEL is set and not already in the supported set, add it
+        if (modelFromConfig != null && !SupportedModels.Contains(modelFromConfig))
+        {
+            SupportedModels.Add(modelFromConfig);
         }
 
         _http = new HttpClient { Timeout = TimeSpan.FromSeconds(RequestTimeoutSeconds) };
@@ -456,7 +465,7 @@ public class ChatService
                     status = order.Status.ToString(),
                     totalAmount = order.TotalAmount,
                     itemCount = order.Items.Count,
-                    createdAt = order.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss UTC"),
+                    createdAt = order.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture),
                 },
             }
         );
@@ -507,7 +516,7 @@ public class ChatService
                     status = o.Status.ToString(),
                     totalAmount = o.TotalAmount,
                     itemCount = o.Items.Count,
-                    createdAt = o.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss UTC"),
+                    createdAt = o.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture),
                 }),
             }
         );
@@ -518,7 +527,7 @@ public class ChatService
     /// <summary>
     /// Check if user is rate limited
     /// </summary>
-    private (bool isLimited, string reason) CheckRateLimit(string userId)
+    private static (bool isLimited, string reason) CheckRateLimit(string userId)
     {
         var now = DateTime.UtcNow;
 
@@ -561,7 +570,7 @@ public class ChatService
     /// <summary>
     /// Update rate limit tracking after successful request
     /// </summary>
-    private void UpdateRateLimit(string userId)
+    private static void UpdateRateLimit(string userId)
     {
         var now = DateTime.UtcNow;
         _lastRequestTime[userId] = now;
@@ -614,12 +623,12 @@ public class ChatService
         }
 
         // Validate and set model
-        var selectedModel = string.IsNullOrWhiteSpace(model) ? DefaultModel : model;
+        var selectedModel = string.IsNullOrWhiteSpace(model) ? _defaultModel : model;
 
         if (!SupportedModels.Contains(selectedModel))
         {
             _logger.LogWarning("Invalid model requested: {Model}. Using default.", selectedModel);
-            selectedModel = DefaultModel;
+            selectedModel = _defaultModel;
         }
 
         // Check rate limit
@@ -873,7 +882,7 @@ public class ChatService
 
         var requestBody = new
         {
-            model = "google/gemini-2.5-flash",
+            model = _defaultModel,
             messages = new[]
             {
                 new { role = "system", content = systemPrompt },
@@ -890,11 +899,11 @@ public class ChatService
 
         // Clean potential markdown fences from the response
         content = content.Trim();
-        if (content.StartsWith("```json"))
+        if (content.StartsWith("```json", StringComparison.Ordinal))
             content = content[7..];
-        if (content.StartsWith("```"))
+        if (content.StartsWith("```", StringComparison.Ordinal))
             content = content[3..];
-        if (content.EndsWith("```"))
+        if (content.EndsWith("```", StringComparison.Ordinal))
             content = content[..^3];
         content = content.Trim();
 
@@ -931,6 +940,12 @@ public class ChatService
                 Duration = duration,
             };
         }
+    }
+
+    public void Dispose()
+    {
+        _http?.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
 

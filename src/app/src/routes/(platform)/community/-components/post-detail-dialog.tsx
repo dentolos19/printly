@@ -1,5 +1,3 @@
-﻿"use client";
-
 import { Link } from "@tanstack/react-router";
 import {
   AlertTriangleIcon,
@@ -18,6 +16,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+
 import { Avatar, AvatarFallback } from "#/components/ui/avatar";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
@@ -361,7 +360,7 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                   {(post.isNsfw || post.contentWarning) && !nsfwRevealed && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60">
                       <AlertTriangleIcon className="h-8 w-8 text-yellow-400" />
-                      <p className="font-medium text-sm text-white">{post.contentWarning || "Sensitive Content"}</p>
+                      <p className="text-sm font-medium text-white">{post.contentWarning || "Sensitive Content"}</p>
                       <Button onClick={() => setNsfwRevealed(true)} size="sm" variant="secondary">
                         Show Content
                       </Button>
@@ -377,7 +376,7 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                 <div className="flex flex-wrap gap-1">
                   {post.tags.map((tag) => (
                     <Badge
-                      className="cursor-pointer text-xs hover:bg-primary/20"
+                      className="hover:bg-primary/20 cursor-pointer text-xs"
                       key={tag}
                       onClick={() => onTagClick?.(tag)}
                       variant="secondary"
@@ -412,7 +411,7 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                   {post.shareCount > 0 && post.shareCount}
                 </Button>
                 {post.viewCount > 0 && (
-                  <span className="flex items-center gap-1 text-muted-foreground text-xs">
+                  <span className="text-muted-foreground flex items-center gap-1 text-xs">
                     <EyeIcon className="h-3.5 w-3.5" />
                     {post.viewCount}
                   </span>
@@ -461,7 +460,7 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                     .filter((c) => !c.parentId)
                     .map((comment) => (
                       <div className="space-y-1" key={comment.id}>
-                        <div className="space-y-2 rounded-lg bg-muted p-3">
+                        <div className="bg-muted space-y-2 rounded-lg p-3">
                           <div className="flex gap-3">
                             <Link params={{ userId: comment.authorId }} to="/user/$userId">
                               <Avatar className="h-8 w-8 cursor-pointer transition-opacity hover:opacity-80">
@@ -471,13 +470,13 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <Link params={{ userId: comment.authorId }} to="/user/$userId">
-                                  <span className="cursor-pointer font-semibold text-sm hover:underline">
+                                  <span className="cursor-pointer text-sm font-semibold hover:underline">
                                     {comment.authorName}
                                   </span>
                                 </Link>
                                 {comment.authorId === post.authorId && (
                                   <Badge
-                                    className="border-primary/40 px-1.5 py-0 font-medium text-[10px] text-primary"
+                                    className="border-primary/40 text-primary px-1.5 py-0 text-[10px] font-medium"
                                     variant="outline"
                                   >
                                     Owner
@@ -517,11 +516,11 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                               </button>
                             ))}
                             {comment.reactionCount > 0 && (
-                              <span className="ml-1 text-muted-foreground text-xs">{comment.reactionCount}</span>
+                              <span className="text-muted-foreground ml-1 text-xs">{comment.reactionCount}</span>
                             )}
-                            <span className="mx-1 text-muted-foreground">·</span>
+                            <span className="text-muted-foreground mx-1">·</span>
                             <button
-                              className="flex items-center gap-1 font-medium text-muted-foreground text-xs transition-colors hover:text-foreground"
+                              className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs font-medium transition-colors"
                               onClick={() => handleReplyClick(comment.id, comment.authorName)}
                             >
                               <MessageCircleIcon className="h-3.5 w-3.5" />
@@ -533,7 +532,7 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                         {/* View replies toggle */}
                         {comment.replyCount > 0 && (
                           <button
-                            className="ml-11 flex items-center gap-1 font-medium text-muted-foreground text-xs transition-colors hover:text-foreground"
+                            className="text-muted-foreground hover:text-foreground ml-11 flex items-center gap-1 text-xs font-medium transition-colors"
                             disabled={loadingReplies[comment.id]}
                             onClick={() => toggleReplies(comment.id)}
                           >
@@ -554,7 +553,7 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                         {expandedReplies[comment.id] && (
                           <div className="ml-8 space-y-2 border-l-2 pl-3">
                             {expandedReplies[comment.id].map((reply) => (
-                              <div className="space-y-1.5 rounded-lg bg-muted/60 p-2.5" key={reply.id}>
+                              <div className="bg-muted/60 space-y-1.5 rounded-lg p-2.5" key={reply.id}>
                                 <div className="flex gap-2.5">
                                   <Link params={{ userId: reply.authorId }} to="/user/$userId">
                                     <Avatar className="h-6 w-6 cursor-pointer transition-opacity hover:opacity-80">
@@ -566,13 +565,13 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                                   <div className="flex-1">
                                     <div className="flex items-center gap-2">
                                       <Link params={{ userId: reply.authorId }} to="/user/$userId">
-                                        <span className="cursor-pointer font-semibold text-xs hover:underline">
+                                        <span className="cursor-pointer text-xs font-semibold hover:underline">
                                           {reply.authorName}
                                         </span>
                                       </Link>
                                       {reply.authorId === post.authorId && (
                                         <Badge
-                                          className="border-primary/40 px-1.5 py-0 font-medium text-[10px] text-primary"
+                                          className="border-primary/40 text-primary px-1.5 py-0 text-[10px] font-medium"
                                           variant="outline"
                                         >
                                           Owner
@@ -612,11 +611,11 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                                     </button>
                                   ))}
                                   {reply.reactionCount > 0 && (
-                                    <span className="ml-1 text-muted-foreground text-xs">{reply.reactionCount}</span>
+                                    <span className="text-muted-foreground ml-1 text-xs">{reply.reactionCount}</span>
                                   )}
-                                  <span className="mx-0.5 text-muted-foreground">·</span>
+                                  <span className="text-muted-foreground mx-0.5">·</span>
                                   <button
-                                    className="flex items-center gap-1 font-medium text-muted-foreground text-xs transition-colors hover:text-foreground"
+                                    className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs font-medium transition-colors"
                                     onClick={() => handleReplyClick(reply.id, reply.authorName, comment.id)}
                                   >
                                     <MessageCircleIcon className="h-3 w-3" />
@@ -631,7 +630,7 @@ export function PostDetailDialog({ postId, open, onOpenChange, onPostUpdated, on
                         {/* Reply input */}
                         {replyingTo === comment.id && (
                           <div className="ml-8 flex items-center gap-2 pt-1">
-                            <CornerDownRightIcon className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                            <CornerDownRightIcon className="text-muted-foreground h-4 w-4 flex-shrink-0" />
                             <Input
                               className="h-8 text-sm"
                               onChange={(e) => setReplyContent(e.target.value)}

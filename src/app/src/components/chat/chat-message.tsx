@@ -1,9 +1,8 @@
-"use client";
-
 import { Check, CheckCheck, CornerUpLeft, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { forwardRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +24,7 @@ import {
 } from "#/components/ui/dropdown-menu";
 import { Textarea } from "#/components/ui/textarea";
 import { cn, formatMessageTime } from "#/lib/utils";
+
 import { FileAttachment } from "./file-attachment";
 import { VoiceMessagePlayer } from "./voice-message-player";
 
@@ -77,16 +77,16 @@ function getInitials(name: string): string {
 export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
   (
     {
-      id,
+      _id,
       content,
       senderName,
-      senderId,
+      _senderId,
       isCurrentUser,
       isRead,
       isEdited,
       isDeleted,
       createdAt,
-      editedAt,
+      _editedAt,
       replyToContent,
       replyToSenderName,
       fileUrl,
@@ -142,9 +142,9 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                   isCurrentUser ? "border-l-primary" : "border-l-muted-foreground",
                 )}
               >
-                <CornerUpLeft className="h-3 w-3 shrink-0 text-muted-foreground" />
+                <CornerUpLeft className="text-muted-foreground h-3 w-3 shrink-0" />
                 <div className="min-w-0">
-                  <span className="font-medium text-muted-foreground">{replyToSenderName}: </span>
+                  <span className="text-muted-foreground font-medium">{replyToSenderName}: </span>
                   <span className="text-muted-foreground">{replyToContent.slice(0, 100)}...</span>
                 </div>
               </div>
@@ -197,7 +197,7 @@ export const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                         <ReactMarkdown
                           components={{
                             p: ({ children }) => (
-                              <p className="wrap-break-word mb-1 whitespace-pre-wrap last:mb-0">{children}</p>
+                              <p className="mb-1 wrap-break-word whitespace-pre-wrap last:mb-0">{children}</p>
                             ),
                             strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
                             em: ({ children }) => <em className="italic">{children}</em>,
@@ -333,7 +333,7 @@ export interface ChatDateSeparatorProps {
 export function ChatDateSeparator({ date }: ChatDateSeparatorProps) {
   return (
     <div className="flex items-center justify-center py-4">
-      <Badge className="font-normal text-xs" variant="secondary">
+      <Badge className="text-xs font-normal" variant="secondary">
         {formatDate(date)}
       </Badge>
     </div>

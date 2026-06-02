@@ -1,7 +1,6 @@
-"use client";
-
 import { createFileRoute, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
+
 import { TooltipProvider } from "#/components/ui/tooltip";
 import { useServer } from "#/lib/providers/server";
 import { ImprinterContent } from "#/routes/(tools)/imprinter/-components";
@@ -26,7 +25,7 @@ function Page() {
   const initialVariantId = search["variant"];
   const initialDesignId = search["design"];
 
-  const [initialImprintId, setInitialImprintId] = useState<string | null>(isNew ? null : imprintId || null);
+  const [initialImprintId, _setInitialImprintId] = useState<string | null>(isNew ? null : imprintId || null);
   const [initialImprintName, setInitialImprintName] = useState("Untitled Imprint");
   const [isLoading, setIsLoading] = useState(true);
   const [needsProductSelection, setNeedsProductSelection] = useState(false);
@@ -41,7 +40,7 @@ function Page() {
         })
         .catch((error) => {
           console.error("Failed to load imprint:", error);
-          navigate({ to: "/imprinter/new" });
+          navigate({ to: "/imprinter/$id", params: { id: "new" } });
         })
         .finally(() => {
           setIsLoading(false);
@@ -155,7 +154,7 @@ function Page() {
     return (
       <div className="flex h-dvh w-dvw items-center justify-center">
         <div className="flex flex-col items-center gap-2">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <div className="border-primary h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" />
           <span className="text-muted-foreground text-sm">Loading imprint...</span>
         </div>
       </div>

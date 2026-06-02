@@ -1,8 +1,7 @@
-"use client";
-
 import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
+
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
 import { useServer } from "#/lib/providers/server";
@@ -14,7 +13,7 @@ function CheckoutSuccessContent() {
   const server = useServer();
 
   const [loading, setLoading] = useState(true);
-  const [success, setSuccess] = useState(false);
+  const [_success, setSuccess] = useState(false);
   const [verificationFailed, setVerificationFailed] = useState(false);
 
   useEffect(() => {
@@ -54,8 +53,8 @@ function CheckoutSuccessContent() {
       <div className="flex min-h-[60vh] items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Loader2 className="mb-4 h-12 w-12 animate-spin text-primary" />
-            <p className="text-lg text-muted-foreground">Verifying your payment...</p>
+            <Loader2 className="text-primary mb-4 h-12 w-12 animate-spin" />
+            <p className="text-muted-foreground text-lg">Verifying your payment...</p>
           </CardContent>
         </Card>
       </div>
@@ -103,8 +102,8 @@ function CheckoutSuccessPage() {
         <div className="flex min-h-[60vh] items-center justify-center">
           <Card className="w-full max-w-md">
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <Loader2 className="mb-4 h-12 w-12 animate-spin text-primary" />
-              <p className="text-lg text-muted-foreground">Loading...</p>
+              <Loader2 className="text-primary mb-4 h-12 w-12 animate-spin" />
+              <p className="text-muted-foreground text-lg">Loading...</p>
             </CardContent>
           </Card>
         </div>

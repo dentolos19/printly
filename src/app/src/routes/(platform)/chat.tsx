@@ -1,5 +1,3 @@
-"use client";
-
 import * as signalR from "@microsoft/signalr";
 import { createFileRoute } from "@tanstack/react-router";
 import {
@@ -20,6 +18,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
 import { CallInterface, IncomingCallNotification } from "#/components/call-interface";
 import {
   AiMessageAssistant,
@@ -116,7 +115,7 @@ function ChatPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
-  const [pendingOptimisticMessages, setPendingOptimisticMessages] = useState<Set<string>>(new Set());
+  const [_pendingOptimisticMessages, setPendingOptimisticMessages] = useState<Set<string>>(new Set());
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
@@ -487,7 +486,7 @@ function ChatPage() {
       console.error("[Chat] Connection failed", error);
       setConnectionState("error");
     }
-  }, [auth.tokens?.accessToken, currentUserId, markConversationRead]);
+  }, [auth.tokens?.accessToken, currentUserId, markConversationRead, activeCallId, currentCall?.callId]);
 
   useEffect(() => {
     if (auth.tokens?.accessToken) {
@@ -743,7 +742,7 @@ function ChatPage() {
         setTimeout(() => setLastError(null), 5000);
       }
     },
-    [selectedConversationId, uploadFile],
+    [selectedConversationId, uploadFile, auth.claims?.email, currentUserId, messages],
   );
 
   const handleSendVoice = useCallback(
@@ -1041,7 +1040,7 @@ function ChatPage() {
 
   const selectedConversation = conversations.find((c) => c.id === selectedConversationId);
 
-  const handleCreateNew = useCallback(() => {
+  const _handleCreateNew = useCallback(() => {
     setNewConversationOpen(true);
   }, []);
 
@@ -1055,7 +1054,7 @@ function ChatPage() {
             <span className="hidden sm:inline">{sidebarCollapsed ? "Show" : "Hide"}</span>
           </Button>
           <div>
-            <h1 className="font-bold text-xl">Support Chat</h1>
+            <h1 className="text-xl font-bold">Support Chat</h1>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -1107,7 +1106,7 @@ function ChatPage() {
                   <div className="flex items-center justify-between">
                     <Label htmlFor="message">Message (optional)</Label>
                     <Button
-                      className="h-7 gap-1.5 text-blue-600 text-xs hover:bg-blue-50 hover:text-blue-700"
+                      className="h-7 gap-1.5 text-xs text-blue-600 hover:bg-blue-50 hover:text-blue-700"
                       disabled={!newSubject.trim()}
                       onClick={() => setAiAssistantOpen(true)}
                       size="sm"
@@ -1161,7 +1160,7 @@ function ChatPage() {
           )}
         >
           <CardHeader className="border-b px-3 py-2">
-            <CardTitle className="font-medium text-sm">Conversations</CardTitle>
+            <CardTitle className="text-sm font-medium">Conversations</CardTitle>
           </CardHeader>
           <ScrollArea className="min-h-0 flex-1">
             <ConversationList
@@ -1207,7 +1206,7 @@ function ChatPage() {
                       <CardTitle className="truncate text-base">
                         {selectedConversation.subject || "Conversation"}
                       </CardTitle>
-                      <p className="truncate text-muted-foreground text-sm">Printly Customer Support 😊</p>
+                      <p className="text-muted-foreground truncate text-sm">Printly Customer Support 😊</p>
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5">
@@ -1261,11 +1260,11 @@ function ChatPage() {
                   </div>
                 </div>
                 {lastError && (
-                  <div className="mt-3 flex items-center gap-2 rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-destructive text-sm">
+                  <div className="border-destructive/20 bg-destructive/10 text-destructive mt-3 flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
                     <WifiOff className="h-4 w-4 shrink-0" />
                     <span className="flex-1">{lastError}</span>
                     <Button
-                      className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                      className="text-destructive hover:text-destructive h-6 w-6 p-0"
                       onClick={() => setLastError(null)}
                       size="sm"
                       variant="ghost"
@@ -1280,10 +1279,10 @@ function ChatPage() {
                 <ScrollArea className="min-h-0 flex-1 p-4">
                   {isLoadingMessages ? (
                     <div className="flex h-40 items-center justify-center">
-                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                      <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
                     </div>
                   ) : messages.length === 0 ? (
-                    <div className="flex h-40 flex-col items-center justify-center text-muted-foreground">
+                    <div className="text-muted-foreground flex h-40 flex-col items-center justify-center">
                       <MessageSquarePlus className="h-16 w-16" />
                       <p className="mt-4">No messages yet.</p>
                       <p className="text-sm">Send a message to start the conversation!</p>
@@ -1369,10 +1368,10 @@ function ChatPage() {
 
                 {/* Show closed banner when conversation is closed, otherwise show message input */}
                 {selectedConversation.status === 3 ? (
-                  <div className="shrink-0 border-t bg-muted/50 p-4">
+                  <div className="bg-muted/50 shrink-0 border-t p-4">
                     <div className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/50">
                       <XCircle className="h-5 w-5 text-gray-500" />
-                      <span className="font-medium text-gray-600 text-sm dark:text-gray-400">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
                         This conversation has been closed by support.
                       </span>
                     </div>
@@ -1396,9 +1395,9 @@ function ChatPage() {
               </CardContent>
             </>
           ) : (
-            <div className="flex flex-1 flex-col items-center justify-center p-8 text-muted-foreground">
+            <div className="text-muted-foreground flex flex-1 flex-col items-center justify-center p-8">
               <MessageSquarePlus className="h-16 w-16 opacity-50" />
-              <p className="mt-4 font-medium text-lg">Select a conversation</p>
+              <p className="mt-4 text-lg font-medium">Select a conversation</p>
               <p className="text-sm">Or start a new one to get help from our support team</p>
             </div>
           )}

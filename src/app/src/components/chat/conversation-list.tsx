@@ -1,7 +1,6 @@
-"use client";
-
 import { AlertCircle, CheckCircle, Clock, Flag, MessageSquare, Plus, Search, User, XCircle } from "lucide-react";
 import { forwardRef, useState } from "react";
+
 import { Avatar, AvatarFallback } from "#/components/ui/avatar";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
@@ -67,7 +66,7 @@ function getStatusIcon(status: ConversationStatus) {
   }
 }
 
-function getStatusVariant(status: ConversationStatus): "default" | "secondary" | "destructive" | "outline" {
+function _getStatusVariant(status: ConversationStatus): "default" | "secondary" | "destructive" | "outline" {
   switch (status) {
     case 0: // Pending
       return "secondary";
@@ -224,9 +223,9 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
     if (isLoading) {
       return (
         <div className="flex h-full items-center justify-center p-12">
-          <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <div className="text-muted-foreground flex flex-col items-center gap-3">
             <div className="h-10 w-10 animate-spin rounded-full border-3 border-current border-t-transparent" />
-            <span className="font-medium text-sm">Loading conversations...</span>
+            <span className="text-sm font-medium">Loading conversations...</span>
           </div>
         </div>
       );
@@ -234,21 +233,21 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
 
     if (conversations.length === 0) {
       return (
-        <div className="flex h-full flex-col items-center justify-center gap-3 p-12 text-muted-foreground">
-          <div className="rounded-full bg-muted/50 p-4">
+        <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-3 p-12">
+          <div className="bg-muted/50 rounded-full p-4">
             <MessageSquare className="h-10 w-10 opacity-40" />
           </div>
-          <p className="font-medium text-foreground text-sm">{emptyMessage}</p>
+          <p className="text-foreground text-sm font-medium">{emptyMessage}</p>
         </div>
       );
     }
 
     return (
-      <div className="flex h-full flex-col border-r bg-background">
+      <div className="bg-background flex h-full flex-col border-r">
         {showHeader && (
           <div className="border-b px-3 py-2">
             <div className="mb-2 flex items-center justify-between">
-              <h2 className="font-semibold text-sm">Messages</h2>
+              <h2 className="text-sm font-semibold">Messages</h2>
               {onCreateNew && (
                 <Button className="h-7 w-7 rounded-full" onClick={onCreateNew} size="icon" variant="default">
                   <Plus className="h-3 w-3" />
@@ -258,7 +257,7 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
 
             {showSearch && (
               <div className="relative mb-2">
-                <Search className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
                 <Input
                   className="h-8 pl-8 text-xs"
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -286,11 +285,11 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
         )}
 
         {filteredConversations.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center gap-3 p-12 text-muted-foreground">
-            <div className="rounded-full bg-muted/50 p-4">
+          <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-3 p-12">
+            <div className="bg-muted/50 rounded-full p-4">
               <MessageSquare className="h-10 w-10 opacity-40" />
             </div>
-            <p className="font-medium text-foreground text-sm">
+            <p className="text-foreground text-sm font-medium">
               {searchQuery ? "No conversations found" : emptyMessage}
             </p>
           </div>
@@ -317,7 +316,7 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                     key={conversation.id}
                     onClick={() => onSelect(conversation.id)}
                   >
-                    <Avatar className="h-11 w-11 shrink-0 ring-2 ring-border/5">
+                    <Avatar className="ring-border/5 h-11 w-11 shrink-0 ring-2">
                       <AvatarFallback
                         className={cn("font-semibold text-sm", showPriority && getPriorityColor(conversation.priority))}
                       >
@@ -325,7 +324,7 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                       </AvatarFallback>
                     </Avatar>
 
-                    <div className="min-w-0 max-w-sm flex-1 space-y-1 overflow-hidden">
+                    <div className="max-w-sm min-w-0 flex-1 space-y-1 overflow-hidden">
                       <div className="flex min-w-0 items-center gap-2 overflow-hidden">
                         <span
                           className={cn(
@@ -336,7 +335,7 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                         >
                           {displayName}
                         </span>
-                        <span className="shrink-0 font-medium text-muted-foreground text-xs">
+                        <span className="text-muted-foreground shrink-0 text-xs font-medium">
                           {formatRelativeTime(conversation.lastMessageAt || conversation.createdAt)}
                         </span>
                       </div>
@@ -369,7 +368,7 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                           )}
                           {showAssignment && conversation.assignedToAdminName && (
                             <Badge
-                              className="gap-1 border-blue-200 bg-blue-50/50 px-2 py-0.5 font-medium text-[10px] text-blue-700 dark:border-blue-800 dark:bg-blue-950/20 dark:text-blue-400"
+                              className="gap-1 border-blue-200 bg-blue-50/50 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:border-blue-800 dark:bg-blue-950/20 dark:text-blue-400"
                               title={conversation.assignedToAdminName}
                               variant="outline"
                             >
@@ -381,11 +380,11 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                       )}
 
                       <div className="flex min-w-0 items-center gap-2">
-                        <div className="min-w-0 flex-1 text-muted-foreground text-xs leading-relaxed">
+                        <div className="text-muted-foreground min-w-0 flex-1 text-xs leading-relaxed">
                           {conversation.lastMessage ? (
                             <>
                               <span
-                                className="truncate font-medium text-foreground/70"
+                                className="text-foreground/70 truncate font-medium"
                                 title={conversation.lastMessage.senderName}
                               >
                                 {conversation.lastMessage.senderName}
@@ -402,7 +401,7 @@ export const ConversationList = forwardRef<HTMLDivElement, ConversationListProps
                           )}
                         </div>
                         {conversation.unreadCount > 0 && (
-                          <Badge className="h-5 min-w-[20px] shrink-0 justify-center rounded-full bg-blue-600 px-1.5 font-semibold text-[10px] hover:bg-blue-600">
+                          <Badge className="h-5 min-w-[20px] shrink-0 justify-center rounded-full bg-blue-600 px-1.5 text-[10px] font-semibold hover:bg-blue-600">
                             {conversation.unreadCount > 99 ? "99+" : conversation.unreadCount}
                           </Badge>
                         )}

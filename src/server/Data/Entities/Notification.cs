@@ -17,13 +17,13 @@ public class Notification : BaseEntity
     public Guid? MessageId { get; set; }
 
     // Status tracking
-    public bool IsRead { get; set; } = false;
+    public bool IsRead { get; set; }
     public DateTime? ReadAt { get; set; }
 
-    public bool IsArchived { get; set; } = false;
+    public bool IsArchived { get; set; }
     public DateTime? ArchivedAt { get; set; }
 
-    public bool IsDeleted { get; set; } = false;
+    public bool IsDeleted { get; set; }
     public DateTime? DeletedAt { get; set; }
 
     // Priority for sorting and display

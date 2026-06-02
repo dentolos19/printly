@@ -1,7 +1,6 @@
-﻿"use client";
-
 import { SearchIcon, XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { useDebounce } from "#/hooks/use-debounce";
@@ -27,7 +26,7 @@ export function SearchBar({ placeholder = "Search posts...", onSearch, debounceM
 
   return (
     <div className="relative">
-      <SearchIcon className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <SearchIcon className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
       <Input className="pr-9 pl-9" onChange={(e) => setValue(e.target.value)} placeholder={placeholder} value={value} />
       {value && (
         <Button

@@ -1,9 +1,8 @@
-"use client";
-
 import * as signalR from "@microsoft/signalr";
 import { useNavigate } from "@tanstack/react-router";
 import { Archive, Bell, CheckCheck, Trash2 } from "lucide-react";
 import { type ComponentProps, useCallback, useEffect, useRef, useState } from "react";
+
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "#/components/ui/dropdown-menu";
@@ -304,7 +303,7 @@ export function NotificationBell(props: ComponentProps<typeof Button>) {
 
         <ScrollArea className="h-[400px]">
           {notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+            <div className="text-muted-foreground flex flex-col items-center justify-center py-12">
               <Bell className="mb-2 size-12 opacity-50" />
               <p className="text-sm">No notifications</p>
             </div>
@@ -312,7 +311,7 @@ export function NotificationBell(props: ComponentProps<typeof Button>) {
             <div className="divide-y">
               {notifications.map((notification) => (
                 <div
-                  className={`cursor-pointer p-4 transition-colors hover:bg-accent ${
+                  className={`hover:bg-accent cursor-pointer p-4 transition-colors ${
                     !notification.isRead ? "bg-blue-50 dark:bg-blue-950" : ""
                   }`}
                   key={notification.id}
@@ -322,10 +321,10 @@ export function NotificationBell(props: ComponentProps<typeof Button>) {
                     <div className="flex-shrink-0 text-2xl">{getNotificationIcon(notification.type)}</div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="font-medium text-sm">{notification.title}</p>
+                        <p className="text-sm font-medium">{notification.title}</p>
                         {!notification.isRead && <div className="mt-1 size-2 flex-shrink-0 rounded-full bg-blue-500" />}
                       </div>
-                      <p className="mt-1 line-clamp-2 text-muted-foreground text-xs">{notification.message}</p>
+                      <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">{notification.message}</p>
                       <div className="mt-2 flex items-center gap-2">
                         <span className="text-muted-foreground text-xs">{formatTime(notification.createdAt)}</span>
                       </div>

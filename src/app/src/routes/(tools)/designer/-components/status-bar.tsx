@@ -1,11 +1,11 @@
-"use client";
-
 import { Magnet, Redo2, RotateCcw, Undo2, ZoomIn, ZoomOut } from "lucide-react";
+
 import { Button } from "#/components/ui/button";
 import { Separator } from "#/components/ui/separator";
 import { Slider } from "#/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "#/components/ui/tooltip";
 import { cn } from "#/lib/utils";
+
 import { useDesigner } from "./hooks";
 
 type StatusBarProps = {
@@ -39,7 +39,7 @@ export function StatusBar({ className }: StatusBarProps) {
   return (
     <div className={cn("flex h-8 items-center justify-between border-t bg-background px-3", className)}>
       {/* Left section - Document info */}
-      <div className={"flex items-center gap-3 text-muted-foreground text-xs"}>
+      <div className={"text-muted-foreground flex items-center gap-3 text-xs"}>
         <span>
           Doc: {canvasSize.width} x {canvasSize.height} px
         </span>
@@ -69,7 +69,7 @@ export function StatusBar({ className }: StatusBarProps) {
           <Slider className={"flex-1"} max={3} min={0.1} onValueChange={handleZoomSlider} step={0.05} value={[zoom]} />
         </div>
 
-        <span className={"w-12 text-center text-muted-foreground text-xs"}>{Math.round(zoom * 100)}%</span>
+        <span className={"text-muted-foreground w-12 text-center text-xs"}>{Math.round(zoom * 100)}%</span>
 
         <Tooltip>
           <TooltipTrigger asChild>

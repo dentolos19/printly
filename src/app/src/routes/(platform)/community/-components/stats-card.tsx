@@ -1,5 +1,3 @@
-﻿"use client";
-
 import { Card, CardContent, CardHeader } from "#/components/ui/card";
 import { Skeleton } from "#/components/ui/skeleton";
 import type { CommunityStatsResponse } from "#/lib/server/community";
@@ -34,15 +32,15 @@ export function StatsCard({ stats, loading }: StatsCardProps) {
       </CardHeader>
       <CardContent className="grid grid-cols-3 gap-4">
         <div className="text-center">
-          <p className="font-bold text-2xl">{stats.totalPosts}</p>
+          <p className="text-2xl font-bold">{stats.totalPosts}</p>
           <p className="text-muted-foreground text-sm">Posts</p>
         </div>
         <div className="text-center">
-          <p className="font-bold text-2xl">{stats.totalComments}</p>
+          <p className="text-2xl font-bold">{stats.totalComments}</p>
           <p className="text-muted-foreground text-sm">Comments</p>
         </div>
         <div className="text-center">
-          <p className="font-bold text-2xl">{stats.totalReactions}</p>
+          <p className="text-2xl font-bold">{stats.totalReactions}</p>
           <p className="text-muted-foreground text-sm">Reactions</p>
         </div>
       </CardContent>

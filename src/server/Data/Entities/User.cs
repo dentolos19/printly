@@ -20,15 +20,15 @@ public class User : IdentityUser
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     // Privacy
-    public bool IsPrivate { get; set; } = false;
+    public bool IsPrivate { get; set; }
 
     // Moderation
-    public bool IsBanned { get; set; } = false;
+    public bool IsBanned { get; set; }
     public string? BanReason { get; set; }
 
     // Email notification tracking
     // Set to true when we send a digest email, reset to false when user reads notifications
-    public bool UnreadEmailSent { get; set; } = false;
+    public bool UnreadEmailSent { get; set; }
     public ICollection<UserFollower> Followers { get; set; } = new List<UserFollower>();
     public ICollection<UserFollower> Following { get; set; } = new List<UserFollower>();
 }

@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace PrintlyServer.Services;
 
-public class ElevenLabsService
+public class ElevenLabsService : IDisposable
 {
     private readonly HttpClient _httpClient;
     private readonly string _apiKey;
@@ -19,6 +19,12 @@ public class ElevenLabsService
             configuration["ELEVENLABS_AGENT_ID"]
             ?? throw new InvalidOperationException("ELEVENLABS_AGENT_ID not configured");
         _logger = logger;
+    }
+
+    public void Dispose()
+    {
+        _httpClient?.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>

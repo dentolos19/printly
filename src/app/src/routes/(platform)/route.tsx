@@ -1,5 +1,3 @@
-"use client";
-
 import { ConversationProvider } from "@elevenlabs/react";
 import { createFileRoute, Link, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import {
@@ -20,6 +18,7 @@ import {
   UsersIcon,
 } from "lucide-react";
 import { useTheme } from "next-themes";
+
 import AccessDenied from "#/components/access-denied";
 import { ChatbotWidget } from "#/components/chatbot-widget";
 import DebugDialog from "#/components/debug-dialog";
@@ -169,7 +168,7 @@ function NestedLayout() {
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
                       <span className="truncate font-medium">{claims?.role}</span>
-                      <span className="truncate text-muted-foreground text-xs">{claims?.email}</span>
+                      <span className="text-muted-foreground truncate text-xs">{claims?.email}</span>
                     </div>
                     <MoreVerticalIcon className="ml-auto size-4" />
                   </SidebarMenuButton>
@@ -188,7 +187,7 @@ function NestedLayout() {
                       </Avatar>
                       <div className="grid flex-1 text-left text-sm leading-tight">
                         <span className="truncate font-medium">{claims?.role}</span>
-                        <span className="truncate text-muted-foreground text-xs">{claims?.email}</span>
+                        <span className="text-muted-foreground truncate text-xs">{claims?.email}</span>
                       </div>
                     </div>
                   </DropdownMenuLabel>
@@ -256,14 +255,14 @@ function NestedLayout() {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset className="h-svh overflow-hidden">
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-sidebar px-4">
+        <header className="bg-sidebar flex h-14 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger />
           <div className="ml-auto flex items-center gap-2">
             <NotificationBell />
           </div>
         </header>
         <div className="flex flex-1 flex-col overflow-hidden">
-          <main className="flex-1 overflow-auto bg-background p-4">
+          <main className="bg-background flex-1 overflow-auto p-4">
             <Outlet />
           </main>
         </div>
@@ -282,7 +281,7 @@ function PlatformLayout() {
     return (
       <div className="flex h-dvh items-center justify-center">
         <div className="flex flex-col items-center gap-2">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <div className="border-primary h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" />
           <span className="text-muted-foreground text-sm">Loading...</span>
         </div>
       </div>

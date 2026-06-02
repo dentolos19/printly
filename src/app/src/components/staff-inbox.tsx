@@ -1,8 +1,7 @@
-"use client";
-
 import * as signalR from "@microsoft/signalr";
 import { Loader2, MessageCircle, RefreshCw, Send, Wifi, WifiOff } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
 import { Avatar, AvatarFallback } from "#/components/ui/avatar";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "#/components/ui/card";
@@ -140,7 +139,7 @@ export default function StaffInbox() {
         setIsLoadingMessages(false);
       }
     },
-    [authorizedFetch, auth.tokens?.accessToken],
+    [authorizedFetch, auth.tokens?.accessToken, markConversationRead],
   );
 
   const markConversationRead = useCallback(
@@ -357,7 +356,7 @@ export default function StaffInbox() {
     return (
       <Card className="mx-auto w-full max-w-3xl">
         <CardContent className="p-6">
-          <p className="text-center text-muted-foreground">Please log in to access the staff inbox.</p>
+          <p className="text-muted-foreground text-center">Please log in to access the staff inbox.</p>
         </CardContent>
       </Card>
     );
@@ -369,12 +368,12 @@ export default function StaffInbox() {
         <CardHeader className="space-y-3 pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <CardTitle className="flex items-center gap-2 font-semibold text-lg">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                 <MessageCircle className="h-5 w-5" />
                 All Conversations
               </CardTitle>
               {unreadCount > 0 && (
-                <span className="rounded-full bg-primary/10 px-2 py-1 font-semibold text-primary text-xs">
+                <span className="bg-primary/10 text-primary rounded-full px-2 py-1 text-xs font-semibold">
                   {unreadCount}
                 </span>
               )}
@@ -396,11 +395,11 @@ export default function StaffInbox() {
         <CardContent className="flex-1 overflow-hidden p-0">
           <ScrollArea className="h-full">
             {isLoadingConversations ? (
-              <div className="flex items-center justify-center p-6 text-muted-foreground text-sm">
+              <div className="text-muted-foreground flex items-center justify-center p-6 text-sm">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading conversations...
               </div>
             ) : filteredConversations.length === 0 ? (
-              <div className="p-6 text-muted-foreground text-sm">No conversations yet.</div>
+              <div className="text-muted-foreground p-6 text-sm">No conversations yet.</div>
             ) : (
               <div className="divide-y">
                 {filteredConversations.map((conversation) => {
@@ -409,7 +408,7 @@ export default function StaffInbox() {
                   const hasUnread = conversation.unreadCount > 0;
                   return (
                     <button
-                      className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted ${selectedConversationId === conversation.id ? "bg-muted" : ""} ${hasUnread ? "font-semibold" : ""}`}
+                      className={`hover:bg-muted flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${selectedConversationId === conversation.id ? "bg-muted" : ""} ${hasUnread ? "font-semibold" : ""}`}
                       key={conversation.id}
                       onClick={() => handleSelectConversation(conversation.id)}
                     >
@@ -420,13 +419,13 @@ export default function StaffInbox() {
                         <div className="flex items-center justify-between gap-2">
                           <div>{title}</div>
                           {hasUnread && (
-                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-primary text-xs">
+                            <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs">
                               {conversation.unreadCount}
                             </span>
                           )}
                         </div>
                         <div
-                          className={`line-clamp-1 text-xs ${hasUnread ? "font-medium text-foreground" : "text-muted-foreground"}`}
+                          className={`line-clamp-1 text-xs ${hasUnread ? "text-foreground font-medium" : "text-muted-foreground"}`}
                         >
                           {lastMessage || "No messages yet"}
                         </div>
@@ -443,7 +442,7 @@ export default function StaffInbox() {
       <Card className="flex h-full flex-col">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 font-semibold text-lg">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
               <MessageCircle className="h-5 w-5" />
               {selectedConversation
                 ? getConversationTitle(selectedConversation, currentUserId)
@@ -451,7 +450,7 @@ export default function StaffInbox() {
             </CardTitle>
           </div>
           {connectionError ? (
-            <div className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-destructive text-sm">
+            <div className="bg-destructive/10 text-destructive flex items-center gap-2 rounded-md px-3 py-2 text-sm">
               <WifiOff className="h-4 w-4" />
               <span className="flex-1 truncate">{connectionError}</span>
               <Button onClick={startConnection} size="sm" variant="ghost">
@@ -465,11 +464,11 @@ export default function StaffInbox() {
             <div className="flex h-full flex-col">
               <ScrollArea className="flex-1 px-4">
                 {isLoadingMessages ? (
-                  <div className="flex items-center justify-center p-6 text-muted-foreground text-sm">
+                  <div className="text-muted-foreground flex items-center justify-center p-6 text-sm">
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading messages...
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="p-6 text-muted-foreground text-sm">No messages yet.</div>
+                  <div className="text-muted-foreground p-6 text-sm">No messages yet.</div>
                 ) : (
                   <div className="space-y-3 pb-8">
                     {messages.map((message) => {
@@ -494,13 +493,13 @@ export default function StaffInbox() {
               </ScrollArea>
             </div>
           ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-muted-foreground">
+            <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-3 text-center">
               <MessageCircle className="h-10 w-10" />
               <p>Select a conversation to respond to customer inquiries.</p>
             </div>
           )}
         </CardContent>
-        <CardFooter className="border-t bg-background">
+        <CardFooter className="bg-background border-t">
           <div className="flex w-full items-center gap-2">
             <Input
               disabled={!selectedConversation || connectionState !== "connected"}
@@ -531,7 +530,7 @@ function renderConnectionStatus(state: "disconnected" | "connecting" | "connecte
   switch (state) {
     case "connected":
       return (
-        <div className="flex items-center gap-1 text-green-600 text-xs">
+        <div className="flex items-center gap-1 text-xs text-green-600">
           <Wifi className="h-4 w-4" /> Connected
         </div>
       );
@@ -543,13 +542,13 @@ function renderConnectionStatus(state: "disconnected" | "connecting" | "connecte
       );
     case "error":
       return (
-        <button className="flex items-center gap-1 text-red-600 text-xs" onClick={reconnect}>
+        <button className="flex items-center gap-1 text-xs text-red-600" onClick={reconnect}>
           <WifiOff className="h-4 w-4" /> Retry
         </button>
       );
     default:
       return (
-        <button className="flex items-center gap-1 text-muted-foreground text-xs" onClick={reconnect}>
+        <button className="text-muted-foreground flex items-center gap-1 text-xs" onClick={reconnect}>
           <WifiOff className="h-4 w-4" /> Connect
         </button>
       );

@@ -1,5 +1,3 @@
-"use client";
-
 import * as signalR from "@microsoft/signalr";
 import {
   AlertCircle,
@@ -25,6 +23,7 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+
 import { Avatar, AvatarFallback } from "#/components/ui/avatar";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
@@ -228,7 +227,7 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
   }, [auth.tokens?.accessToken]);
 
   /** Fetch messages for a ticket */
-  const fetchMessages = useCallback(
+  const _fetchMessages = useCallback(
     async (ticketId: string) => {
       if (!auth.tokens?.accessToken) return;
 
@@ -344,7 +343,7 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
     } finally {
       isConnectingRef.current = false;
     }
-  }, [auth.tokens?.accessToken, fetchTickets]);
+  }, [auth.tokens?.accessToken, fetchTickets, setupConnectionHandlers]);
 
   /** Setup SignalR event handlers */
   const setupConnectionHandlers = useCallback(
@@ -405,7 +404,7 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
       connection.on("TicketMessagesRead", (data: ReadReceiptResponse) => {
         console.log("[Support] Messages read:", data);
         const currentTicket = selectedTicketRef.current;
-        const currentUserId = currentUserIdRef.current;
+        const _currentUserId = currentUserIdRef.current;
 
         if (data.ticketId === currentTicket?.id && isMountedRef.current) {
           setMessages((prev) =>
@@ -598,7 +597,7 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
     return () => {
       abortController.abort();
     };
-  }, [selectedTicket?.id, auth.tokens?.accessToken, fetchTickets]);
+  }, [selectedTicket?.id, selectedTicket?.subject, auth.tokens?.accessToken, fetchTickets]);
 
   /** Create a new ticket */
   const handleCreateTicket = async () => {
@@ -906,7 +905,7 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
   };
 
   /** Format file size */
-  const formatFileSize = (bytes: number) => {
+  const _formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
@@ -985,14 +984,14 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
         return (
           <div className="flex items-center gap-2">
             <Wifi className="h-4 w-4 text-green-500" />
-            <span className="text-green-500 text-xs">Connected</span>
+            <span className="text-xs text-green-500">Connected</span>
           </div>
         );
       case "error":
         return (
           <div className="flex items-center gap-2">
             <WifiOff className="h-4 w-4 text-red-500" />
-            <span className="text-red-500 text-xs">Error</span>
+            <span className="text-xs text-red-500">Error</span>
             <Button className="h-6 w-6" onClick={startConnection} size="icon" title="Retry connection" variant="ghost">
               <RefreshCw className="h-3 w-3" />
             </Button>
@@ -1002,7 +1001,7 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
         return (
           <div className="flex items-center gap-2">
             <WifiOff className="h-4 w-4 text-gray-400" />
-            <span className="text-gray-400 text-xs">Disconnected</span>
+            <span className="text-xs text-gray-400">Disconnected</span>
             <Button className="h-6 w-6" onClick={startConnection} size="icon" title="Connect" variant="ghost">
               <RefreshCw className="h-3 w-3" />
             </Button>
@@ -1016,7 +1015,7 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
     if (!connectionError) return null;
 
     return (
-      <div className="mx-4 mb-2 flex items-center gap-2 rounded-md bg-destructive/10 p-2 text-destructive text-sm">
+      <div className="bg-destructive/10 text-destructive mx-4 mb-2 flex items-center gap-2 rounded-md p-2 text-sm">
         <AlertCircle className="h-4 w-4 shrink-0" />
         <span className="flex-1 truncate">{connectionError}</span>
         <Button
@@ -1039,7 +1038,7 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
     return (
       <Card className="mx-auto w-full max-w-4xl">
         <CardContent className="p-6">
-          <p className="text-center text-muted-foreground">Please log in to access support.</p>
+          <p className="text-muted-foreground text-center">Please log in to access support.</p>
         </CardContent>
       </Card>
     );
@@ -1050,7 +1049,7 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
     return (
       <Card className="mx-auto flex h-[600px] w-full max-w-4xl flex-col">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-          <CardTitle className="flex items-center gap-2 font-semibold text-lg">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
             <MessageSquare className="h-5 w-5" />
             {isAdmin ? "All Support Tickets" : "Your Support Tickets"}
           </CardTitle>
@@ -1097,11 +1096,11 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
             {isLoadingTickets ? (
               <div className="flex items-center justify-center p-8">
                 <Loader2 className="h-6 w-6 animate-spin" />
-                <span className="ml-2 text-muted-foreground text-sm">Loading tickets...</span>
+                <span className="text-muted-foreground ml-2 text-sm">Loading tickets...</span>
               </div>
             ) : tickets.length === 0 ? (
               <div className="p-8 text-center">
-                <MessageSquare className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
+                <MessageSquare className="text-muted-foreground/50 mx-auto mb-4 h-12 w-12" />
                 <p className="text-muted-foreground text-sm">
                   {isAdmin ? "No tickets yet." : "You haven't created any tickets yet."}
                 </p>
@@ -1116,7 +1115,7 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
               <div className="divide-y">
                 {tickets.map((ticket) => (
                   <button
-                    className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-muted"
+                    className="hover:bg-muted flex w-full items-center gap-3 p-4 text-left transition-colors"
                     key={ticket.id}
                     onClick={() => setSelectedTicket(ticket)}
                   >
@@ -1127,7 +1126,7 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
                       <div className="flex items-center gap-2">
                         <p className="truncate font-medium">{ticket.subject}</p>
                         {ticket.unreadCount > 0 && (
-                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 font-bold text-[10px] text-white">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
                             {ticket.unreadCount > 9 ? "9+" : ticket.unreadCount}
                           </span>
                         )}
@@ -1142,7 +1141,7 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
                         </Badge>
                       </div>
                     </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1 text-muted-foreground text-xs">
+                    <div className="text-muted-foreground flex shrink-0 flex-col items-end gap-1 text-xs">
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         {formatDate(ticket.lastMessageAt)}
@@ -1156,7 +1155,7 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
         </CardContent>
 
         <CardFooter className="border-t p-3">
-          <p className="w-full text-center text-muted-foreground text-xs">
+          <p className="text-muted-foreground w-full text-center text-xs">
             {tickets.length} ticket{tickets.length !== 1 ? "s" : ""}
           </p>
         </CardFooter>
@@ -1180,7 +1179,7 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="min-w-0 flex-1">
-          <CardTitle className="truncate font-semibold text-base">{selectedTicket.subject}</CardTitle>
+          <CardTitle className="truncate text-base font-semibold">{selectedTicket.subject}</CardTitle>
           <div className="mt-1 flex items-center gap-2">
             {isAdmin && <span className="text-muted-foreground text-xs">From: {selectedTicket.customerName}</span>}
             <Badge className={`text-[10px] ${getStatusColor(selectedTicket.status)}`} variant="secondary">
@@ -1229,7 +1228,7 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
         <ScrollArea className="h-full px-4">
           <div className="space-y-4 py-4">
             {messages.length === 0 ? (
-              <div className="py-8 text-center text-muted-foreground">
+              <div className="text-muted-foreground py-8 text-center">
                 <p className="text-sm">No messages yet</p>
                 <p className="text-xs">Send a message to start the conversation!</p>
               </div>
@@ -1254,11 +1253,11 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
             )}
             {/* Typing indicator */}
             {currentTypingUsers.length > 0 && (
-              <div className="flex items-center gap-2 px-2 py-1 text-muted-foreground text-sm">
+              <div className="text-muted-foreground flex items-center gap-2 px-2 py-1 text-sm">
                 <div className="flex gap-1">
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]" />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]" />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-primary" />
+                  <span className="bg-primary h-2 w-2 animate-bounce rounded-full [animation-delay:-0.3s]" />
+                  <span className="bg-primary h-2 w-2 animate-bounce rounded-full [animation-delay:-0.15s]" />
+                  <span className="bg-primary h-2 w-2 animate-bounce rounded-full" />
                 </div>
                 <span>
                   {currentTypingUsers[0].userName}
@@ -1274,10 +1273,10 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
       <CardFooter className="flex-col gap-0 border-t p-0">
         {/* Reply preview */}
         {replyToMessage && (
-          <div className="flex w-full items-center gap-2 border-b bg-muted/50 px-3 py-2">
-            <div className="min-w-0 flex-1 border-primary border-l-4 pl-2">
-              <p className="truncate font-medium text-primary text-xs">Replying to {replyToMessage.senderName}</p>
-              <p className="truncate text-muted-foreground text-sm">{replyToMessage.content}</p>
+          <div className="bg-muted/50 flex w-full items-center gap-2 border-b px-3 py-2">
+            <div className="border-primary min-w-0 flex-1 border-l-4 pl-2">
+              <p className="text-primary truncate text-xs font-medium">Replying to {replyToMessage.senderName}</p>
+              <p className="text-muted-foreground truncate text-sm">{replyToMessage.content}</p>
             </div>
             <Button className="h-8 w-8 shrink-0" onClick={() => setReplyToMessage(null)} size="icon" variant="ghost">
               <X className="h-4 w-4" />
@@ -1286,9 +1285,9 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
         )}
         {/* Recording indicator */}
         {isRecording && (
-          <div className="flex w-full items-center justify-center gap-2 border-b bg-destructive/10 px-3 py-2">
-            <div className="h-2 w-2 animate-pulse rounded-full bg-destructive" />
-            <span className="font-medium text-destructive text-sm">
+          <div className="bg-destructive/10 flex w-full items-center justify-center gap-2 border-b px-3 py-2">
+            <div className="bg-destructive h-2 w-2 animate-pulse rounded-full" />
+            <span className="text-destructive text-sm font-medium">
               Recording... {formatDuration(recordingDuration)}
             </span>
           </div>
@@ -1455,7 +1454,7 @@ function TicketMessageBubble({
           } ${message.isDeleted ? "italic opacity-60" : ""}`}
         >
           {/* Sender name for non-own messages */}
-          {!isOwnMessage && <p className="mb-1 font-medium text-xs opacity-70">{message.senderName}</p>}
+          {!isOwnMessage && <p className="mb-1 text-xs font-medium opacity-70">{message.senderName}</p>}
 
           {/* Reply context */}
           {message.replyToMessageId && message.replyToContent && (
@@ -1537,7 +1536,7 @@ function TicketMessageBubble({
                         <Paperclip className="h-5 w-5 shrink-0" />
                       )}
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium text-sm">{message.fileName || "File"}</p>
+                        <p className="truncate text-sm font-medium">{message.fileName || "File"}</p>
                         {message.fileSize && (
                           <p className="text-xs opacity-70">
                             {message.fileSize < 1024
@@ -1555,7 +1554,7 @@ function TicketMessageBubble({
               )}
 
               {/* Text content */}
-              {message.content && <p className="break-words text-sm">{message.content}</p>}
+              {message.content && <p className="text-sm break-words">{message.content}</p>}
             </>
           )}
         </div>
@@ -1576,14 +1575,14 @@ function TicketMessageBubble({
 
       {/* Timestamp, edited indicator, and read receipt */}
       <div className="mt-1 flex items-center gap-1">
-        {message.isEdited && !message.isDeleted && <span className="text-[10px] text-muted-foreground">edited</span>}
+        {message.isEdited && !message.isDeleted && <span className="text-muted-foreground text-[10px]">edited</span>}
         <span className="text-muted-foreground text-xs">{formatTime(message.createdAt)}</span>
         {isOwnMessage && (
           <span className="ml-0.5">
             {isRead ? (
               <CheckCheck className="h-3.5 w-3.5 text-blue-500" />
             ) : (
-              <Check className="h-3.5 w-3.5 text-muted-foreground" />
+              <Check className="text-muted-foreground h-3.5 w-3.5" />
             )}
           </span>
         )}

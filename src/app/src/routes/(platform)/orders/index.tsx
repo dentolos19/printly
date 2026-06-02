@@ -1,5 +1,3 @@
-"use client";
-
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   CheckCircle2,
@@ -17,8 +15,9 @@ import {
   Truck,
   XCircle,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+
 import { OrderProgressTracker } from "#/components/order-progress-tracker";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
@@ -136,7 +135,7 @@ function OrderCard({
               <p className="text-muted-foreground text-sm">
                 {order.itemCount} {order.itemCount === 1 ? "item" : "items"}
               </p>
-              <p className="font-bold text-xl">${order.totalAmount.toFixed(2)}</p>
+              <p className="text-xl font-bold">${order.totalAmount.toFixed(2)}</p>
             </div>
           </div>
 
@@ -199,8 +198,8 @@ function OrderDetailsDialog({
       <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="mt-2 text-muted-foreground">Loading order details...</p>
+            <Loader2 className="text-primary h-8 w-8 animate-spin" />
+            <p className="text-muted-foreground mt-2">Loading order details...</p>
           </div>
         ) : !order ? (
           <div className="flex flex-col items-center justify-center py-8">
@@ -271,8 +270,8 @@ function OrderDetailsDialog({
                   <div className="rounded-lg border p-3" key={item.id}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
-                          <Package className="h-6 w-6 text-muted-foreground" />
+                        <div className="bg-muted flex h-12 w-12 items-center justify-center rounded-lg">
+                          <Package className="text-muted-foreground h-6 w-6" />
                         </div>
                         <div>
                           <p className="font-medium">{item.productName}</p>
@@ -290,7 +289,7 @@ function OrderDetailsDialog({
                     {item.imprintId && (
                       <div className="mt-2 flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5 dark:border-blue-800 dark:bg-blue-950/50">
                         <Paintbrush className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                        <span className="flex-1 text-blue-700 text-sm dark:text-blue-300">
+                        <span className="flex-1 text-sm text-blue-700 dark:text-blue-300">
                           Custom Design: {item.imprintName || "Unnamed"}
                           {item.customizationPrice > 0 && (
                             <span className="ml-1 text-blue-600 dark:text-blue-400">
@@ -299,9 +298,10 @@ function OrderDetailsDialog({
                           )}
                         </span>
                         <Link
-                          className="text-blue-600 text-xs hover:underline dark:text-blue-400"
-                          href={`/imprinter/${item.imprintId}`}
+                          className="text-xs text-blue-600 hover:underline dark:text-blue-400"
                           onClick={(e) => e.stopPropagation()}
+                          params={{ id: item.imprintId }}
+                          to="/imprinter/$id"
                         >
                           <ExternalLink className="h-3 w-3" />
                         </Link>
@@ -313,7 +313,7 @@ function OrderDetailsDialog({
 
               <Separator />
 
-              <div className="space-y-2 rounded-lg bg-muted/50 p-3">
+              <div className="bg-muted/50 space-y-2 rounded-lg p-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span>${order.totalAmount.toFixed(2)}</span>
@@ -323,7 +323,7 @@ function OrderDetailsDialog({
                   <span className="text-green-600 dark:text-green-400">Free</span>
                 </div>
                 <Separator />
-                <div className="flex justify-between font-bold text-lg">
+                <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
                   <span>${order.totalAmount.toFixed(2)}</span>
                 </div>
@@ -501,7 +501,7 @@ function RefundRequestDialog({
             />
           </div>
 
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-blue-700 text-sm dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-300">
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-300">
             <div className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
               <p className="font-medium">What happens next?</p>
@@ -531,15 +531,15 @@ function RefundRequestDialog({
 function EmptyOrders() {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="mb-4 rounded-full bg-muted p-6">
-        <ShoppingBag className="h-12 w-12 text-muted-foreground" />
+      <div className="bg-muted mb-4 rounded-full p-6">
+        <ShoppingBag className="text-muted-foreground h-12 w-12" />
       </div>
-      <h2 className="mb-2 font-bold text-2xl">No orders yet</h2>
-      <p className="mb-6 max-w-sm text-muted-foreground">
+      <h2 className="mb-2 text-2xl font-bold">No orders yet</h2>
+      <p className="text-muted-foreground mb-6 max-w-sm">
         When you place an order, it will appear here. Start shopping to see your orders!
       </p>
       <Button asChild>
-        <Link to="/#products">Browse Products</Link>
+        <a href="/#products">Browse Products</a>
       </Button>
     </div>
   );
@@ -564,7 +564,7 @@ function OrdersPage() {
   const [selectedOrderRefund, setSelectedOrderRefund] = useState<RefundResponse | null>(null);
   const [isLoadingRefund, setIsLoadingRefund] = useState(false);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       const data = await server.api.order.getMyOrders();
       setOrders(data);
@@ -576,11 +576,11 @@ function OrdersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [server]);
 
   useEffect(() => {
     fetchOrders();
-  }, [server]);
+  }, [server, fetchOrders]);
 
   const filteredOrders = useMemo(() => {
     switch (activeTab) {
@@ -739,7 +739,7 @@ function OrdersPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="font-bold text-3xl">My Orders</h1>
+        <h1 className="text-3xl font-bold">My Orders</h1>
         <p className="text-muted-foreground">Track and manage all your orders</p>
       </div>
 
@@ -780,7 +780,7 @@ function OrdersPage() {
             {filteredOrders.length === 0 ? (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Package className="mb-4 h-12 w-12 text-muted-foreground" />
+                  <Package className="text-muted-foreground mb-4 h-12 w-12" />
                   <p className="text-muted-foreground">No {activeTab === "all" ? "" : activeTab} orders found</p>
                 </CardContent>
               </Card>

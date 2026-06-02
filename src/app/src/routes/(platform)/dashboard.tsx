@@ -1,5 +1,3 @@
-"use client";
-
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
@@ -16,6 +14,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
 import { Skeleton } from "#/components/ui/skeleton";
@@ -131,8 +130,8 @@ function DashboardPage() {
     <div className="container mx-auto space-y-8 py-8">
       {/* Header */}
       <div>
-        <h1 className="font-bold text-4xl tracking-tight">Dashboard</h1>
-        <p className="mt-2 text-lg text-muted-foreground">
+        <h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground mt-2 text-lg">
           Welcome back! Here's what's happening with your orders and designs.
         </p>
       </div>
@@ -158,45 +157,45 @@ function DashboardPage() {
           <>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="font-medium text-sm">Active Orders</CardTitle>
-                <Package className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Active Orders</CardTitle>
+                <Package className="text-muted-foreground h-4 w-4" />
               </CardHeader>
               <CardContent>
-                <div className="font-bold text-2xl">{stats?.activeOrders ?? 0}</div>
-                <p className="mt-1 text-muted-foreground text-xs">Orders in progress</p>
+                <div className="text-2xl font-bold">{stats?.activeOrders ?? 0}</div>
+                <p className="text-muted-foreground mt-1 text-xs">Orders in progress</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="font-medium text-sm">Pending Payment</CardTitle>
-                <CreditCard className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Pending Payment</CardTitle>
+                <CreditCard className="text-muted-foreground h-4 w-4" />
               </CardHeader>
               <CardContent>
-                <div className="font-bold text-2xl">{stats?.pendingPayment ?? 0}</div>
-                <p className="mt-1 text-muted-foreground text-xs">Awaiting payment</p>
+                <div className="text-2xl font-bold">{stats?.pendingPayment ?? 0}</div>
+                <p className="text-muted-foreground mt-1 text-xs">Awaiting payment</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="font-medium text-sm">Completed Orders</CardTitle>
-                <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Completed Orders</CardTitle>
+                <ShoppingBag className="text-muted-foreground h-4 w-4" />
               </CardHeader>
               <CardContent>
-                <div className="font-bold text-2xl">{stats?.completedOrders ?? 0}</div>
-                <p className="mt-1 text-muted-foreground text-xs">Successfully delivered</p>
+                <div className="text-2xl font-bold">{stats?.completedOrders ?? 0}</div>
+                <p className="text-muted-foreground mt-1 text-xs">Successfully delivered</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="font-medium text-sm">Total Spent</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
+                <TrendingUp className="text-muted-foreground h-4 w-4" />
               </CardHeader>
               <CardContent>
-                <div className="font-bold text-2xl">{formatCurrency(stats?.totalSpent ?? 0)}</div>
-                <p className="mt-1 text-muted-foreground text-xs">All time spending</p>
+                <div className="text-2xl font-bold">{formatCurrency(stats?.totalSpent ?? 0)}</div>
+                <p className="text-muted-foreground mt-1 text-xs">All time spending</p>
               </CardContent>
             </Card>
           </>
@@ -214,7 +213,7 @@ function DashboardPage() {
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Button asChild className="h-auto flex-col gap-2 py-4" variant="outline">
-              <Link to="/designer/new">
+              <Link params={{ id: "new" }} to="/designer/$id">
                 <Palette className="h-6 w-6" />
                 <span className="font-semibold">Create Design</span>
                 <span className="text-muted-foreground text-xs">Start a new design</span>
@@ -222,7 +221,7 @@ function DashboardPage() {
             </Button>
 
             <Button asChild className="h-auto flex-col gap-2 py-4" variant="outline">
-              <Link to="/imprinter/new">
+              <Link params={{ id: "new" }} to="/imprinter/$id">
                 <Box className="h-6 w-6" />
                 <span className="font-semibold">Create Imprint</span>
                 <span className="text-muted-foreground text-xs">Configure 3D product</span>
@@ -230,11 +229,11 @@ function DashboardPage() {
             </Button>
 
             <Button asChild className="h-auto flex-col gap-2 py-4" variant="outline">
-              <Link to="/products">
+              <a href="/products">
                 <ShoppingBag className="h-6 w-6" />
                 <span className="font-semibold">Browse Products</span>
                 <span className="text-muted-foreground text-xs">Explore catalog</span>
-              </Link>
+              </a>
             </Button>
 
             <Button asChild className="h-auto flex-col gap-2 py-4" variant="outline">
@@ -278,12 +277,12 @@ function DashboardPage() {
               </div>
             ) : recentDesigns.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12">
-                <div className="mb-4 rounded-full bg-primary/10 p-3">
-                  <FileImage className="h-6 w-6 text-primary" />
+                <div className="bg-primary/10 mb-4 rounded-full p-3">
+                  <FileImage className="text-primary h-6 w-6" />
                 </div>
-                <p className="mb-4 text-center text-muted-foreground text-sm">You haven't created any designs yet</p>
+                <p className="text-muted-foreground mb-4 text-center text-sm">You haven't created any designs yet</p>
                 <Button asChild size="sm">
-                  <Link to="/designer/new">
+                  <Link params={{ id: "new" }} to="/designer/$id">
                     <Plus className="mr-2 h-4 w-4" />
                     Create Your First Design
                   </Link>
@@ -293,11 +292,11 @@ function DashboardPage() {
               <div className="space-y-3">
                 {recentDesigns.map((design) => (
                   <div
-                    className="group flex cursor-pointer items-center gap-3 rounded-lg p-2 transition-colors hover:bg-accent"
+                    className="group hover:bg-accent flex cursor-pointer items-center gap-3 rounded-lg p-2 transition-colors"
                     key={design.id}
                     onClick={() => navigate({ to: "/designer/$id", params: { id: design.id } })}
                   >
-                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded bg-muted">
+                    <div className="bg-muted relative h-16 w-16 shrink-0 overflow-hidden rounded">
                       {design.preview ? (
                         <img
                           alt={design.name}
@@ -306,7 +305,7 @@ function DashboardPage() {
                         />
                       ) : (
                         <div className="flex size-full items-center justify-center">
-                          <FileImage className="h-6 w-6 text-muted-foreground" />
+                          <FileImage className="text-muted-foreground h-6 w-6" />
                         </div>
                       )}
                     </div>
@@ -314,7 +313,7 @@ function DashboardPage() {
                       <p className="truncate font-medium">{design.name}</p>
                       <p className="text-muted-foreground text-xs">Updated {formatDate(design.updatedAt)}</p>
                     </div>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                    <ArrowRight className="text-muted-foreground h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
                   </div>
                 ))}
               </div>
@@ -351,28 +350,28 @@ function DashboardPage() {
               </div>
             ) : recentOrders.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12">
-                <div className="mb-4 rounded-full bg-primary/10 p-3">
-                  <ShoppingBag className="h-6 w-6 text-primary" />
+                <div className="bg-primary/10 mb-4 rounded-full p-3">
+                  <ShoppingBag className="text-primary h-6 w-6" />
                 </div>
-                <p className="mb-4 text-center text-muted-foreground text-sm">You haven't placed any orders yet</p>
+                <p className="text-muted-foreground mb-4 text-center text-sm">You haven't placed any orders yet</p>
                 <Button asChild size="sm">
-                  <Link to="/products">
+                  <a href="/products">
                     <Plus className="mr-2 h-4 w-4" />
                     Browse Products
-                  </Link>
+                  </a>
                 </Button>
               </div>
             ) : (
               <div className="space-y-3">
                 {recentOrders.map((order) => (
                   <div
-                    className="group flex cursor-pointer items-center justify-between rounded-lg p-2 transition-colors hover:bg-accent"
+                    className="group hover:bg-accent flex cursor-pointer items-center justify-between rounded-lg p-2 transition-colors"
                     key={order.id}
                     onClick={() => navigate({ to: "/orders/$id", params: { id: order.id } })}
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="truncate font-medium text-muted-foreground text-sm">
+                        <p className="text-muted-foreground truncate text-sm font-medium">
                           Order #{order.id.slice(0, 8)}
                         </p>
                         <span
@@ -394,7 +393,7 @@ function DashboardPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <p className="font-semibold">{formatCurrency(order.totalAmount)}</p>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                      <ArrowRight className="text-muted-foreground h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
                     </div>
                   </div>
                 ))}

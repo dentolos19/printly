@@ -1,5 +1,3 @@
-"use client";
-
 import { createFileRoute } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -15,6 +13,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
@@ -230,7 +229,7 @@ function InventoryPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-bold text-3xl">Inventory</h1>
+          <h1 className="text-3xl font-bold">Inventory</h1>
           <p className="text-muted-foreground">Monitor and manage stock levels</p>
         </div>
         <Button onClick={loadInventory} variant="outline">
@@ -243,43 +242,43 @@ function InventoryPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="font-medium text-sm">Total Stock</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Stock</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{totalStock.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{totalStock.toLocaleString()}</div>
             <p className="text-muted-foreground text-xs">units across all variants</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="font-medium text-sm">Total Variants</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Variants</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{inventory.length}</div>
+            <div className="text-2xl font-bold">{inventory.length}</div>
             <p className="text-muted-foreground text-xs">product variations</p>
           </CardContent>
         </Card>
         <Card className={lowStockCount > 0 ? "border-yellow-500" : ""}>
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 font-medium text-sm">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <AlertTriangle className="size-4 text-yellow-500" />
               Low Stock
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{lowStockCount}</div>
+            <div className="text-2xl font-bold">{lowStockCount}</div>
             <p className="text-muted-foreground text-xs">items need restocking</p>
           </CardContent>
         </Card>
         <Card className={outOfStockCount > 0 ? "border-red-500" : ""}>
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 font-medium text-sm">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium">
               <XCircle className="size-4 text-red-500" />
               Out of Stock
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{outOfStockCount}</div>
+            <div className="text-2xl font-bold">{outOfStockCount}</div>
             <p className="text-muted-foreground text-xs">items unavailable</p>
           </CardContent>
         </Card>
@@ -294,7 +293,7 @@ function InventoryPage() {
         <CardContent>
           <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center">
             <div className="relative max-w-sm flex-1">
-              <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
               <Input
                 className="pl-9"
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -345,7 +344,7 @@ function InventoryPage() {
               <TableBody>
                 {filteredInventory.length === 0 ? (
                   <TableRow>
-                    <TableCell className="h-24 text-center text-muted-foreground" colSpan={6}>
+                    <TableCell className="text-muted-foreground h-24 text-center" colSpan={6}>
                       <Package className="mx-auto mb-2 size-8 opacity-50" />
                       No inventory items found
                     </TableCell>
@@ -427,7 +426,7 @@ function InventoryPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="text-center text-muted-foreground text-sm">
+            <div className="text-muted-foreground text-center text-sm">
               Current stock: <strong>{selectedInventory?.quantity ?? 0}</strong>
             </div>
             <div className="space-y-2">
@@ -442,7 +441,7 @@ function InventoryPage() {
               <p className="text-muted-foreground text-xs">Use positive numbers to add stock, negative to remove</p>
             </div>
             {adjustAmount && !isNaN(parseInt(adjustAmount)) && (
-              <div className="rounded-lg bg-muted p-3 text-center">
+              <div className="bg-muted rounded-lg p-3 text-center">
                 New stock will be:{" "}
                 <strong>{Math.max(0, (selectedInventory?.quantity ?? 0) + parseInt(adjustAmount))}</strong>
               </div>

@@ -1,6 +1,5 @@
-"use client";
-
 import { CheckCircle2, Clock, CreditCard, Package, RotateCcw, Truck, XCircle } from "lucide-react";
+
 import { OrderStatus } from "#/lib/server/order";
 import { cn } from "#/lib/utils";
 
@@ -58,7 +57,7 @@ export function OrderProgressTracker({ status, className }: OrderProgressTracker
           </div>
           <div>
             <p className="font-medium text-red-800 dark:text-red-300">Order Cancelled</p>
-            <p className="text-red-600 text-sm dark:text-red-400">This order has been cancelled</p>
+            <p className="text-sm text-red-600 dark:text-red-400">This order has been cancelled</p>
           </div>
         </div>
       </div>
@@ -80,7 +79,7 @@ export function OrderProgressTracker({ status, className }: OrderProgressTracker
           </div>
           <div>
             <p className="font-medium text-orange-800 dark:text-orange-300">Refund Requested</p>
-            <p className="text-orange-600 text-sm dark:text-orange-400">Your refund request is being reviewed</p>
+            <p className="text-sm text-orange-600 dark:text-orange-400">Your refund request is being reviewed</p>
           </div>
         </div>
       </div>
@@ -101,7 +100,7 @@ export function OrderProgressTracker({ status, className }: OrderProgressTracker
           </div>
           <div>
             <p className="font-medium text-amber-800 dark:text-amber-300">Refund Approved</p>
-            <p className="text-amber-600 text-sm dark:text-amber-400">
+            <p className="text-sm text-amber-600 dark:text-amber-400">
               Your refund has been approved and is being processed
             </p>
           </div>
@@ -124,7 +123,7 @@ export function OrderProgressTracker({ status, className }: OrderProgressTracker
           </div>
           <div>
             <p className="font-medium text-gray-800 dark:text-gray-200">Refunded</p>
-            <p className="text-gray-600 text-sm dark:text-gray-400">This order has been refunded</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">This order has been refunded</p>
           </div>
         </div>
       </div>
@@ -136,13 +135,13 @@ export function OrderProgressTracker({ status, className }: OrderProgressTracker
 
   return (
     <div className={cn("rounded-lg border bg-card p-4", className)}>
-      <h4 className="mb-4 font-medium text-muted-foreground text-sm">Order Progress</h4>
+      <h4 className="text-muted-foreground mb-4 text-sm font-medium">Order Progress</h4>
 
       {/* Progress bar */}
       <div className="relative mb-6">
-        <div className="absolute top-1/2 left-0 h-1 w-full -translate-y-1/2 rounded-full bg-muted" />
+        <div className="bg-muted absolute top-1/2 left-0 h-1 w-full -translate-y-1/2 rounded-full" />
         <div
-          className="absolute top-1/2 left-0 h-1 -translate-y-1/2 rounded-full bg-primary transition-all duration-500"
+          className="bg-primary absolute top-1/2 left-0 h-1 -translate-y-1/2 rounded-full transition-all duration-500"
           style={{
             width: `${(currentStageIndex / (orderStages.length - 1)) * 100}%`,
           }}
@@ -190,7 +189,7 @@ export function OrderProgressTracker({ status, className }: OrderProgressTracker
               >
                 {stage.label}
               </span>
-              {isCurrent && <span className="mt-0.5 text-[10px] text-muted-foreground">{stage.description}</span>}
+              {isCurrent && <span className="text-muted-foreground mt-0.5 text-[10px]">{stage.description}</span>}
             </div>
           );
         })}

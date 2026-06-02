@@ -27,7 +27,7 @@ public static class Utilities
         var hashBytes = sha256.ComputeHash(stream);
 
         // Convert hash to hexadecimal string
-        return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+        return Convert.ToHexStringLower(hashBytes);
     }
 
     public static string GenerateSecureToken()

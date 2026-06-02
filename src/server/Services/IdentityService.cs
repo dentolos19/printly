@@ -97,12 +97,12 @@ public class IdentityService
             : await _userManager.CreateAsync(user, password);
 
         if (!userResult.Succeeded)
-            throw new Exception("Failed to create user.");
+            throw new InvalidOperationException("Failed to create user.");
 
         var roleResult = await _userManager.AddToRoleAsync(user, Roles.User);
 
         if (!roleResult.Succeeded)
-            throw new Exception("Failed to assign role to user.");
+            throw new InvalidOperationException("Failed to assign role to user.");
 
         return user;
     }
@@ -123,7 +123,7 @@ public class IdentityService
         // Reload user from database to ensure we have the latest role
         var freshUser = await _userManager.FindByIdAsync(user.Id);
         if (freshUser == null)
-            throw new Exception("User not found.");
+            throw new InvalidOperationException("User not found.");
 
         var accessToken = await GenerateAccessToken(freshUser);
         var refreshToken = await GenerateRefreshToken(freshUser);
@@ -135,7 +135,7 @@ public class IdentityService
         // Reload user from database to ensure we have the latest role
         var freshUser = await _userManager.FindByIdAsync(user.Id);
         if (freshUser == null)
-            throw new Exception("User not found.");
+            throw new InvalidOperationException("User not found.");
 
         var accessToken = await GenerateAccessToken(freshUser);
         var refreshToken = await RotateRefreshToken(token);

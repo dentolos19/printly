@@ -1,5 +1,3 @@
-"use client";
-
 import { Decal, Environment, OrbitControls, PerspectiveCamera, useGLTF, useTexture } from "@react-three/drei";
 import { Canvas, createPortal, useFrame, useThree } from "@react-three/fiber";
 import type { ErrorInfo, ReactNode } from "react";
@@ -15,7 +13,9 @@ import {
   useState,
 } from "react";
 import * as THREE from "three";
+
 import type { AppliedDesign, PrintAreaConfig } from "#/routes/(tools)/imprinter/-types";
+
 import { useImprinter } from "./hooks/use-imprinter";
 
 // Screenshot capture context
@@ -295,16 +295,7 @@ function NoModelPlaceholder() {
 }
 
 function CanvasModel() {
-  const {
-    productColor,
-    appliedDesigns,
-    modelConfig,
-    selectedProduct,
-    availablePrintAreas,
-    activeTool,
-    addImageToProduct,
-    activePrintArea,
-  } = useImprinter();
+  const { productColor, appliedDesigns, selectedProduct, availablePrintAreas } = useImprinter();
   const { gl } = useThree();
   const modelRef = useRef<THREE.Group>(null);
   const [meshes, setMeshes] = useState<MeshMap>({ body: null, leftSleeve: null, rightSleeve: null });
@@ -603,8 +594,8 @@ export function ImprinterScene() {
         onDrop={handleDrop}
       >
         {isDragging && (
-          <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center rounded-lg border-2 border-primary border-dashed bg-primary/10">
-            <p className="font-medium text-lg text-primary">Drop image to apply as decal</p>
+          <div className="border-primary bg-primary/10 pointer-events-none absolute inset-0 z-50 flex items-center justify-center rounded-lg border-2 border-dashed">
+            <p className="text-primary text-lg font-medium">Drop image to apply as decal</p>
           </div>
         )}
         {activeTool === "place" && (

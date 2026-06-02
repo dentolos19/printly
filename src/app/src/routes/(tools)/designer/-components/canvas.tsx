@@ -1,8 +1,8 @@
-"use client";
-
 import { Canvas } from "fabric";
 import { useCallback, useEffect, useRef } from "react";
+
 import { cn } from "#/lib/utils";
+
 import { CanvasContextMenu } from "./canvas-context-menu";
 import { useDesigner } from "./hooks";
 
@@ -98,6 +98,7 @@ export function DesignerCanvas({ className }: DesignerCanvasProps) {
       fabricRef.current = null;
       setCanvas(null);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handle canvas size changes

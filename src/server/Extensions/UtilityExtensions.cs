@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -13,7 +13,8 @@ public static class UtilityExtensions
 
     public static DbContextOptionsBuilder UseDatabase(this DbContextOptionsBuilder options)
     {
-        var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL")
+        var databaseUrl =
+            Environment.GetEnvironmentVariable("DATABASE_URL")
             ?? throw new InvalidOperationException("DATABASE_URL environment variable is required.");
 
         databaseUrl = databaseUrl.TrimStart('"').TrimEnd('"');

@@ -1,9 +1,8 @@
-"use client";
-
 import { createFileRoute } from "@tanstack/react-router";
 import { AlertTriangle, CheckCircle2, Eye, Loader2, MoreHorizontalIcon, Trash2, XCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+
 import { Avatar, AvatarFallback } from "#/components/ui/avatar";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
@@ -152,7 +151,7 @@ function AdminReportsPage() {
     <div className="space-y-6 p-6">
       {/* Header */}
       <div>
-        <h1 className="font-bold text-3xl">Reported Content</h1>
+        <h1 className="text-3xl font-bold">Reported Content</h1>
         <p className="text-muted-foreground">Review and manage reported posts, comments, and users</p>
       </div>
 
@@ -161,7 +160,7 @@ function AdminReportsPage() {
         <CardContent className="pt-6">
           <div className="flex flex-col gap-4 sm:flex-row">
             <div className="flex-1">
-              <Label className="font-semibold text-xs">Filter by Status</Label>
+              <Label className="text-xs font-semibold">Filter by Status</Label>
               <div className="mt-2 flex flex-wrap gap-2">
                 <Button
                   onClick={() => {
@@ -190,7 +189,7 @@ function AdminReportsPage() {
             </div>
 
             <div className="flex-1">
-              <Label className="font-semibold text-xs">Filter by Type</Label>
+              <Label className="text-xs font-semibold">Filter by Type</Label>
               <div className="mt-2 flex flex-wrap gap-2">
                 <Button
                   onClick={() => {
@@ -229,8 +228,8 @@ function AdminReportsPage() {
       ) : reports.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <AlertTriangle className="mx-auto h-12 w-12 text-muted-foreground/50" />
-            <p className="mt-4 text-muted-foreground">No reports found</p>
+            <AlertTriangle className="text-muted-foreground/50 mx-auto h-12 w-12" />
+            <p className="text-muted-foreground mt-4">No reports found</p>
           </CardContent>
         </Card>
       ) : (
@@ -244,7 +243,7 @@ function AdminReportsPage() {
                       <AvatarFallback>{report.reporterName.charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-semibold text-sm">{report.reporterName}</p>
+                      <p className="text-sm font-semibold">{report.reporterName}</p>
                       <p className="text-muted-foreground text-xs">{new Date(report.createdAt).toLocaleDateString()}</p>
                     </div>
                   </div>
@@ -282,12 +281,12 @@ function AdminReportsPage() {
               </CardHeader>
               <CardContent className="space-y-2">
                 <div>
-                  <p className="font-semibold text-muted-foreground text-xs">Reason</p>
+                  <p className="text-muted-foreground text-xs font-semibold">Reason</p>
                   <p className="text-sm">{ReportReasonLabels[report.reason]}</p>
                 </div>
                 {report.description && (
                   <div>
-                    <p className="font-semibold text-muted-foreground text-xs">Description</p>
+                    <p className="text-muted-foreground text-xs font-semibold">Description</p>
                     <p className="text-sm">{report.description}</p>
                   </div>
                 )}
@@ -326,42 +325,42 @@ function AdminReportsPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="font-semibold text-muted-foreground text-xs">Report ID</p>
+                  <p className="text-muted-foreground text-xs font-semibold">Report ID</p>
                   <p className="font-mono text-sm">{selectedReport.id.slice(0, 8)}</p>
                 </div>
                 <div>
-                  <p className="font-semibold text-muted-foreground text-xs">Status</p>
+                  <p className="text-muted-foreground text-xs font-semibold">Status</p>
                   <Badge className={cn("mt-1", getStatusColor(selectedReport.status))}>
                     {ReportStatusLabels[selectedReport.status]}
                   </Badge>
                 </div>
                 <div>
-                  <p className="font-semibold text-muted-foreground text-xs">Reported By</p>
+                  <p className="text-muted-foreground text-xs font-semibold">Reported By</p>
                   <p className="text-sm">{selectedReport.reporterName}</p>
                 </div>
                 <div>
-                  <p className="font-semibold text-muted-foreground text-xs">Reason</p>
+                  <p className="text-muted-foreground text-xs font-semibold">Reason</p>
                   <p className="text-sm">{ReportReasonLabels[selectedReport.reason]}</p>
                 </div>
               </div>
 
               {selectedReport.description && (
                 <div>
-                  <p className="font-semibold text-muted-foreground text-xs">Description</p>
+                  <p className="text-muted-foreground text-xs font-semibold">Description</p>
                   <p className="text-sm">{selectedReport.description}</p>
                 </div>
               )}
 
               {selectedReport.adminNotes && (
                 <div>
-                  <p className="font-semibold text-muted-foreground text-xs">Admin Notes</p>
+                  <p className="text-muted-foreground text-xs font-semibold">Admin Notes</p>
                   <p className="text-sm">{selectedReport.adminNotes}</p>
                 </div>
               )}
 
               {selectedReport.reviewedAt && (
                 <div>
-                  <p className="font-semibold text-muted-foreground text-xs">Reviewed At</p>
+                  <p className="text-muted-foreground text-xs font-semibold">Reviewed At</p>
                   <p className="text-sm">{new Date(selectedReport.reviewedAt).toLocaleString()}</p>
                 </div>
               )}

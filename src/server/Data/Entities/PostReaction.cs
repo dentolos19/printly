@@ -1,4 +1,4 @@
-﻿namespace PrintlyServer.Data.Entities;
+namespace PrintlyServer.Data.Entities;
 
 public class PostReaction : BaseEntity
 {

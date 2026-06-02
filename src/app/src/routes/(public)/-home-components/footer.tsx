@@ -1,10 +1,9 @@
-import { Link as NextLink } from "@tanstack/react-router";
 import { Image } from "@unpic/react";
 import { Github, Instagram, Linkedin, Twitter } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="border-border border-t bg-muted/50 pt-20 pb-10">
+    <footer className="border-border bg-muted/50 border-t pt-20 pb-10">
       <div className="container mx-auto px-6 lg:px-12">
         <div className="mb-16 grid grid-cols-1 gap-12 lg:grid-cols-4 lg:gap-8">
           <div className="space-y-6">
@@ -13,17 +12,17 @@ export function Footer() {
               <h2 className="text-2xl font-bold tracking-tighter">Printly</h2>
             </div>
             <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
-              Empowering brands through high-quality custom apparel. Proudly serving creative teams since 2025.
+              Empowering brands through high-quality custom apparel.
             </p>
             <div className="flex gap-4">
               {[Twitter, Instagram, Github, Linkedin].map((Icon, i) => (
-                <NextLink
-                  className="border-border hover:text-primary hover:border-primary rounded-full border bg-background p-2 text-muted-foreground shadow-sm transition-all"
+                <a
+                  className="border-border bg-background text-muted-foreground hover:border-primary hover:text-primary rounded-full border p-2 shadow-sm transition-all"
                   href="#"
                   key={i}
                 >
                   <Icon className="size-5" />
-                </NextLink>
+                </a>
               ))}
             </div>
           </div>
@@ -43,13 +42,13 @@ export function Footer() {
             },
           ].map((group, idx) => (
             <div className="space-y-6 md:pl-10 lg:pl-0" key={idx}>
-              <h3 className="text-xs font-bold tracking-widest text-foreground uppercase">{group.title}</h3>
+              <h3 className="text-foreground text-xs font-bold tracking-widest uppercase">{group.title}</h3>
               <ul className="space-y-4">
                 {group.links.map((link, i) => (
                   <li key={i}>
-                    <NextLink className="text-muted-foreground hover:text-primary text-sm transition-colors" href="#">
+                    <a className="text-muted-foreground hover:text-primary text-sm transition-colors" href="#">
                       {link}
-                    </NextLink>
+                    </a>
                   </li>
                 ))}
               </ul>
@@ -57,15 +56,15 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="flex flex-col items-center justify-between gap-4 border-t border-border pt-8 text-sm text-muted-foreground md:flex-row">
-          <p>&copy; 2026 Printly. All rights reserved. Crafted with ❤️ for creators.</p>
+        <div className="border-border text-muted-foreground flex flex-col items-center justify-between gap-4 border-t pt-8 text-sm md:flex-row">
+          <p>&copy; 2025 Dennise Catolos</p>
           <div className="flex gap-8">
-            <NextLink className="hover:text-primary transition-colors" href="#">
+            <a className="hover:text-primary transition-colors" href="https://dennise.me/privacy">
               Privacy Policy
-            </NextLink>
-            <NextLink className="hover:text-primary transition-colors" href="#">
+            </a>
+            <a className="hover:text-primary transition-colors" href="https://dennise.me/terms">
               Terms of Service
-            </NextLink>
+            </a>
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using PrintlyServer.Data.Entities;
 
 namespace PrintlyServer.Controllers.Dtos;
@@ -64,7 +64,7 @@ public record PostSummaryResponse(
 );
 
 public record CreatePostDto(
-    [Required] [StringLength(2000, MinimumLength = 1)] string Caption,
+    [Required][StringLength(2000, MinimumLength = 1)] string Caption,
     [Required] Guid PhotoId,
     PostStatus PostStatus = PostStatus.Published,
     List<string>? Tags = null,
@@ -111,7 +111,7 @@ public record PostCommentDetailResponse(
 
 public record CreateCommentDto(
     [Required] Guid PostId,
-    [Required] [StringLength(1000, MinimumLength = 1)] string Content,
+    [Required][StringLength(1000, MinimumLength = 1)] string Content,
     Guid? ParentId = null
 );
 

@@ -1,10 +1,11 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "printly",
+  "name": "printly-development",
   "main": "src/server.ts",
-  "compatibility_date": "2026-01-01",
+  "account_id": "d910f54eba4cf3d1634aa41c3d9a93bc",
+  "compatibility_date": "2026-05-01",
   "compatibility_flags": ["nodejs_compat"],
-  "keep_vars": true,
+  "logpush": true,
   "observability": {
     "logs": {
       "enabled": true
@@ -13,32 +14,36 @@
       "enabled": true
     }
   },
-  "routes": [
-    {
-      "pattern": "printly.dennise.me",
-      "custom_domain": true
-    }
-  ],
-  "containers": [
-    {
-      "class_name": "Server",
-      "image": "../server/Dockerfile",
-      "max_instances": 1,
-      "instance_type": "basic"
-    }
-  ],
-  "durable_objects": {
-    "bindings": [
-      {
-        "name": "SERVER",
-        "class_name": "Server"
-      }
-    ]
+  "route": {
+    "pattern": "printly.dennise.me",
+    "custom_domain": true
   },
-  "migrations": [
-    {
-      "tag": "v1",
-      "new_sqlite_classes": ["Server"]
+  "env": {
+    "production": {
+      "name": "printly",
+      "containers": [
+        {
+          "name": "printly-server",
+          "class_name": "Server",
+          "image": "../server/Dockerfile",
+          "max_instances": 1,
+          "instance_type": "basic"
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "SERVER",
+            "class_name": "Server"
+          }
+        ]
+      },
+      "migrations": [
+        {
+          "tag": "v1",
+          "new_sqlite_classes": ["Server"]
+        }
+      ]
     }
-  ]
+  }
 }

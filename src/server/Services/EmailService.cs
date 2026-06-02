@@ -18,7 +18,7 @@ public class EmailService : IEmailService
         var apiKey =
             configuration["RESEND_API_KEY"] ?? throw new InvalidOperationException("RESEND_API_KEY not configured");
 
-        _fromEmail = configuration["RESEND_FROM_EMAIL"] ?? "notifications@printly.app";
+        _fromEmail = configuration["RESEND_FROM_EMAIL"] ?? "apps@dennise.me";
         _resend = ResendClient.Create(new ResendClientOptions { ApiToken = apiKey });
         _logger = logger;
     }

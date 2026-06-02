@@ -1,9 +1,9 @@
-"use client";
-
 import { Image, Shirt, Sparkles } from "lucide-react";
+
 import { Button } from "#/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "#/components/ui/tooltip";
 import { cn } from "#/lib/utils";
+
 import { useImprinter } from "./hooks/use-imprinter";
 
 const PANEL_TOOLS: {

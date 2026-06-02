@@ -36,7 +36,7 @@ public class VariantController(DatabaseContext context, StorageService storageSe
             query = query.Where(v => v.Size == size.Value);
 
         if (!string.IsNullOrWhiteSpace(color))
-            query = query.Where(v => v.Color.ToLower() == color.ToLower());
+            query = query.Where(v => string.Equals(v.Color, color, StringComparison.OrdinalIgnoreCase));
 
         var variants = await query.OrderBy(v => v.Product.Name).ThenBy(v => v.Size).ThenBy(v => v.Color).ToListAsync();
 
@@ -141,7 +141,7 @@ public class VariantController(DatabaseContext context, StorageService storageSe
 
         // Check for duplicate variant
         var existingVariant = await Context.ProductVariants.FirstOrDefaultAsync(v =>
-            v.ProductId == dto.ProductId && v.Size == dto.Size && v.Color.ToLower() == dto.Color.ToLower()
+            v.ProductId == dto.ProductId && v.Size == dto.Size && string.Equals(v.Color, dto.Color, StringComparison.OrdinalIgnoreCase)
         );
 
         if (existingVariant is not null)
@@ -186,7 +186,7 @@ public class VariantController(DatabaseContext context, StorageService storageSe
 
         // Validate file type
         var allowedTypes = new[] { "image/jpeg", "image/png", "image/gif", "image/webp" };
-        if (!allowedTypes.Contains(file.ContentType.ToLower()))
+        if (!allowedTypes.Contains(file.ContentType, StringComparer.OrdinalIgnoreCase))
         {
             return BadRequest(new { message = "Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed." });
         }
@@ -257,7 +257,7 @@ public class VariantController(DatabaseContext context, StorageService storageSe
                 v.Id != id
                 && v.ProductId == variant.ProductId
                 && v.Size == newSize
-                && v.Color.ToLower() == newColor.ToLower()
+                && string.Equals(v.Color, newColor, StringComparison.OrdinalIgnoreCase)
             );
 
             if (existingVariant is not null)

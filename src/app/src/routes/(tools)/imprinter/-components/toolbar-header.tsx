@@ -1,9 +1,8 @@
-"use client";
-
 import { useNavigate } from "@tanstack/react-router";
 import { ChevronDown, Download, FileDown, Home, Redo2, RotateCcw, Save, ShoppingCart, Undo2 } from "lucide-react";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { toast } from "sonner";
+
 import { Button } from "#/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "#/components/ui/dialog";
 import {
@@ -20,6 +19,7 @@ import { cn } from "#/lib/utils";
 import { SaveIndicator } from "#/routes/(tools)/-shared/components/save-indicator";
 import { useUnsavedChangesGuard } from "#/routes/(tools)/-shared/hooks";
 import { EXPORT_PRESETS } from "#/routes/(tools)/imprinter/-types";
+
 import { useImprinter } from "./hooks/use-imprinter";
 
 type ToolbarHeaderProps = {
@@ -33,8 +33,8 @@ type DebouncedNameInputHandle = {
   flush: () => string;
 };
 
-export function ToolbarHeader({ className, title = "Printly Imprinter" }: ToolbarHeaderProps) {
-  const navigate = useNavigate();
+export function ToolbarHeader({ className, _title = "Printly Imprinter" }: ToolbarHeaderProps) {
+  const _navigate = useNavigate();
   const { addItemWithImprint } = useCart();
   const nameInputRef = useRef<DebouncedNameInputHandle | null>(null);
   const {
@@ -71,9 +71,9 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
       }
 
       allowNextNavigation();
-      navigate(href);
+      window.location.href = href;
     },
-    [allowNextNavigation, confirmNavigation, navigate],
+    [allowNextNavigation, confirmNavigation],
   );
 
   const handleSaveImprint = useCallback(async () => {
@@ -218,7 +218,7 @@ export function ToolbarHeader({ className, title = "Printly Imprinter" }: Toolba
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="mx-1 h-5 w-px bg-border" />
+        <div className="bg-border mx-1 h-5 w-px" />
 
         <Button className="h-8 w-8" disabled={!canUndo} onClick={undo} size="icon" title="Undo" variant="ghost">
           <Undo2 className="h-4 w-4" />
@@ -334,7 +334,7 @@ const DebouncedNameInput = forwardRef<
 
   return (
     <Input
-      className={"h-7 w-48 border-none bg-transparent px-1 font-medium text-sm shadow-none focus-visible:ring-1"}
+      className={"h-7 w-48 border-none bg-transparent px-1 text-sm font-medium shadow-none focus-visible:ring-1"}
       onBlur={() => {
         const latestValue = flush();
         onCommit?.(latestValue);

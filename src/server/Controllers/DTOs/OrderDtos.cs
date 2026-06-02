@@ -48,7 +48,7 @@ public record OrderItemResponse(
 /// DTO for creating an order with items
 /// </summary>
 public record CreateOrderDto(
-    [Required] [MinLength(1, ErrorMessage = "Order must have at least one item")] List<CreateOrderItemDto> Items
+    [Required][MinLength(1, ErrorMessage = "Order must have at least one item")] List<CreateOrderItemDto> Items
 );
 
 /// <summary>
@@ -58,7 +58,7 @@ public record CreateOrderItemDto(
     [Required] Guid VariantId,
     Guid? RequestId,
     Guid? ImprintId,
-    [Required] [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1")] int Quantity
+    [Required][Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1")] int Quantity
 );
 
 /// <summary>
@@ -78,8 +78,8 @@ public record AddOrderItemDto(
     [Required] Guid VariantId,
     Guid? RequestId,
     Guid? ImprintId,
-    [Required] [Range(1, int.MaxValue)] int Quantity,
-    [Required] [Range(0.01, double.MaxValue)] decimal UnitPrice,
+    [Required][Range(1, int.MaxValue)] int Quantity,
+    [Required][Range(0.01, double.MaxValue)] decimal UnitPrice,
     [Range(0, double.MaxValue)] decimal CustomizationPrice = 0
 );
 

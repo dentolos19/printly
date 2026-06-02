@@ -1,12 +1,12 @@
-"use client";
-
 import { Package } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+
 import { ProductModal } from "#/components/product-modal";
 import { Button } from "#/components/ui/button";
 import { useServer } from "#/lib/providers/server";
 import type { ProductResponse } from "#/lib/server/product";
+
 import { ProductCard } from "./product-card";
 import { ProductsSkeleton } from "./products-skeleton";
 
@@ -49,7 +49,7 @@ export function ProductsSection() {
       {loading ? (
         <ProductsSkeleton />
       ) : products.length === 0 ? (
-        <div className="py-12 text-center text-muted-foreground">
+        <div className="text-muted-foreground py-12 text-center">
           <Package className="mx-auto mb-4 h-12 w-12" />
           <p className="text-lg">No products available at the moment.</p>
           <p className="text-sm">Check back soon!</p>

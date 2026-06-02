@@ -1,9 +1,8 @@
-"use client";
-
 import { jwtDecode } from "jwt-decode";
 import { createContext, useContext, useEffect, useState } from "react";
+
 import { API_URL } from "#/environment";
-import type { UserClaims } from "#/types";
+import type { UserClaims } from "#/lib/types";
 
 const AuthContext = createContext<{
   claims: UserClaims | null;
@@ -133,7 +132,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           },
           body: JSON.stringify({ refreshToken: refreshToken }),
         });
-      } catch (error) {
+      } catch {
         console.error("Failed to revoke token.");
       }
     }
@@ -255,7 +254,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
               setRefreshToken(null);
               setClaims(null);
             }
-          } catch (error) {
+          } catch {
             console.error("Failed to refresh token.");
 
             setAccessToken(null);
@@ -339,6 +338,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       clearTimeout(immediateTimeout);
       clearInterval(interval);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessToken, refreshToken]);
 
   return (

@@ -4,12 +4,11 @@
  * This file is kept for reference only.
  */
 
-"use client";
-
 import { TooltipProvider } from "#/components/ui/tooltip";
 import { cn } from "#/lib/utils";
 import { IconToolbar } from "#/routes/(tools)/designer/-components/icon-toolbar";
 import type { ArtStyle } from "#/routes/(tools)/designer/-types";
+
 import { DesignerCanvas } from "./canvas";
 import { DesignerProvider, useKeyboardShortcuts } from "./hooks";
 import { LeftPanel, RightPanel } from "./panels";

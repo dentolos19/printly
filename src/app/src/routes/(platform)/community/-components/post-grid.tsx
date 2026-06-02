@@ -1,6 +1,5 @@
-﻿"use client";
-
 import type { PostStatus, PostSummaryResponse, ReactionType, ReportReason } from "#/lib/server/community";
+
 import { EmptyState } from "./empty-state";
 import { PostCard } from "./post-card";
 import { PostCardSkeleton } from "./post-card-skeleton";

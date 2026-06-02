@@ -1,5 +1,3 @@
-"use client";
-
 import { useNavigate } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -33,6 +31,7 @@ import {
   ZoomOut,
 } from "lucide-react";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
+
 import { Button } from "#/components/ui/button";
 import {
   DropdownMenu,
@@ -50,6 +49,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "#/components/ui/tooltip
 import { cn } from "#/lib/utils";
 import { SaveIndicator } from "#/routes/(tools)/-shared/components/save-indicator";
 import { useUnsavedChangesGuard } from "#/routes/(tools)/-shared/hooks";
+
 import { useDesigner } from "./hooks";
 import { ResizeDesignDialog } from "./resize-design-dialog";
 
@@ -65,7 +65,7 @@ type DebouncedNameInputHandle = {
   flush: () => string;
 };
 
-export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }: ToolbarHeaderProps) {
+export function ToolbarHeader({ className, _title = "Printly", problemCount = 0 }: ToolbarHeaderProps) {
   const navigate = useNavigate();
   const [resizeDialogOpen, setResizeDialogOpen] = useState(false);
   const nameInputRef = useRef<DebouncedNameInputHandle | null>(null);
@@ -118,9 +118,9 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
       }
 
       allowNextNavigation();
-      navigate(href);
+      window.location.href = href;
     },
-    [allowNextNavigation, confirmNavigation, navigate],
+    [allowNextNavigation, confirmNavigation],
   );
 
   const handleSaveDesign = useCallback(async () => {
@@ -134,7 +134,7 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
       const idToUse = savedDesignId || designId;
       if (idToUse) {
         allowNextNavigation();
-        navigate({ to: "/imprinter/new", search: { design: idToUse } });
+        navigate({ to: "/imprinter/$id", params: { id: "new" }, search: { design: idToUse } });
       }
     } catch (error) {
       console.error("Failed to save design before imprinting:", error);
@@ -423,7 +423,7 @@ export function ToolbarHeader({ className, title = "Printly", problemCount = 0 }
 
       {/* Problem indicator */}
       {problemCount > 0 && (
-        <Button className={"h-7 gap-1 text-destructive"} size={"sm"} type={"button"} variant={"ghost"}>
+        <Button className={"text-destructive h-7 gap-1"} size={"sm"} type={"button"} variant={"ghost"}>
           <AlertTriangle className={"h-4 w-4"} />
           {problemCount} problem{problemCount > 1 ? "s" : ""} found
         </Button>
@@ -491,7 +491,7 @@ const DebouncedNameInput = forwardRef<
 
   return (
     <Input
-      className={"h-7 w-48 border-none bg-transparent px-1 font-medium text-sm shadow-none focus-visible:ring-1"}
+      className={"h-7 w-48 border-none bg-transparent px-1 text-sm font-medium shadow-none focus-visible:ring-1"}
       onBlur={() => {
         const latestValue = flush();
         onCommit?.(latestValue);

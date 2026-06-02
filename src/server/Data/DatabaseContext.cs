@@ -7,57 +7,57 @@ namespace PrintlyServer.Data;
 
 public class DatabaseContext(DbContextOptions<DatabaseContext> options) : IdentityDbContext<User>(options)
 {
-    public DbSet<RefreshToken> RefreshTokens { get; set; }
-    public DbSet<Design> Designs { get; set; }
-    public DbSet<Imprint> Imprints { get; set; }
-    public DbSet<Asset> Assets { get; set; }
-    public DbSet<Broadcast> Broadcasts { get; set; }
-    public DbSet<Notification> Notifications { get; set; }
-    public DbSet<ChatbotMessage> ChatbotMessages { get; set; }
-    public DbSet<Product> Products { get; set; }
-    public DbSet<ProductVariant> ProductVariants { get; set; }
-    public DbSet<Inventory> Inventories { get; set; }
-    public DbSet<Order> Orders { get; set; }
-    public DbSet<OrderItem> OrderItems { get; set; }
-    public DbSet<Payment> Payments { get; set; }
-    public DbSet<Post> Posts { get; set; }
-    public DbSet<PostComment> PostComments { get; set; }
-    public DbSet<PostReaction> PostReactions { get; set; }
-    public DbSet<PostBookmark> PostBookmarks { get; set; }
-    public DbSet<Conversation> Conversations { get; set; }
-    public DbSet<ConversationParticipant> ConversationParticipants { get; set; }
-    public DbSet<ConversationMessage> ConversationMessages { get; set; }
-    public DbSet<Refund> Refunds { get; set; }
-    public DbSet<CallLog> CallLogs { get; set; }
-    public DbSet<CallParticipant> CallParticipants { get; set; }
-    public DbSet<UserFollower> UserFollowers { get; set; }
-    public DbSet<Report> Reports { get; set; }
-    public DbSet<UserBlock> UserBlocks { get; set; }
-    public DbSet<PrintArea> PrintAreas { get; set; }
+    public DbSet<RefreshToken>? RefreshTokens { get; set; }
+    public DbSet<Design>? Designs { get; set; }
+    public DbSet<Imprint>? Imprints { get; set; }
+    public DbSet<Asset>? Assets { get; set; }
+    public DbSet<Broadcast>? Broadcasts { get; set; }
+    public DbSet<Notification>? Notifications { get; set; }
+    public DbSet<ChatbotMessage>? ChatbotMessages { get; set; }
+    public DbSet<Product>? Products { get; set; }
+    public DbSet<ProductVariant>? ProductVariants { get; set; }
+    public DbSet<Inventory>? Inventories { get; set; }
+    public DbSet<Order>? Orders { get; set; }
+    public DbSet<OrderItem>? OrderItems { get; set; }
+    public DbSet<Payment>? Payments { get; set; }
+    public DbSet<Post>? Posts { get; set; }
+    public DbSet<PostComment>? PostComments { get; set; }
+    public DbSet<PostReaction>? PostReactions { get; set; }
+    public DbSet<PostBookmark>? PostBookmarks { get; set; }
+    public DbSet<Conversation>? Conversations { get; set; }
+    public DbSet<ConversationParticipant>? ConversationParticipants { get; set; }
+    public DbSet<ConversationMessage>? ConversationMessages { get; set; }
+    public DbSet<Refund>? Refunds { get; set; }
+    public DbSet<CallLog>? CallLogs { get; set; }
+    public DbSet<CallParticipant>? CallParticipants { get; set; }
+    public DbSet<UserFollower>? UserFollowers { get; set; }
+    public DbSet<Report>? Reports { get; set; }
+    public DbSet<UserBlock>? UserBlocks { get; set; }
+    public DbSet<PrintArea>? PrintAreas { get; set; }
 
     // New community feature DbSets
-    public DbSet<Tag> Tags { get; set; }
-    public DbSet<PostTag> PostTags { get; set; }
-    public DbSet<CommentReaction> CommentReactions { get; set; }
-    public DbSet<PostShare> PostShares { get; set; }
-    public DbSet<UserMute> UserMutes { get; set; }
-    public DbSet<FollowRequest> FollowRequests { get; set; }
-    public DbSet<PushToken> PushTokens { get; set; }
-    public DbSet<NotificationPreference> NotificationPreferences { get; set; }
-    public DbSet<PostView> PostViews { get; set; }
+    public DbSet<Tag>? Tags { get; set; }
+    public DbSet<PostTag>? PostTags { get; set; }
+    public DbSet<CommentReaction>? CommentReactions { get; set; }
+    public DbSet<PostShare>? PostShares { get; set; }
+    public DbSet<UserMute>? UserMutes { get; set; }
+    public DbSet<FollowRequest>? FollowRequests { get; set; }
+    public DbSet<PushToken>? PushTokens { get; set; }
+    public DbSet<NotificationPreference>? NotificationPreferences { get; set; }
+    public DbSet<PostView>? PostViews { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder options)
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        if (!options.IsConfigured)
-            options.UseDatabase();
+        if (!optionsBuilder.IsConfigured)
+            optionsBuilder.UseDatabase();
     }
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    protected override void OnModelCreating(ModelBuilder builder)
     {
-        base.OnModelCreating(modelBuilder);
+        base.OnModelCreating(builder);
 
         // Broadcast relationships
-        modelBuilder
+        builder
             .Entity<Broadcast>()
             .HasOne(b => b.Sender)
             .WithMany()
@@ -65,14 +65,14 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .OnDelete(DeleteBehavior.Restrict);
 
         // Notification relationships
-        modelBuilder
+        builder
             .Entity<Notification>()
             .HasOne(n => n.User)
             .WithMany()
             .HasForeignKey(n => n.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder
+        builder
             .Entity<Notification>()
             .HasOne(n => n.Conversation)
             .WithMany()
@@ -80,7 +80,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .OnDelete(DeleteBehavior.SetNull);
 
         // Index for faster queries
-        modelBuilder
+        builder
             .Entity<Notification>()
             .HasIndex(n => new
             {
@@ -89,26 +89,26 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
                 n.IsDeleted,
             });
 
-        modelBuilder.Entity<Notification>().HasIndex(n => n.CreatedAt);
-        modelBuilder.Entity<Notification>().HasIndex(n => n.CreatedAt);
+        builder.Entity<Notification>().HasIndex(n => n.CreatedAt);
+        builder.Entity<Notification>().HasIndex(n => n.CreatedAt);
 
-        modelBuilder
+        builder
             .Entity<Product>()
             .HasMany(p => p.Variants)
             .WithOne(v => v.Product)
             .HasForeignKey(v => v.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder
+        builder
             .Entity<Product>()
             .HasMany(p => p.PrintAreas)
             .WithOne(pa => pa.Product)
             .HasForeignKey(pa => pa.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<PrintArea>().HasIndex(pa => new { pa.ProductId, pa.AreaId }).IsUnique();
+        builder.Entity<PrintArea>().HasIndex(pa => new { pa.ProductId, pa.AreaId }).IsUnique();
 
-        modelBuilder
+        builder
             .Entity<ProductVariant>()
             .HasOne(v => v.Inventory)
             .WithOne(i => i.Variant)
@@ -117,7 +117,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .OnDelete(DeleteBehavior.Cascade);
 
         // Unique constraint to prevent duplicate variants (same product, size, color)
-        modelBuilder
+        builder
             .Entity<ProductVariant>()
             .HasIndex(v => new
             {
@@ -128,17 +128,17 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .IsUnique();
 
         // Index for querying active products
-        modelBuilder.Entity<Product>().HasIndex(p => p.IsActive);
+        builder.Entity<Product>().HasIndex(p => p.IsActive);
 
         // Order relationships
-        modelBuilder
+        builder
             .Entity<Order>()
             .HasOne(o => o.User)
             .WithMany()
             .HasForeignKey(o => o.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder
+        builder
             .Entity<Order>()
             .HasMany(o => o.Items)
             .WithOne(i => i.Order)
@@ -146,7 +146,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .OnDelete(DeleteBehavior.Cascade);
 
         // OrderItem relationships
-        modelBuilder
+        builder
             .Entity<OrderItem>()
             .HasOne(i => i.Variant)
             .WithMany()
@@ -154,7 +154,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .OnDelete(DeleteBehavior.Restrict);
 
         // OrderItem -> Imprint relationship (nullable - only for customized products)
-        modelBuilder
+        builder
             .Entity<OrderItem>()
             .HasOne(i => i.Imprint)
             .WithMany()
@@ -162,7 +162,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .OnDelete(DeleteBehavior.SetNull);
 
         // Imprint -> Product relationship (optional association)
-        modelBuilder
+        builder
             .Entity<Imprint>()
             .HasOne(i => i.Product)
             .WithMany()
@@ -170,18 +170,18 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .OnDelete(DeleteBehavior.SetNull);
 
         // Index for OrderItem imprint queries
-        modelBuilder.Entity<OrderItem>().HasIndex(i => i.ImprintId);
+        builder.Entity<OrderItem>().HasIndex(i => i.ImprintId);
 
         // Index for Imprint product queries
-        modelBuilder.Entity<Imprint>().HasIndex(i => i.ProductId);
+        builder.Entity<Imprint>().HasIndex(i => i.ProductId);
 
         // Index for querying orders by user and status
-        modelBuilder.Entity<Order>().HasIndex(o => o.UserId);
-        modelBuilder.Entity<Order>().HasIndex(o => o.Status);
-        modelBuilder.Entity<Order>().HasIndex(o => o.CreatedAt);
+        builder.Entity<Order>().HasIndex(o => o.UserId);
+        builder.Entity<Order>().HasIndex(o => o.Status);
+        builder.Entity<Order>().HasIndex(o => o.CreatedAt);
 
         // Payment relationships (1:1 with Order)
-        modelBuilder
+        builder
             .Entity<Payment>()
             .HasOne(p => p.Order)
             .WithOne()
@@ -189,46 +189,46 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .OnDelete(DeleteBehavior.Restrict);
 
         // Unique constraints for Payment
-        modelBuilder.Entity<Payment>().HasIndex(p => p.OrderId).IsUnique();
-        modelBuilder.Entity<Payment>().HasIndex(p => p.StripeCheckoutSessionId).IsUnique();
-        modelBuilder.Entity<Payment>().HasIndex(p => p.Status);
+        builder.Entity<Payment>().HasIndex(p => p.OrderId).IsUnique();
+        builder.Entity<Payment>().HasIndex(p => p.StripeCheckoutSessionId).IsUnique();
+        builder.Entity<Payment>().HasIndex(p => p.Status);
 
-        modelBuilder.Entity<Post>().HasOne(p => p.Author).WithMany().HasForeignKey(p => p.AuthorId).IsRequired();
+        builder.Entity<Post>().HasOne(p => p.Author).WithMany().HasForeignKey(p => p.AuthorId).IsRequired();
 
-        modelBuilder.Entity<Post>().HasOne(p => p.Photo).WithMany().HasForeignKey(p => p.PhotoId).IsRequired();
+        builder.Entity<Post>().HasOne(p => p.Photo).WithMany().HasForeignKey(p => p.PhotoId).IsRequired();
 
-        modelBuilder
+        builder
             .Entity<PostReaction>()
             .HasOne(pr => pr.Post)
             .WithMany(p => p.Reactions)
             .HasForeignKey(pr => pr.PostId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder
+        builder
             .Entity<PostReaction>()
             .HasOne(pr => pr.User)
             .WithMany()
             .HasForeignKey(pr => pr.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<PostReaction>().HasIndex(pr => new { pr.PostId, pr.UserId }).IsUnique();
+        builder.Entity<PostReaction>().HasIndex(pr => new { pr.PostId, pr.UserId }).IsUnique();
 
         // PostComment relationships
-        modelBuilder
+        builder
             .Entity<PostComment>()
             .HasOne(pc => pc.Post)
             .WithMany(p => p.Comments)
             .HasForeignKey(pc => pc.PostId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder
+        builder
             .Entity<PostComment>()
             .HasOne(pc => pc.Author)
             .WithMany()
             .HasForeignKey(pc => pc.AuthorId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder
+        builder
             .Entity<PostComment>()
             .HasOne(pc => pc.Parent)
             .WithMany(pc => pc.Replies)
@@ -236,102 +236,102 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .OnDelete(DeleteBehavior.Restrict);
 
         // PostBookmark relationships
-        modelBuilder
+        builder
             .Entity<PostBookmark>()
             .HasOne(pb => pb.Post)
             .WithMany(p => p.Bookmarks)
             .HasForeignKey(pb => pb.PostId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder
+        builder
             .Entity<PostBookmark>()
             .HasOne(pb => pb.User)
             .WithMany()
             .HasForeignKey(pb => pb.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<PostBookmark>().HasIndex(pb => new { pb.PostId, pb.UserId }).IsUnique();
+        builder.Entity<PostBookmark>().HasIndex(pb => new { pb.PostId, pb.UserId }).IsUnique();
 
         // Indexes for Post queries
-        modelBuilder.Entity<Post>().HasIndex(p => p.AuthorId);
-        modelBuilder.Entity<Post>().HasIndex(p => p.PostStatus);
-        modelBuilder.Entity<Post>().HasIndex(p => p.Visibility);
-        modelBuilder.Entity<Post>().HasIndex(p => p.CreatedAt);
+        builder.Entity<Post>().HasIndex(p => p.AuthorId);
+        builder.Entity<Post>().HasIndex(p => p.PostStatus);
+        builder.Entity<Post>().HasIndex(p => p.Visibility);
+        builder.Entity<Post>().HasIndex(p => p.CreatedAt);
 
         // Index for PostComment queries
-        modelBuilder.Entity<PostComment>().HasIndex(pc => pc.PostId);
-        modelBuilder.Entity<PostComment>().HasIndex(pc => pc.AuthorId);
+        builder.Entity<PostComment>().HasIndex(pc => pc.PostId);
+        builder.Entity<PostComment>().HasIndex(pc => pc.AuthorId);
 
         // Conversations
-        modelBuilder
+        builder
             .Entity<ConversationParticipant>()
             .HasOne(cp => cp.Conversation)
             .WithMany(c => c.Participants)
             .HasForeignKey(cp => cp.ConversationId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder
+        builder
             .Entity<ConversationParticipant>()
             .HasOne(cp => cp.User)
             .WithMany()
             .HasForeignKey(cp => cp.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder.Entity<ConversationParticipant>().HasIndex(cp => new { cp.ConversationId, cp.UserId }).IsUnique();
+        builder.Entity<ConversationParticipant>().HasIndex(cp => new { cp.ConversationId, cp.UserId }).IsUnique();
 
-        modelBuilder
+        builder
             .Entity<ConversationMessage>()
             .HasOne(cm => cm.Conversation)
             .WithMany(c => c.Messages)
             .HasForeignKey(cm => cm.ConversationId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder
+        builder
             .Entity<ConversationMessage>()
             .HasOne(cm => cm.Participant)
             .WithMany()
             .HasForeignKey(cm => cm.ParticipantId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder
+        builder
             .Entity<ConversationMessage>()
             .HasOne(cm => cm.ReplyToMessage)
             .WithMany()
             .HasForeignKey(cm => cm.ReplyToMessageId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        modelBuilder.Entity<ConversationMessage>().HasIndex(cm => cm.CreatedAt);
+        builder.Entity<ConversationMessage>().HasIndex(cm => cm.CreatedAt);
 
         // Refund relationships
-        modelBuilder
+        builder
             .Entity<Refund>()
             .HasOne(r => r.Payment)
             .WithMany()
             .HasForeignKey(r => r.PaymentId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder
+        builder
             .Entity<Refund>()
             .HasOne(r => r.Order)
             .WithMany()
             .HasForeignKey(r => r.OrderId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder
+        builder
             .Entity<Refund>()
             .HasOne(r => r.RequestedByUser)
             .WithMany()
             .HasForeignKey(r => r.RequestedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder
+        builder
             .Entity<Refund>()
             .HasOne(r => r.ProcessedByUser)
             .WithMany()
             .HasForeignKey(r => r.ProcessedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder
+        builder
             .Entity<Refund>()
             .HasOne(r => r.Conversation)
             .WithMany()
@@ -339,22 +339,22 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .OnDelete(DeleteBehavior.SetNull);
 
         // Refund indexes
-        modelBuilder.Entity<Refund>().HasIndex(r => r.PaymentId);
-        modelBuilder.Entity<Refund>().HasIndex(r => r.OrderId);
-        modelBuilder.Entity<Refund>().HasIndex(r => r.RequestedByUserId);
-        modelBuilder.Entity<Refund>().HasIndex(r => r.Status);
-        modelBuilder.Entity<Refund>().HasIndex(r => r.RequestedAt);
-        modelBuilder.Entity<Refund>().HasIndex(r => r.StripeRefundId).IsUnique();
+        builder.Entity<Refund>().HasIndex(r => r.PaymentId);
+        builder.Entity<Refund>().HasIndex(r => r.OrderId);
+        builder.Entity<Refund>().HasIndex(r => r.RequestedByUserId);
+        builder.Entity<Refund>().HasIndex(r => r.Status);
+        builder.Entity<Refund>().HasIndex(r => r.RequestedAt);
+        builder.Entity<Refund>().HasIndex(r => r.StripeRefundId).IsUnique();
 
         // UserFollower relationships
-        modelBuilder
+        builder
             .Entity<UserFollower>()
             .HasOne(uf => uf.Follower)
             .WithMany(u => u.Following)
             .HasForeignKey(uf => uf.FollowerId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder
+        builder
             .Entity<UserFollower>()
             .HasOne(uf => uf.Following)
             .WithMany(u => u.Followers)
@@ -362,54 +362,54 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .OnDelete(DeleteBehavior.Cascade);
 
         // Prevent duplicate follows
-        modelBuilder.Entity<UserFollower>().HasIndex(uf => new { uf.FollowerId, uf.FollowingId }).IsUnique();
+        builder.Entity<UserFollower>().HasIndex(uf => new { uf.FollowerId, uf.FollowingId }).IsUnique();
 
         // Indexes for queries
-        modelBuilder.Entity<UserFollower>().HasIndex(uf => uf.FollowerId);
-        modelBuilder.Entity<UserFollower>().HasIndex(uf => uf.FollowingId);
+        builder.Entity<UserFollower>().HasIndex(uf => uf.FollowerId);
+        builder.Entity<UserFollower>().HasIndex(uf => uf.FollowingId);
 
         // Report relationships
-        modelBuilder
+        builder
             .Entity<Report>()
             .HasOne(r => r.Reporter)
             .WithMany()
             .HasForeignKey(r => r.ReporterId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder
+        builder
             .Entity<Report>()
             .HasOne(r => r.ReportedUser)
             .WithMany()
             .HasForeignKey(r => r.ReportedUserId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        modelBuilder
+        builder
             .Entity<Report>()
             .HasOne(r => r.ReviewedBy)
             .WithMany()
             .HasForeignKey(r => r.ReviewedById)
             .OnDelete(DeleteBehavior.SetNull);
 
-        modelBuilder
+        builder
             .Entity<Report>()
             .HasOne(r => r.Post)
             .WithMany()
             .HasForeignKey(r => r.PostId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        modelBuilder
+        builder
             .Entity<Report>()
             .HasOne(r => r.ReportedComment)
             .WithMany()
             .HasForeignKey(r => r.CommentId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        modelBuilder.Entity<Report>().HasIndex(r => r.Status);
-        modelBuilder.Entity<Report>().HasIndex(r => r.ReportType);
-        modelBuilder.Entity<Report>().HasIndex(r => r.ReporterId);
+        builder.Entity<Report>().HasIndex(r => r.Status);
+        builder.Entity<Report>().HasIndex(r => r.ReportType);
+        builder.Entity<Report>().HasIndex(r => r.ReporterId);
 
         // Asset relationships
-        modelBuilder
+        builder
             .Entity<Asset>()
             .HasOne(a => a.User)
             .WithMany()
@@ -417,24 +417,24 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .OnDelete(DeleteBehavior.SetNull);
 
         // User avatar relationship (separate from Asset.User)
-        modelBuilder
+        builder
             .Entity<User>()
             .HasOne(u => u.Avatar)
             .WithMany()
             .HasForeignKey(u => u.AvatarId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        modelBuilder.Entity<User>().HasIndex(u => u.AvatarId);
+        builder.Entity<User>().HasIndex(u => u.AvatarId);
 
         // UserBlock relationships
-        modelBuilder
+        builder
             .Entity<UserBlock>()
             .HasOne(b => b.Blocker)
             .WithMany()
             .HasForeignKey(b => b.BlockerId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder
+        builder
             .Entity<UserBlock>()
             .HasOne(b => b.Blocked)
             .WithMany()
@@ -442,24 +442,24 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .OnDelete(DeleteBehavior.Cascade);
 
         // Prevent duplicate blocks
-        modelBuilder.Entity<UserBlock>().HasIndex(b => new { b.BlockerId, b.BlockedId }).IsUnique();
-        modelBuilder.Entity<UserBlock>().HasIndex(b => b.BlockerId);
-        modelBuilder.Entity<UserBlock>().HasIndex(b => b.BlockedId);
+        builder.Entity<UserBlock>().HasIndex(b => new { b.BlockerId, b.BlockedId }).IsUnique();
+        builder.Entity<UserBlock>().HasIndex(b => b.BlockerId);
+        builder.Entity<UserBlock>().HasIndex(b => b.BlockedId);
 
         // ============ New Community Feature Config ============
 
         // Tag - unique name
-        modelBuilder.Entity<Tag>().HasIndex(t => t.Name).IsUnique();
+        builder.Entity<Tag>().HasIndex(t => t.Name).IsUnique();
 
         // PostTag - composite key join table
-        modelBuilder.Entity<PostTag>().HasKey(pt => new { pt.PostId, pt.TagId });
-        modelBuilder
+        builder.Entity<PostTag>().HasKey(pt => new { pt.PostId, pt.TagId });
+        builder
             .Entity<PostTag>()
             .HasOne(pt => pt.Post)
             .WithMany(p => p.Tags)
             .HasForeignKey(pt => pt.PostId)
             .OnDelete(DeleteBehavior.Cascade);
-        modelBuilder
+        builder
             .Entity<PostTag>()
             .HasOne(pt => pt.Tag)
             .WithMany(t => t.PostTags)
@@ -467,105 +467,105 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : Identi
             .OnDelete(DeleteBehavior.Cascade);
 
         // CommentReaction relationships
-        modelBuilder
+        builder
             .Entity<CommentReaction>()
             .HasOne(cr => cr.Comment)
             .WithMany(c => c.CommentReactions)
             .HasForeignKey(cr => cr.CommentId)
             .OnDelete(DeleteBehavior.Cascade);
-        modelBuilder
+        builder
             .Entity<CommentReaction>()
             .HasOne(cr => cr.User)
             .WithMany()
             .HasForeignKey(cr => cr.UserId)
             .OnDelete(DeleteBehavior.Cascade);
-        modelBuilder.Entity<CommentReaction>().HasIndex(cr => new { cr.CommentId, cr.UserId }).IsUnique();
+        builder.Entity<CommentReaction>().HasIndex(cr => new { cr.CommentId, cr.UserId }).IsUnique();
 
         // PostShare relationships
-        modelBuilder
+        builder
             .Entity<PostShare>()
             .HasOne(ps => ps.Post)
             .WithMany(p => p.Shares)
             .HasForeignKey(ps => ps.PostId)
             .OnDelete(DeleteBehavior.Cascade);
-        modelBuilder
+        builder
             .Entity<PostShare>()
             .HasOne(ps => ps.User)
             .WithMany()
             .HasForeignKey(ps => ps.UserId)
             .OnDelete(DeleteBehavior.Cascade);
-        modelBuilder.Entity<PostShare>().HasIndex(ps => ps.PostId);
+        builder.Entity<PostShare>().HasIndex(ps => ps.PostId);
 
         // UserMute relationships
-        modelBuilder
+        builder
             .Entity<UserMute>()
             .HasOne(um => um.Muter)
             .WithMany()
             .HasForeignKey(um => um.MuterId)
             .OnDelete(DeleteBehavior.Cascade);
-        modelBuilder
+        builder
             .Entity<UserMute>()
             .HasOne(um => um.Muted)
             .WithMany()
             .HasForeignKey(um => um.MutedId)
             .OnDelete(DeleteBehavior.Cascade);
-        modelBuilder.Entity<UserMute>().HasIndex(um => new { um.MuterId, um.MutedId }).IsUnique();
-        modelBuilder.Entity<UserMute>().HasIndex(um => um.MuterId);
+        builder.Entity<UserMute>().HasIndex(um => new { um.MuterId, um.MutedId }).IsUnique();
+        builder.Entity<UserMute>().HasIndex(um => um.MuterId);
 
         // FollowRequest relationships
-        modelBuilder
+        builder
             .Entity<FollowRequest>()
             .HasOne(fr => fr.Requester)
             .WithMany()
             .HasForeignKey(fr => fr.RequesterId)
             .OnDelete(DeleteBehavior.Cascade);
-        modelBuilder
+        builder
             .Entity<FollowRequest>()
             .HasOne(fr => fr.Target)
             .WithMany()
             .HasForeignKey(fr => fr.TargetId)
             .OnDelete(DeleteBehavior.Cascade);
-        modelBuilder.Entity<FollowRequest>().HasIndex(fr => new { fr.RequesterId, fr.TargetId }).IsUnique();
-        modelBuilder.Entity<FollowRequest>().HasIndex(fr => fr.TargetId);
+        builder.Entity<FollowRequest>().HasIndex(fr => new { fr.RequesterId, fr.TargetId }).IsUnique();
+        builder.Entity<FollowRequest>().HasIndex(fr => fr.TargetId);
 
         // PushToken relationships
-        modelBuilder
+        builder
             .Entity<PushToken>()
             .HasOne(pt => pt.User)
             .WithMany()
             .HasForeignKey(pt => pt.UserId)
             .OnDelete(DeleteBehavior.Cascade);
-        modelBuilder.Entity<PushToken>().HasIndex(pt => pt.Token).IsUnique();
-        modelBuilder.Entity<PushToken>().HasIndex(pt => pt.UserId);
+        builder.Entity<PushToken>().HasIndex(pt => pt.Token).IsUnique();
+        builder.Entity<PushToken>().HasIndex(pt => pt.UserId);
 
         // NotificationPreference relationships
-        modelBuilder
+        builder
             .Entity<NotificationPreference>()
             .HasOne(np => np.User)
             .WithMany()
             .HasForeignKey(np => np.UserId)
             .OnDelete(DeleteBehavior.Cascade);
-        modelBuilder.Entity<NotificationPreference>().HasIndex(np => new { np.UserId, np.Type }).IsUnique();
+        builder.Entity<NotificationPreference>().HasIndex(np => new { np.UserId, np.Type }).IsUnique();
 
         // PostView relationships
-        modelBuilder
+        builder
             .Entity<PostView>()
             .HasOne(pv => pv.Post)
             .WithMany(p => p.Views)
             .HasForeignKey(pv => pv.PostId)
             .OnDelete(DeleteBehavior.Cascade);
-        modelBuilder
+        builder
             .Entity<PostView>()
             .HasOne(pv => pv.User)
             .WithMany()
             .HasForeignKey(pv => pv.UserId)
             .OnDelete(DeleteBehavior.SetNull);
-        modelBuilder.Entity<PostView>().HasIndex(pv => pv.PostId);
-        modelBuilder.Entity<PostView>().HasIndex(pv => new { pv.PostId, pv.UserId });
-        modelBuilder.Entity<PostView>().HasIndex(pv => pv.CreatedAt);
+        builder.Entity<PostView>().HasIndex(pv => pv.PostId);
+        builder.Entity<PostView>().HasIndex(pv => new { pv.PostId, pv.UserId });
+        builder.Entity<PostView>().HasIndex(pv => pv.CreatedAt);
 
         // Post pinned index
-        modelBuilder.Entity<Post>().HasIndex(p => new { p.AuthorId, p.IsPinned });
+        builder.Entity<Post>().HasIndex(p => new { p.AuthorId, p.IsPinned });
     }
 
     public override int SaveChanges()

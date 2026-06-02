@@ -1,5 +1,6 @@
 import * as THREE from "three";
-import type { DetectedPrintArea } from "../types";
+
+import type { DetectedPrintArea } from "../-types";
 
 // Naming conventions for print area detection
 const PRINT_AREA_PATTERNS = [

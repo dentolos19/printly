@@ -1,5 +1,3 @@
-"use client";
-
 import {
   ArrowDown,
   ArrowUp,
@@ -17,6 +15,7 @@ import {
   Unlock,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "#/components/ui/collapsible";
@@ -28,7 +27,8 @@ import { Separator } from "#/components/ui/separator";
 import { Slider } from "#/components/ui/slider";
 import { cn } from "#/lib/utils";
 import { FallbackImage } from "#/routes/(tools)/-shared/components/fallback-image";
-import type { PrintArea } from "../../types";
+
+import type { PrintArea } from "../../-types";
 import { useImprinter } from "../hooks/use-imprinter";
 
 type RightPanelProps = {
@@ -125,7 +125,7 @@ function PanelHeader() {
     <div className="flex h-10 shrink-0 items-center justify-between border-b px-3">
       <div className="flex items-center gap-2">
         <Settings className="h-4 w-4" />
-        <span className="font-medium text-sm">Properties</span>
+        <span className="text-sm font-medium">Properties</span>
       </div>
     </div>
   );
@@ -146,10 +146,10 @@ function PrintAreaSection({ open, onOpenChange }: PrintAreaSectionProps) {
 
   return (
     <Collapsible onOpenChange={onOpenChange} open={open}>
-      <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md p-2 hover:bg-accent">
+      <CollapsibleTrigger className="hover:bg-accent flex w-full items-center justify-between rounded-md p-2">
         <div className="flex items-center gap-2">
           <MapPin className="h-4 w-4" />
-          <span className="font-medium text-sm">Print Area</span>
+          <span className="text-sm font-medium">Print Area</span>
         </div>
         {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
       </CollapsibleTrigger>
@@ -193,7 +193,7 @@ function PrintAreaSection({ open, onOpenChange }: PrintAreaSectionProps) {
                   Free
                 </Button>
               </div>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-muted-foreground text-[10px]">
                 {placementMode === "zone"
                   ? "Designs snap to the active print area zone."
                   : "Click anywhere on the model to place a design."}
@@ -261,10 +261,10 @@ function AppliedDesignsSection({ open, onOpenChange }: AppliedDesignsSectionProp
 
   return (
     <Collapsible onOpenChange={onOpenChange} open={open}>
-      <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md p-2 hover:bg-accent">
+      <CollapsibleTrigger className="hover:bg-accent flex w-full items-center justify-between rounded-md p-2">
         <div className="flex items-center gap-2">
           <Layers className="h-4 w-4" />
-          <span className="font-medium text-sm">Layers</span>
+          <span className="text-sm font-medium">Layers</span>
           <span className="text-muted-foreground text-xs">({appliedDesigns.length})</span>
         </div>
         {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -322,7 +322,7 @@ function AppliedDesignsSection({ open, onOpenChange }: AppliedDesignsSectionProp
                       />
                     ) : (
                       <span
-                        className="w-full truncate text-left font-medium text-xs"
+                        className="w-full truncate text-left text-xs font-medium"
                         onDoubleClick={(e) => {
                           e.stopPropagation();
                           startRenaming(design.id, design.name || design.designData.name);
@@ -426,10 +426,10 @@ function TransformSection({ open, onOpenChange }: TransformSectionProps) {
   if (!selectedDesign) {
     return (
       <Collapsible onOpenChange={onOpenChange} open={open}>
-        <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md p-2 hover:bg-accent">
+        <CollapsibleTrigger className="hover:bg-accent flex w-full items-center justify-between rounded-md p-2">
           <div className="flex items-center gap-2">
             <RotateCcw className="h-4 w-4" />
-            <span className="font-medium text-sm">Transform</span>
+            <span className="text-sm font-medium">Transform</span>
           </div>
           {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         </CollapsibleTrigger>
@@ -444,11 +444,11 @@ function TransformSection({ open, onOpenChange }: TransformSectionProps) {
 
   return (
     <Collapsible onOpenChange={onOpenChange} open={open}>
-      <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md p-2 hover:bg-accent">
+      <CollapsibleTrigger className="hover:bg-accent flex w-full items-center justify-between rounded-md p-2">
         <div className="flex items-center gap-2">
           <RotateCcw className="h-4 w-4" />
-          <span className="font-medium text-sm">Transform</span>
-          {isLocked && <Lock className="h-3 w-3 text-muted-foreground" />}
+          <span className="text-sm font-medium">Transform</span>
+          {isLocked && <Lock className="text-muted-foreground h-3 w-3" />}
         </div>
         {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
       </CollapsibleTrigger>
@@ -476,7 +476,7 @@ function TransformSection({ open, onOpenChange }: TransformSectionProps) {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-xs">Position X</Label>
-            <span className="text-[10px] text-muted-foreground">{selectedDesign.transform.position[0].toFixed(2)}</span>
+            <span className="text-muted-foreground text-[10px]">{selectedDesign.transform.position[0].toFixed(2)}</span>
           </div>
           <Slider
             disabled={isLocked}
@@ -495,7 +495,7 @@ function TransformSection({ open, onOpenChange }: TransformSectionProps) {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-xs">Position Y</Label>
-            <span className="text-[10px] text-muted-foreground">{selectedDesign.transform.position[1].toFixed(2)}</span>
+            <span className="text-muted-foreground text-[10px]">{selectedDesign.transform.position[1].toFixed(2)}</span>
           </div>
           <Slider
             disabled={isLocked}
@@ -514,7 +514,7 @@ function TransformSection({ open, onOpenChange }: TransformSectionProps) {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-xs">Scale</Label>
-            <span className="text-[10px] text-muted-foreground">{selectedDesign.transform.scale[0].toFixed(1)}x</span>
+            <span className="text-muted-foreground text-[10px]">{selectedDesign.transform.scale[0].toFixed(1)}x</span>
           </div>
           <Slider
             disabled={isLocked}
@@ -533,7 +533,7 @@ function TransformSection({ open, onOpenChange }: TransformSectionProps) {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-xs">Rotation</Label>
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-muted-foreground text-[10px]">
               {Math.round(selectedDesign.transform.rotation[2])}°
             </span>
           </div>
@@ -554,7 +554,7 @@ function TransformSection({ open, onOpenChange }: TransformSectionProps) {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-xs">Opacity</Label>
-            <span className="text-[10px] text-muted-foreground">{Math.round(selectedDesign.opacity * 100)}%</span>
+            <span className="text-muted-foreground text-[10px]">{Math.round(selectedDesign.opacity * 100)}%</span>
           </div>
           <Slider
             disabled={isLocked}

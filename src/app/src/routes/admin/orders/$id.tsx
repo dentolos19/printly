@@ -1,7 +1,4 @@
-"use client";
-
-import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
-import { Image } from "@unpic/react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
   ArrowRight,
@@ -22,6 +19,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
@@ -78,14 +76,18 @@ function OrderItemCard({ item }: { item: OrderItemResponse }) {
   const hasCustomization = item.customizationPrice > 0;
 
   return (
-    <div className="flex gap-4 rounded-xl border bg-card p-4 shadow-sm transition-shadow hover:shadow-md">
+    <div className="bg-card flex gap-4 rounded-xl border p-4 shadow-sm transition-shadow hover:shadow-md">
       {/* Product Image */}
       <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
         {item.productImageUrl ? (
-          <Image alt={item.productName} className="object-contain p-1" fill src={item.productImageUrl} />
+          <img
+            alt={item.productName}
+            className="absolute inset-0 size-full object-contain p-1"
+            src={item.productImageUrl}
+          />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <Package className="h-12 w-12 text-muted-foreground" />
+            <Package className="text-muted-foreground h-12 w-12" />
           </div>
         )}
       </div>
@@ -93,12 +95,12 @@ function OrderItemCard({ item }: { item: OrderItemResponse }) {
       <div className="flex flex-1 flex-col justify-between">
         {/* Product Info */}
         <div>
-          <h3 className="font-semibold text-lg">{item.productName}</h3>
+          <h3 className="text-lg font-semibold">{item.productName}</h3>
           <p className="text-muted-foreground text-sm">
             {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]} • {item.color}
           </p>
-          <p className="mt-1 text-muted-foreground text-sm">Qty: {item.quantity}</p>
-          <p className="mt-1 font-mono text-muted-foreground text-xs">Variant: {item.variantId.slice(0, 8)}...</p>
+          <p className="text-muted-foreground mt-1 text-sm">Qty: {item.quantity}</p>
+          <p className="text-muted-foreground mt-1 font-mono text-xs">Variant: {item.variantId.slice(0, 8)}...</p>
         </div>
 
         {/* Imprint Badge & View Design CTA */}
@@ -106,17 +108,19 @@ function OrderItemCard({ item }: { item: OrderItemResponse }) {
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1 dark:bg-blue-900/50">
               <Paintbrush className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-              <span className="font-medium text-blue-700 text-sm dark:text-blue-300">
+              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
                 {item.imprintName || "Custom Design"}
               </span>
             </div>
-            <Button asChild className="h-7 bg-blue-600 hover:bg-blue-700" size="sm" variant="default">
-              <Link target="_blank" to={`/imprinter/${item.imprintId}`}>
-                View Design
-                <ArrowRight className="ml-1 h-3 w-3" />
-              </Link>
-            </Button>
-            <span className="font-mono text-muted-foreground text-xs">ID: {item.imprintId?.slice(0, 8)}...</span>
+            {item.imprintId && (
+              <Button asChild className="h-7 bg-blue-600 hover:bg-blue-700" size="sm" variant="default">
+                <Link params={{ id: item.imprintId }} target="_blank" to="/imprinter/$id">
+                  View Design
+                  <ArrowRight className="ml-1 h-3 w-3" />
+                </Link>
+              </Button>
+            )}
+            <span className="text-muted-foreground font-mono text-xs">ID: {item.imprintId?.slice(0, 8)}...</span>
           </div>
         )}
 
@@ -128,7 +132,7 @@ function OrderItemCard({ item }: { item: OrderItemResponse }) {
               <span className="text-blue-600 dark:text-blue-400"> + ${item.customizationPrice.toFixed(2)} custom</span>
             )}
           </div>
-          <span className="font-bold text-xl">${item.subtotal.toFixed(2)}</span>
+          <span className="text-xl font-bold">${item.subtotal.toFixed(2)}</span>
         </div>
       </div>
     </div>
@@ -253,10 +257,9 @@ export const Route = createFileRoute("/admin/orders/$id")({
 });
 
 function AdminOrderDetailsPage() {
-  const params = useParams();
   const navigate = useNavigate();
   const { api } = useServer();
-  const orderId = params?.id as string;
+  const orderId = Route.useParams().id;
 
   const [order, setOrder] = useState<OrderResponse | null>(null);
   const [refund, setRefund] = useState<RefundResponse | null>(null);
@@ -339,7 +342,7 @@ function AdminOrderDetailsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-6">
+      <div className="bg-background min-h-screen p-6">
         <div className="mx-auto max-w-7xl space-y-6">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-16 w-full" />
@@ -357,11 +360,11 @@ function AdminOrderDetailsPage() {
 
   if (!order) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-6">
+      <div className="bg-background flex min-h-screen items-center justify-center p-6">
         <div className="text-center">
-          <Package className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-          <h2 className="mb-2 font-bold text-2xl">Order not found</h2>
-          <p className="mb-6 text-muted-foreground">The order you&apos;re looking for doesn&apos;t exist.</p>
+          <Package className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
+          <h2 className="mb-2 text-2xl font-bold">Order not found</h2>
+          <p className="text-muted-foreground mb-6">The order you&apos;re looking for doesn&apos;t exist.</p>
           <Button asChild>
             <Link to="/admin/orders">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -379,9 +382,9 @@ function AdminOrderDetailsPage() {
   const customizationTotal = order.items.reduce((sum, item) => sum + item.customizationPrice * item.quantity, 0);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background min-h-screen">
       {/* Header */}
-      <div className="border-b bg-card">
+      <div className="bg-card border-b">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
             <Button asChild size="icon" variant="ghost">
@@ -391,7 +394,7 @@ function AdminOrderDetailsPage() {
             </Button>
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="font-bold text-2xl">Order #{order.id.slice(0, 8)}</h1>
+                <h1 className="text-2xl font-bold">Order #{order.id.slice(0, 8)}</h1>
                 <Badge className={`${OrderStatusColors[order.status]} text-sm`}>
                   {OrderStatusLabels[order.status]}
                 </Badge>
@@ -459,7 +462,7 @@ function AdminOrderDetailsPage() {
                   </div>
                   {refund.customerNotes && (
                     <div className="rounded-lg bg-yellow-100 p-2 dark:bg-yellow-900/30">
-                      <span className="font-medium text-xs">Customer Notes:</span>
+                      <span className="text-xs font-medium">Customer Notes:</span>
                       <p className="text-sm">{refund.customerNotes}</p>
                     </div>
                   )}
@@ -475,7 +478,7 @@ function AdminOrderDetailsPage() {
 
             {/* Order Items */}
             <div>
-              <h2 className="mb-4 font-semibold text-lg">Order Items ({order.items.length})</h2>
+              <h2 className="mb-4 text-lg font-semibold">Order Items ({order.items.length})</h2>
               <div className="space-y-4">
                 {order.items.map((item) => (
                   <OrderItemCard item={item} key={item.id} />
@@ -504,7 +507,7 @@ function AdminOrderDetailsPage() {
                   <span className="text-green-600 dark:text-green-400">Free</span>
                 </div>
                 <Separator />
-                <div className="flex justify-between font-bold text-xl">
+                <div className="flex justify-between text-xl font-bold">
                   <span>Total</span>
                   <span className="text-primary">${order.totalAmount.toFixed(2)}</span>
                 </div>
@@ -521,17 +524,17 @@ function AdminOrderDetailsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-full bg-primary/10 p-2">
-                    <Package className="h-4 w-4 text-primary" />
+                  <div className="bg-primary/10 rounded-full p-2">
+                    <Package className="text-primary h-4 w-4" />
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs">Order Number</p>
-                    <p className="font-medium font-mono">#{order.id.slice(0, 8)}</p>
+                    <p className="font-mono font-medium">#{order.id.slice(0, 8)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="rounded-full bg-primary/10 p-2">
-                    <Calendar className="h-4 w-4 text-primary" />
+                  <div className="bg-primary/10 rounded-full p-2">
+                    <Calendar className="text-primary h-4 w-4" />
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs">Order Date</p>
@@ -545,8 +548,8 @@ function AdminOrderDetailsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="rounded-full bg-primary/10 p-2">
-                    <StatusIcon className="h-4 w-4 text-primary" />
+                  <div className="bg-primary/10 rounded-full p-2">
+                    <StatusIcon className="text-primary h-4 w-4" />
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs">Status</p>
@@ -554,8 +557,8 @@ function AdminOrderDetailsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="rounded-full bg-primary/10 p-2">
-                    <Clock className="h-4 w-4 text-primary" />
+                  <div className="bg-primary/10 rounded-full p-2">
+                    <Clock className="text-primary h-4 w-4" />
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs">Last Updated</p>
@@ -580,8 +583,8 @@ function AdminOrderDetailsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-full bg-primary/10 p-2">
-                    <User className="h-4 w-4 text-primary" />
+                  <div className="bg-primary/10 rounded-full p-2">
+                    <User className="text-primary h-4 w-4" />
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs">User ID</p>
@@ -589,8 +592,8 @@ function AdminOrderDetailsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="rounded-full bg-primary/10 p-2">
-                    <Mail className="h-4 w-4 text-primary" />
+                  <div className="bg-primary/10 rounded-full p-2">
+                    <Mail className="text-primary h-4 w-4" />
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs">Email</p>

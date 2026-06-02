@@ -1,4 +1,5 @@
-import type { ServerFetch } from "#/types";
+import type { ServerFetch } from "#/lib/types";
+
 import type { ProductSize } from "./product";
 
 // Enums matching backend

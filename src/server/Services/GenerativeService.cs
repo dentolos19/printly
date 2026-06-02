@@ -1,14 +1,16 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using PrintlyServer.Data.Entities;
 
 namespace PrintlyServer.Services;
 
-public class GenerativeService
+public class GenerativeService : IDisposable
 {
     private readonly HttpClient _http;
     private readonly StorageService _storage;
+    private readonly string _model;
+    private readonly string _imageModel;
 
     public GenerativeService(IConfiguration configuration, StorageService storage)
     {
@@ -18,6 +20,8 @@ public class GenerativeService
         var apiKey = configuration["OPENROUTER_API_KEY"]!;
         var title = configuration["OPENROUTER_TITLE"] ?? "Printly";
         var referer = configuration["OPENROUTER_REFERER"] ?? "https://dennise.me";
+        _model = configuration["OPENROUTER_MODEL"] ?? "openrouter/auto";
+        _imageModel = configuration["OPENROUTER_IMAGE_MODEL"] ?? "google/gemini-2.5-flash-image";
 
         // Initialize HTTP client
         _http = new HttpClient();
@@ -26,13 +30,15 @@ public class GenerativeService
         _http.DefaultRequestHeaders.Add("HTTP-Referer", referer);
     }
 
+    public void Dispose()
+    {
+        _http?.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
     public async Task<string> GenerateTextAsync(string prompt)
     {
-        var requestBody = new
-        {
-            model = "google/gemini-2.5-flash",
-            messages = new[] { new { role = "user", content = prompt } },
-        };
+        var requestBody = new { model = _model, messages = new[] { new { role = "user", content = prompt } } };
 
         var response = await _http.PostAsync(
             "https://openrouter.ai/api/v1/chat/completions",
@@ -40,7 +46,7 @@ public class GenerativeService
         );
 
         if (!response.IsSuccessStatusCode)
-            throw new Exception("Failed to generate text.");
+            throw new InvalidOperationException("Failed to generate text.");
 
         var responseBody = await response.Content.ReadAsStringAsync();
         var responseJson = JsonSerializer.Deserialize<JsonElement>(responseBody);
@@ -56,7 +62,7 @@ public class GenerativeService
 
         var requestBody = new
         {
-            model = "google/gemini-2.5-flash-image",
+            model = _imageModel,
             messages = new[] { new { role = "user", content = styledPrompt } },
             modalities = new[] { "image", "text" },
             stream = false,
@@ -68,7 +74,7 @@ public class GenerativeService
         );
 
         if (!response.IsSuccessStatusCode)
-            throw new Exception("Failed to generate text.");
+            throw new InvalidOperationException("Failed to generate text.");
 
         var responseBody = await response.Content.ReadAsStringAsync();
         var responseJson = JsonSerializer.Deserialize<JsonElement>(responseBody);
@@ -124,7 +130,7 @@ public class GenerativeService
 
         var requestBody = new
         {
-            model = "google/gemini-2.5-flash",
+            model = _model,
             messages = new object[]
             {
                 new { role = "system", content = systemInstruction },
@@ -149,7 +155,7 @@ public class GenerativeService
         if (!response.IsSuccessStatusCode)
         {
             var errorContent = await response.Content.ReadAsStringAsync();
-            throw new Exception($"Failed to generate caption: {errorContent}");
+            throw new InvalidOperationException($"Failed to generate caption: {errorContent}");
         }
 
         var responseBody = await response.Content.ReadAsStringAsync();
@@ -192,7 +198,7 @@ public class GenerativeService
         // Build the multimodal request with audio input for OpenRouter
         var requestBody = new
         {
-            model = "google/gemini-2.5-flash",
+            model = _model,
             messages = new object[]
             {
                 new
@@ -244,7 +250,7 @@ Format your response exactly like this:
         if (!response.IsSuccessStatusCode)
         {
             var errorBody = await response.Content.ReadAsStringAsync();
-            throw new Exception($"Failed to generate call notes: {errorBody}");
+            throw new InvalidOperationException($"Failed to generate call notes: {errorBody}");
         }
 
         var responseBody = await response.Content.ReadAsStringAsync();
@@ -324,7 +330,7 @@ Format your response exactly like this:
 
             if (process.ExitCode != 0)
             {
-                throw new Exception($"ffmpeg conversion failed (exit {process.ExitCode}): {stderr}");
+                throw new InvalidOperationException($"ffmpeg conversion failed (exit {process.ExitCode}): {stderr}");
             }
 
             // Read the converted WAV file

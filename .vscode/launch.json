@@ -12,6 +12,20 @@
         "uriFormat": "%s",
         "action": "openExternally"
       }
+    },
+    {
+      "name": "Server",
+      "request": "launch",
+      "type": "node-terminal",
+      "cwd": "${workspaceFolder}/src/server",
+      "command": "dotnet run"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "App + Server",
+      "configurations": ["App", "Server"],
+      "stopAll": true
     }
   ]
 }

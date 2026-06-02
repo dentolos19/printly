@@ -6,11 +6,11 @@ using PrintlyServer.Data.Entities;
 
 namespace PrintlyServer.Services;
 
-public class StorageService
+public class StorageService : IDisposable
 {
     private readonly DatabaseContext _context;
 
-    private readonly IAmazonS3 _client;
+    private readonly AmazonS3Client _client;
     private readonly string _bucketName;
     private readonly string _bucketPrefix;
 
@@ -41,6 +41,12 @@ public class StorageService
         // Assign bucket details
         _bucketName = bucketName;
         _bucketPrefix = bucketPrefix;
+    }
+
+    public void Dispose()
+    {
+        _client?.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     public async Task<Asset> UploadFileAsync(Stream file, string name, string? category = null)

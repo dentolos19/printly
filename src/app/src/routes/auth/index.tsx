@@ -1,5 +1,3 @@
-"use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
@@ -7,6 +5,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "#/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "#/components/ui/form";
@@ -43,7 +42,7 @@ function LoginPage() {
       await auth.login(data.email, data.password);
       toast.success("Welcome back! Logging you in...");
       navigate({ to: "/dashboard" });
-    } catch (error) {
+    } catch {
       toast.error("Invalid email or password. Please try again.");
       form.setError("root", {
         message: "Invalid credentials",
@@ -110,7 +109,7 @@ function LoginPage() {
                 <span className={"w-full border-t"} />
               </div>
               <div className={"relative flex justify-center text-xs uppercase"}>
-                <span className={"bg-card px-2 text-muted-foreground"}>Or continue with</span>
+                <span className={"bg-card text-muted-foreground px-2"}>Or continue with</span>
               </div>
             </div>
             <Button
@@ -140,9 +139,9 @@ function LoginPage() {
               </svg>
               Google
             </Button>
-            <p className={"text-center text-muted-foreground text-sm"}>
+            <p className={"text-muted-foreground text-center text-sm"}>
               Don't have an account?{" "}
-              <Link className={"font-medium underline underline-offset-4 hover:text-foreground"} to="/auth/new">
+              <Link className={"hover:text-foreground font-medium underline underline-offset-4"} to="/auth/new">
                 Sign up
               </Link>
             </p>

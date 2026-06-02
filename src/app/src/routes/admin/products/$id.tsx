@@ -1,10 +1,8 @@
-"use client";
-
-import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
-import { Image } from "@unpic/react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Box, Edit, ImageIcon, MapPin, Package, Plus, Trash2 } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,10 +41,9 @@ export const Route = createFileRoute("/admin/products/$id")({
 });
 
 function ProductDetailPage() {
-  const params = useParams();
   const navigate = useNavigate();
   const { api } = useServer();
-  const productId = params.id as string;
+  const productId = Route.useParams().id;
 
   const [product, setProduct] = useState<ProductResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -604,7 +601,7 @@ function ProductDetailPage() {
         </Button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="font-bold text-3xl">{product.name}</h1>
+            <h1 className="text-3xl font-bold">{product.name}</h1>
             <Badge variant={product.isActive ? "default" : "secondary"}>
               {product.isActive ? "Active" : "Inactive"}
             </Badge>
@@ -617,34 +614,34 @@ function ProductDetailPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="font-medium text-sm">Base Price</CardTitle>
+            <CardTitle className="text-sm font-medium">Base Price</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">${product.basePrice.toFixed(2)}</div>
+            <div className="text-2xl font-bold">${product.basePrice.toFixed(2)}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="font-medium text-sm">Variants</CardTitle>
+            <CardTitle className="text-sm font-medium">Variants</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{product.variants.length}</div>
+            <div className="text-2xl font-bold">{product.variants.length}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="font-medium text-sm">Total Stock</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Stock</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{totalStock}</div>
+            <div className="text-2xl font-bold">{totalStock}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="font-medium text-sm">Created</CardTitle>
+            <CardTitle className="text-sm font-medium">Created</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="font-medium text-lg">{new Date(product.createdAt).toLocaleDateString()}</div>
+            <div className="text-lg font-medium">{new Date(product.createdAt).toLocaleDateString()}</div>
           </CardContent>
         </Card>
       </div>
@@ -663,11 +660,11 @@ function ProductDetailPage() {
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="relative aspect-square w-full max-w-[200px] overflow-hidden rounded-lg border bg-muted">
+            <div className="bg-muted relative aspect-square w-full max-w-[200px] overflow-hidden rounded-lg border">
               {product.imageUrl ? (
-                <Image alt={product.name} className="object-cover" fill src={product.imageUrl} />
+                <img alt={product.name} className="absolute inset-0 size-full object-cover" src={product.imageUrl} />
               ) : (
-                <div className="flex h-full w-full flex-col items-center justify-center text-muted-foreground">
+                <div className="text-muted-foreground flex h-full w-full flex-col items-center justify-center">
                   <ImageIcon className="mb-2 size-8" />
                   <span className="text-sm">No image</span>
                 </div>
@@ -687,17 +684,21 @@ function ProductDetailPage() {
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="relative aspect-square w-full max-w-[200px] overflow-hidden rounded-lg border bg-muted">
+            <div className="bg-muted relative aspect-square w-full max-w-[200px] overflow-hidden rounded-lg border">
               {product.modelPreviewUrl ? (
-                <Image alt={`${product.name} 3D preview`} className="object-cover" fill src={product.modelPreviewUrl} />
+                <img
+                  alt={`${product.name} 3D preview`}
+                  className="absolute inset-0 size-full object-cover"
+                  src={product.modelPreviewUrl}
+                />
               ) : product.modelUrl ? (
                 <div className="flex h-full flex-col items-center justify-center text-center">
-                  <Box className="mx-auto mb-2 size-12 text-primary" />
-                  <span className="font-medium text-sm">3D Model uploaded</span>
-                  <p className="mt-1 text-muted-foreground text-xs">No preview available</p>
+                  <Box className="text-primary mx-auto mb-2 size-12" />
+                  <span className="text-sm font-medium">3D Model uploaded</span>
+                  <p className="text-muted-foreground mt-1 text-xs">No preview available</p>
                 </div>
               ) : (
-                <div className="flex h-full flex-col items-center justify-center text-center text-muted-foreground">
+                <div className="text-muted-foreground flex h-full flex-col items-center justify-center text-center">
                   <Box className="mx-auto mb-2 size-8" />
                   <span className="text-sm">No 3D model</span>
                 </div>
@@ -736,7 +737,7 @@ function ProductDetailPage() {
               <Skeleton className="h-10 w-full" />
             </div>
           ) : printAreas.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+            <div className="text-muted-foreground flex flex-col items-center justify-center py-8 text-center">
               <MapPin className="mb-2 size-8 opacity-50" />
               <p className="text-sm">No print areas configured</p>
               <p className="text-xs">Add print areas to enable design placement on this product</p>
@@ -813,7 +814,7 @@ function ProductDetailPage() {
             <TableBody>
               {product.variants.length === 0 ? (
                 <TableRow>
-                  <TableCell className="h-24 text-center text-muted-foreground" colSpan={7}>
+                  <TableCell className="text-muted-foreground h-24 text-center" colSpan={7}>
                     <Package className="mx-auto mb-2 size-8 opacity-50" />
                     No variants yet. Add one to get started.
                   </TableCell>
@@ -830,15 +831,14 @@ function ProductDetailPage() {
                       <TableCell>
                         {variant.imageUrl ? (
                           <div className="relative h-12 w-12 overflow-hidden rounded-md border">
-                            <Image
+                            <img
                               alt={`${product.name} - ${variant.color}`}
-                              className="object-cover"
-                              fill
+                              className="absolute inset-0 size-full object-cover"
                               src={variant.imageUrl}
                             />
                           </div>
                         ) : (
-                          <div className="flex h-12 w-12 items-center justify-center rounded-md border bg-muted text-muted-foreground">
+                          <div className="bg-muted text-muted-foreground flex h-12 w-12 items-center justify-center rounded-md border">
                             <ImageIcon className="size-5" />
                           </div>
                         )}
@@ -1104,7 +1104,11 @@ function ProductDetailPage() {
               <div className="space-y-2">
                 <Label>Current Image</Label>
                 <div className="relative aspect-square w-full overflow-hidden rounded-lg border">
-                  <Image alt="Current variant image" className="object-cover" fill src={selectedVariant.imageUrl} />
+                  <img
+                    alt="Current variant image"
+                    className="absolute inset-0 size-full object-cover"
+                    src={selectedVariant.imageUrl}
+                  />
                 </div>
                 <Button
                   className="w-full"
@@ -1123,7 +1127,7 @@ function ProductDetailPage() {
               <div className="space-y-2">
                 <Label>Preview</Label>
                 <div className="relative aspect-square w-full overflow-hidden rounded-lg border">
-                  <Image alt="Preview" className="object-cover" fill src={imagePreview} />
+                  <img alt="Preview" className="absolute inset-0 size-full object-cover" src={imagePreview} />
                 </div>
               </div>
             )}
@@ -1181,7 +1185,11 @@ function ProductDetailPage() {
               <div className="space-y-2">
                 <Label>Current Image</Label>
                 <div className="relative aspect-square w-full overflow-hidden rounded-lg border">
-                  <Image alt="Current product image" className="object-cover" fill src={product.imageUrl} />
+                  <img
+                    alt="Current product image"
+                    className="absolute inset-0 size-full object-cover"
+                    src={product.imageUrl}
+                  />
                 </div>
                 <Button
                   className="w-full"
@@ -1200,7 +1208,7 @@ function ProductDetailPage() {
               <div className="space-y-2">
                 <Label>Preview</Label>
                 <div className="relative aspect-square w-full overflow-hidden rounded-lg border">
-                  <Image alt="Preview" className="object-cover" fill src={productImagePreview} />
+                  <img alt="Preview" className="absolute inset-0 size-full object-cover" src={productImagePreview} />
                 </div>
               </div>
             )}
@@ -1257,13 +1265,17 @@ function ProductDetailPage() {
             {product?.modelUrl && !selectedProductModel && (
               <div className="space-y-2">
                 <Label>Current 3D Model</Label>
-                <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg border bg-muted">
+                <div className="bg-muted relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg border">
                   {product.modelPreviewUrl ? (
-                    <Image alt="Current model preview" className="object-cover" fill src={product.modelPreviewUrl} />
+                    <img
+                      alt="Current model preview"
+                      className="absolute inset-0 size-full object-cover"
+                      src={product.modelPreviewUrl}
+                    />
                   ) : (
                     <div className="text-center">
-                      <Box className="mx-auto mb-2 size-12 text-primary" />
-                      <span className="font-medium text-sm">3D Model uploaded</span>
+                      <Box className="text-primary mx-auto mb-2 size-12" />
+                      <span className="text-sm font-medium">3D Model uploaded</span>
                     </div>
                   )}
                 </div>
@@ -1285,8 +1297,8 @@ function ProductDetailPage() {
                 <Label>3D Preview</Label>
                 <Suspense
                   fallback={
-                    <div className="flex h-48 items-center justify-center rounded bg-muted">
-                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    <div className="bg-muted flex h-48 items-center justify-center rounded">
+                      <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
                     </div>
                   }
                 >
@@ -1303,7 +1315,11 @@ function ProductDetailPage() {
                   <div className="space-y-1">
                     <Label className="text-muted-foreground text-xs">Auto-captured preview</Label>
                     <div className="relative aspect-video w-full overflow-hidden rounded-md border">
-                      <Image alt="Model screenshot" className="object-contain" fill src={modelPreviewImageUrl} />
+                      <img
+                        alt="Model screenshot"
+                        className="absolute inset-0 size-full object-contain"
+                        src={modelPreviewImageUrl}
+                      />
                     </div>
                   </div>
                 )}

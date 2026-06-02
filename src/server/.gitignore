@@ -19,6 +19,3 @@ packages/
 Desktop.ini
 Thumbs.db
 !.gitkeep
-
-# SQLite database (no longer used)
-data.db

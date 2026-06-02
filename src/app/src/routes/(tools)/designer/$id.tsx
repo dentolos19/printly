@@ -1,7 +1,6 @@
-"use client";
-
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
+
 import { TooltipProvider } from "#/components/ui/tooltip";
 import { useServer } from "#/lib/providers/server";
 import { cn } from "#/lib/utils";
@@ -49,7 +48,7 @@ export const Route = createFileRoute("/(tools)/designer/$id")({
 function Page() {
   const navigate = useNavigate();
   const params = useParams({ strict: false }) as { id?: string };
-  const { api, fetch: serverFetch } = useServer();
+  const { api } = useServer();
 
   const designId = params.id as string | undefined;
   const isNew = designId === "new";
@@ -74,7 +73,7 @@ function Page() {
             })
             .catch((error) => {
               console.error("Failed to load design:", error);
-              navigate({ to: "/designer/new" });
+              navigate({ to: "/designer/$id", params: { id: "new" } });
             }),
         );
       }
@@ -188,7 +187,7 @@ function Page() {
     return (
       <div className={"flex h-dvh w-dvw items-center justify-center"}>
         <div className={"flex flex-col items-center gap-2"}>
-          <div className={"h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"} />
+          <div className={"border-primary h-8 w-8 animate-spin rounded-full border-2 border-t-transparent"} />
           <span className={"text-muted-foreground text-sm"}>Loading design...</span>
         </div>
       </div>

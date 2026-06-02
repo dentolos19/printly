@@ -1,5 +1,3 @@
-"use client";
-
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -33,6 +31,7 @@ import {
   YAxis,
 } from "recharts";
 import { toast } from "sonner";
+
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
 import {
@@ -79,9 +78,9 @@ function StatCard({
 }) {
   return (
     <Link to={href}>
-      <Card className="transition-colors hover:bg-muted/50">
+      <Card className="hover:bg-muted/50 transition-colors">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="font-medium text-sm">{title}</CardTitle>
+          <CardTitle className="text-sm font-medium">{title}</CardTitle>
           <Icon className={`size-4 ${color}`} />
         </CardHeader>
         <CardContent>
@@ -89,7 +88,7 @@ function StatCard({
             <Skeleton className="h-8 w-20" />
           ) : (
             <>
-              <div className="font-bold text-2xl">{typeof value === "number" ? value.toLocaleString() : value}</div>
+              <div className="text-2xl font-bold">{typeof value === "number" ? value.toLocaleString() : value}</div>
               <CardDescription>{description}</CardDescription>
             </>
           )}
@@ -120,7 +119,7 @@ function RevenueChart({ data, loading }: { data: MonthlyRevenueData[]; loading: 
               <XAxis dataKey="monthLabel" />
               <YAxis tickFormatter={(value) => `$${value}`} />
               <Tooltip
-                formatter={(value: number) => [`$${value.toFixed(2)}`, "Revenue"]}
+                formatter={(value) => [`$${Number(value).toFixed(2)}`, "Revenue"]}
                 labelFormatter={(label) => `Month: ${label}`}
               />
               <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} />
@@ -175,7 +174,7 @@ function StatusDistributionChart({ data, loading }: { data: OrderStatusData[]; l
         {loading ? (
           <Skeleton className="h-[300px] w-full" />
         ) : filteredData.length === 0 ? (
-          <div className="flex h-[300px] items-center justify-center text-muted-foreground">No orders yet</div>
+          <div className="text-muted-foreground flex h-[300px] items-center justify-center">No orders yet</div>
         ) : (
           <ResponsiveContainer height={300} width="100%">
             <PieChart>
@@ -185,7 +184,7 @@ function StatusDistributionChart({ data, loading }: { data: OrderStatusData[]; l
                 data={filteredData}
                 dataKey="count"
                 innerRadius={60}
-                label={({ status, count }) => `${status}: ${count}`}
+                label={({ name, value }) => `${name}: ${value}`}
                 labelLine={false}
                 nameKey="status"
                 outerRadius={100}
@@ -377,7 +376,7 @@ function Page() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-bold text-3xl">Admin Dashboard</h1>
+          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
           <p className="text-muted-foreground">Overview of your store performance</p>
         </div>
         <Dialog onOpenChange={setAiDialogOpen} open={aiDialogOpen}>
@@ -390,7 +389,7 @@ function Page() {
           <DialogContent className="max-h-[80vh] max-w-4xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <BrainCircuit className="h-5 w-5 text-primary" />
+                <BrainCircuit className="text-primary h-5 w-5" />
                 AI Sales Analysis
               </DialogTitle>
               <DialogDescription>
@@ -402,7 +401,7 @@ function Page() {
             <ScrollArea className="max-h-[60vh] pr-4">
               {loadingAiAnalysis ? (
                 <div className="space-y-4 py-4">
-                  <div className="flex items-center gap-2 text-muted-foreground">
+                  <div className="text-muted-foreground flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span>Analyzing sales data, orders, inventory, and trends...</span>
                   </div>
@@ -415,7 +414,7 @@ function Page() {
                   <Skeleton className="h-4 w-full" />
                 </div>
               ) : aiAnalysis ? (
-                <div className="py-4 [&>h1]:mb-4 [&>h1]:font-bold [&>h1]:text-2xl [&>h2]:mt-6 [&>h2]:mb-3 [&>h2]:font-semibold [&>h2]:text-lg [&>p]:mb-4 [&>p]:leading-relaxed [&>ul>li]:mb-1 [&>ul]:mb-4 [&>ul]:list-disc [&>ul]:pl-6">
+                <div className="py-4 [&>h1]:mb-4 [&>h1]:text-2xl [&>h1]:font-bold [&>h2]:mt-6 [&>h2]:mb-3 [&>h2]:text-lg [&>h2]:font-semibold [&>p]:mb-4 [&>p]:leading-relaxed [&>ul]:mb-4 [&>ul]:list-disc [&>ul]:pl-6 [&>ul>li]:mb-1">
                   <ReactMarkdown>{aiAnalysis.analysis}</ReactMarkdown>
                 </div>
               ) : null}
@@ -426,7 +425,7 @@ function Page() {
 
       {/* Order Stats */}
       <div>
-        <h2 className="mb-4 font-semibold text-xl">Order Statistics</h2>
+        <h2 className="mb-4 text-xl font-semibold">Order Statistics</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
           {orderCards.map((card) => (
             <StatCard key={card.title} {...card} loading={loadingOrders} />
@@ -453,13 +452,13 @@ function Page() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {inventoryCards.slice(0, 5).map((card) => (
                 <Link className="block" key={card.title} to={card.href}>
-                  <div className="flex items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50">
+                  <div className="hover:bg-muted/50 flex items-center gap-3 rounded-lg border p-3 transition-colors">
                     <card.icon className={`h-5 w-5 ${card.color}`} />
                     <div>
                       {loadingInventory ? (
                         <Skeleton className="h-6 w-12" />
                       ) : (
-                        <p className="font-bold text-lg">{card.value}</p>
+                        <p className="text-lg font-bold">{card.value}</p>
                       )}
                       <p className="text-muted-foreground text-xs">{card.title}</p>
                     </div>

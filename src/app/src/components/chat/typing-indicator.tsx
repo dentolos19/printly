@@ -1,5 +1,3 @@
-"use client";
-
 import { cn } from "#/lib/utils";
 
 export interface TypingIndicatorProps {
@@ -20,9 +18,9 @@ export function TypingIndicator({ users, className }: TypingIndicatorProps) {
   return (
     <div className={cn("flex items-center gap-2 px-4 py-2", className)}>
       <div className="flex gap-1">
-        <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:-0.3s]" />
-        <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:-0.15s]" />
-        <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50" />
+        <span className="bg-muted-foreground/50 h-2 w-2 animate-bounce rounded-full [animation-delay:-0.3s]" />
+        <span className="bg-muted-foreground/50 h-2 w-2 animate-bounce rounded-full [animation-delay:-0.15s]" />
+        <span className="bg-muted-foreground/50 h-2 w-2 animate-bounce rounded-full" />
       </div>
       <span className="text-muted-foreground text-xs">{displayText}</span>
     </div>

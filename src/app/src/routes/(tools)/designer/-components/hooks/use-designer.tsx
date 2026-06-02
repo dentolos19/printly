@@ -1,5 +1,3 @@
-"use client";
-
 import type { FabricObject } from "fabric";
 import {
   ActiveSelection,
@@ -15,6 +13,7 @@ import {
 } from "fabric";
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+
 import { useAutoSave } from "#/routes/(tools)/-shared/hooks/use-auto-save";
 import type {
   AlignmentType,
@@ -132,7 +131,7 @@ export function DesignerProvider({
     isDirty,
     triggerAutoSave,
     saveNow,
-    setId: setDesignIdInternal,
+    setId: _setDesignIdInternal,
   } = useAutoSave({
     id: initialDesignId,
     name: designName,

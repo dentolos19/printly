@@ -1,8 +1,7 @@
-"use client";
-
 import { ChevronLeft, Image as ImageIcon, Loader2, Sparkles, Upload } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
@@ -122,7 +121,7 @@ function PanelHeader({ tool, onClose }: PanelHeaderProps) {
 
   return (
     <div className={"flex shrink-0 items-center justify-between border-b px-3 py-2"}>
-      <span className={"font-medium text-sm"}>{titles[tool] || "Panel"}</span>
+      <span className={"text-sm font-medium"}>{titles[tool] || "Panel"}</span>
       <Button className={"h-7 w-7"} onClick={onClose} size={"icon"} type={"button"} variant={"ghost"}>
         <ChevronLeft className={"h-4 w-4"} />
       </Button>
@@ -175,7 +174,7 @@ function AIGeneratorPanel() {
     <div className={"flex flex-col gap-4 p-3"}>
       {/* Art Style Selection */}
       <div className={"flex flex-col gap-2"}>
-        <Label className={"font-medium text-muted-foreground text-xs uppercase tracking-wide"}>Art Style</Label>
+        <Label className={"text-muted-foreground text-xs font-medium tracking-wide uppercase"}>Art Style</Label>
         <div className={"grid grid-cols-2 gap-1.5"}>
           {ART_STYLES.map((style) => (
             <Button
@@ -203,7 +202,7 @@ function AIGeneratorPanel() {
 
       {/* Prompt input */}
       <div className={"flex flex-col gap-2"}>
-        <Label className={"font-medium text-muted-foreground text-xs uppercase tracking-wide"}>Prompt</Label>
+        <Label className={"text-muted-foreground text-xs font-medium tracking-wide uppercase"}>Prompt</Label>
         <Textarea
           className={"min-h-20 resize-none"}
           disabled={isGenerating}
@@ -225,7 +224,7 @@ function AIGeneratorPanel() {
 
       {/* Generated results */}
       <div className={"flex flex-col gap-2"}>
-        <Label className={"font-medium text-muted-foreground text-xs uppercase tracking-wide"}>Generated Results</Label>
+        <Label className={"text-muted-foreground text-xs font-medium tracking-wide uppercase"}>Generated Results</Label>
 
         {isGenerating && (
           <div className={"grid grid-cols-2 gap-2"}>
@@ -263,7 +262,7 @@ function AIGeneratorPanel() {
                         {ART_STYLES.find((s) => s.value === image.style)?.label}
                       </span>
                     )}
-                    <p className={"line-clamp-2 text-white text-xs"}>{image.prompt}</p>
+                    <p className={"line-clamp-2 text-xs text-white"}>{image.prompt}</p>
                   </div>
                 </div>
               </button>
@@ -273,8 +272,8 @@ function AIGeneratorPanel() {
 
         {!isGenerating && generatedImages.length === 0 && (
           <div className={"flex flex-col items-center justify-center py-8 text-center"}>
-            <Sparkles className={"h-10 w-10 text-muted-foreground/50"} />
-            <p className={"mt-2 text-muted-foreground text-sm"}>No images generated yet</p>
+            <Sparkles className={"text-muted-foreground/50 h-10 w-10"} />
+            <p className={"text-muted-foreground mt-2 text-sm"}>No images generated yet</p>
             <p className={"text-muted-foreground text-xs"}>Select a style and enter a prompt</p>
           </div>
         )}
@@ -327,7 +326,7 @@ function ShapesPanel() {
 
   return (
     <div className={"flex flex-col gap-4 p-3"}>
-      <Label className={"font-medium text-muted-foreground text-xs uppercase tracking-wide"}>Basic Shapes</Label>
+      <Label className={"text-muted-foreground text-xs font-medium tracking-wide uppercase"}>Basic Shapes</Label>
       <div className={"grid grid-cols-2 gap-2"}>
         {shapes.map((shape) => (
           <Button
@@ -342,7 +341,7 @@ function ShapesPanel() {
             {shape.id === "triangle" && (
               <div
                 className={
-                  "h-0 w-0 border-r-4 border-r-transparent border-b-8 border-b-amber-500 border-l-4 border-l-transparent"
+                  "h-0 w-0 border-r-4 border-b-8 border-l-4 border-r-transparent border-b-amber-500 border-l-transparent"
                 }
               />
             )}
@@ -380,7 +379,7 @@ function StickersPanel() {
 
   return (
     <div className={"flex flex-col gap-4 p-3"}>
-      <Label className={"font-medium text-muted-foreground text-xs uppercase tracking-wide"}>Emoji Stickers</Label>
+      <Label className={"text-muted-foreground text-xs font-medium tracking-wide uppercase"}>Emoji Stickers</Label>
       <div className={"grid grid-cols-4 gap-2"}>
         {stickers.map((sticker) => (
           <Button
@@ -411,7 +410,7 @@ function AssetsPanel() {
   const [isLoadingAssets, setIsLoadingAssets] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
 
-  function loadAssets() {
+  const loadAssets = useCallback(() => {
     setIsLoadingAssets(true);
     api.asset
       .getAssets()
@@ -425,11 +424,11 @@ function AssetsPanel() {
       .finally(() => {
         setIsLoadingAssets(false);
       });
-  }
+  }, [api.asset]);
 
   useEffect(() => {
     loadAssets();
-  }, [api.asset]);
+  }, [api.asset, loadAssets]);
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -511,7 +510,7 @@ function AssetsPanel() {
 
         <TabsContent className={"mt-4"} value={"library"}>
           <div className={"flex flex-col gap-2"}>
-            <Label className={"font-medium text-muted-foreground text-xs uppercase tracking-wide"}>Your Assets</Label>
+            <Label className={"text-muted-foreground text-xs font-medium tracking-wide uppercase"}>Your Assets</Label>
 
             {isLoadingAssets && (
               <div className={"grid grid-cols-2 gap-2"}>
@@ -545,7 +544,7 @@ function AssetsPanel() {
                         "opacity-0 transition-opacity group-hover:opacity-100",
                       )}
                     >
-                      <p className={"line-clamp-2 p-2 text-white text-xs"}>{asset.name}</p>
+                      <p className={"line-clamp-2 p-2 text-xs text-white"}>{asset.name}</p>
                     </div>
                   </button>
                 ))}
@@ -554,8 +553,8 @@ function AssetsPanel() {
 
             {!isLoadingAssets && assets.length === 0 && (
               <div className={"flex flex-col items-center justify-center py-8 text-center"}>
-                <ImageIcon className={"h-10 w-10 text-muted-foreground/50"} />
-                <p className={"mt-2 text-muted-foreground text-sm"}>No images in library</p>
+                <ImageIcon className={"text-muted-foreground/50 h-10 w-10"} />
+                <p className={"text-muted-foreground mt-2 text-sm"}>No images in library</p>
                 <p className={"text-muted-foreground text-xs"}>Upload images to see them here</p>
               </div>
             )}
@@ -566,7 +565,7 @@ function AssetsPanel() {
           <div className={"flex flex-col gap-4"}>
             {/* Upload from file */}
             <div className={"flex flex-col gap-2"}>
-              <Label className={"font-medium text-muted-foreground text-xs uppercase tracking-wide"}>
+              <Label className={"text-muted-foreground text-xs font-medium tracking-wide uppercase"}>
                 Upload Image
               </Label>
               <input
@@ -591,7 +590,7 @@ function AssetsPanel() {
 
             {/* Add from URL */}
             <div className={"flex flex-col gap-2"}>
-              <Label className={"font-medium text-muted-foreground text-xs uppercase tracking-wide"}>From URL</Label>
+              <Label className={"text-muted-foreground text-xs font-medium tracking-wide uppercase"}>From URL</Label>
               <div className={"flex gap-2"}>
                 <Input
                   disabled={isUploading}

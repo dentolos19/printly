@@ -1,5 +1,3 @@
-"use client";
-
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   Box,
@@ -18,6 +16,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+
 import { Button } from "#/components/ui/button";
 import { Card, CardContent } from "#/components/ui/card";
 import {
@@ -72,7 +71,6 @@ function LibraryPage() {
 
   // Dialogs
   const [selectedDesign, setSelectedDesign] = useState<DesignWithPreview | null>(null);
-  const [selectedImprint, setSelectedImprint] = useState<Imprint | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -163,7 +161,7 @@ function LibraryPage() {
         if (d.preview?.startsWith("blob:")) URL.revokeObjectURL(d.preview);
       });
     };
-  }, [loadDesigns, loadImprints, loadAssets]);
+  }, [loadDesigns, loadImprints, loadAssets, designs]);
 
   // Filter items by search query
   const filteredDesigns = designs.filter((design) => design.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -335,13 +333,13 @@ function LibraryPage() {
     <div className="container mx-auto space-y-8 py-8">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="font-bold text-4xl tracking-tight">Library</h1>
-        <p className="text-lg text-muted-foreground">Manage your designs, imprints, and assets in one place</p>
+        <h1 className="text-4xl font-bold tracking-tight">Library</h1>
+        <p className="text-muted-foreground text-lg">Manage your designs, imprints, and assets in one place</p>
       </div>
 
       {/* Search */}
       <div className="relative max-w-md">
-        <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
         <Input
           className="pl-9"
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -375,7 +373,7 @@ function LibraryPage() {
           <div className="flex items-center justify-between">
             <p className="text-muted-foreground">Create and manage your custom designs</p>
             <Button asChild>
-              <Link to="/designer/new">
+              <Link params={{ id: "new" }} to="/designer/$id">
                 <Plus className="mr-2 h-4 w-4" />
                 New Design
               </Link>
@@ -397,16 +395,16 @@ function LibraryPage() {
           ) : filteredDesigns.length === 0 ? (
             <Card className="border-dashed">
               <CardContent className="flex flex-col items-center justify-center py-16">
-                <div className="mb-4 rounded-full bg-primary/10 p-4">
-                  <FileImage className="h-8 w-8 text-primary" />
+                <div className="bg-primary/10 mb-4 rounded-full p-4">
+                  <FileImage className="text-primary h-8 w-8" />
                 </div>
-                <h3 className="mb-2 font-semibold text-xl">{searchQuery ? "No designs found" : "No designs yet"}</h3>
-                <p className="mb-6 text-center text-muted-foreground">
+                <h3 className="mb-2 text-xl font-semibold">{searchQuery ? "No designs found" : "No designs yet"}</h3>
+                <p className="text-muted-foreground mb-6 text-center">
                   {searchQuery ? "Try adjusting your search query" : "Create your first design to get started"}
                 </p>
                 {!searchQuery && (
                   <Button asChild>
-                    <Link to="/designer/new">
+                    <Link params={{ id: "new" }} to="/designer/$id">
                       <Plus className="mr-2 h-4 w-4" />
                       Create Your First Design
                     </Link>
@@ -418,11 +416,11 @@ function LibraryPage() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filteredDesigns.map((design) => (
                 <Card
-                  className="group m-0 cursor-pointer gap-0 overflow-hidden p-0 transition-all hover:border-primary/50 hover:shadow-lg"
+                  className="group hover:border-primary/50 m-0 cursor-pointer gap-0 overflow-hidden p-0 transition-all hover:shadow-lg"
                   key={design.id}
                   onClick={() => navigate({ to: "/designer/$id", params: { id: design.id } })}
                 >
-                  <div className="relative aspect-square overflow-hidden bg-muted">
+                  <div className="bg-muted relative aspect-square overflow-hidden">
                     {design.preview ? (
                       <img
                         alt={design.name}
@@ -431,7 +429,7 @@ function LibraryPage() {
                       />
                     ) : (
                       <div className="flex size-full items-center justify-center">
-                        <FileImage className="h-12 w-12 text-muted-foreground" />
+                        <FileImage className="text-muted-foreground h-12 w-12" />
                       </div>
                     )}
                   </div>
@@ -483,8 +481,8 @@ function LibraryPage() {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-                    <div className="flex items-center justify-between border-t pt-2 text-muted-foreground text-xs">
-                      <span className="rounded bg-primary/10 px-2 py-1 font-medium text-primary">
+                    <div className="text-muted-foreground flex items-center justify-between border-t pt-2 text-xs">
+                      <span className="bg-primary/10 text-primary rounded px-2 py-1 font-medium">
                         {getCanvasSize(design)}
                       </span>
                       <span>{formatDate(design.updatedAt)}</span>
@@ -501,7 +499,7 @@ function LibraryPage() {
           <div className="flex items-center justify-between">
             <p className="text-muted-foreground">Configure 3D product imprints for your designs</p>
             <Button asChild>
-              <Link to="/imprinter/new">
+              <Link params={{ id: "new" }} to="/imprinter/$id">
                 <Plus className="mr-2 h-4 w-4" />
                 New Imprint
               </Link>
@@ -523,18 +521,18 @@ function LibraryPage() {
           ) : filteredImprints.length === 0 ? (
             <Card className="border-dashed">
               <CardContent className="flex flex-col items-center justify-center py-16">
-                <div className="mb-4 rounded-full bg-primary/10 p-4">
-                  <Box className="h-8 w-8 text-primary" />
+                <div className="bg-primary/10 mb-4 rounded-full p-4">
+                  <Box className="text-primary h-8 w-8" />
                 </div>
-                <h3 className="mb-2 font-semibold text-xl">{searchQuery ? "No imprints found" : "No imprints yet"}</h3>
-                <p className="mb-6 text-center text-muted-foreground">
+                <h3 className="mb-2 text-xl font-semibold">{searchQuery ? "No imprints found" : "No imprints yet"}</h3>
+                <p className="text-muted-foreground mb-6 text-center">
                   {searchQuery
                     ? "Try adjusting your search query"
                     : "Create your first imprint to visualize designs on 3D products"}
                 </p>
                 {!searchQuery && (
                   <Button asChild>
-                    <Link to="/imprinter/new">
+                    <Link params={{ id: "new" }} to="/imprinter/$id">
                       <Plus className="mr-2 h-4 w-4" />
                       Create Your First Imprint
                     </Link>
@@ -546,11 +544,11 @@ function LibraryPage() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filteredImprints.map((imprint) => (
                 <Card
-                  className="group m-0 cursor-pointer gap-0 overflow-hidden p-0 transition-all hover:border-primary/50 hover:shadow-lg"
+                  className="group hover:border-primary/50 m-0 cursor-pointer gap-0 overflow-hidden p-0 transition-all hover:shadow-lg"
                   key={imprint.id}
                   onClick={() => navigate({ to: "/imprinter/$id", params: { id: imprint.id } })}
                 >
-                  <div className="relative aspect-square overflow-hidden bg-muted">
+                  <div className="bg-muted relative aspect-square overflow-hidden">
                     {imprint.previewId ? (
                       <FallbackImage
                         alt={imprint.name}
@@ -559,7 +557,7 @@ function LibraryPage() {
                       />
                     ) : (
                       <div className="flex size-full items-center justify-center">
-                        <Box className="h-12 w-12 text-muted-foreground" />
+                        <Box className="text-muted-foreground h-12 w-12" />
                       </div>
                     )}
                   </div>
@@ -568,7 +566,7 @@ function LibraryPage() {
                       <div className="min-w-0 flex-1">
                         <h3 className="line-clamp-1 font-semibold">{imprint.name}</h3>
                         {imprint.productName && (
-                          <p className="line-clamp-1 text-muted-foreground text-sm">{imprint.productName}</p>
+                          <p className="text-muted-foreground line-clamp-1 text-sm">{imprint.productName}</p>
                         )}
                       </div>
                       <DropdownMenu>
@@ -598,8 +596,8 @@ function LibraryPage() {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-                    <div className="flex items-center justify-between border-t pt-2 text-muted-foreground text-xs">
-                      <span className="rounded bg-primary/10 px-2 py-1 font-medium text-primary">
+                    <div className="text-muted-foreground flex items-center justify-between border-t pt-2 text-xs">
+                      <span className="bg-primary/10 text-primary rounded px-2 py-1 font-medium">
                         ${imprint.customizationPrice.toFixed(2)}
                       </span>
                       <span>{formatDate(imprint.updatedAt)}</span>
@@ -636,11 +634,11 @@ function LibraryPage() {
           ) : filteredAssets.length === 0 ? (
             <Card className="border-dashed">
               <CardContent className="flex flex-col items-center justify-center py-16">
-                <div className="mb-4 rounded-full bg-primary/10 p-4">
-                  <ImageIcon className="h-8 w-8 text-primary" />
+                <div className="bg-primary/10 mb-4 rounded-full p-4">
+                  <ImageIcon className="text-primary h-8 w-8" />
                 </div>
-                <h3 className="mb-2 font-semibold text-xl">{searchQuery ? "No assets found" : "No assets yet"}</h3>
-                <p className="mb-6 text-center text-muted-foreground">
+                <h3 className="mb-2 text-xl font-semibold">{searchQuery ? "No assets found" : "No assets yet"}</h3>
+                <p className="text-muted-foreground mb-6 text-center">
                   {searchQuery ? "Try adjusting your search query" : "Upload your first image asset to use in designs"}
                 </p>
                 {!searchQuery && (
@@ -655,11 +653,11 @@ function LibraryPage() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filteredAssets.map((asset) => (
                 <Card
-                  className="group m-0 cursor-pointer gap-0 overflow-hidden p-0 transition-all hover:border-primary/50 hover:shadow-lg"
+                  className="group hover:border-primary/50 m-0 cursor-pointer gap-0 overflow-hidden p-0 transition-all hover:shadow-lg"
                   key={asset.id}
                   onClick={() => openAssetDetail(asset)}
                 >
-                  <div className="relative aspect-square overflow-hidden bg-muted">
+                  <div className="bg-muted relative aspect-square overflow-hidden">
                     {imageUrls[asset.id] ? (
                       <FallbackImage
                         alt={asset.name}
@@ -668,11 +666,11 @@ function LibraryPage() {
                       />
                     ) : (
                       <div className="flex size-full items-center justify-center">
-                        <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                        <ImageIcon className="text-muted-foreground h-12 w-12" />
                       </div>
                     )}
                     {asset.isGenerated && (
-                      <div className="absolute top-2 right-2 rounded-full bg-primary/90 p-1.5">
+                      <div className="bg-primary/90 absolute top-2 right-2 rounded-full p-1.5">
                         <Sparkles className="h-3 w-3 text-white" />
                       </div>
                     )}
@@ -707,8 +705,8 @@ function LibraryPage() {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-                    <div className="flex items-center justify-between border-t pt-2 text-muted-foreground text-xs">
-                      <span className="rounded bg-primary/10 px-2 py-1 font-medium text-primary">
+                    <div className="text-muted-foreground flex items-center justify-between border-t pt-2 text-xs">
+                      <span className="bg-primary/10 text-primary rounded px-2 py-1 font-medium">
                         {formatFileSize(asset.size)}
                       </span>
                       <span>{formatDate(asset.createdAt)}</span>
@@ -828,7 +826,7 @@ function LibraryPage() {
           </DialogHeader>
           {selectedAsset && (
             <div className="space-y-4">
-              <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">
+              <div className="bg-muted relative aspect-video overflow-hidden rounded-lg">
                 {imageUrls[selectedAsset.id] && (
                   <FallbackImage
                     alt={selectedAsset.name}

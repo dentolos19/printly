@@ -1,5 +1,3 @@
-"use client";
-
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Check,
@@ -13,8 +11,9 @@ import {
   X,
   XCircle,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
@@ -130,7 +129,7 @@ function RefundDetailsDialog({
           {/* Refund Details */}
           <div className="space-y-3">
             <h4 className="font-medium">Refund Details</h4>
-            <div className="space-y-2 rounded-lg bg-muted/50 p-3 text-sm">
+            <div className="bg-muted/50 space-y-2 rounded-lg p-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Requested Amount</span>
                 <span className="font-medium">${refund.requestedAmount.toFixed(2)}</span>
@@ -190,7 +189,7 @@ function RefundDetailsDialog({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-blue-700">
                   <MessageSquare className="h-4 w-4" />
-                  <span className="font-medium text-sm">Support Chat Linked</span>
+                  <span className="text-sm font-medium">Support Chat Linked</span>
                 </div>
                 <Button asChild size="sm" variant="outline">
                   <Link search={{ conversation: refund.conversationId }} to="/admin/support">
@@ -214,7 +213,7 @@ function RefundDetailsDialog({
           {refund.adminNotes && !showApproveForm && !showRejectForm && (
             <div className="space-y-2">
               <h4 className="font-medium">Admin Notes</h4>
-              <div className="rounded-lg border bg-blue-50 p-3 text-blue-700 text-sm">{refund.adminNotes}</div>
+              <div className="rounded-lg border bg-blue-50 p-3 text-sm text-blue-700">{refund.adminNotes}</div>
             </div>
           )}
 
@@ -350,7 +349,7 @@ function AdminRefundsPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState("pending");
 
-  const fetchRefunds = async () => {
+  const fetchRefunds = useCallback(async () => {
     try {
       const data = await server.api.refund.getAllRefunds();
       setRefunds(data);
@@ -362,11 +361,11 @@ function AdminRefundsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [server]);
 
   useEffect(() => {
     fetchRefunds();
-  }, [server]);
+  }, [server, fetchRefunds]);
 
   const filteredRefunds = useMemo(() => {
     switch (activeTab) {
@@ -471,7 +470,7 @@ function AdminRefundsPage() {
       await server.api.refund.approveRefund(refund.id, {});
       toast.success("Refund approved");
       fetchRefunds();
-    } catch (error) {
+    } catch {
       toast.error("Failed to approve refund");
     } finally {
       setIsProcessing(false);
@@ -484,7 +483,7 @@ function AdminRefundsPage() {
       await server.api.refund.rejectRefund(refund.id, {});
       toast.success("Refund rejected");
       fetchRefunds();
-    } catch (error) {
+    } catch {
       toast.error("Failed to reject refund");
     } finally {
       setIsProcessing(false);
@@ -494,7 +493,7 @@ function AdminRefundsPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="font-bold text-3xl">Refund Management</h1>
+        <h1 className="text-3xl font-bold">Refund Management</h1>
         <p className="text-muted-foreground">Review and process customer refund requests</p>
       </div>
 
@@ -502,41 +501,41 @@ function AdminRefundsPage() {
       <div className="mb-6 grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">Pending Review</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
+            <Clock className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{refundCounts.pending}</div>
+            <div className="text-2xl font-bold">{refundCounts.pending}</div>
             <p className="text-muted-foreground text-xs">Awaiting decision</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">Ready to Process</CardTitle>
+            <CardTitle className="text-sm font-medium">Ready to Process</CardTitle>
             <CheckCircle2 className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{refundCounts.approved}</div>
+            <div className="text-2xl font-bold">{refundCounts.approved}</div>
             <p className="text-muted-foreground text-xs">Approved, pending Stripe</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">Completed</CardTitle>
+            <CardTitle className="text-sm font-medium">Completed</CardTitle>
             <CreditCard className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{refundCounts.completed}</div>
+            <div className="text-2xl font-bold">{refundCounts.completed}</div>
             <p className="text-muted-foreground text-xs">Successfully refunded</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">Rejected</CardTitle>
+            <CardTitle className="text-sm font-medium">Rejected</CardTitle>
             <XCircle className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{refundCounts.rejected}</div>
+            <div className="text-2xl font-bold">{refundCounts.rejected}</div>
             <p className="text-muted-foreground text-xs">Denied requests</p>
           </CardContent>
         </Card>
@@ -547,8 +546,8 @@ function AdminRefundsPage() {
       ) : refunds.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <RefreshCcw className="mb-4 h-12 w-12 text-muted-foreground" />
-            <h2 className="mb-2 font-semibold text-xl">No refund requests</h2>
+            <RefreshCcw className="text-muted-foreground mb-4 h-12 w-12" />
+            <h2 className="mb-2 text-xl font-semibold">No refund requests</h2>
             <p className="text-muted-foreground">Refund requests from customers will appear here.</p>
           </CardContent>
         </Card>
@@ -629,7 +628,7 @@ function AdminRefundsPage() {
                           <div>
                             <span className="font-medium">${refund.requestedAmount.toFixed(2)}</span>
                             {refund.approvedAmount && refund.approvedAmount !== refund.requestedAmount && (
-                              <p className="text-green-600 text-xs">Approved: ${refund.approvedAmount.toFixed(2)}</p>
+                              <p className="text-xs text-green-600">Approved: ${refund.approvedAmount.toFixed(2)}</p>
                             )}
                           </div>
                         </TableCell>

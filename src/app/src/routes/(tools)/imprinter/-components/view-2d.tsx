@@ -1,8 +1,8 @@
-"use client";
-
 import { useCallback, useRef, useState } from "react";
+
 import { PLACEHOLDER_SVG } from "#/routes/(tools)/-shared/components/fallback-image";
 import type { AppliedDesign, PrintAreaConfig } from "#/routes/(tools)/imprinter/-types";
+
 import { useImprinter } from "./hooks/use-imprinter";
 
 type DragState = {
@@ -36,7 +36,7 @@ function getPrintAreaPosition(index: number, total: number): { x: number; y: num
 
 function DesignItem({
   design,
-  printArea,
+  _printArea,
   printAreaPosition,
   isSelected,
   onSelect,
@@ -126,7 +126,7 @@ function PrintAreaBox({
         y={position.y}
       />
       <text
-        className="fill-muted-foreground font-medium text-xs"
+        className="fill-muted-foreground text-xs font-medium"
         textAnchor="middle"
         x={position.x + PRINT_AREA_SIZE / 2}
         y={position.y + 20}

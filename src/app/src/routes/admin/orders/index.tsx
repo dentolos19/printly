@@ -1,5 +1,3 @@
-"use client";
-
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   CheckCircle2,
@@ -13,8 +11,9 @@ import {
   Trash2,
   Truck,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
@@ -202,7 +201,7 @@ function OrderDetailsDialog({
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Total Amount</Label>
-                  <p className="mt-1 font-bold text-lg">${order.totalAmount.toFixed(2)}</p>
+                  <p className="mt-1 text-lg font-bold">${order.totalAmount.toFixed(2)}</p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Last Updated</Label>
@@ -219,8 +218,8 @@ function OrderDetailsDialog({
                     <div className="rounded-lg border p-3" key={item.id}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded bg-muted">
-                            <Package className="h-5 w-5 text-muted-foreground" />
+                          <div className="bg-muted flex h-10 w-10 items-center justify-center rounded">
+                            <Package className="text-muted-foreground h-5 w-5" />
                           </div>
                           <div>
                             <p className="font-medium">
@@ -243,7 +242,7 @@ function OrderDetailsDialog({
                       {item.imprintId && (
                         <div className="mt-2 flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5 dark:border-blue-800 dark:bg-blue-950/50">
                           <Paintbrush className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                          <span className="flex-1 text-blue-700 text-sm dark:text-blue-300">
+                          <span className="flex-1 text-sm text-blue-700 dark:text-blue-300">
                             Custom: {item.imprintName || "Unnamed"}
                             {item.customizationPrice > 0 && (
                               <span className="ml-1 text-blue-600 dark:text-blue-400">
@@ -251,14 +250,15 @@ function OrderDetailsDialog({
                               </span>
                             )}
                           </span>
-                          <Link
-                            className="text-blue-600 text-xs hover:underline dark:text-blue-400"
+                          <a
+                            className="text-xs text-blue-600 hover:underline dark:text-blue-400"
                             href={`/imprinter/${item.imprintId}`}
                             onClick={(e) => e.stopPropagation()}
+                            rel="noopener noreferrer"
                             target="_blank"
                           >
                             <ExternalLink className="h-3 w-3" />
-                          </Link>
+                          </a>
                         </div>
                       )}
                     </div>
@@ -344,7 +344,7 @@ function AdminOrdersPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     setLoading(true);
     try {
       const data = await server.api.order.getAllOrders();
@@ -357,11 +357,11 @@ function AdminOrdersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [server]);
 
   useEffect(() => {
     fetchOrders();
-  }, [server]);
+  }, [server, fetchOrders]);
 
   // Filter orders based on search and status
   useEffect(() => {
@@ -471,7 +471,7 @@ function AdminOrdersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-bold text-3xl">Orders</h1>
+          <h1 className="text-3xl font-bold">Orders</h1>
           <p className="text-muted-foreground">Manage customer orders</p>
         </div>
         <Button disabled={loading} onClick={fetchOrders} variant="outline">
@@ -488,7 +488,7 @@ function AdminOrdersPage() {
         <CardContent>
           <div className="flex flex-col gap-4 sm:flex-row">
             <div className="relative flex-1">
-              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <Input
                 className="pl-9"
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -529,7 +529,7 @@ function AdminOrdersPage() {
             <OrdersTableSkeleton />
           ) : filteredOrders.length === 0 ? (
             <div className="py-8 text-center">
-              <Package className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+              <Package className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
               <p className="text-muted-foreground">No orders found</p>
             </div>
           ) : (

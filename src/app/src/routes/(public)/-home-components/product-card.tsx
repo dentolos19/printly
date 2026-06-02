@@ -1,5 +1,5 @@
-import { Image } from "@unpic/react";
 import { ArrowUpRight, Package } from "lucide-react";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
 import type { ProductResponse } from "#/lib/server/product";
 
@@ -15,15 +15,14 @@ export function ProductCard({ product, onClick }: { product: ProductResponse; on
 
   return (
     <Card
-      className="group cursor-pointer overflow-hidden border-border bg-card transition-all hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/5"
+      className="group border-border bg-card hover:border-primary/50 hover:shadow-primary/5 cursor-pointer overflow-hidden transition-all hover:shadow-2xl"
       onClick={onClick}
     >
-      <div className="relative aspect-square overflow-hidden bg-muted">
+      <div className="bg-muted relative aspect-square overflow-hidden">
         {displayImage ? (
-          <Image
+          <img
             alt={product.name}
-            className="object-cover transition-transform duration-500 group-hover:scale-110"
-            fill
+            className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-110"
             src={displayImage}
           />
         ) : (
@@ -41,7 +40,7 @@ export function ProductCard({ product, onClick }: { product: ProductResponse; on
       </div>
 
       <CardHeader className="space-y-1">
-        <CardTitle className="font-bold text-xl transition-colors group-hover:text-primary">{product.name}</CardTitle>
+        <CardTitle className="group-hover:text-primary text-xl font-bold transition-colors">{product.name}</CardTitle>
         <CardDescription className="text-sm">
           {uniqueSizes.length} sizes available • {uniqueColors.length} unique colors
         </CardDescription>
@@ -49,13 +48,13 @@ export function ProductCard({ product, onClick }: { product: ProductResponse; on
 
       <CardContent className="flex items-center justify-between pt-0 pb-6">
         <div className="flex flex-col">
-          <span className="font-semibold text-muted-foreground text-xs uppercase">Starting from</span>
-          <span className="font-black text-2xl text-foreground">${product.basePrice.toFixed(2)}</span>
+          <span className="text-muted-foreground text-xs font-semibold uppercase">Starting from</span>
+          <span className="text-foreground text-2xl font-black">${product.basePrice.toFixed(2)}</span>
         </div>
 
         <div className="text-right">
           {totalStock > 0 ? (
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 font-bold text-emerald-600 text-xs ring-1 ring-emerald-500/20 ring-inset">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-600 ring-1 ring-emerald-500/20 ring-inset">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
@@ -63,7 +62,7 @@ export function ProductCard({ product, onClick }: { product: ProductResponse; on
               In Stock
             </div>
           ) : (
-            <span className="inline-flex items-center rounded-full bg-red-500/10 px-2.5 py-1 font-bold text-red-600 text-xs ring-1 ring-red-500/20 ring-inset">
+            <span className="inline-flex items-center rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-bold text-red-600 ring-1 ring-red-500/20 ring-inset">
               Out of Stock
             </span>
           )}

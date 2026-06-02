@@ -44,9 +44,9 @@ public record UpdateProfileDto(
     bool? IsPrivate
 );
 
-public record UpdateEmailDto([Required] [EmailAddress] string NewEmail, [Required] string Password);
+public record UpdateEmailDto([Required][EmailAddress] string NewEmail, [Required] string Password);
 
 public record UpdatePasswordDto(
     [Required] string CurrentPassword,
-    [Required] [StringLength(100, MinimumLength = 8)] string NewPassword
+    [Required][StringLength(100, MinimumLength = 8)] string NewPassword
 );

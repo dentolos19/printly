@@ -1,6 +1,5 @@
-"use client";
-
 import { useEffect } from "react";
+
 import { useImprinter } from "./use-imprinter";
 
 export function useKeyboardShortcuts() {

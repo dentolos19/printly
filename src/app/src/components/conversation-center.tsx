@@ -1,8 +1,7 @@
-"use client";
-
 import * as signalR from "@microsoft/signalr";
 import { Loader2, MessageCircle, Plus, RefreshCw, Send, Users, Wifi, WifiOff } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
 import { Avatar, AvatarFallback } from "#/components/ui/avatar";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "#/components/ui/card";
@@ -87,7 +86,7 @@ export default function ConversationCenter() {
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
-  const [lastError, setLastError] = useState<string | null>(null);
+  const [_lastError, setLastError] = useState<string | null>(null);
 
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const selectedConversationRef = useRef<string | null>(null);
@@ -168,7 +167,7 @@ export default function ConversationCenter() {
         setIsLoadingMessages(false);
       }
     },
-    [authorizedFetch, auth.tokens?.accessToken],
+    [authorizedFetch, auth.tokens?.accessToken, markConversationRead],
   );
 
   const markConversationRead = useCallback(
@@ -493,7 +492,7 @@ export default function ConversationCenter() {
     return (
       <Card className="mx-auto w-full max-w-3xl">
         <CardContent className="p-6">
-          <p className="text-center text-muted-foreground">Please log in to use messaging.</p>
+          <p className="text-muted-foreground text-center">Please log in to use messaging.</p>
         </CardContent>
       </Card>
     );
@@ -504,7 +503,7 @@ export default function ConversationCenter() {
       <Card className="flex h-full flex-col">
         <CardHeader className="space-y-3 pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 font-semibold text-lg">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
               <MessageCircle className="h-5 w-5" />
               Conversations
             </CardTitle>
@@ -542,20 +541,20 @@ export default function ConversationCenter() {
         <CardContent className="flex-1 overflow-hidden p-0">
           <ScrollArea className="h-full">
             {isLoadingConversations ? (
-              <div className="flex items-center justify-center p-6 text-muted-foreground text-sm">
+              <div className="text-muted-foreground flex items-center justify-center p-6 text-sm">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading conversations...
               </div>
             ) : filteredConversations.length === 0 ? (
-              <div className="p-6 text-muted-foreground text-sm">No conversations yet.</div>
+              <div className="text-muted-foreground p-6 text-sm">No conversations yet.</div>
             ) : (
               <div className="divide-y">
                 {filteredConversations.map((conversation) => {
                   const title = getConversationTitle(conversation, currentUserId);
                   const lastMessage = conversation.lastMessage?.content ?? "";
-                  const unread = conversation.unreadCount > 0;
+                  const _unread = conversation.unreadCount > 0;
                   return (
                     <button
-                      className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted ${selectedConversationId === conversation.id ? "bg-muted" : ""}`}
+                      className={`hover:bg-muted flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${selectedConversationId === conversation.id ? "bg-muted" : ""}`}
                       key={conversation.id}
                       onClick={() => handleSelectConversation(conversation.id)}
                     >
@@ -566,12 +565,12 @@ export default function ConversationCenter() {
                         <div className="flex items-center justify-between">
                           <div className="font-semibold">{title}</div>
                           {conversation.unreadCount > 0 && (
-                            <span className="rounded-full bg-primary/10 px-2 py-1 text-primary text-xs">
+                            <span className="bg-primary/10 text-primary rounded-full px-2 py-1 text-xs">
                               {conversation.unreadCount}
                             </span>
                           )}
                         </div>
-                        <div className="line-clamp-1 text-muted-foreground text-xs">
+                        <div className="text-muted-foreground line-clamp-1 text-xs">
                           {lastMessage || "No messages yet"}
                         </div>
                       </div>
@@ -587,7 +586,7 @@ export default function ConversationCenter() {
       <Card className="flex h-full flex-col">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 font-semibold text-lg">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
               <Users className="h-5 w-5" />
               {selectedConversation
                 ? getConversationTitle(selectedConversation, currentUserId)
@@ -595,7 +594,7 @@ export default function ConversationCenter() {
             </CardTitle>
           </div>
           {connectionError ? (
-            <div className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-destructive text-sm">
+            <div className="bg-destructive/10 text-destructive flex items-center gap-2 rounded-md px-3 py-2 text-sm">
               <WifiOff className="h-4 w-4" />
               <span className="flex-1 truncate">{connectionError}</span>
               <Button onClick={startConnection} size="sm" variant="ghost">
@@ -609,11 +608,11 @@ export default function ConversationCenter() {
             <div className="flex h-full flex-col">
               <ScrollArea className="flex-1 px-4">
                 {isLoadingMessages ? (
-                  <div className="flex items-center justify-center p-6 text-muted-foreground text-sm">
+                  <div className="text-muted-foreground flex items-center justify-center p-6 text-sm">
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading messages...
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="p-6 text-muted-foreground text-sm">No messages yet. Say hello! 👋</div>
+                  <div className="text-muted-foreground p-6 text-sm">No messages yet. Say hello! 👋</div>
                 ) : (
                   <div className="space-y-3 pb-8">
                     {messages.map((message) => {
@@ -638,13 +637,13 @@ export default function ConversationCenter() {
               </ScrollArea>
             </div>
           ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-muted-foreground">
+            <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-3 text-center">
               <MessageCircle className="h-10 w-10" />
               <p>Select a conversation to get started.</p>
             </div>
           )}
         </CardContent>
-        <CardFooter className="border-t bg-background">
+        <CardFooter className="bg-background border-t">
           <div className="flex w-full items-center gap-2">
             <Input
               disabled={!selectedConversation || connectionState !== "connected"}
@@ -675,7 +674,7 @@ function renderConnectionStatus(state: "disconnected" | "connecting" | "connecte
   switch (state) {
     case "connected":
       return (
-        <div className="flex items-center gap-1 text-green-600 text-xs">
+        <div className="flex items-center gap-1 text-xs text-green-600">
           <Wifi className="h-4 w-4" /> Connected
         </div>
       );
@@ -687,13 +686,13 @@ function renderConnectionStatus(state: "disconnected" | "connecting" | "connecte
       );
     case "error":
       return (
-        <button className="flex items-center gap-1 text-red-600 text-xs" onClick={reconnect}>
+        <button className="flex items-center gap-1 text-xs text-red-600" onClick={reconnect}>
           <WifiOff className="h-4 w-4" /> Retry
         </button>
       );
     default:
       return (
-        <button className="flex items-center gap-1 text-muted-foreground text-xs" onClick={reconnect}>
+        <button className="text-muted-foreground flex items-center gap-1 text-xs" onClick={reconnect}>
           <WifiOff className="h-4 w-4" /> Connect
         </button>
       );

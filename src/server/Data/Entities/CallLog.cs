@@ -47,7 +47,7 @@ public class CallParticipant : BaseEntity
 
     public DateTime? JoinedAt { get; set; }
     public DateTime? LeftAt { get; set; }
-    public bool DidAnswer { get; set; } = false;
+    public bool DidAnswer { get; set; }
 }
 
 public enum CallType

@@ -1,10 +1,9 @@
-"use client";
-
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Image } from "@unpic/react";
 import { ArrowLeft, Minus, Package, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+
 import { CartButton } from "#/components/cart-button";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "#/components/ui/card";
@@ -27,15 +26,15 @@ function CartItemRow({
 
   return (
     <div className="flex items-center gap-4 py-4">
-      <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-muted">
-        <Package className="h-8 w-8 text-muted-foreground" />
+      <div className="bg-muted flex h-20 w-20 shrink-0 items-center justify-center rounded-lg">
+        <Package className="text-muted-foreground h-8 w-8" />
       </div>
       <div className="flex-1 space-y-1">
         <h3 className="font-medium">{item.productName}</h3>
         <p className="text-muted-foreground text-sm">
           {ProductSizeLabels[item.size as keyof typeof ProductSizeLabels]} • {item.color}
         </p>
-        {item.imprintName && <p className="font-medium text-primary text-sm">+ Customization: {item.imprintName}</p>}
+        {item.imprintName && <p className="text-primary text-sm font-medium">+ Customization: {item.imprintName}</p>}
         <div className="flex items-center gap-2">
           <p className="font-medium">${item.unitPrice.toFixed(2)}</p>
           {item.customizationPrice && item.customizationPrice > 0 && (
@@ -75,14 +74,14 @@ function CartItemRow({
 function EmptyCart() {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <ShoppingCart className="mb-4 h-16 w-16 text-muted-foreground" />
-      <h2 className="mb-2 font-bold text-2xl">Your cart is empty</h2>
-      <p className="mb-6 text-muted-foreground">Browse our products and add items to your cart to get started.</p>
+      <ShoppingCart className="text-muted-foreground mb-4 h-16 w-16" />
+      <h2 className="mb-2 text-2xl font-bold">Your cart is empty</h2>
+      <p className="text-muted-foreground mb-6">Browse our products and add items to your cart to get started.</p>
       <Button asChild>
-        <Link to="/#products">
+        <a href="/#products">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Continue Shopping
-        </Link>
+        </a>
       </Button>
     </div>
   );
@@ -125,7 +124,7 @@ function CartPage() {
         imprintId: item.imprintId,
       }));
 
-      const order = await server.api.order.createOrder({ items: orderItems });
+      await server.api.order.createOrder({ items: orderItems });
 
       // Set redirecting flag to prevent showing empty cart
       setIsRedirecting(true);
@@ -155,11 +154,11 @@ function CartPage() {
   return (
     <div className="min-h-dvh">
       {/* Header */}
-      <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between border-b bg-background/95 px-4 backdrop-blur supports-backdrop-filter:bg-background/60 lg:px-8">
+      <header className="bg-background/95 supports-backdrop-filter:bg-background/60 fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between border-b px-4 backdrop-blur lg:px-8">
         <div className="flex items-center gap-2">
           <Link className="flex items-center gap-2" to="/">
             <Image alt="Printly Logo" className="size-6" height={24} src={"/icon.png"} width={24} />
-            <h1 className="font-bold font-mono text-xl">Printly</h1>
+            <h1 className="font-mono text-xl font-bold">Printly</h1>
           </Link>
         </div>
         <div className="flex items-center gap-2">
@@ -181,12 +180,12 @@ function CartPage() {
       <main className="container mx-auto px-4 pt-24 pb-16 lg:px-8">
         <div className="mb-6">
           <Button asChild className="mb-4" variant="ghost">
-            <Link to="/#products">
+            <a href="/#products">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Continue Shopping
-            </Link>
+            </a>
           </Button>
-          <h1 className="font-bold text-3xl">Shopping Cart</h1>
+          <h1 className="text-3xl font-bold">Shopping Cart</h1>
           <p className="text-muted-foreground">
             {itemCount === 0 ? "No items in cart" : `${itemCount} ${itemCount === 1 ? "item" : "items"} in your cart`}
           </p>
@@ -196,8 +195,8 @@ function CartPage() {
           <EmptyCart />
         ) : isRedirecting ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="mb-4 h-16 w-16 animate-spin rounded-full border-4 border-current border-t-transparent text-primary" />
-            <h2 className="mb-2 font-bold text-xl">Redirecting to your orders...</h2>
+            <div className="text-primary mb-4 h-16 w-16 animate-spin rounded-full border-4 border-current border-t-transparent" />
+            <h2 className="mb-2 text-xl font-bold">Redirecting to your orders...</h2>
           </div>
         ) : (
           <div className="grid gap-8 lg:grid-cols-3">
@@ -241,7 +240,7 @@ function CartPage() {
                     <span className="text-green-600">Free</span>
                   </div>
                   <Separator />
-                  <div className="flex justify-between font-bold text-lg">
+                  <div className="flex justify-between text-lg font-bold">
                     <span>Total</span>
                     <span>${total.toFixed(2)}</span>
                   </div>
@@ -259,7 +258,7 @@ function CartPage() {
               </Card>
 
               {!claims && (
-                <p className="mt-4 text-center text-muted-foreground text-sm">
+                <p className="text-muted-foreground mt-4 text-center text-sm">
                   <Link className="text-primary underline" to="/auth">
                     Log in
                   </Link>{" "}
