@@ -1,4 +1,4 @@
-name: Web Deployment
+name: Cloudflare Deployment
 on:
   push:
     branches:
@@ -9,9 +9,10 @@ concurrency:
   cancel-in-progress: true
 jobs:
   deploy:
-    name: Deploy
+    name: Deploy Worker
     environment: Production
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -30,62 +31,28 @@ jobs:
       - name: Setup Just
         uses: extractions/setup-just@v4
 
-      - name: Install Dependencies
-        working-directory: src/app
-        run: bun install --frozen-lockfile
-
-      - name: Build App
-        working-directory: src/app
-        run: bun run build
-
-      - name: Build Server
-        working-directory: src/server
-        run: dotnet build --configuration Release
+      - name: Deploy Worker
+        run: just deploy
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ELEVENLABS_AGENT_ID: ${{ secrets.ELEVENLABS_AGENT_ID }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
+          LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
+          LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_IMAGE_MODEL: ${{ vars.OPENROUTER_IMAGE_MODEL }}
+          OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
+          OPENROUTER_REFERER: ${{ vars.OPENROUTER_REFERER }}
+          OPENROUTER_TITLE: ${{ vars.OPENROUTER_TITLE }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM_EMAIL: ${{ vars.RESEND_FROM_EMAIL }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
       - name: Migrate Database
         run: just migrate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Deploy Worker
-        uses: cloudflare/wrangler-action@v4
-        with:
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          workingDirectory: src/app
-          secrets: |
-            SECRET_KEY
-            APP_URL
-            DATABASE_URL
-            GOOGLE_CLIENT_ID
-            GOOGLE_CLIENT_SECRET
-            LIVEKIT_URL
-            LIVEKIT_API_KEY
-            LIVEKIT_API_SECRET
-            OPENROUTER_API_KEY
-            OPENROUTER_TITLE
-            OPENROUTER_REFERER
-            OPENROUTER_MODEL
-            OPENROUTER_IMAGE_MODEL
-            ELEVENLABS_API_KEY
-            ELEVENLABS_AGENT_ID
-            RESEND_API_KEY
-            RESEND_FROM_EMAIL
-        env:
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          APP_URL: ${{ vars.APP_URL }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
-          LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
-          LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          OPENROUTER_TITLE: ${{ vars.OPENROUTER_TITLE }}
-          OPENROUTER_REFERER: ${{ vars.OPENROUTER_REFERER }}
-          OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
-          OPENROUTER_IMAGE_MODEL: ${{ vars.OPENROUTER_IMAGE_MODEL }}
-          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
-          ELEVENLABS_AGENT_ID: ${{ secrets.ELEVENLABS_AGENT_ID }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          RESEND_FROM_EMAIL: ${{ vars.RESEND_FROM_EMAIL }}

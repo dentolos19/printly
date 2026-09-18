@@ -82,7 +82,7 @@ export const Route = createRootRouteWithContext<{
   ),
   errorComponent: ({ error }) => (
     <main className={"h-dvh"}>
-      <ErrorOccurred error={error} />
+      <ErrorOccurred error={error instanceof Error ? error : new Error(String(error))} />
     </main>
   ),
   notFoundComponent: () => (
