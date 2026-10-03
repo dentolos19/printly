@@ -16,7 +16,8 @@ start: compose
     just decompose
 
 compose:
-    docker compose up --detach --wait
+    docker compose up --detach --wait database storage
+    docker compose run --rm storage-setup
 
 decompose:
     docker compose down
@@ -38,6 +39,10 @@ deploy: install build
     set -euo pipefail
     cd src/app
     names=(
+        AWS_ACCESS_KEY_ID
+        AWS_ENDPOINT_URL_S3
+        AWS_REGION
+        AWS_SECRET_ACCESS_KEY
         SECRET_KEY
         APP_URL
         DATABASE_URL

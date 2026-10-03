@@ -35,6 +35,10 @@ jobs:
         run: just deploy
         env:
           APP_URL: ${{ vars.APP_URL }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_ENDPOINT_URL_S3: ${{ vars.AWS_ENDPOINT_URL_S3 }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           ELEVENLABS_AGENT_ID: ${{ secrets.ELEVENLABS_AGENT_ID }}
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
