@@ -1,5 +1,6 @@
 import { Image } from "@unpic/react";
-import { Github, Instagram, Linkedin, Twitter } from "lucide-react";
+
+import { Github, Instagram, Linkedin, Twitter } from "#/components/social-icons";
 
 export function Footer() {
   return (

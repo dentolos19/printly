@@ -846,7 +846,7 @@ public class ConversationController(
 
         try
         {
-            // Upload to R2 storage
+            // Upload to object storage
             await using var stream = file.OpenReadStream();
             var asset = await _storageService.UploadFileAsync(stream, file.FileName, $"conversation-{conversationId}");
 
@@ -920,7 +920,7 @@ public class ConversationController(
 
         try
         {
-            // Upload to R2 storage
+            // Upload to object storage
             await using var stream = audioFile.OpenReadStream();
             var asset = await _storageService.UploadFileAsync(
                 stream,
@@ -1275,7 +1275,7 @@ public class ConversationController(
 
         try
         {
-            // Fetch the audio bytes from R2 storage
+            // Fetch the audio bytes from object storage
             using var audioStream = await storageService.StreamFileAsync(callLog.RecordingAsset);
             using var memoryStream = new MemoryStream();
             await audioStream.CopyToAsync(memoryStream);
