@@ -573,13 +573,20 @@ export type AdminUserListResponse = {
 export type UserSearchResponse = {
   id: string;
   userName: string;
-  displayName: string | null;
-  avatarUrl: string | null;
   followerCount: number;
-  isFollowing: boolean;
+  isFollowedByMe: boolean | null;
   isPrivate: boolean;
   hasPendingRequest: boolean;
 };
+
+export function updateFollowState(user: UserSearchResponse, isFollowing: boolean, hasPendingRequest: boolean) {
+  const following = !isFollowing && !hasPendingRequest;
+  return {
+    ...user,
+    isFollowedByMe: following && !user.isPrivate,
+    hasPendingRequest: following && user.isPrivate,
+  };
+}
 
 export type PagedUserSearchResponse = {
   items: UserSearchResponse[];
@@ -940,7 +947,7 @@ export default function initCommunityController(fetch: ServerFetch) {
 
     // Get suggested users
     getSuggestedUsers: async (count = 5): Promise<UserSearchResponse[]> => {
-      const response = await fetch(`/community/users/suggested?count=${count}`, { method: "GET" });
+      const response = await fetch(`/community/users/suggested?limit=${count}`, { method: "GET" });
       if (!response.ok) throw await buildError(response, "Failed to fetch suggested users");
       return response.json();
     },

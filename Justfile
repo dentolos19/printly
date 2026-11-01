@@ -1,7 +1,12 @@
 set dotenv-load
+set dotenv-filename := "src/app/" + dotenv_file
+set dotenv-override
+
+environment := ""
+dotenv_file := if environment == "" { ".env" } else { ".env." + environment }
 
 setup mode="": install compose
-    just --no-deps migrate
+    just --no-deps environment={{ quote(environment) }} migrate
     if [ "{{ mode }}" != "prerun" ]; then just decompose; fi
 
 install:
@@ -25,7 +30,7 @@ build:
     cd src/server && dotnet build --configuration Release --no-restore
 
 check:
-    cd src/app && bun run check
+    cd src/app && bun lint --fix && bun fmt && bun check --no-script
     cd src/server && dotnet format
 
 migrate: compose
@@ -35,30 +40,7 @@ migrate: compose
 deploy: install build
     #!/usr/bin/env bash
     set -euo pipefail
+    test -f {{ quote("src/app/" + dotenv_file) }}
+    CI=true just environment={{ quote(environment) }} migrate
     cd src/app
-    secrets=(
-        AWS_ACCESS_KEY_ID
-        AWS_ENDPOINT_URL_S3
-        AWS_REGION
-        AWS_SECRET_ACCESS_KEY
-        SECRET_KEY
-        APP_URL
-        DATABASE_URL
-        GOOGLE_CLIENT_ID
-        GOOGLE_CLIENT_SECRET
-        LIVEKIT_URL
-        LIVEKIT_API_KEY
-        LIVEKIT_API_SECRET
-        OPENROUTER_API_KEY
-        OPENROUTER_TITLE
-        OPENROUTER_REFERER
-        OPENROUTER_MODEL
-        OPENROUTER_IMAGE_MODEL
-        ELEVENLABS_API_KEY
-        ELEVENLABS_AGENT_ID
-        RESEND_API_KEY
-        RESEND_FROM_EMAIL
-    )
-    for secret in "${secrets[@]}"; do if [[ -z "${!secret:-}" ]]; then echo "Missing secret value: $secret" >&2; exit 1; fi; done
-    node -e 'process.stdout.write(JSON.stringify(Object.fromEntries(process.argv.slice(1).map((name) => [name, process.env[name]]))))' "${secrets[@]}" | bun wrangler secret bulk
-    bun wrangler deploy
+    bun run deploy --prebuilt --secrets-file {{ quote(dotenv_file) }}

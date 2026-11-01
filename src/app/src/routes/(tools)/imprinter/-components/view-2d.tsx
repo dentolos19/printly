@@ -54,10 +54,10 @@ function DesignItem({
   const x = printAreaPosition.x + PRINT_AREA_SIZE / 2 + offsetX - designSize / 2;
   const y = printAreaPosition.y + PRINT_AREA_SIZE / 2 + offsetY - designSize / 2;
 
+  const [imgFailed, setImgFailed] = useState(false);
   const coverId = design.designData?.coverId;
   if (!coverId) return null;
   const imageHref = coverId.startsWith("blob:") || coverId.startsWith("data:") ? coverId : `/assets/${coverId}/view`;
-  const [imgFailed, setImgFailed] = useState(false);
 
   return (
     <g

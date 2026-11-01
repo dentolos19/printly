@@ -1,4 +1,5 @@
 name: Cloudflare Deployment
+run-name: Cloudflare Deployment
 on:
   push:
     branches:
@@ -7,14 +8,14 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
   cancel-in-progress: true
+env:
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 jobs:
   deploy:
     name: Deploy Worker
     environment: Production
     runs-on: ubuntu-latest
-    env:
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     steps:
       - name: Checkout Source
         uses: actions/checkout@v4
@@ -30,32 +31,33 @@ jobs:
       - name: Setup Just
         uses: extractions/setup-just@v4
 
+      - name: Download Secrets
+        uses: SpicyPizza/create-envfile@v2.0
+        with:
+          directory: src/app
+          envkey_APP_URL: ${{ toJSON(vars.APP_URL) }}
+          envkey_AWS_ACCESS_KEY_ID: ${{ toJSON(secrets.AWS_ACCESS_KEY_ID) }}
+          envkey_AWS_ENDPOINT_URL_S3: ${{ toJSON(vars.AWS_ENDPOINT_URL_S3) }}
+          envkey_AWS_REGION: ${{ toJSON(vars.AWS_REGION) }}
+          envkey_AWS_SECRET_ACCESS_KEY: ${{ toJSON(secrets.AWS_SECRET_ACCESS_KEY) }}
+          envkey_DATABASE_URL: ${{ toJSON(secrets.DATABASE_URL) }}
+          envkey_ELEVENLABS_AGENT_ID: ${{ toJSON(secrets.ELEVENLABS_AGENT_ID) }}
+          envkey_ELEVENLABS_API_KEY: ${{ toJSON(secrets.ELEVENLABS_API_KEY) }}
+          envkey_GOOGLE_CLIENT_ID: ${{ toJSON(secrets.GOOGLE_CLIENT_ID) }}
+          envkey_GOOGLE_CLIENT_SECRET: ${{ toJSON(secrets.GOOGLE_CLIENT_SECRET) }}
+          envkey_LIVEKIT_API_KEY: ${{ toJSON(secrets.LIVEKIT_API_KEY) }}
+          envkey_LIVEKIT_API_SECRET: ${{ toJSON(secrets.LIVEKIT_API_SECRET) }}
+          envkey_LIVEKIT_URL: ${{ toJSON(secrets.LIVEKIT_URL) }}
+          envkey_OPENROUTER_API_KEY: ${{ toJSON(secrets.OPENROUTER_API_KEY) }}
+          envkey_OPENROUTER_IMAGE_MODEL: ${{ toJSON(vars.OPENROUTER_IMAGE_MODEL) }}
+          envkey_OPENROUTER_MODEL: ${{ toJSON(vars.OPENROUTER_MODEL) }}
+          envkey_OPENROUTER_REFERER: ${{ toJSON(vars.OPENROUTER_REFERER) }}
+          envkey_OPENROUTER_TITLE: ${{ toJSON(vars.OPENROUTER_TITLE) }}
+          envkey_RESEND_API_KEY: ${{ toJSON(secrets.RESEND_API_KEY) }}
+          envkey_RESEND_FROM_EMAIL: ${{ toJSON(vars.RESEND_FROM_EMAIL) }}
+          envkey_SECRET_KEY: ${{ toJSON(secrets.SECRET_KEY) }}
+
       - name: Deploy Worker
         run: just deploy
-        env:
-          APP_URL: ${{ vars.APP_URL }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_ENDPOINT_URL_S3: ${{ vars.AWS_ENDPOINT_URL_S3 }}
-          AWS_REGION: ${{ vars.AWS_REGION }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          ELEVENLABS_AGENT_ID: ${{ secrets.ELEVENLABS_AGENT_ID }}
-          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
-          LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
-          LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          OPENROUTER_IMAGE_MODEL: ${{ vars.OPENROUTER_IMAGE_MODEL }}
-          OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
-          OPENROUTER_REFERER: ${{ vars.OPENROUTER_REFERER }}
-          OPENROUTER_TITLE: ${{ vars.OPENROUTER_TITLE }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          RESEND_FROM_EMAIL: ${{ vars.RESEND_FROM_EMAIL }}
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-
-      - name: Migrate Database
-        run: just migrate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

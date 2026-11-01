@@ -10,7 +10,7 @@ import { Input } from "#/components/ui/input";
 import { Skeleton } from "#/components/ui/skeleton";
 import { useDebounce } from "#/hooks/use-debounce";
 import { useServer } from "#/lib/providers/server";
-import type { UserSearchResponse } from "#/lib/server/community";
+import { type UserSearchResponse, updateFollowState } from "#/lib/server/community";
 
 function UserSearchPage() {
   const { api } = useServer();
@@ -75,7 +75,7 @@ function UserSearchPage() {
         toast.success(isFollowing ? "Unfollowed" : "Request cancelled");
       } else {
         await api.community.follow(userId);
-        toast.success("Follow request sent");
+        toast.success("Follow updated");
       }
       // Refresh lists
       if (debouncedQuery.trim()) {
@@ -84,18 +84,12 @@ function UserSearchPage() {
       // Update suggested list locally
       setSuggested((prev) =>
         prev.map((u) =>
-          u.id === userId ? { ...u, isFollowing: !isFollowing && !hasPendingRequest, hasPendingRequest: false } : u,
+          u.id === userId ? updateFollowState(u, isFollowing, hasPendingRequest) : u,
         ),
       );
       setUsers((prev) =>
         prev.map((u) =>
-          u.id === userId
-            ? {
-                ...u,
-                isFollowing: !isFollowing && !hasPendingRequest && !u.isPrivate,
-                hasPendingRequest: !isFollowing && !hasPendingRequest && u.isPrivate,
-              }
-            : u,
+          u.id === userId ? updateFollowState(u, isFollowing, hasPendingRequest) : u,
         ),
       );
     } catch (error) {
@@ -111,7 +105,7 @@ function UserSearchPage() {
   };
 
   const renderUserCard = (user: UserSearchResponse) => {
-    const isFollowing = "isFollowedByMe" in user ? (user as any).isFollowedByMe : user.isFollowing;
+    const isFollowing = user.isFollowedByMe ?? false;
     const hasPending = user.hasPendingRequest ?? false;
     const isPrivate = user.isPrivate ?? false;
 

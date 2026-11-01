@@ -24,14 +24,12 @@ public class IdentityService
         _userManager = userManager;
     }
 
-    private async Task<string> GenerateAccessToken(User user)
+    private string GenerateAccessToken(User user)
     {
         // Generate signing credentials
         var keyData = SHA256.HashData(Encoding.UTF8.GetBytes(_configuration["SECRET_KEY"]!));
         var key = new SymmetricSecurityKey(keyData);
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        var roles = await _userManager.GetRolesAsync(user);
 
         // Define claims accessible for the frontend
         var claims = new List<Claim>
@@ -125,7 +123,7 @@ public class IdentityService
         if (freshUser == null)
             throw new InvalidOperationException("User not found.");
 
-        var accessToken = await GenerateAccessToken(freshUser);
+        var accessToken = GenerateAccessToken(freshUser);
         var refreshToken = await GenerateRefreshToken(freshUser);
         return (accessToken, refreshToken.Token);
     }
@@ -137,7 +135,7 @@ public class IdentityService
         if (freshUser == null)
             throw new InvalidOperationException("User not found.");
 
-        var accessToken = await GenerateAccessToken(freshUser);
+        var accessToken = GenerateAccessToken(freshUser);
         var refreshToken = await RotateRefreshToken(token);
         return (accessToken, refreshToken.Token);
     }

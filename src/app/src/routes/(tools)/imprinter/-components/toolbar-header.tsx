@@ -1,4 +1,3 @@
-import { useNavigate } from "@tanstack/react-router";
 import { ChevronDown, Download, FileDown, Home, Redo2, RotateCcw, Save, ShoppingCart, Undo2 } from "lucide-react";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -33,7 +32,6 @@ type DebouncedNameInputHandle = {
 };
 
 export function ToolbarHeader({ className }: ToolbarHeaderProps) {
-  const _navigate = useNavigate();
   const { addItemWithImprint } = useCart();
   const nameInputRef = useRef<DebouncedNameInputHandle | null>(null);
   const {

@@ -60,7 +60,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     return {
       id: data.sub,
       email: data.email,
-      role: (data.role as any) || data["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || "user",
+      role: data.role || data["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || "user",
     };
   };
 

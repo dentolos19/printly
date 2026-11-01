@@ -96,7 +96,7 @@ export default function ServerProvider({ children }: { children: React.ReactNode
           // Refresh failed, log out user
           console.error("Token refresh failed:", error);
           logout();
-          throw new Error("Session expired");
+          throw new Error("Session expired", { cause: error });
         }
       }
 

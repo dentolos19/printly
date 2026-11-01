@@ -170,16 +170,11 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
 
   // Use refs to track current values without triggering re-renders
   const selectedTicketRef = useRef<Ticket | null>(null);
-  const currentUserIdRef = useRef<string | null>(null);
 
   // Keep refs in sync with state
   useEffect(() => {
     selectedTicketRef.current = selectedTicket;
   }, [selectedTicket]);
-
-  useEffect(() => {
-    currentUserIdRef.current = auth.claims?.id ?? null;
-  }, [auth.claims?.id]);
 
   // Track component mount state
   useEffect(() => {
@@ -226,36 +221,6 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
       }
     }
   }, [auth.tokens?.accessToken]);
-
-  /** Fetch messages for a ticket */
-  const _fetchMessages = useCallback(
-    async (ticketId: string) => {
-      if (!auth.tokens?.accessToken) return;
-
-      try {
-        console.log(`[Support] Loading messages for ticket: ${ticketId}`);
-        const response = await fetch(`${API_URL}/ticket/${ticketId}/messages`, {
-          headers: {
-            Authorization: `Bearer ${auth.tokens.accessToken}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = (await response.json()) as TicketMessage[];
-          if (isMountedRef.current) {
-            setMessages(data);
-            console.log(`[Support] Loaded ${data.length} messages`);
-            scrollToBottom();
-          }
-        } else {
-          console.error("[Support] Failed to fetch messages:", response.status);
-        }
-      } catch (error) {
-        console.error("[Support] Failed to fetch messages:", error);
-      }
-    },
-    [auth.tokens?.accessToken, scrollToBottom],
-  );
 
   /** Start SignalR connection */
   const startConnection = useCallback(async () => {
@@ -405,7 +370,6 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
       connection.on("TicketMessagesRead", (data: ReadReceiptResponse) => {
         console.log("[Support] Messages read:", data);
         const currentTicket = selectedTicketRef.current;
-        const _currentUserId = currentUserIdRef.current;
 
         if (data.ticketId === currentTicket?.id && isMountedRef.current) {
           setMessages((prev) =>
@@ -907,13 +871,6 @@ export default function TicketInterface({ isAdmin = false, onTicketCreated }: Ti
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  /** Format file size */
-  const _formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
   };
 
   /** Update ticket status (admin only) */

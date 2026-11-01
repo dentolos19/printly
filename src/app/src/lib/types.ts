@@ -6,7 +6,7 @@ export type ServerFunctions = ReturnType<typeof generateServerFunctions>;
 export type UserClaims = {
   id: string;
   email: string;
-  role: "admin" | "user";
+  role: string;
 };
 
 export type UserProfile = {

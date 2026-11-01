@@ -190,7 +190,9 @@ export default function CustomerChat() {
     if (connectionRef.current) {
       try {
         await connectionRef.current.stop();
-      } catch {}
+      } catch (error) {
+        console.error("[Customer Chat] Failed to stop connection:", error);
+      }
       connectionRef.current = null;
     }
 

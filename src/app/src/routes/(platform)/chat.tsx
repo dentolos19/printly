@@ -115,7 +115,6 @@ function ChatPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
-  const [_pendingOptimisticMessages, setPendingOptimisticMessages] = useState<Set<string>>(new Set());
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
@@ -223,7 +222,9 @@ function ChatPage() {
     if (connectionRef.current) {
       try {
         await connectionRef.current.stop();
-      } catch {}
+      } catch (error) {
+        console.error("[Chat] Failed to stop connection:", error);
+      }
       connectionRef.current = null;
     }
 
@@ -250,7 +251,9 @@ function ChatPage() {
         if (conversationId) {
           try {
             await connection.invoke("JoinConversation", conversationId, false);
-          } catch {}
+          } catch (error) {
+            console.error("[Chat] Failed to rejoin conversation:", error);
+          }
         }
       });
 
@@ -277,17 +280,7 @@ function ChatPage() {
               // Match voice messages by the optimistic prefix
               const voiceMatch = m.id.startsWith("optimistic-voice-") && message.voiceMessageUrl != null;
 
-              if (contentMatch || fileMatch || voiceMatch) {
-                // Clean up pending optimistic message tracking
-                setPendingOptimisticMessages((pendingPrev) => {
-                  const next = new Set(pendingPrev);
-                  next.delete(m.id);
-                  return next;
-                });
-                return false;
-              }
-
-              return true;
+              return !(contentMatch || fileMatch || voiceMatch);
             });
             // Check if message already exists (avoid duplicates)
             if (withoutOptimistic.some((existing) => existing.id === message.id)) {
@@ -480,7 +473,9 @@ function ChatPage() {
       if (conversationId) {
         try {
           await connection.invoke("JoinConversation", conversationId, false);
-        } catch {}
+        } catch (error) {
+          console.error("[Chat] Failed to join conversation:", error);
+        }
       }
     } catch (error) {
       console.error("[Chat] Connection failed", error);
@@ -509,7 +504,9 @@ function ChatPage() {
           try {
             await connectionRef.current.invoke("JoinConversation", selectedConversationId, false);
             markConversationRead(selectedConversationId);
-          } catch {}
+          } catch (error) {
+            console.error("[Chat] Failed to join conversation:", error);
+          }
         }
       };
       joinConversation();
@@ -536,7 +533,6 @@ function ChatPage() {
 
       // Optimistic update - show message immediately
       const optimisticId = `optimistic-${Date.now()}`;
-      setPendingOptimisticMessages((prev) => new Set(prev).add(optimisticId));
 
       const optimisticMessage: ConversationMessage = {
         id: optimisticId,
@@ -595,11 +591,6 @@ function ChatPage() {
         console.error("[Chat] Failed to send message", error);
         // Remove optimistic message on failure
         setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
-        setPendingOptimisticMessages((prev) => {
-          const next = new Set(prev);
-          next.delete(optimisticId);
-          return next;
-        });
 
         const errorMessage = error instanceof Error ? error.message : "Failed to send message";
         setLastError(`Message failed to send: ${errorMessage}`);
@@ -702,18 +693,12 @@ function ChatPage() {
 
       // Show optimistic message immediately
       setMessages((prev) => [...prev, optimisticMessage]);
-      setPendingOptimisticMessages((prev) => new Set(prev).add(optimisticId));
 
       try {
         const uploadResult = await uploadFile(selectedConversationId, file);
         if (!uploadResult) {
           // Remove optimistic message on failure
           setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
-          setPendingOptimisticMessages((prev) => {
-            const next = new Set(prev);
-            next.delete(optimisticId);
-            return next;
-          });
           setLastError("Failed to upload file");
           setTimeout(() => setLastError(null), 5000);
           return;
@@ -733,11 +718,6 @@ function ChatPage() {
         console.error("[Chat] Failed to send file message", error);
         // Remove optimistic message on failure
         setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
-        setPendingOptimisticMessages((prev) => {
-          const next = new Set(prev);
-          next.delete(optimisticId);
-          return next;
-        });
         setLastError("Failed to send file");
         setTimeout(() => setLastError(null), 5000);
       }
@@ -1039,10 +1019,6 @@ function ChatPage() {
   }, [messages]);
 
   const selectedConversation = conversations.find((c) => c.id === selectedConversationId);
-
-  const _handleCreateNew = useCallback(() => {
-    setNewConversationOpen(true);
-  }, []);
 
   return (
     <main className="flex h-full w-full flex-col gap-3 overflow-hidden p-3">

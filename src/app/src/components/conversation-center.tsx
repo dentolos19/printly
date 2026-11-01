@@ -195,7 +195,9 @@ export default function ConversationCenter() {
     if (connectionRef.current) {
       try {
         await connectionRef.current.stop();
-      } catch {}
+      } catch (error) {
+        console.error("[Conversation Center] Failed to stop connection:", error);
+      }
       connectionRef.current = null;
     }
 
@@ -551,7 +553,6 @@ export default function ConversationCenter() {
                 {filteredConversations.map((conversation) => {
                   const title = getConversationTitle(conversation, currentUserId);
                   const lastMessage = conversation.lastMessage?.content ?? "";
-                  const _unread = conversation.unreadCount > 0;
                   return (
                     <button
                       className={`hover:bg-muted flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${selectedConversationId === conversation.id ? "bg-muted" : ""}`}

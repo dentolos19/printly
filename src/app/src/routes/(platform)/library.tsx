@@ -14,7 +14,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "#/components/ui/button";
@@ -68,7 +68,6 @@ function LibraryPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [assetsLoading, setAssetsLoading] = useState(true);
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
-  const previewUrls = useRef<string[]>([]);
 
   // Dialogs
   const [selectedDesign, setSelectedDesign] = useState<DesignWithPreview | null>(null);
@@ -86,7 +85,7 @@ function LibraryPage() {
   const [uploading, setUploading] = useState(false);
 
   // Load designs
-  const loadDesigns = useCallback(async () => {
+  const loadDesigns = useCallback(async (signal: AbortSignal, previewUrls: string[]) => {
     try {
       setDesignsLoading(true);
       const data = await api.design.getDesigns();
@@ -98,10 +97,12 @@ function LibraryPage() {
           if (design.coverId) {
             try {
               const blob = await api.design.getDesignCover(design.id);
-              preview = URL.createObjectURL(blob);
-              previewUrls.current.push(preview);
+              if (!signal.aborted) {
+                preview = URL.createObjectURL(blob);
+                previewUrls.push(preview);
+              }
             } catch (error) {
-              console.error("Failed to load cover:", error);
+              if (!signal.aborted) console.error("Failed to load cover:", error);
             }
           }
 
@@ -109,12 +110,14 @@ function LibraryPage() {
         }),
       );
 
-      setDesigns(designsWithPreviews);
+      if (!signal.aborted) setDesigns(designsWithPreviews);
     } catch (error) {
-      toast.error("Failed to load designs");
-      console.error(error);
+      if (!signal.aborted) {
+        toast.error("Failed to load designs");
+        console.error(error);
+      }
     } finally {
-      setDesignsLoading(false);
+      if (!signal.aborted) setDesignsLoading(false);
     }
   }, [api.design]);
 
@@ -153,14 +156,16 @@ function LibraryPage() {
   }, [api.asset]);
 
   useEffect(() => {
-    loadDesigns();
+    const controller = new AbortController();
+    const previewUrls: string[] = [];
+    loadDesigns(controller.signal, previewUrls);
     loadImprints();
     loadAssets();
 
     // Cleanup object URLs on unmount to prevent memory leaks
     return () => {
-      previewUrls.current.forEach(URL.revokeObjectURL);
-      previewUrls.current = [];
+      controller.abort();
+      previewUrls.forEach(URL.revokeObjectURL);
     };
   }, [loadDesigns, loadImprints, loadAssets]);
 

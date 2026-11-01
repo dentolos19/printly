@@ -167,7 +167,9 @@ export default function StaffInbox() {
     if (connectionRef.current) {
       try {
         await connectionRef.current.stop();
-      } catch {}
+      } catch (error) {
+        console.error("[Staff Inbox] Failed to stop connection:", error);
+      }
       connectionRef.current = null;
     }
 

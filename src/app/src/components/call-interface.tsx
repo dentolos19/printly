@@ -7,7 +7,7 @@ import {
   useRoomContext,
   useTracks,
 } from "@livekit/components-react";
-import { RoomEvent, Track } from "livekit-client";
+import { type LocalTrackPublication, RoomEvent, type RoomEventCallbacks, Track } from "livekit-client";
 import { MessageSquare, Phone, PhoneOff, Send, Video, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -160,7 +160,7 @@ function CallChat({ participantName, isOpen, onClose, onUnreadChange }: CallChat
   useEffect(() => {
     if (!room) return;
 
-    const handleDataReceived = (payload: Uint8Array, participant: any, kind: any, topic: string | undefined) => {
+    const handleDataReceived: RoomEventCallbacks["dataReceived"] = (payload, participant, _kind, topic) => {
       if (topic !== "chat") return;
 
       try {
@@ -195,8 +195,7 @@ function CallChat({ participantName, isOpen, onClose, onUnreadChange }: CallChat
     return () => {
       room.off(RoomEvent.DataReceived, handleDataReceived);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [room]);
+  }, [room, onUnreadChange]);
 
   // Auto-scroll when new messages arrive
   useEffect(() => {
@@ -417,7 +416,7 @@ function CallAudioRecorder({ callId, accessToken }: { callId: string; accessToke
     }
 
     // Also listen for when the track gets published (covers the case where it's not ready yet)
-    const handleLocalTrackPublished = (publication: any) => {
+    const handleLocalTrackPublished = (publication: LocalTrackPublication) => {
       if (publication.source === Track.Source.Microphone && publication.track?.mediaStreamTrack) {
         console.log("[CallRecorder] Mic track just published");
         startRecording(publication.track.mediaStreamTrack);

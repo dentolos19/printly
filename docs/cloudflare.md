@@ -1,0 +1,7 @@
+# Cloudflare development
+
+The frontend in `src/app` uses the beta `cf` CLI and Cloudflare Vite plugin with `cloudflare.config.ts`. `just check` uses Bun's linter, formatter, and type checker; `bunfig.toml` configures import, package, and Tailwind sorting. The C# service checks remain in the root Justfile.
+
+`just start` starts the frontend and the local C# server. In development, the Worker proxies API requests directly to the local server, so Vite disables the container attachment while retaining the `Server` Durable Object. Production builds retain the `printly-server` container. Local Worker state remains under `src/app/.wrangler/state`.
+
+`just deploy` installs and builds the app and server, applies Entity Framework migrations, then deploys the prebuilt Worker with secrets from `src/app/.env`. A failed migration stops the upload. Use `just environment=production deploy` to select `src/app/.env.production`. The selected file is uploaded as Worker secrets and takes precedence over inherited variables. Selecting a file changes configuration values but still targets the same Worker. Keep Cloudflare deployment credentials in the process environment instead of that file. CI creates `src/app/.env` from the Production environment and runs `just deploy`, without a separate migration step. The recipe sets `CI=true` for migration to skip local Docker even when deploying from a developer machine; Entity Framework uses the selected database URL.

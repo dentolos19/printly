@@ -66,21 +66,6 @@ function getStatusIcon(status: ConversationStatus) {
   }
 }
 
-function _getStatusVariant(status: ConversationStatus): "default" | "secondary" | "destructive" | "outline" {
-  switch (status) {
-    case 0: // Pending
-      return "secondary";
-    case 1: // Active/Open
-      return "default";
-    case 2: // Resolved
-      return "outline";
-    case 3: // Closed
-      return "outline";
-    default:
-      return "secondary";
-  }
-}
-
 function getStatusText(status: ConversationStatus): string {
   switch (status) {
     case 0:

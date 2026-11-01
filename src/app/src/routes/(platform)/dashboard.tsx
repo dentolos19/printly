@@ -70,7 +70,7 @@ function DashboardPage() {
   }, [api.order]);
 
   // Load recent designs
-  const loadRecentDesigns = useCallback(async () => {
+  const loadRecentDesigns = useCallback(async (signal: AbortSignal, previewUrls: string[]) => {
     try {
       setDesignsLoading(true);
       const data = await api.design.getDesigns();
@@ -82,9 +82,12 @@ function DashboardPage() {
           if (design.coverId) {
             try {
               const blob = await api.design.getDesignCover(design.id);
-              preview = URL.createObjectURL(blob);
+              if (!signal.aborted) {
+                preview = URL.createObjectURL(blob);
+                previewUrls.push(preview);
+              }
             } catch (error) {
-              console.error("Failed to load cover:", error);
+              if (!signal.aborted) console.error("Failed to load cover:", error);
             }
           }
 
@@ -92,19 +95,27 @@ function DashboardPage() {
         }),
       );
 
-      setRecentDesigns(designsWithPreviews);
+      if (!signal.aborted) setRecentDesigns(designsWithPreviews);
     } catch (error) {
-      toast.error("Failed to load recent designs");
-      console.error(error);
+      if (!signal.aborted) {
+        toast.error("Failed to load recent designs");
+        console.error(error);
+      }
     } finally {
-      setDesignsLoading(false);
+      if (!signal.aborted) setDesignsLoading(false);
     }
   }, [api.design]);
 
   useEffect(() => {
+    const controller = new AbortController();
+    const previewUrls: string[] = [];
     loadStats();
     loadRecentOrders();
-    loadRecentDesigns();
+    loadRecentDesigns(controller.signal, previewUrls);
+    return () => {
+      controller.abort();
+      previewUrls.forEach(URL.revokeObjectURL);
+    };
   }, [loadStats, loadRecentOrders, loadRecentDesigns]);
 
   const formatDate = (dateString: string): string => {

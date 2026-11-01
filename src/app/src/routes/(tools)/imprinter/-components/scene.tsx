@@ -316,11 +316,6 @@ function CanvasModel() {
   // Get model URL from selected product - use proxied URL to avoid CORS issues
   const modelUrl = selectedProduct?.product.modelId ? `/assets/${selectedProduct.product.modelId}/view` : null;
 
-  // Safety check: don't render if no model URL
-  if (!modelUrl) {
-    return <NoModelPlaceholder />;
-  }
-
   // Find and categorize meshes by position and material
   useEffect(() => {
     if (!modelRef.current) return;
@@ -452,6 +447,8 @@ function CanvasModel() {
 
     return grouped;
   }, [visibleDesigns, getMeshForPrintArea]);
+
+  if (!modelUrl) return <NoModelPlaceholder />;
 
   return (
     <group ref={modelRef}>

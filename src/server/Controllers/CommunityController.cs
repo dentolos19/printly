@@ -2710,7 +2710,9 @@ public class CommunityController(
                 u.Followers.Count,
                 false,
                 u.IsPrivate,
-                false
+                Context.Set<FollowRequest>().Any(fr =>
+                    fr.RequesterId == userId && fr.TargetId == u.Id && fr.Status == FollowRequestStatus.Pending
+                )
             ))
             .ToListAsync();
 

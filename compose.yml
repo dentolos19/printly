@@ -28,8 +28,8 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - storage-s3mock:/data
+      - storage:/data
 
 volumes:
-  storage-s3mock:
+  storage:
   database:

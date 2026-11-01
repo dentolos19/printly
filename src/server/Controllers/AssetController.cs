@@ -135,19 +135,15 @@ public class AssetController(DatabaseContext context, StorageService storageServ
         }
 
         // Generate inline thumbnail for image assets (keeps previews fast and resilient)
-        if (asset.Type.StartsWith("image/", StringComparison.Ordinal) && file.Length < 10_000_000)
+        if (asset.Type.StartsWith("image/", StringComparison.Ordinal) && file.Length <= 102_400)
         {
             try
             {
                 await using var thumbnailStream = file.OpenReadStream();
                 var bytes = new byte[file.Length];
-                _ = await thumbnailStream.ReadAsync(bytes);
-                // Store raw bytes if small enough for a thumbnail (< 100KB original)
-                if (bytes.Length <= 102_400)
-                {
-                    asset.ThumbnailData = bytes;
-                    asset.ThumbnailType = asset.Type;
-                }
+                await thumbnailStream.ReadExactlyAsync(bytes);
+                asset.ThumbnailData = bytes;
+                asset.ThumbnailType = asset.Type;
             }
             catch
             {

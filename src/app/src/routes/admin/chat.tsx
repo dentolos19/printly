@@ -38,7 +38,6 @@ import { Tabs, TabsList, TabsTrigger } from "#/components/ui/tabs";
 import { API_URL } from "#/environment";
 import { useAuth } from "#/lib/providers/auth";
 import type {
-  AdminInfo,
   ConversationMessage,
   ConversationPriority,
   ConversationStatus,
@@ -86,10 +85,8 @@ function AdminChatPage() {
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [admins, setAdmins] = useState<AdminInfo[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
-  const [_pendingOptimisticMessages, setPendingOptimisticMessages] = useState<Set<string>>(new Set());
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
 
@@ -234,44 +231,6 @@ function AdminChatPage() {
     [authorizedFetch],
   );
 
-  const fetchAdmins = useCallback(async () => {
-    if (!auth.tokens?.accessToken) return;
-    try {
-      const response = await authorizedFetch(`${API_URL}/conversation/admins`);
-      if (response.ok) {
-        const data = (await response.json()) as AdminInfo[];
-        setAdmins(data);
-      }
-    } catch (error) {
-      console.error("[Admin Chat] Failed to fetch admins", error);
-    }
-  }, [authorizedFetch, auth.tokens?.accessToken]);
-
-  const _assignConversation = useCallback(
-    async (conversationId: string, adminId: string | null) => {
-      try {
-        const response = await authorizedFetch(`${API_URL}/conversation/${conversationId}/assign`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ adminId }),
-        });
-        if (response.ok) {
-          const assignedAdmin = adminId ? admins.find((a) => a.id === adminId) : null;
-          setConversations((prev) =>
-            prev.map((c) =>
-              c.id === conversationId
-                ? { ...c, assignedToAdminId: adminId, assignedToAdminName: assignedAdmin?.userName ?? null }
-                : c,
-            ),
-          );
-        }
-      } catch (error) {
-        console.error("[Admin Chat] Failed to assign conversation", error);
-      }
-    },
-    [authorizedFetch, admins],
-  );
-
   const uploadFile = useCallback(
     async (
       conversationId: string,
@@ -336,7 +295,9 @@ function AdminChatPage() {
     if (connectionRef.current) {
       try {
         await connectionRef.current.stop();
-      } catch {}
+      } catch (error) {
+        console.error("[Admin Chat] Failed to stop connection:", error);
+      }
       connectionRef.current = null;
     }
 
@@ -363,7 +324,9 @@ function AdminChatPage() {
         if (conversationId) {
           try {
             await connection.invoke("JoinConversation", conversationId, true);
-          } catch {}
+          } catch (error) {
+            console.error("[Admin Chat] Failed to rejoin conversation:", error);
+          }
         }
       });
 
@@ -390,17 +353,7 @@ function AdminChatPage() {
               // Match voice messages by the optimistic prefix
               const voiceMatch = m.id.startsWith("optimistic-voice-") && message.voiceMessageUrl != null;
 
-              if (contentMatch || fileMatch || voiceMatch) {
-                // Clean up pending optimistic message tracking
-                setPendingOptimisticMessages((pendingPrev) => {
-                  const next = new Set(pendingPrev);
-                  next.delete(m.id);
-                  return next;
-                });
-                return false;
-              }
-
-              return true;
+              return !(contentMatch || fileMatch || voiceMatch);
             });
             // Check if message already exists (avoid duplicates)
             if (withoutOptimistic.some((existing) => existing.id === message.id)) {
@@ -593,7 +546,9 @@ function AdminChatPage() {
       if (conversationId) {
         try {
           await connection.invoke("JoinConversation", conversationId, true);
-        } catch {}
+        } catch (error) {
+          console.error("[Admin Chat] Failed to join conversation:", error);
+        }
       }
     } catch (error) {
       console.error("[Admin Chat] Connection failed", error);
@@ -611,13 +566,12 @@ function AdminChatPage() {
   useEffect(() => {
     if (auth.tokens?.accessToken) {
       fetchConversations();
-      fetchAdmins();
       startConnection();
     }
     return () => {
       connectionRef.current?.stop();
     };
-  }, [auth.tokens?.accessToken, startConnection, fetchConversations, fetchAdmins]);
+  }, [auth.tokens?.accessToken, startConnection, fetchConversations]);
 
   useEffect(() => {
     fetchConversations();
@@ -634,7 +588,9 @@ function AdminChatPage() {
           try {
             await connectionRef.current.invoke("JoinConversation", selectedConversationId, true);
             markConversationRead(selectedConversationId);
-          } catch {}
+          } catch (error) {
+            console.error("[Admin Chat] Failed to join conversation:", error);
+          }
         }
       };
       joinConversation();
@@ -661,7 +617,6 @@ function AdminChatPage() {
 
       // Optimistic update - show message immediately
       const optimisticId = `optimistic-${Date.now()}`;
-      setPendingOptimisticMessages((prev) => new Set(prev).add(optimisticId));
 
       const optimisticMessage: ConversationMessage = {
         id: optimisticId,
@@ -720,11 +675,6 @@ function AdminChatPage() {
         console.error("[Admin Chat] Failed to send message", error);
         // Remove optimistic message on failure
         setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
-        setPendingOptimisticMessages((prev) => {
-          const next = new Set(prev);
-          next.delete(optimisticId);
-          return next;
-        });
 
         const errorMessage = error instanceof Error ? error.message : "Failed to send message";
         setLastError(`Message failed to send: ${errorMessage}`);
@@ -769,18 +719,12 @@ function AdminChatPage() {
 
       // Show optimistic message immediately
       setMessages((prev) => [...prev, optimisticMessage]);
-      setPendingOptimisticMessages((prev) => new Set(prev).add(optimisticId));
 
       try {
         const uploadResult = await uploadFile(selectedConversationId, file);
         if (!uploadResult) {
           // Remove optimistic message on failure
           setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
-          setPendingOptimisticMessages((prev) => {
-            const next = new Set(prev);
-            next.delete(optimisticId);
-            return next;
-          });
           setLastError("Failed to upload file");
           setTimeout(() => setLastError(null), 5000);
           return;
@@ -800,11 +744,6 @@ function AdminChatPage() {
         console.error("[Admin Chat] Failed to send file message", error);
         // Remove optimistic message on failure
         setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
-        setPendingOptimisticMessages((prev) => {
-          const next = new Set(prev);
-          next.delete(optimisticId);
-          return next;
-        });
         setLastError("Failed to send file");
         setTimeout(() => setLastError(null), 5000);
       }
